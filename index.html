@@ -340,37 +340,43 @@
 <!-- Robotic TME Evidence Page -->
 <div class="view" id="v-robotic-tme">
 
-  <!-- Best Practice -->
+  <!-- Best Practice (collapsible) -->
   <div class="ev-section">
     <h3>&#x1F48A; 現行最佳實踐</h3>
-    <div class="flow-card" style="font-size:0.95rem; line-height:1.7">
-      <p style="font-weight:600;color:var(--primary);margin-bottom:8px;font-size:1.0rem">Robotic TME 用於中低位直腸癌</p>
 
-      <div style="background:#f0fff4;border-radius:10px;padding:14px 16px;margin:10px 0">
-        <div style="font-weight:700;color:#276749;font-size:1.0rem;margin-bottom:6px">&#x1F7E2; 關鍵結論（2025 更新）</div>
-        <div style="font-size:0.9rem;color:var(--text-sec)">
-          <strong>REAL 試驗（JAMA 2025）首次證實 robotic TME 的腫瘤學優勢：</strong><br>
-          &bull; 3 年局部復發率：Robotic <strong>1.6%</strong> vs Laparoscopic <strong>4.0%</strong>（HR 0.45, p=0.03）<br>
-          &bull; 3 年 DFS：Robotic <strong>87.2%</strong> vs Lap <strong>83.4%</strong>（HR 0.74, p=0.04）<br>
-          &bull; 3 年 OS：無顯著差異（94.7% vs 93.0%）<br>
-          &bull; 術後泌尿/性功能/排便功能：Robotic 均顯著較佳
-        </div>
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F7E2; REAL 試驗關鍵結論（JAMA 2025）</h4>
+        <span class="arrow">&#9662;</span>
       </div>
-
-      <div style="background:#ebf8ff;border-radius:10px;padding:14px 16px;margin:10px 0">
-        <div style="font-weight:700;color:#2c5282;font-size:1.0rem;margin-bottom:6px">&#x1F535; 整體證據摘要</div>
-        <div style="font-size:0.9rem;color:var(--text-sec)">
-          &bull; <strong>轉換率</strong>：Robotic 顯著較低（OR 0.27-0.46）<br>
-          &bull; <strong>CRM 陽性率</strong>：Robotic 較低（OR 0.62）<br>
-          &bull; <strong>TME 完整性</strong>：Robotic 較佳（OR 1.97）<br>
-          &bull; <strong>手術時間</strong>：Robotic 較長（+22-42 min）<br>
-          &bull; <strong>腸功能恢復</strong>：Robotic 較快（-0.6 天）<br>
-          &bull; <strong>併發症</strong>：兩者相當或 Robotic 較佳（OR 0.70）
-        </div>
+      <div class="ev-card-body">
+        <p style="font-weight:600;color:var(--primary)">首次 RCT 證實 robotic TME 的腫瘤學優勢</p>
+        <table>
+          <tr><th></th><th>Robotic</th><th>Lap</th><th>HR / p</th></tr>
+          <tr><td>3 年局部復發</td><td><strong>1.6%</strong></td><td>4.0%</td><td>0.45, p=0.03</td></tr>
+          <tr><td>3 年 DFS</td><td><strong>87.2%</strong></td><td>83.4%</td><td>0.74, p=0.04</td></tr>
+          <tr><td>3 年 OS</td><td>94.7%</td><td>93.0%</td><td>NS</td></tr>
+        </table>
+        <p>術後 3、6、12 個月泌尿/性功能/排便功能：Robotic 均顯著較佳。</p>
       </div>
+    </div>
 
-      <div style="background:#fffbeb;border-left:3px solid #d69e2e;padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.9rem;margin-top:8px">
-        <strong>臨床定位：</strong>對於中低位直腸癌，robotic TME 在技術精準度、功能保留和腫瘤學結果上展現優勢，尤其適用於骨盆狹窄、低位腫瘤、肥胖病患等困難案例。REAL 試驗將 robotic 從「非劣性」推向「優越性」的新時代。
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F535; Robotic vs Lap TME 整體證據</h4>
+        <span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">
+        <table>
+          <tr><th>指標</th><th>Robotic 優勢？</th><th>效果量</th></tr>
+          <tr><td>轉換率</td><td>&#x2713;</td><td>OR 0.27-0.46</td></tr>
+          <tr><td>CRM 陽性率</td><td>&#x2713;</td><td>OR 0.62</td></tr>
+          <tr><td>TME 完整性</td><td>&#x2713;</td><td>OR 1.97</td></tr>
+          <tr><td>重大併發症</td><td>&#x2713;</td><td>OR 0.70</td></tr>
+          <tr><td>腸功能恢復</td><td>&#x2713;</td><td>-0.6 天</td></tr>
+          <tr><td>手術時間</td><td>&#x2717;</td><td>+22-42 min</td></tr>
+        </table>
+        <div class="note"><strong>臨床定位：</strong>Robotic TME 尤其適用於骨盆狹窄、低位腫瘤、肥胖病患等困難案例。REAL 試驗將 robotic 從「非劣性」推向「優越性」。</div>
       </div>
     </div>
   </div>
@@ -407,52 +413,49 @@
 <!-- Anastomosis Evidence Page -->
 <div class="view" id="v-robotic-anast">
 
-  <!-- Best Practice -->
+  <!-- Best Practice (collapsible) -->
   <div class="ev-section">
     <h3>&#x1F48A; 現行證據摘要</h3>
-    <div class="flow-card" style="font-size:0.95rem; line-height:1.7">
 
-      <div style="background:#f0fff4;border-radius:10px;padding:14px 16px;margin:10px 0">
-        <div style="font-weight:700;color:#276749;font-size:1.0rem;margin-bottom:6px">&#x1F7E2; Intracorporeal vs Extracorporeal Anastomosis</div>
-        <div style="font-size:0.9rem;color:var(--text-sec)">
-          <strong>適用場景：</strong>右側結腸切除術（right hemicolectomy）的迴結腸吻合<br><br>
-          <strong>ICA 優勢（RCT Meta-analysis, 7 trials, N=750）：</strong><br>
-          &bull; 術後麻痺性腸阻塞較低（RR 0.62, p=0.04）<br>
-          &bull; 切口長度較短（-1.38 cm, p&lt;0.00001）<br>
-          &bull; 手術部位感染較低（3.65% vs 16.67%, p=0.008, IVEA study）<br>
-          &bull; 術後疼痛較低<br><br>
-          <strong>ICA 劣勢：</strong><br>
-          &bull; 手術時間較長（+10.7 min, p=0.008）<br><br>
-          <strong>兩者相當：</strong>吻合處滲漏率、整體併發症、住院天數、淋巴結數目
-        </div>
-        <hr style="border:none;border-top:1px dashed #c6f6d5;margin:8px 0">
-        <div style="font-size:0.88rem;color:var(--text-sec)">
-          <strong>Robotic ICA RCT（Dohrn, Ann Surg 2022）：</strong>在優化的 ERAS 環境下，robotic ICA vs ECA 在病患自評恢復（QoR-15）上無顯著差異。ICA 吻合時間較長（17 vs 13 min）。
-        </div>
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F7E2; Intracorporeal vs Extracorporeal Anastomosis</h4>
+        <span class="arrow">&#9662;</span>
       </div>
-
-      <div style="background:#ebf8ff;border-radius:10px;padding:14px 16px;margin:10px 0">
-        <div style="font-weight:700;color:#2c5282;font-size:1.0rem;margin-bottom:6px">&#x1F535; Single-Stapled vs Double-Stapled Anastomosis</div>
-        <div style="font-size:0.9rem;color:var(--text-sec)">
-          <strong>適用場景：</strong>低位前位切除術（LAR）的直腸吻合<br><br>
-          <strong>Double-Stapled Technique (DST)：</strong><br>
-          &bull; 傳統標準技術，使用線性 stapler 橫斷直腸 + circular stapler 吻合<br>
-          &bull; 「Dog-ear」交叉釘合線為潛在弱點<br>
-          &bull; 吻合滲漏率約 4-10%（視距離肛門高度而定）<br><br>
-          <strong>Single-Stapled Technique (SST) / TTSS：</strong><br>
-          &bull; 經肛門橫斷直腸（purse-string）+ circular stapler 吻合<br>
-          &bull; 消除「dog-ear」問題，理論上減少滲漏<br>
-          &bull; <strong>RiSSA（Robotic Intracorporeal Single-Stapled Anastomosis）</strong>：Wu/Huang, Kaohsiung VGH — 首創以 robotic 全腔內 purse-string + circular stapler 完成 single-stapled 吻合<br>
-          &bull; RiSSA vs DSA pilot study（J Robot Surg 2025）：RiSSA 組滲漏率 <strong>0%</strong> vs DSA 9.5%，手術時間較短、恢復較快、造口率較低<br>
-          &bull; RiSSA learning curve（Int J Colorectal Dis 2026）：RA-CUSUM 分析顯示約 17 例達到技術熟練<br>
-          &bull; RPC-RiSSA 在 St Mark's Hospital（Tech Coloproctol 2024）：FAP 病患無吻合滲漏（0% vs 傳統 RPC 9%）<br>
-          &bull; Safe Anastomosis Project（Kim, DCR 2026）：SST + reinforcement 組滲漏率 <strong>6.3%</strong>，保護性造口率僅 <strong>18.8%</strong><br>
-          &bull; TTSS 初始系列（Vivas López, 2024）：滲漏率 9.1%，所有病患均達完整 TME
-        </div>
+      <div class="ev-card-body">
+        <p><strong>適用場景：</strong>右側結腸切除術的迴結腸吻合</p>
+        <table>
+          <tr><th>指標</th><th>ICA 優勢？</th><th>效果量</th></tr>
+          <tr><td>術後腸阻塞</td><td>&#x2713;</td><td>RR 0.62, p=0.04</td></tr>
+          <tr><td>切口長度</td><td>&#x2713;</td><td>-1.38 cm, p&lt;0.00001</td></tr>
+          <tr><td>手術部位感染</td><td>&#x2713;</td><td>3.65% vs 16.67% (IVEA)</td></tr>
+          <tr><td>術後疼痛</td><td>&#x2713;</td><td>較低</td></tr>
+          <tr><td>手術時間</td><td>&#x2717;</td><td>+10.7 min</td></tr>
+          <tr><td>滲漏率</td><td>&mdash;</td><td>NS</td></tr>
+          <tr><td>住院天數</td><td>&mdash;</td><td>NS</td></tr>
+        </table>
+        <p>Robotic ICA RCT（Dohrn, Ann Surg 2022）：在優化的 ERAS 環境下，QoR-15 無顯著差異。ICA 吻合時間較長（17 vs 13 min）。</p>
       </div>
+    </div>
 
-      <div style="background:#fffbeb;border-left:3px solid #d69e2e;padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.9rem;margin-top:8px">
-        <strong>趨勢：</strong>ICA 在右側結腸手術中越來越被採用，尤其搭配 robotic 平台。SST 在直腸手術中作為減少滲漏的策略正在興起，但目前缺乏大型 RCT。COLOR IV 和 INEX 等試驗結果值得關注。
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F535; Single-Stapled vs Double-Stapled（含 RiSSA）</h4>
+        <span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">
+        <p><strong>適用場景：</strong>低位前位切除術（LAR）的直腸吻合</p>
+        <p><strong>DST（傳統）：</strong>線性 stapler 橫斷 + circular stapler 吻合。「Dog-ear」交叉釘合線為弱點，滲漏率約 4-10%。</p>
+        <p><strong>SST / RiSSA：</strong>purse-string 橫斷 + circular stapler，消除 dog-ear。</p>
+        <table>
+          <tr><th>研究</th><th>技術</th><th>滲漏率</th><th>重點</th></tr>
+          <tr><td>RiSSA vs DSA (2025)</td><td>RiSSA</td><td><strong>0%</strong> vs 9.5%</td><td>手術較短、恢復較快</td></tr>
+          <tr><td>RiSSA LC (2026)</td><td>RiSSA</td><td>&mdash;</td><td>17 例達熟練（RA-CUSUM）</td></tr>
+          <tr><td>RPC-RiSSA (2024)</td><td>RiSSA</td><td><strong>0%</strong> vs 9%</td><td>St Mark's, FAP</td></tr>
+          <tr><td>Safe Anast (2026)</td><td>SST+reinf</td><td><strong>6.3%</strong></td><td>造口率 18.8%</td></tr>
+          <tr><td>TTSS (2024)</td><td>TTSS</td><td>9.1%</td><td>全部完整 TME</td></tr>
+        </table>
+        <div class="note"><strong>趨勢：</strong>SST/RiSSA 在直腸手術中作為減少滲漏的策略正在興起。COLOR IV 和 INEX 等 RCT 結果值得關注。</div>
       </div>
     </div>
   </div>
@@ -480,36 +483,46 @@
 <!-- BRAF V600E Evidence Page -->
 <div class="view" id="v-braf">
 
-  <!-- Section 0: Best Practice Summary -->
+  <!-- Section 0: Best Practice (collapsible) -->
   <div class="ev-section">
     <h3>&#x1F48A; 現行治療方案最佳實踐</h3>
-    <div class="flow-card" style="font-size:0.95rem; line-height:1.7">
-      <p style="font-weight:600;color:var(--primary);margin-bottom:8px;font-size:1.0rem">適用族群：RAS wild-type、BRAF V600E 突變之轉移性大腸直腸癌</p>
 
-      <div style="background:#f0fff4;border-radius:10px;padding:14px 16px;margin:10px 0">
-        <div style="font-weight:700;color:#276749;font-size:1.0rem;margin-bottom:6px">&#x1F7E2; 第一線治療（1L）</div>
-        <div style="font-weight:600;color:var(--primary);font-size:0.95rem">首選：Encorafenib + Cetuximab + mFOLFOX6</div>
-        <div style="font-size:0.88rem;color:var(--text-sec);margin-top:2px">ORR 65.7% &middot; mPFS 12.8 mo &middot; mOS 30.3 mo &middot; OS HR 0.49<br>BREAKWATER Phase 3 &middot; US FDA 加速核准（2025）</div>
-        <hr style="border:none;border-top:1px dashed #c6f6d5;margin:8px 0">
-        <div style="font-weight:600;color:var(--primary);font-size:0.95rem">替代方案：Encorafenib + Cetuximab + FOLFIRI</div>
-        <div style="font-size:0.88rem;color:var(--text-sec);margin-top:2px">ORR 64.4% &middot; 適用 oxaliplatin 不耐受/禁忌<br>BREAKWATER Cohort 3 &middot; PFS/OS 數據成熟中</div>
-        <hr style="border:none;border-top:1px dashed #c6f6d5;margin:8px 0">
-        <div style="font-weight:600;color:var(--primary);font-size:0.95rem">無法耐受化療：Encorafenib + Cetuximab（EC 單獨）</div>
-        <div style="font-size:0.88rem;color:var(--text-sec);margin-top:2px">ORR 45.6% &middot; mOS 19.5 mo &middot; 無化療毒性<br>BREAKWATER EC arm</div>
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F7E2; 第一線治療（1L）方案選擇</h4>
+        <span class="arrow">&#9662;</span>
       </div>
-
-      <div style="background:#ebf8ff;border-radius:10px;padding:14px 16px;margin:10px 0">
-        <div style="font-weight:700;color:#2c5282;font-size:1.0rem;margin-bottom:6px">&#x1F535; 第二線以上治療（2L+）</div>
-        <div style="font-weight:600;color:var(--primary);font-size:0.95rem">標準方案：Encorafenib + Cetuximab（EC 雙標靶）</div>
-        <div style="font-size:0.88rem;color:var(--text-sec);margin-top:2px">ORR 19.5% &middot; mPFS 4.3 mo &middot; mOS 9.3 mo &middot; OS HR 0.61<br>BEACON Phase 3 &middot; FDA/EMA/TFDA 核准<br>台灣健保：預計 2026/5/1 生效，最長給付 24 週</div>
+      <div class="ev-card-body">
+        <p style="font-weight:600;color:var(--primary)">適用族群：RAS wt、BRAF V600E mt mCRC</p>
+        <table>
+          <tr><th>方案</th><th>ORR</th><th>mPFS</th><th>mOS</th><th>備註</th></tr>
+          <tr><td><strong>EC + mFOLFOX6</strong></td><td>65.7%</td><td>12.8</td><td>30.3</td><td>首選，FDA 加速核准</td></tr>
+          <tr><td>EC + FOLFIRI</td><td>64.4%</td><td>--</td><td>--</td><td>替代，適用 oxaliplatin 禁忌</td></tr>
+          <tr><td>EC 單獨</td><td>45.6%</td><td>6.8</td><td>19.5</td><td>無法耐受化療時使用</td></tr>
+        </table>
       </div>
+    </div>
 
-      <div style="background:#fffbeb;border-left:3px solid #d69e2e;padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.9rem;margin-top:8px">
-        <strong>關鍵原則：</strong>「最佳治療優先」——一線即使用 EC + 化療優於序貫式（一線化療 &rarr; 二線 EC），PFS2 證實：20.7 vs 12.9 個月。
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F535; 第二線以上治療（2L+）</h4>
+        <span class="arrow">&#9662;</span>
       </div>
+      <div class="ev-card-body">
+        <p><strong>標準方案：Encorafenib + Cetuximab（EC 雙標靶）</strong></p>
+        <p>ORR 19.5% &middot; mPFS 4.3 mo &middot; mOS 9.3 mo &middot; OS HR 0.61</p>
+        <p>BEACON Phase 3 &middot; FDA/EMA/TFDA 核准<br>台灣健保：預計 2026/5/1 生效，最長給付 24 週</p>
+      </div>
+    </div>
 
-      <div style="font-size:0.85rem;color:#718096;margin-top:10px;border-top:1px solid var(--border);padding-top:8px">
-        <strong>注意事項：</strong>MSI-H/dMMR 病患若適用免疫治療，應優先考慮 ICI（BREAKWATER 排除此族群）。SEAMARK 試驗正在評估 EC + pembrolizumab 用於 BRAF V600E + MSI-H mCRC。
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x26A0;&#xFE0F; 關鍵原則與注意事項</h4>
+        <span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">
+        <div class="note"><strong>最佳治療優先：</strong>一線即使用 EC + 化療優於序貫式（一線化療 &rarr; 二線 EC）。PFS2 證實：20.7 vs 12.9 個月。</div>
+        <p><strong>MSI-H/dMMR 注意：</strong>若適用免疫治療，應優先考慮 ICI（BREAKWATER 排除此族群）。SEAMARK 試驗正在評估 EC + pembrolizumab 用於 BRAF V600E + MSI-H mCRC。</p>
       </div>
     </div>
   </div>
