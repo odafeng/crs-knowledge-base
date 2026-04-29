@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a365d">
+  <meta name="description" content="CRS (Colorectal Surgery) Knowledge Base - Progressive Web App">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>CRS Knowledge Base</title>
+  <style>
+    :root {
+      --primary: #1a365d;
+      --primary-light: #2c5282;
+      --accent: #3182ce;
+      --bg: #f7fafc;
+      --card-bg: #ffffff;
+      --text: #1a202c;
+      --text-secondary: #4a5568;
+      --border: #e2e8f0;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding-bottom: 72px;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white;
+      padding: 20px 16px 14px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: var(--shadow-lg);
+    }
+    header h1 { font-size: 1.25rem; font-weight: 700; }
+    header p { font-size: 0.78rem; opacity: 0.85; margin-top: 2px; }
+
+    /* Search */
+    .search-wrap {
+      padding: 10px 16px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 62px; z-index: 99;
+    }
+    #search {
+      width: 100%; padding: 9px 12px 9px 36px;
+      border: 1px solid var(--border); border-radius: 8px;
+      font-size: 0.92rem; outline: none; background: var(--bg);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' fill='%234a5568' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: 11px center;
+      transition: border-color .2s;
+    }
+    #search:focus { border-color: var(--accent); }
+
+    /* Tabs */
+    .tabs {
+      display: flex; overflow-x: auto; gap: 4px;
+      padding: 10px 16px 6px;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      flex-shrink: 0; padding: 5px 13px; border-radius: 18px;
+      border: 1px solid var(--border); background: var(--card-bg);
+      font-size: 0.8rem; color: var(--text-secondary);
+      cursor: pointer; transition: all .2s; white-space: nowrap;
+    }
+    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* Main */
+    main { padding: 6px 16px 16px; }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      font-size: 0.78rem; color: var(--text-secondary);
+      padding: 8px 0 4px; display: none;
+    }
+    .breadcrumb a { color: var(--accent); text-decoration: none; }
+
+    /* Card */
+    .card {
+      background: var(--card-bg); border-radius: var(--radius);
+      box-shadow: var(--shadow); margin-bottom: 10px; overflow: hidden;
+    }
+    .card-hdr {
+      padding: 13px 14px; cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .card-hdr h3 { font-size: 0.92rem; font-weight: 600; color: var(--primary); flex: 1; min-width: 0; }
+    .tag {
+      font-size: 0.68rem; padding: 2px 7px; border-radius: 10px;
+      background: #ebf8ff; color: var(--accent); font-weight: 500;
+      flex-shrink: 0; margin-left: 6px; white-space: nowrap;
+    }
+    .arrow { color: var(--text-secondary); transition: transform .25s; flex-shrink: 0; margin-left: 6px; font-size: 0.7rem; }
+    .card.open .arrow { transform: rotate(180deg); }
+    .card-body {
+      display: none; padding: 0 14px 14px;
+      font-size: 0.86rem; color: var(--text-secondary); line-height: 1.7;
+    }
+    .card.open .card-body { display: block; }
+    .card-body h4 { color: var(--primary); font-size: 0.86rem; margin: 10px 0 5px; }
+    .card-body h4:first-child { margin-top: 0; }
+    .card-body ul, .card-body ol { padding-left: 1.15em; margin: 3px 0; }
+    .card-body li { margin: 2px 0; }
+    .card-body table { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 0.8rem; }
+    .card-body th, .card-body td { border: 1px solid var(--border); padding: 5px 7px; text-align: left; }
+    .card-body th { background: #edf2f7; font-weight: 600; color: var(--primary); }
+    .card-body .note {
+      background: #fffbeb; border-left: 3px solid #d69e2e;
+      padding: 7px 10px; margin: 7px 0; border-radius: 0 6px 6px 0; font-size: 0.82rem;
+    }
+    .card-body .ref {
+      font-size: 0.73rem; color: #718096; margin-top: 8px;
+      border-top: 1px solid var(--border); padding-top: 6px;
+    }
+    .card-body a { color: var(--accent); }
+
+    /* Doc link card */
+    .doc-link {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; background: #f0f5ff; border-radius: 8px;
+      margin: 5px 0; font-size: 0.82rem; color: var(--primary);
+      text-decoration: none; transition: background .2s;
+    }
+    .doc-link:hover { background: #dbeafe; }
+    .doc-link svg { flex-shrink: 0; width: 18px; height: 18px; }
+
+    /* Empty */
+    .empty { text-align: center; padding: 36px 16px; color: var(--text-secondary); }
+    .empty p { font-size: 0.88rem; }
+
+    /* Bottom nav */
+    nav.bottom {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card-bg); border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around;
+      padding: 6px 0; padding-bottom: max(6px, env(safe-area-inset-bottom)); z-index: 100;
+    }
+    nav.bottom button {
+      background: none; border: none; display: flex; flex-direction: column;
+      align-items: center; gap: 1px; color: var(--text-secondary);
+      font-size: 0.62rem; cursor: pointer; padding: 3px 10px;
+    }
+    nav.bottom button.active { color: var(--accent); }
+    nav.bottom button svg { width: 20px; height: 20px; }
+
+    .offline-banner {
+      display: none; background: #fed7d7; color: #c53030;
+      text-align: center; padding: 5px; font-size: 0.75rem;
+    }
+    body.offline .offline-banner { display: block; }
+
+    .page { display: none; }
+    .page.active { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="offline-banner">Offline Mode</div>
+
+<header>
+  <h1>CRS Knowledge Base</h1>
+  <p>Colorectal Surgery</p>
+</header>
+
+<div class="search-wrap">
+  <input type="search" id="search" placeholder="Search..." autocomplete="off">
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab active" data-cat="all">All</button>
+  <button class="tab" data-cat="mcrc">mCRC</button>
+  <button class="tab" data-cat="anal">Anal Surgery</button>
+  <button class="tab" data-cat="robotic">Robotic Surgery</button>
+  <button class="tab" data-cat="others">Others</button>
+</div>
+
+<div class="page active" id="page-kb">
+  <main id="content"></main>
+</div>
+
+<div class="page" id="page-docs">
+  <main id="docs-content"></main>
+</div>
+
+<div class="page" id="page-about">
+  <main>
+    <div class="card open">
+      <div class="card-hdr"><h3>About</h3></div>
+      <div class="card-body" style="display:block">
+        <p>CRS Knowledge Base is a Progressive Web App for Colorectal Surgery reference. Designed for mobile-first, offline-capable access to key clinical evidence and surgical knowledge.</p>
+        <h4>Categories</h4>
+        <ul>
+          <li><strong>mCRC</strong> - Metastatic colorectal cancer: targeted therapy, clinical trials, molecular biomarkers</li>
+          <li><strong>Anal Surgery</strong> - Hemorrhoids, fistula, abscess, anal cancer</li>
+          <li><strong>Robotic Surgery</strong> - Robotic colorectal procedures, platforms, outcomes</li>
+          <li><strong>Others</strong> - IBD, diverticular disease, functional disorders, etc.</li>
+        </ul>
+        <h4>Disclaimer</h4>
+        <p>For educational purposes only. Clinical decisions should be based on individual patient assessment and current evidence-based guidelines.</p>
+        <div class="ref">v1.0</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<nav class="bottom">
+  <button class="active" data-page="page-kb">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    Knowledge
+  </button>
+  <button data-page="page-docs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    Documents
+  </button>
+  <button data-page="page-about">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+    About
+  </button>
+</nav>
+
+<script>
+// =====================
+// KNOWLEDGE BASE DATA
+// =====================
+const KB = [
+
+// ---- mCRC ----
+{
+  id: "braf-v600e-overview",
+  title: "BRAF V600E mCRC: Overview & Biology",
+  cat: "mcrc",
+  tag: "BRAF",
+  body: `
+    <h4>Epidemiology</h4>
+    <ul>
+      <li>BRAF V600E mutations occur in 8&ndash;12% of mCRC</li>
+      <li>Associated with right-sided tumors, female sex, older age, MSI-H (~20%)</li>
+      <li>Poor prognosis: historically mOS ~12 months in 1L, ~5&ndash;6 months in 2L+</li>
+    </ul>
+    <h4>Biology & Rationale for Dual Blockade</h4>
+    <p>BRAF V600E causes constitutive MAPK pathway activation. Single-agent BRAF inhibition in CRC leads to rapid EGFR-mediated feedback reactivation (unlike melanoma). Therefore, simultaneous BRAF + EGFR inhibition (encorafenib + cetuximab) is required.</p>
+    <ul>
+      <li><strong>Encorafenib</strong>: Highly selective BRAF inhibitor with prolonged pharmacodynamic activity; 300 mg PO QD</li>
+      <li><strong>Cetuximab</strong>: Anti-EGFR mAb; blocks feedback reactivation through EGFR; 400/250 mg/m&sup2; QW or Q2W</li>
+    </ul>
+    <div class="note">Adding chemotherapy backbone (mFOLFOX6 or FOLFIRI) to EC further enhances efficacy through cytotoxic synergy and suppression of resistance clone emergence (BREAKWATER data).</div>
+    <div class="ref">Prahallad A et al. Nature 2012;483:100-103. Corcoran RB et al. Cancer Discov 2012;2:227-235.</div>
+  `
+},
+{
+  id: "beacon-trial",
+  title: "BEACON CRC Trial (2L+): EC Doublet",
+  cat: "mcrc",
+  tag: "BEACON",
+  body: `
+    <h4>Study Design</h4>
+    <p>Phase 3, randomized, open-label, 3-arm (N=665). RAS wt / BRAF V600E mt mCRC, 1&ndash;2 prior lines. 1:1:1 randomization.</p>
+    <table>
+      <tr><th>Arm</th><th>Regimen</th><th>N</th></tr>
+      <tr><td>Triplet</td><td>Encorafenib + binimetinib + cetuximab</td><td>224</td></tr>
+      <tr><td>Doublet</td><td>Encorafenib + cetuximab (EC)</td><td>220</td></tr>
+      <tr><td>Control</td><td>Cetuximab + FOLFIRI/irinotecan</td><td>221</td></tr>
+    </table>
+    <h4>Key Results (median f/u 12.8 mo)</h4>
+    <table>
+      <tr><th></th><th>Triplet</th><th>EC Doublet</th><th>Control</th></tr>
+      <tr><td>mOS</td><td>9.3 mo</td><td>9.3 mo</td><td>5.9 mo</td></tr>
+      <tr><td>OS HR vs ctrl</td><td>0.60</td><td>0.61</td><td>Ref</td></tr>
+      <tr><td>mPFS</td><td>4.5 mo</td><td>4.3 mo</td><td>1.5 mo</td></tr>
+      <tr><td>PFS HR vs ctrl</td><td>0.42</td><td>0.44</td><td>Ref</td></tr>
+      <tr><td>ORR</td><td>26.8%</td><td>19.5%</td><td>1.8%</td></tr>
+    </table>
+    <h4>Key Conclusions</h4>
+    <ul>
+      <li>Triplet and doublet showed identical mOS (9.3 mo); adding binimetinib offered no additional OS/PFS benefit</li>
+      <li>FDA/EMA approved <strong>doublet (EC)</strong> only</li>
+      <li>OS benefit consistent across all subgroups (left/right, prior lines, ECOG, MSI)</li>
+      <li>Grade &ge;3 AEs: Doublet 57% vs Control 64%; doublet safety was favorable</li>
+      <li>QoL maintenance significantly longer with doublet vs control (HR ~0.49&ndash;0.54)</li>
+    </ul>
+    <div class="ref">Kopetz S et al. N Engl J Med 2019;381:1632&ndash;1643. Tabernero J et al. J Clin Oncol 2021;39:273&ndash;284.</div>
+  `
+},
+{
+  id: "breakwater-ph3",
+  title: "BREAKWATER Phase 3 (1L): EC + mFOLFOX6",
+  cat: "mcrc",
+  tag: "BREAKWATER",
+  body: `
+    <h4>Study Design</h4>
+    <p>Phase 3, randomized, 1:1:1 (NCT04607421). Previously untreated BRAF V600E mCRC. Excluded: prior BRAF/EGFR inhibitors, MSI-H/dMMR (unless ICI-ineligible), RAS mutation.</p>
+    <table>
+      <tr><th>Arm</th><th>N</th></tr>
+      <tr><td>EC + mFOLFOX6</td><td>236</td></tr>
+      <tr><td>EC alone (chemo-free)</td><td>158</td></tr>
+      <tr><td>Control (chemo &plusmn; bev)</td><td>243</td></tr>
+    </table>
+    <p>Dual primary endpoints: ORR by BICR, PFS by BICR. Key secondary: OS.</p>
+
+    <h4>Results (2025 ASCO)</h4>
+    <table>
+      <tr><th></th><th>EC+mFOLFOX6</th><th>EC alone</th><th>Control</th></tr>
+      <tr><td>ORR (BICR)</td><td><strong>65.7%</strong></td><td>45.6%</td><td>37.4%</td></tr>
+      <tr><td>mPFS (BICR)</td><td><strong>12.8 mo</strong></td><td>6.8 mo</td><td>7.1 mo</td></tr>
+      <tr><td>mOS</td><td><strong>30.3 mo</strong></td><td>19.5 mo</td><td>15.1 mo</td></tr>
+      <tr><td>OS HR vs ctrl</td><td><strong>0.49</strong></td><td>&mdash;</td><td>Ref</td></tr>
+    </table>
+
+    <div class="note">EC + mFOLFOX6 met all primary and key secondary endpoints. OS HR 0.49 = 51% reduction in death risk. mOS 30.3 months is unprecedented for BRAF V600E mCRC. US FDA granted accelerated approval (Project FrontRunner).</div>
+
+    <h4>Surgical Conversion</h4>
+    <p>EC + mFOLFOX6: 5.2% had curative-intent surgery; 3.0% achieved complete resection (R0).</p>
+
+    <div class="ref">&Eacute;lez E et al. N Engl J Med 2025;392:2425&ndash;2437. Kopetz S et al. Nat Med 2025;31:901&ndash;908.</div>
+  `
+},
+{
+  id: "breakwater-ctdna",
+  title: "BREAKWATER ctDNA Analysis (2025 ESMO)",
+  cat: "mcrc",
+  tag: "BREAKWATER",
+  body: `
+    <h4>ctDNA &amp; Tissue Concordance</h4>
+    <p>BRAF V600E ctDNA vs tumor tissue: overall agreement <strong>87.4%</strong>. Supports liquid biopsy for BRAF V600E molecular profiling.</p>
+
+    <h4>Baseline VAF &amp; Efficacy</h4>
+    <p>Dichotomized at median VAF 9.2%. EC + mFOLFOX6 benefit was independent of baseline VAF:</p>
+    <table>
+      <tr><th></th><th>Low VAF (&lt;9.2%)</th><th>High VAF (&ge;9.2%)</th></tr>
+      <tr><td>ORR (EC+mFOLFOX6)</td><td>74.7%</td><td>62.5%</td></tr>
+      <tr><td>OS HR vs ctrl</td><td>0.38</td><td>0.50</td></tr>
+    </table>
+
+    <h4>On-treatment ctDNA Dynamics</h4>
+    <p>BRAF V600E detected &rarr; undetectable (D/ND) at C2D15 (week 8):</p>
+    <ul>
+      <li>EC + mFOLFOX6: <strong>67.1%</strong></li>
+      <li>EC alone: 45.2%</li>
+      <li>Control: 37.5%</li>
+    </ul>
+    <p>D/ND status correlated with OS: In EC+mFOLFOX6 arm, D/ND patients had mOS = NE (HR 0.30 vs D/D patients with mOS 16.2 mo).</p>
+
+    <h4>Resistance Mutations at C7D1 (month 6)</h4>
+    <p>Acquired genomic resistance alterations (KRAS, NRAS, MAP2K1 mutations; MET amplification; BRAF exon deletions):</p>
+    <ul>
+      <li>EC + mFOLFOX6: <strong>6.6%</strong></li>
+      <li>EC alone: <strong>37.9%</strong></li>
+    </ul>
+    <div class="note">Chemotherapy backbone suppresses resistance clone emergence, providing the mechanistic basis for superior PFS with EC + mFOLFOX6 vs EC alone.</div>
+
+    <div class="ref">Kopetz S et al. ESMO 2025 (Oral Presentation).</div>
+  `
+},
+{
+  id: "breakwater-subsequent",
+  title: "BREAKWATER Subsequent Therapies (2025 ESMO)",
+  cat: "mcrc",
+  tag: "BREAKWATER",
+  body: `
+    <h4>Subsequent Treatment Patterns</h4>
+    <table>
+      <tr><th></th><th>EC+mFOLFOX6</th><th>EC alone</th><th>Control</th></tr>
+      <tr><td>Discontinued study tx</td><td>71.6%</td><td>92.4%</td><td>93.4%</td></tr>
+      <tr><td>Any subsequent tx</td><td>63.9%</td><td>73.3%</td><td>61.2%</td></tr>
+      <tr><td>Subsequent BRAF inh</td><td>17.6%</td><td>19.6%</td><td><strong>71.9%</strong></td></tr>
+      <tr><td>Subsequent EC</td><td>13.9%</td><td>13.1%</td><td><strong>55.4%</strong></td></tr>
+    </table>
+    <p>Control arm patients overwhelmingly received EC as subsequent therapy, validating the comparator arm against real-world practice.</p>
+
+    <h4>PFS2 Analysis</h4>
+    <p>Time from randomization to second progression or death:</p>
+    <ul>
+      <li>EC + mFOLFOX6 (1L): mPFS2 = <strong>20.7 months</strong></li>
+      <li>Control &rarr; subsequent EC (sequential): mPFS2 = <strong>12.9 months</strong></li>
+    </ul>
+
+    <div class="note">PFS2 data definitively shows that upfront EC + chemo is superior to sequential 1L chemo &rarr; 2L EC. "Best treatment first" strategy confirmed.</div>
+
+    <div class="ref">Kopetz S et al. ESMO 2025 (Poster).</div>
+  `
+},
+{
+  id: "breakwater-cohort3",
+  title: "BREAKWATER Cohort 3 (1L): EC + FOLFIRI",
+  cat: "mcrc",
+  tag: "ASCO GI 2026",
+  body: `
+    <h4>Study Design</h4>
+    <p>EC + FOLFIRI (n=73) vs Control: FOLFIRI &plusmn; bevacizumab (n=74). Primary endpoint: ORR by BICR.</p>
+
+    <h4>Results</h4>
+    <table>
+      <tr><th></th><th>EC + FOLFIRI</th><th>Control</th></tr>
+      <tr><td>ORR (BICR)</td><td><strong>64.4%</strong> (52.9&ndash;74.4)</td><td>39.2% (28.9&ndash;50.6)</td></tr>
+      <tr><td>CR</td><td>4.1%</td><td>1.4%</td></tr>
+      <tr><td>PR</td><td>60.3%</td><td>37.8%</td></tr>
+      <tr><td>Odds ratio</td><td colspan="2">2.756 (1.420&ndash;5.348), p=0.0011</td></tr>
+      <tr><td>TTR (median)</td><td>6.9 weeks</td><td>7.1 weeks</td></tr>
+      <tr><td>DOR &ge;6 mo</td><td>57.4%</td><td>34.5%</td></tr>
+      <tr><td>OS HR</td><td colspan="2">0.49 (0.237&ndash;1.032) &mdash; trend</td></tr>
+    </table>
+
+    <h4>Subgroup: Liver Metastases</h4>
+    <p>EC + FOLFIRI ORR in liver mets: <strong>79.1%</strong> vs control 37.0% (OR 6.44, 95% CI: 2.50&ndash;16.63)</p>
+
+    <h4>Clinical Significance</h4>
+    <ul>
+      <li>Provides FOLFIRI as alternative chemo backbone (for oxaliplatin-intolerant/contraindicated patients)</li>
+      <li>EC + FOLFIRI safety profile consistent with known AE profiles of each component</li>
+      <li>PFS and OS data still maturing</li>
+    </ul>
+
+    <div class="ref">Kopetz S et al. ASCO GI 2026.</div>
+  `
+},
+{
+  id: "beacon-breakwater-summary",
+  title: "BEACON + BREAKWATER: Cross-Trial Data Summary",
+  cat: "mcrc",
+  tag: "Summary",
+  body: `
+    <h4>Comprehensive Efficacy Comparison</h4>
+    <table>
+      <tr><th>Trial</th><th>Line</th><th>Regimen</th><th>ORR</th><th>mPFS</th><th>mOS</th><th>OS HR</th></tr>
+      <tr><td>BEACON</td><td>2L+</td><td>EC Doublet</td><td>19.5%</td><td>4.3 mo</td><td>9.3 mo</td><td>0.61</td></tr>
+      <tr><td>BEACON</td><td>2L+</td><td>Triplet (ECB)</td><td>26.8%</td><td>4.5 mo</td><td>9.3 mo</td><td>0.60</td></tr>
+      <tr><td>BEACON</td><td>2L+</td><td>Control</td><td>1.8%</td><td>1.5 mo</td><td>5.9 mo</td><td>Ref</td></tr>
+      <tr style="background:#f0f5ff"><td>BW Ph3</td><td>1L</td><td>EC+mFOLFOX6</td><td><strong>65.7%</strong></td><td><strong>12.8 mo</strong></td><td><strong>30.3 mo</strong></td><td><strong>0.49</strong></td></tr>
+      <tr><td>BW Ph3</td><td>1L</td><td>EC alone</td><td>45.6%</td><td>6.8 mo</td><td>19.5 mo</td><td>&mdash;</td></tr>
+      <tr><td>BW Ph3</td><td>1L</td><td>Control</td><td>37.4%</td><td>7.1 mo</td><td>15.1 mo</td><td>Ref</td></tr>
+      <tr style="background:#f0fff4"><td>BW C3</td><td>1L</td><td>EC+FOLFIRI</td><td><strong>64.4%</strong></td><td>Ongoing</td><td>Ongoing</td><td>0.49*</td></tr>
+      <tr><td>BW C3</td><td>1L</td><td>Control</td><td>39.2%</td><td>Ongoing</td><td>Ongoing</td><td>Ref</td></tr>
+    </table>
+    <p style="font-size:0.75rem">*Immature data. BW = BREAKWATER; ECB = encorafenib + cetuximab + binimetinib.</p>
+
+    <h4>Key Takeaways</h4>
+    <ol>
+      <li>EC + chemo in 1L: ORR triples (20% &rarr; 66%), mOS triples (9.3 &rarr; 30.3 mo) compared to 2L</li>
+      <li>Both mFOLFOX6 and FOLFIRI are viable chemo backbones with EC</li>
+      <li>EC + mFOLFOX6 suppresses resistance mutations (6.6% vs 37.9% at 6 mo)</li>
+      <li>PFS2 confirms 1L EC + chemo &gt; sequential chemo &rarr; EC (20.7 vs 12.9 mo)</li>
+      <li>ctDNA clearance at week 8 strongly predicts OS</li>
+    </ol>
+
+    <div class="ref">Kopetz S et al. N Engl J Med 2019. Tabernero J et al. JCO 2021. &Eacute;lez E et al. NEJM 2025. Kopetz S et al. Nat Med 2025. Kopetz S et al. ESMO 2025. Kopetz S et al. ASCO GI 2026.</div>
+  `
+},
+
+// ---- Anal Surgery (placeholder) ----
+{
+  id: "anal-placeholder",
+  title: "Anal Surgery: Coming Soon",
+  cat: "anal",
+  tag: "Planned",
+  body: `<p>Content for anal surgery topics (hemorrhoids, fistula, abscess, anal cancer, etc.) will be added in future updates.</p>`
+},
+
+// ---- Robotic Surgery (placeholder) ----
+{
+  id: "robotic-placeholder",
+  title: "Robotic Surgery: Coming Soon",
+  cat: "robotic",
+  tag: "Planned",
+  body: `<p>Content for robotic colorectal surgery (platforms, techniques, outcomes) will be added in future updates.</p>`
+},
+
+// ---- Others (placeholder) ----
+{
+  id: "others-placeholder",
+  title: "Others: Coming Soon",
+  cat: "others",
+  tag: "Planned",
+  body: `<p>Content for other colorectal surgery topics (IBD, diverticular disease, functional disorders, etc.) will be added in future updates.</p>`
+}
+];
+
+// =====================
+// DOCUMENTS DATA
+// =====================
+const DOCS = [
+  { cat: "mcrc", subcategory: "BRAF V600E", title: "Kopetz S et al. NEJM 2019 - BEACON CRC Phase 3", file: "docs/mCRC-BRAF-V600E/Kopetz_NEJM_2019_BEACON.pdf" },
+  { cat: "mcrc", subcategory: "BRAF V600E", title: "Tabernero J et al. JCO 2021 - BEACON Updated Analysis", file: "docs/mCRC-BRAF-V600E/Tabernero_JCO_2021_BEACON.pdf" },
+  { cat: "mcrc", subcategory: "BRAF V600E", title: "\u00C9lez E et al. NEJM 2025 - BREAKWATER Phase 3 PFS/OS", file: "docs/mCRC-BRAF-V600E/Elez_NEJM_2025_BREAKWATER.pdf" },
+  { cat: "mcrc", subcategory: "BRAF V600E", title: "Kopetz S et al. Nat Med 2025 - BREAKWATER ORR/Safety", file: "docs/mCRC-BRAF-V600E/Kopetz_NatMed_2025_BREAKWATER.pdf" },
+  { cat: "mcrc", subcategory: "BRAF V600E", title: "Kopetz S et al. ESMO 2025 - BREAKWATER ctDNA Analysis", file: "docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.pdf" },
+  { cat: "mcrc", subcategory: "BRAF V600E", title: "Kopetz S et al. ESMO 2025 - BREAKWATER Subsequent Therapies", file: "docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.pdf" },
+  { cat: "mcrc", subcategory: "BRAF V600E", title: "Kopetz S et al. ASCO GI 2026 - BREAKWATER Cohort 3 EC+FOLFIRI", file: "docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.pdf" },
+];
+
+// =====================
+// APP LOGIC
+// =====================
+let currentCat = 'all';
+
+function renderCards(data) {
+  const el = document.getElementById('content');
+  if (!data.length) { el.innerHTML = '<div class="empty"><p>No matching topics</p></div>'; return; }
+  el.innerHTML = data.map(d => `
+    <div class="card" data-id="${d.id}">
+      <div class="card-hdr" onclick="this.closest('.card').classList.toggle('open')">
+        <h3>${d.title}</h3>
+        <span class="tag">${d.tag}</span>
+        <span class="arrow">&#9662;</span>
+      </div>
+      <div class="card-body">${d.body}</div>
+    </div>
+  `).join('');
+}
+
+function renderDocs() {
+  const el = document.getElementById('docs-content');
+  const groups = {};
+  DOCS.forEach(d => {
+    const key = d.subcategory || d.cat;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(d);
+  });
+  let html = '';
+  for (const [group, docs] of Object.entries(groups)) {
+    html += `<div style="margin-bottom:16px">
+      <h3 style="font-size:0.9rem;color:var(--primary);padding:8px 0 4px">${group}</h3>`;
+    docs.forEach(d => {
+      html += `<a class="doc-link" href="${d.file}" target="_blank">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        ${d.title}
+      </a>`;
+    });
+    html += '</div>';
+  }
+  if (!html) html = '<div class="empty"><p>No documents yet</p></div>';
+  el.innerHTML = html;
+}
+
+function filterAndRender() {
+  const q = document.getElementById('search').value.toLowerCase();
+  let data = KB;
+  if (currentCat !== 'all') data = data.filter(d => d.cat === currentCat);
+  if (q) data = data.filter(d => d.title.toLowerCase().includes(q) || d.body.toLowerCase().includes(q) || d.tag.toLowerCase().includes(q));
+  renderCards(data);
+}
+
+document.getElementById('tabs').addEventListener('click', e => {
+  const t = e.target.closest('.tab'); if (!t) return;
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  currentCat = t.dataset.cat;
+  filterAndRender();
+});
+
+document.getElementById('search').addEventListener('input', filterAndRender);
+
+document.querySelectorAll('nav.bottom button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav.bottom button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(btn.dataset.page).classList.add('active');
+    if (btn.dataset.page === 'page-docs') renderDocs();
+  });
+});
+
+window.addEventListener('online', () => document.body.classList.remove('offline'));
+window.addEventListener('offline', () => document.body.classList.add('offline'));
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+
+filterAndRender();
+</script>
+</body>
+</html>
