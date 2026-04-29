@@ -257,10 +257,10 @@
       <div class="tc-title">肛門手術</div>
       <div class="tc-desc">內容建置中</div>
     </div>
-    <div class="topic-card disabled">
+    <div class="topic-card" onclick="navigate('v-robotic','機器人手術','Robotic Colorectal Surgery')">
       <div class="tc-icon">&#x1F916;</div>
       <div class="tc-title">機器人手術</div>
-      <div class="tc-desc">內容建置中</div>
+      <div class="tc-desc">TME &middot; CME &middot; 臨床試驗</div>
     </div>
     <div class="topic-card disabled">
       <div class="tc-icon">&#x1F4CB;</div>
@@ -301,6 +301,106 @@
       <div class="sc-desc">HER2 標靶治療（內容建置中）</div>
     </div>
   </div>
+</div>
+
+<!-- Robotic Surgery sub-topics -->
+<div class="view" id="v-robotic">
+  <div class="sub-card" onclick="navigate('v-robotic-tme','Robotic TME','機器人手術 &rsaquo; TME')">
+    <div class="sc-icon">&#x1F3AF;</div>
+    <div class="sc-body">
+      <div class="sc-title">TME（全直腸繫膜切除）</div>
+      <div class="sc-desc">ROLARR &middot; REAL &middot; COLRAR &middot; 證據演進圖</div>
+    </div>
+    <div class="sc-arrow">&#x203A;</div>
+  </div>
+  <div class="sub-card disabled">
+    <div class="sc-icon">&#x1F52A;</div>
+    <div class="sc-body">
+      <div class="sc-title">CME（完全結腸繫膜切除）</div>
+      <div class="sc-desc">內容建置中</div>
+    </div>
+  </div>
+  <div class="sub-card disabled">
+    <div class="sc-icon">&#x1F517;</div>
+    <div class="sc-body">
+      <div class="sc-title">Anastomosis</div>
+      <div class="sc-desc">Intracorporeal vs Extracorporeal &middot; Single-stapled vs Double-stapled（內容建置中）</div>
+    </div>
+  </div>
+  <div class="sub-card disabled">
+    <div class="sc-icon">&#x1F4CB;</div>
+    <div class="sc-body">
+      <div class="sc-title">Others</div>
+      <div class="sc-desc">其他機器人手術主題（內容建置中）</div>
+    </div>
+  </div>
+</div>
+
+<!-- Robotic TME Evidence Page -->
+<div class="view" id="v-robotic-tme">
+
+  <!-- Best Practice -->
+  <div class="ev-section">
+    <h3>&#x1F48A; 現行最佳實踐</h3>
+    <div class="flow-card" style="font-size:0.95rem; line-height:1.7">
+      <p style="font-weight:600;color:var(--primary);margin-bottom:8px;font-size:1.0rem">Robotic TME 用於中低位直腸癌</p>
+
+      <div style="background:#f0fff4;border-radius:10px;padding:14px 16px;margin:10px 0">
+        <div style="font-weight:700;color:#276749;font-size:1.0rem;margin-bottom:6px">&#x1F7E2; 關鍵結論（2025 更新）</div>
+        <div style="font-size:0.9rem;color:var(--text-sec)">
+          <strong>REAL 試驗（JAMA 2025）首次證實 robotic TME 的腫瘤學優勢：</strong><br>
+          &bull; 3 年局部復發率：Robotic <strong>1.6%</strong> vs Laparoscopic <strong>4.0%</strong>（HR 0.45, p=0.03）<br>
+          &bull; 3 年 DFS：Robotic <strong>87.2%</strong> vs Lap <strong>83.4%</strong>（HR 0.74, p=0.04）<br>
+          &bull; 3 年 OS：無顯著差異（94.7% vs 93.0%）<br>
+          &bull; 術後泌尿/性功能/排便功能：Robotic 均顯著較佳
+        </div>
+      </div>
+
+      <div style="background:#ebf8ff;border-radius:10px;padding:14px 16px;margin:10px 0">
+        <div style="font-weight:700;color:#2c5282;font-size:1.0rem;margin-bottom:6px">&#x1F535; 整體證據摘要</div>
+        <div style="font-size:0.9rem;color:var(--text-sec)">
+          &bull; <strong>轉換率</strong>：Robotic 顯著較低（OR 0.27-0.46）<br>
+          &bull; <strong>CRM 陽性率</strong>：Robotic 較低（OR 0.62）<br>
+          &bull; <strong>TME 完整性</strong>：Robotic 較佳（OR 1.97）<br>
+          &bull; <strong>手術時間</strong>：Robotic 較長（+22-42 min）<br>
+          &bull; <strong>腸功能恢復</strong>：Robotic 較快（-0.6 天）<br>
+          &bull; <strong>併發症</strong>：兩者相當或 Robotic 較佳（OR 0.70）
+        </div>
+      </div>
+
+      <div style="background:#fffbeb;border-left:3px solid #d69e2e;padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.9rem;margin-top:8px">
+        <strong>臨床定位：</strong>對於中低位直腸癌，robotic TME 在技術精準度、功能保留和腫瘤學結果上展現優勢，尤其適用於骨盆狹窄、低位腫瘤、肥胖病患等困難案例。REAL 試驗將 robotic 從「非劣性」推向「優越性」的新時代。
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="ev-section">
+    <h3>&#x1F4C5; 證據演進時間軸</h3>
+    <div class="tl-legend">
+      <span><span class="dot-b"></span> RCT</span>
+      <span><span class="dot-g"></span> Meta-analysis / Review</span>
+    </div>
+    <div class="timeline-scroll">
+      <div class="timeline" id="tl-tme"></div>
+    </div>
+  </div>
+
+  <!-- Efficacy Chart -->
+  <div class="ev-section">
+    <h3>&#x1F4C8; RCT 比較圖：Robotic vs Laparoscopic TME</h3>
+    <div class="chart-toggles" id="tme-toggles"></div>
+    <div class="chart-wrap">
+      <div class="bar-chart" id="tme-chart"></div>
+    </div>
+  </div>
+
+  <!-- Evidence Cards -->
+  <div class="ev-section">
+    <h3>&#x1F4D6; 關鍵試驗摘要</h3>
+    <div id="tme-ev-cards"></div>
+  </div>
+
 </div>
 
 <!-- BRAF V600E Evidence Page -->
@@ -530,6 +630,7 @@ function navigate(viewId, title, subtitle) {
   document.getElementById('back-btn').style.display = 'block';
   window.scrollTo(0, 0);
   if (viewId === 'v-braf') renderEvidence();
+  if (viewId === 'v-robotic-tme') renderTME();
 }
 function goBack() {
   if (!history_stack.length) return;
@@ -686,6 +787,169 @@ function renderEvCards() {
       <div class="ev-card-body">${c.body}</div>
     </div>
   `).join('');
+}
+
+// === TME DATA ===
+const TL_TME = [
+  { yr:'2017', venue:'JAMA', cls:'beacon', finding:'ROLARR<br>轉換率 NS<br>N=471', file:'https://doi.org/10.1001/jama.2017.7219' },
+  { yr:'2023', venue:'Ann Surg', cls:'beacon', finding:'COLRAR<br>TME 完整性 NS<br>N=295', file:'https://doi.org/10.1097/SLA.0000000000005788' },
+  { yr:'2024', venue:'EJSO', cls:'breakwater', finding:'Network MA<br>R-TME &gt; L-TME<br>病理結果', file:'https://doi.org/10.1016/j.ejso.2024.109481' },
+  { yr:'2025', venue:'JAMA', cls:'breakwater', finding:'REAL 試驗<br>局部復發 <strong>1.6%</strong><br>vs 4.0%', file:'https://doi.org/10.1001/jama.2025.8123' },
+  { yr:'2025', venue:'J Robot Surg', cls:'breakwater', finding:'RCT MA (7 trials)<br>併發症 OR <strong>0.70</strong>', file:'https://doi.org/10.1007/s11701-025-02628-3' },
+  { yr:'2025', venue:'J Robot Surg', cls:'breakwater', finding:'nCRT 後 MA<br>TME 完整 OR <strong>1.97</strong>', file:'https://doi.org/10.1007/s11701-025-02755-x' },
+  { yr:'2025', venue:'BJS Open', cls:'beacon', finding:'TaTME MA<br>65 studies<br>N=13972', file:'https://doi.org/10.1093/bjsopen/zraf111' },
+];
+
+const TME_METRICS = {
+  locoregional: {
+    label: '3 年局部復發率（%）', max: 8,
+    bars: [
+      { label:'Robotic\nREAL', val:1.6, hr:'0.45*', color:'var(--green)', trial:'REAL' },
+      { label:'Lap\nREAL', val:4.0, hr:'Ref', color:'#a0aec0', trial:'REAL' },
+      { label:'Robotic\nROLARR', val:null, hr:'—', color:'var(--green)', trial:'ROLARR', ongoing:true },
+      { label:'Lap\nROLARR', val:null, hr:'—', color:'#a0aec0', trial:'ROLARR', ongoing:true },
+    ]
+  },
+  dfs: {
+    label: '3 年 DFS（%）', max: 100,
+    bars: [
+      { label:'Robotic\nREAL', val:87.2, hr:'0.74*', color:'var(--green)', trial:'REAL' },
+      { label:'Lap\nREAL', val:83.4, hr:'Ref', color:'#a0aec0', trial:'REAL' },
+      { label:'Robotic\nCOLRAR', val:null, hr:'N/R', color:'var(--green)', trial:'COLRAR', ongoing:true },
+      { label:'Lap\nCOLRAR', val:null, hr:'N/R', color:'#a0aec0', trial:'COLRAR', ongoing:true },
+    ]
+  },
+  conversion: {
+    label: '轉換率（%）', max: 15,
+    bars: [
+      { label:'Robotic\nROLARR', val:8.1, hr:'OR 0.61', color:'var(--green)', trial:'ROLARR' },
+      { label:'Lap\nROLARR', val:12.2, hr:'Ref', color:'#a0aec0', trial:'ROLARR' },
+      { label:'Robotic\nMA 2025', val:2.7, hr:'OR 0.27', color:'var(--accent)', trial:'MA' },
+      { label:'Lap\nMA 2025', val:9.5, hr:'Ref', color:'#cbd5e0', trial:'MA' },
+    ]
+  },
+  crm: {
+    label: 'CRM 陽性率（%）', max: 10,
+    bars: [
+      { label:'Robotic\nROLARR', val:5.1, hr:'OR 0.78', color:'var(--green)', trial:'ROLARR' },
+      { label:'Lap\nROLARR', val:6.3, hr:'Ref', color:'#a0aec0', trial:'ROLARR' },
+      { label:'Robotic\nCOLRAR', val:0, hr:'0%*', color:'var(--accent)', trial:'COLRAR' },
+      { label:'Lap\nCOLRAR', val:6.1, hr:'Ref', color:'#cbd5e0', trial:'COLRAR' },
+    ]
+  }
+};
+
+const TME_CARDS = [
+  { title:'REAL 試驗（JAMA 2025）— 里程碑 RCT', tag:'REAL', body:`
+    <p><strong>首次 RCT 證實 robotic TME 的腫瘤學優勢</strong></p>
+    <p>多中心、優越性 RCT，中國 11 中心，N=1171（中低位直腸腺癌 cT1-3 N0-1）</p>
+    <table>
+      <tr><th></th><th>Robotic (n=586)</th><th>Lap (n=585)</th><th>HR / p</th></tr>
+      <tr><td>3 年局部復發</td><td><strong>1.6%</strong></td><td>4.0%</td><td>HR 0.45, p=0.03</td></tr>
+      <tr><td>3 年 DFS</td><td><strong>87.2%</strong></td><td>83.4%</td><td>HR 0.74, p=0.04</td></tr>
+      <tr><td>3 年 OS</td><td>94.7%</td><td>93.0%</td><td>NS</td></tr>
+    </table>
+    <p>Robotic 組在術後 3、6、12 個月的泌尿功能、性功能和排便功能均顯著較佳。</p>
+    <div class="note">REAL 是第一個證實 robotic 在腫瘤學結果上優於 laparoscopic 的大型 RCT，將 robotic rectal surgery 的證據等級從「非劣性」推向「優越性」。</div>
+    <p><a href="https://doi.org/10.1001/jama.2025.8123" target="_blank">&#x1F4C4; DOI: 10.1001/jama.2025.8123</a></p>` },
+  { title:'ROLARR 試驗（JAMA 2017）— 經典 RCT', tag:'ROLARR', body:`
+    <p>多中心 RCT，10 國 29 中心，N=471</p>
+    <table>
+      <tr><th></th><th>Robotic (n=237)</th><th>Lap (n=234)</th><th>p</th></tr>
+      <tr><td>轉換率（主要終點）</td><td>8.1%</td><td>12.2%</td><td>0.16 (NS)</td></tr>
+      <tr><td>CRM+</td><td>5.1%</td><td>6.3%</td><td>0.56</td></tr>
+    </table>
+    <p>所有預設次要終點（併發症、病理、QoL、泌尿/性功能）均無顯著差異。</p>
+    <div class="note">ROLARR 的結論是 robotic 未顯著降低轉換率。但批評者指出：許多參與醫師 robotic 經驗不足（learning curve 問題），且主要終點選擇（轉換率）可能不是最佳指標。</div>
+    <p><a href="https://doi.org/10.1001/jama.2017.7219" target="_blank">&#x1F4C4; DOI: 10.1001/jama.2017.7219</a></p>` },
+  { title:'COLRAR 試驗（Ann Surg 2023）', tag:'COLRAR', body:`
+    <p>韓國多中心 RCT，N=295（因收案困難提前終止）</p>
+    <table>
+      <tr><th></th><th>Robotic (n=151)</th><th>Lap (n=144)</th></tr>
+      <tr><td>TME 完整性（主要終點）</td><td>80.7%</td><td>77.1% (NS)</td></tr>
+      <tr><td>CRM+ 亞分析</td><td><strong>0%</strong></td><td>6.1% (p=0.031)</td></tr>
+      <tr><td>鴉片類使用時間</td><td colspan="2">Robotic 較短 (p=0.028)</td></tr>
+    </table>
+    <div class="note">TME 完整性未達顯著差異，但 CRM 陽性率在亞分析中 robotic 顯著較低（0% vs 6.1%）。提前終止限制了統計效力。</div>
+    <p><a href="https://doi.org/10.1097/SLA.0000000000005788" target="_blank">&#x1F4C4; DOI: 10.1097/SLA.0000000000005788</a></p>` },
+  { title:'RCT Meta-analysis 2025（7 trials, N=1731）', tag:'MA 2025', body:`
+    <p>納入 7 個 RCT 的統合分析</p>
+    <table>
+      <tr><th>結果指標</th><th>Robotic 優勢</th><th>效果量</th></tr>
+      <tr><td>腸功能恢復時間</td><td>&#x2713;</td><td>-0.62 天</td></tr>
+      <tr><td>重大併發症</td><td>&#x2713;</td><td>OR 0.70</td></tr>
+      <tr><td>轉換率</td><td>&#x2713;</td><td>OR 0.27</td></tr>
+      <tr><td>CRM 陽性</td><td>&#x2713;</td><td>OR 0.62</td></tr>
+      <tr><td>手術時間</td><td>&#x2717;</td><td>+22.7 min</td></tr>
+      <tr><td>TME 完整性</td><td>—</td><td>NS</td></tr>
+    </table>
+    <p><a href="https://doi.org/10.1007/s11701-025-02628-3" target="_blank">&#x1F4C4; DOI: 10.1007/s11701-025-02628-3</a></p>` },
+  { title:'Bayesian Network MA 2024（27 RCTs, N=8696）', tag:'NMA 2024', body:`
+    <p>比較四種手術方式：Robotic / TaTME / Laparoscopic / Open</p>
+    <table>
+      <tr><th>排名（SUCRA）</th><th>TME 完整性</th><th>CRM 陰性</th><th>淋巴結數</th></tr>
+      <tr><td>第 1</td><td>TaTME</td><td>TaTME</td><td><strong>Robotic</strong></td></tr>
+      <tr><td>第 2</td><td><strong>Robotic</strong></td><td><strong>Robotic</strong></td><td>Open</td></tr>
+    </table>
+    <p>Robotic 和 TaTME 的病理結果均優於 laparoscopic TME。</p>
+    <p><a href="https://doi.org/10.1016/j.ejso.2024.109481" target="_blank">&#x1F4C4; DOI: 10.1016/j.ejso.2024.109481</a></p>` },
+];
+
+let currentTmeMetric = 'locoregional';
+
+function renderTME() {
+  // Timeline
+  document.getElementById('tl-tme').innerHTML = TL_TME.map(n => `
+    <a class="tl-node ${n.cls}" href="${n.file}" target="_blank">
+      <div class="tl-dot"></div>
+      <div class="tl-line"></div>
+      <div class="tl-yr">${n.yr}</div>
+      <div class="tl-venue">${n.venue}</div>
+      <div class="tl-finding">${n.finding}</div>
+    </a>
+  `).join('');
+  // Chart toggles
+  renderTmeToggles();
+  renderTmeChart();
+  // Evidence cards
+  document.getElementById('tme-ev-cards').innerHTML = TME_CARDS.map((c,i) => `
+    <div class="ev-card" data-i="${i}">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>${c.title}</h4>
+        <span style="font-size:0.8rem;padding:2px 8px;border-radius:8px;background:#ebf8ff;color:var(--accent)">${c.tag}</span>
+        <span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">${c.body}</div>
+    </div>
+  `).join('');
+}
+
+function renderTmeToggles() {
+  document.getElementById('tme-toggles').innerHTML = Object.keys(TME_METRICS).map(k =>
+    `<button class="chart-toggle ${k===currentTmeMetric?'active':''}" onclick="switchTmeMetric('${k}')">${TME_METRICS[k].label}</button>`
+  ).join('');
+}
+
+function switchTmeMetric(k) {
+  currentTmeMetric = k;
+  renderTmeToggles();
+  renderTmeChart();
+}
+
+function renderTmeChart() {
+  const m = TME_METRICS[currentTmeMetric];
+  const el = document.getElementById('tme-chart');
+  el.innerHTML = m.bars.map(b => {
+    const pct = b.val != null ? (b.val / m.max * 100) : 15;
+    const valText = b.val != null ? b.val + '%' : 'N/R';
+    const ongoingCls = b.ongoing ? 'bar-ongoing' : '';
+    return `<div class="bar-col">
+      <div class="bar-val">${valText}</div>
+      <div class="bar-rect ${ongoingCls}" style="height:${Math.max(pct,3)}%;background:${b.ongoing?'':b.color}"></div>
+      <div class="bar-label">${b.label.replace('\n','<br>')}</div>
+      <div class="bar-hr">${b.hr}</div>
+    </div>`;
+  }).join('');
 }
 
 // === SERVICE WORKER ===
