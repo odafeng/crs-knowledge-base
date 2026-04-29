@@ -590,9 +590,9 @@
     </div>
   </div>
 
-  <!-- Section 4: Evidence Cards (expandable) -->
+  <!-- Section 4: Structured Paper Cards -->
   <div class="ev-section">
-    <h3>&#x1F4D6; 試驗摘要卡片</h3>
+    <h3>&#x1F4D6; 結構化試驗卡片</h3>
     <div id="ev-cards"></div>
   </div>
 
@@ -731,109 +731,136 @@ function goBack() {
   window.scrollTo(0, 0);
 }
 
-// === TIMELINE DATA ===
-const TL = [
-  { yr:'2019', venue:'NEJM', cls:'beacon', finding:'BEACON 初始分析<br>mOS <strong>9.0</strong> vs 5.4 mo', file:'docs/mCRC-BRAF-V600E/Kopetz_NEJM_2019_BEACON.html' },
-  { yr:'2021', venue:'JCO', cls:'beacon', finding:'BEACON 更新<br>EC mOS <strong>9.3</strong> mo', file:'docs/mCRC-BRAF-V600E/Tabernero_JCO_2021_BEACON.html' },
-  { yr:'2025', venue:'Nat Med', cls:'breakwater', finding:'BREAKWATER ORR<br><strong>60.9%</strong> vs 40.0%', file:'docs/mCRC-BRAF-V600E/Kopetz_NatMed_2025_BREAKWATER.html' },
-  { yr:'2025', venue:'NEJM', cls:'breakwater', finding:'BW PFS/OS<br>mOS <strong>30.3</strong> mo', file:'docs/mCRC-BRAF-V600E/Elez_NEJM_2025_BREAKWATER.html' },
-  { yr:'2025', venue:'ESMO', cls:'breakwater', finding:'ctDNA 分析<br>清除率 <strong>67.1%</strong>', file:'docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.html' },
-  { yr:'2025', venue:'ESMO', cls:'breakwater', finding:'後續治療<br>PFS2 <strong>20.7</strong> mo', file:'docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.html' },
-  { yr:'2026', venue:'ASCO GI', cls:'breakwater', finding:'EC+FOLFIRI<br>ORR <strong>64.4%</strong>', file:'docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html' },
+// === STRUCTURED PAPER MODEL ===
+// Each paper: { id, year, journal, studyType, n, regimen, endpoint, result, bottomLine, doi, file, relations[] }
+// relations: { targetId, type: 'builds_on'|'supersedes'|'subgroup_of'|'same_regimen' }
+
+const BRAF_PAPERS = [
+  {
+    id: 'beacon-2019', year: 2019, journal: 'NEJM', studyType: 'Phase 3 RCT',
+    n: 665, regimen: 'EC ± binimetinib vs cetux+chemo',
+    endpoint: 'OS (co-primary)', result: 'mOS 9.0 vs 5.4 mo, HR 0.52',
+    bottomLine: '首次證實 BRAF+EGFR 雙阻斷在 2L+ BRAF V600E mCRC 的 OS 獲益',
+    doi: '10.1056/NEJMoa1908075', file: 'docs/mCRC-BRAF-V600E/Kopetz_NEJM_2019_BEACON.html',
+    relations: []
+  },
+  {
+    id: 'beacon-2021', year: 2021, journal: 'JCO', studyType: 'Phase 3 RCT (updated)',
+    n: 665, regimen: 'EC doublet vs triplet vs control',
+    endpoint: 'OS (updated)', result: 'EC mOS 9.3 mo, HR 0.61; triplet = doublet',
+    bottomLine: '確認 doublet 即夠——加 binimetinib 無額外獲益。FDA/EMA 核准 EC doublet',
+    doi: '10.1200/JCO.20.02088', file: 'docs/mCRC-BRAF-V600E/Tabernero_JCO_2021_BEACON.html',
+    relations: [{ targetId: 'beacon-2019', type: 'supersedes' }]
+  },
+  {
+    id: 'bw-natmed-2025', year: 2025, journal: 'Nat Med', studyType: 'Phase 3 RCT',
+    n: 479, regimen: 'EC+mFOLFOX6 vs SOC (1L)',
+    endpoint: 'ORR by BICR (co-primary)', result: 'ORR 60.9% vs 40.0%, OR 2.44',
+    bottomLine: 'BREAKWATER 首報：一線 EC+化療 ORR 達 61%，FDA 加速核准',
+    doi: '10.1038/s41591-024-03443-3', file: 'docs/mCRC-BRAF-V600E/Kopetz_NatMed_2025_BREAKWATER.html',
+    relations: [{ targetId: 'beacon-2021', type: 'builds_on' }]
+  },
+  {
+    id: 'bw-nejm-2025', year: 2025, journal: 'NEJM', studyType: 'Phase 3 RCT (updated)',
+    n: 479, regimen: 'EC+mFOLFOX6 vs SOC (1L)',
+    endpoint: 'PFS by BICR + OS', result: 'mPFS 12.8 vs 7.1 mo; mOS 30.3 vs 15.1 mo, HR 0.49',
+    bottomLine: 'mOS 30.3 個月——BRAF V600E mCRC 首次追上 BRAF wt 的存活。死亡風險減半',
+    doi: '10.1056/NEJMoa2501912', file: 'docs/mCRC-BRAF-V600E/Elez_NEJM_2025_BREAKWATER.html',
+    relations: [{ targetId: 'bw-natmed-2025', type: 'supersedes' }]
+  },
+  {
+    id: 'bw-ctdna-2025', year: 2025, journal: 'ESMO', studyType: 'Biomarker (exploratory)',
+    n: 494, regimen: 'EC+mFOLFOX6 vs EC vs SOC',
+    endpoint: 'ctDNA dynamics', result: 'C2D15 D/ND: 67.1% vs 45.2% vs 37.5%; resistance 6.6% vs 37.9%',
+    bottomLine: '化療骨幹壓制抗藥性克隆——EC+chemo 優於 EC alone 的分子機制',
+    doi: null, file: 'docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.html',
+    relations: [{ targetId: 'bw-nejm-2025', type: 'subgroup_of' }]
+  },
+  {
+    id: 'bw-subseq-2025', year: 2025, journal: 'ESMO', studyType: 'Post-hoc analysis',
+    n: 637, regimen: '1L EC+mFOLFOX6 → subsequent tx',
+    endpoint: 'PFS2', result: 'PFS2: 20.7 vs 12.9 mo (sequential EC)',
+    bottomLine: '一線即用 EC+化療 > 序貫式先化療再 EC。「最佳治療優先」獲證實',
+    doi: null, file: 'docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.html',
+    relations: [{ targetId: 'bw-nejm-2025', type: 'subgroup_of' }]
+  },
+  {
+    id: 'bw-c3-2026', year: 2026, journal: 'ASCO GI', studyType: 'Phase 3 (Cohort 3)',
+    n: 147, regimen: 'EC+FOLFIRI vs FOLFIRI±bev (1L)',
+    endpoint: 'ORR by BICR', result: 'ORR 64.4% vs 39.2%, OR 2.76; 肝 mets ORR 79.1%',
+    bottomLine: 'FOLFIRI 也行——提供第二個化療骨幹選擇，特別適合 oxaliplatin 禁忌',
+    doi: null, file: 'docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html',
+    relations: [{ targetId: 'bw-nejm-2025', type: 'same_regimen' }]
+  },
 ];
 
-// === CHART DATA ===
+// Chart data stays the same structure for bar chart
 const METRICS = {
   mOS: {
     label: 'mOS（月）', max: 35,
     bars: [
-      { label:'對照組\n2L+', val:5.9, hr:'Ref', color:'#cbd5e0', trial:'BEACON' },
-      { label:'EC\n2L+', val:9.3, hr:'0.61', color:'#3182ce', trial:'BEACON' },
-      { label:'對照組\n1L', val:15.1, hr:'Ref', color:'#a0aec0', trial:'BW' },
-      { label:'EC\n1L', val:19.5, hr:'—', color:'#9ae6b4', trial:'BW' },
-      { label:'EC+\nmFOLFOX6', val:30.3, hr:'0.49', color:'#38a169', trial:'BW' },
-      { label:'EC+\nFOLFIRI', val:null, hr:'0.49*', color:'#38a169', trial:'BW C3', ongoing:true },
+      { label:'對照組\n2L+', val:5.9, hr:'Ref', color:'#cbd5e0' },
+      { label:'EC\n2L+', val:9.3, hr:'0.61', color:'#3182ce' },
+      { label:'對照組\n1L', val:15.1, hr:'Ref', color:'#a0aec0' },
+      { label:'EC\n1L', val:19.5, hr:'—', color:'#9ae6b4' },
+      { label:'EC+\nmFOLFOX6', val:30.3, hr:'0.49', color:'#38a169' },
+      { label:'EC+\nFOLFIRI', val:null, hr:'0.49*', color:'#38a169', ongoing:true },
     ]
   },
   ORR: {
     label: 'ORR（%）', max: 80,
     bars: [
-      { label:'對照組\n2L+', val:1.8, hr:'Ref', color:'#cbd5e0', trial:'BEACON' },
-      { label:'EC\n2L+', val:19.5, hr:'—', color:'#3182ce', trial:'BEACON' },
-      { label:'對照組\n1L', val:37.4, hr:'Ref', color:'#a0aec0', trial:'BW' },
-      { label:'EC\n1L', val:45.6, hr:'—', color:'#9ae6b4', trial:'BW' },
-      { label:'EC+\nmFOLFOX6', val:65.7, hr:'2.44†', color:'#38a169', trial:'BW' },
-      { label:'EC+\nFOLFIRI', val:64.4, hr:'2.76†', color:'#38a169', trial:'BW C3' },
+      { label:'對照組\n2L+', val:1.8, hr:'Ref', color:'#cbd5e0' },
+      { label:'EC\n2L+', val:19.5, hr:'—', color:'#3182ce' },
+      { label:'對照組\n1L', val:37.4, hr:'Ref', color:'#a0aec0' },
+      { label:'EC\n1L', val:45.6, hr:'—', color:'#9ae6b4' },
+      { label:'EC+\nmFOLFOX6', val:65.7, hr:'2.44†', color:'#38a169' },
+      { label:'EC+\nFOLFIRI', val:64.4, hr:'2.76†', color:'#38a169' },
     ]
   },
   mPFS: {
     label: 'mPFS（月）', max: 15,
     bars: [
-      { label:'對照組\n2L+', val:1.5, hr:'Ref', color:'#cbd5e0', trial:'BEACON' },
-      { label:'EC\n2L+', val:4.3, hr:'0.44', color:'#3182ce', trial:'BEACON' },
-      { label:'對照組\n1L', val:7.1, hr:'Ref', color:'#a0aec0', trial:'BW' },
-      { label:'EC\n1L', val:6.8, hr:'—', color:'#9ae6b4', trial:'BW' },
-      { label:'EC+\nmFOLFOX6', val:12.8, hr:'0.53', color:'#38a169', trial:'BW' },
-      { label:'EC+\nFOLFIRI', val:null, hr:'—', color:'#38a169', trial:'BW C3', ongoing:true },
+      { label:'對照組\n2L+', val:1.5, hr:'Ref', color:'#cbd5e0' },
+      { label:'EC\n2L+', val:4.3, hr:'0.44', color:'#3182ce' },
+      { label:'對照組\n1L', val:7.1, hr:'Ref', color:'#a0aec0' },
+      { label:'EC\n1L', val:6.8, hr:'—', color:'#9ae6b4' },
+      { label:'EC+\nmFOLFOX6', val:12.8, hr:'0.53', color:'#38a169' },
+      { label:'EC+\nFOLFIRI', val:null, hr:'—', color:'#38a169', ongoing:true },
     ]
   }
 };
 
-// === EVIDENCE CARDS DATA ===
-const EV_CARDS = [
-  { title:'BEACON 試驗（二線以上）', tag:'BEACON', body:`
-    <table><tr><th></th><th>EC 雙標靶</th><th>對照組</th></tr>
-    <tr><td>mOS</td><td><strong>9.3 mo</strong></td><td>5.9 mo</td></tr>
-    <tr><td>OS HR</td><td><strong>0.61</strong></td><td>Ref</td></tr>
-    <tr><td>mPFS</td><td>4.3 mo</td><td>1.5 mo</td></tr>
-    <tr><td>ORR</td><td>19.5%</td><td>1.8%</td></tr></table>
-    <p>N=665，RAS wt / BRAF V600E mt mCRC，1-2 線後。FDA/EMA 核准 EC 雙標靶。</p>
-    <p><a href="docs/mCRC-BRAF-V600E/Tabernero_JCO_2021_BEACON.html" target="_blank">&#x1F4C4; 論文全文</a></p>` },
-  { title:'BREAKWATER Phase 3（一線）', tag:'BREAKWATER', body:`
-    <table><tr><th></th><th>EC+mFOLFOX6</th><th>對照組</th></tr>
-    <tr><td>ORR</td><td><strong>65.7%</strong></td><td>37.4%</td></tr>
-    <tr><td>mPFS</td><td><strong>12.8 mo</strong></td><td>7.1 mo</td></tr>
-    <tr><td>mOS</td><td><strong>30.3 mo</strong></td><td>15.1 mo</td></tr>
-    <tr><td>OS HR</td><td><strong>0.49</strong></td><td>Ref</td></tr></table>
-    <div class="note">mOS 30.3 個月 = BRAF V600E mCRC 前所未有。FDA 加速核准。</div>
-    <p><a href="docs/mCRC-BRAF-V600E/Elez_NEJM_2025_BREAKWATER.html" target="_blank">&#x1F4C4; 論文全文（NEJM 2025）</a></p>` },
-  { title:'BREAKWATER ctDNA 分析', tag:'2025 ESMO', body:`
-    <p>ctDNA vs 組織一致率 <strong>87.4%</strong>。C2D15 ctDNA 清除率：EC+mFOLFOX6 <strong>67.1%</strong> vs EC 45.2% vs 對照 37.5%。</p>
-    <p>抗藥性突變（C7D1）：EC+mFOLFOX6 <strong>6.6%</strong> vs EC alone <strong>37.9%</strong>。</p>
-    <p><a href="docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.html" target="_blank">&#x1F4C4; 摘要頁面</a></p>` },
-  { title:'BREAKWATER 後續治療 & PFS2', tag:'2025 ESMO', body:`
-    <p>對照組 71.9% 後續使用 BRAF 抑制劑。PFS2：EC+mFOLFOX6 <strong>20.7 mo</strong> vs 序貫 EC <strong>12.9 mo</strong>。</p>
-    <div class="note">「最佳治療優先」策略獲 PFS2 證實。</div>
-    <p><a href="docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.html" target="_blank">&#x1F4C4; 摘要頁面</a></p>` },
-  { title:'BREAKWATER Cohort 3：EC + FOLFIRI', tag:'2026 ASCO GI', body:`
-    <table><tr><th></th><th>EC+FOLFIRI</th><th>對照組</th></tr>
-    <tr><td>ORR</td><td><strong>64.4%</strong></td><td>39.2%</td></tr>
-    <tr><td>肝轉移 ORR</td><td><strong>79.1%</strong></td><td>37.0%</td></tr>
-    <tr><td>OS HR</td><td colspan="2">0.49（趨勢）</td></tr></table>
-    <p>提供 FOLFIRI 化療骨幹選擇。PFS/OS 數據成熟中。</p>
-    <p><a href="docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html" target="_blank">&#x1F4C4; 摘要頁面</a></p>` },
-];
-
 // === RENDER FUNCTIONS ===
 let currentMetric = 'mOS';
 
+// Relation type labels
+const REL_LABELS = { builds_on: '延伸自', supersedes: '更新自', subgroup_of: '次分析', same_regimen: '同方案', contradicts: '矛盾' };
+const REL_COLORS = { builds_on: '#38a169', supersedes: '#3182ce', subgroup_of: '#718096', same_regimen: '#d69e2e', contradicts: '#e53e3e' };
+const STUDY_BADGES = { 'Phase 3 RCT': '#276749', 'Phase 3 RCT (updated)': '#2c5282', 'Phase 3 (Cohort 3)': '#2c5282', 'Phase 2 RCT': '#6b46c1', 'Biomarker (exploratory)': '#975a16', 'Post-hoc analysis': '#718096', 'Meta-analysis': '#b83280' };
+
 function renderEvidence() {
-  renderTimeline();
+  renderPaperTimeline(BRAF_PAPERS, 'timeline');
   renderChartToggles();
   renderChart();
-  renderEvCards();
+  renderPaperCards(BRAF_PAPERS, 'ev-cards');
 }
 
-function renderTimeline() {
-  document.getElementById('timeline').innerHTML = TL.map(n => `
-    <a class="tl-node ${n.cls}" href="${n.file}" target="_blank">
+// Render structured paper timeline
+function renderPaperTimeline(papers, elId) {
+  const el = document.getElementById(elId);
+  const sorted = [...papers].sort((a,b) => a.year - b.year);
+  el.innerHTML = sorted.map(p => {
+    const badgeColor = STUDY_BADGES[p.studyType] || '#4a5568';
+    const isRCT = p.studyType.includes('Phase 3') || p.studyType.includes('Phase 2');
+    return `<a class="tl-node ${isRCT ? 'breakwater' : 'beacon'}" href="${p.file || (p.doi ? 'https://doi.org/'+p.doi : '#')}" target="_blank">
       <div class="tl-dot"></div>
       <div class="tl-line"></div>
-      <div class="tl-yr">${n.yr}</div>
-      <div class="tl-venue">${n.venue}</div>
-      <div class="tl-finding">${n.finding}</div>
-    </a>
-  `).join('');
+      <div class="tl-yr">${p.year}</div>
+      <div class="tl-venue">${p.journal}</div>
+      <div class="tl-finding"><strong>${p.result.split(',')[0]}</strong></div>
+    </a>`;
+  }).join('');
 }
 
 function renderChartToggles() {
@@ -864,17 +891,37 @@ function renderChart() {
   }).join('');
 }
 
-function renderEvCards() {
-  document.getElementById('ev-cards').innerHTML = EV_CARDS.map((c,i) => `
-    <div class="ev-card" data-i="${i}">
+// Render structured paper cards
+function renderPaperCards(papers, elId) {
+  const el = document.getElementById(elId);
+  el.innerHTML = papers.map(p => {
+    const badgeColor = STUDY_BADGES[p.studyType] || '#4a5568';
+    const rels = p.relations.map(r => {
+      const target = papers.find(t => t.id === r.targetId);
+      if (!target) return '';
+      return `<span style="font-size:0.75rem;color:${REL_COLORS[r.type] || '#718096'}">${REL_LABELS[r.type] || r.type} → ${target.year} ${target.journal}</span>`;
+    }).filter(Boolean).join(' ');
+    const doiLink = p.doi ? `<a href="https://doi.org/${p.doi}" target="_blank" style="font-size:0.8rem">DOI</a>` : '';
+    const fileLink = p.file ? `<a href="${p.file}" target="_blank" style="font-size:0.8rem">&#x1F4C4; 全文/摘要</a>` : '';
+    return `<div class="ev-card">
       <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
-        <h4>${c.title}</h4>
-        <span style="font-size:0.8rem;padding:2px 8px;border-radius:8px;background:#ebf8ff;color:var(--accent)">${c.tag}</span>
+        <h4>${p.year} ${p.journal} — ${p.regimen.split(' vs ')[0]}</h4>
+        <span style="font-size:0.72rem;padding:2px 7px;border-radius:8px;background:${badgeColor}15;color:${badgeColor};white-space:nowrap">${p.studyType}</span>
         <span class="arrow">&#9662;</span>
       </div>
-      <div class="ev-card-body">${c.body}</div>
-    </div>
-  `).join('');
+      <div class="ev-card-body">
+        <table>
+          <tr><td style="width:30%;font-weight:600;color:var(--primary)">方案</td><td>${p.regimen}</td></tr>
+          <tr><td style="font-weight:600;color:var(--primary)">N</td><td>${p.n}</td></tr>
+          <tr><td style="font-weight:600;color:var(--primary)">主要終點</td><td>${p.endpoint}</td></tr>
+          <tr><td style="font-weight:600;color:var(--primary)">結果</td><td><strong>${p.result}</strong></td></tr>
+        </table>
+        <div class="note">${p.bottomLine}</div>
+        ${rels ? '<div style="margin-top:6px">'+rels+'</div>' : ''}
+        <div style="margin-top:8px;display:flex;gap:12px">${fileLink} ${doiLink}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // === TME DATA ===
