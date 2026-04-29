@@ -320,12 +320,13 @@
       <div class="sc-desc">內容建置中</div>
     </div>
   </div>
-  <div class="sub-card disabled">
+  <div class="sub-card" onclick="navigate('v-robotic-anast','Anastomosis','機器人手術 &rsaquo; 吻合')">
     <div class="sc-icon">&#x1F517;</div>
     <div class="sc-body">
       <div class="sc-title">Anastomosis</div>
-      <div class="sc-desc">Intracorporeal vs Extracorporeal &middot; Single-stapled vs Double-stapled（內容建置中）</div>
+      <div class="sc-desc">Intracorporeal vs Extracorporeal &middot; Single-stapled vs Double-stapled</div>
     </div>
+    <div class="sc-arrow">&#x203A;</div>
   </div>
   <div class="sub-card disabled">
     <div class="sc-icon">&#x1F4CB;</div>
@@ -399,6 +400,79 @@
   <div class="ev-section">
     <h3>&#x1F4D6; 關鍵試驗摘要</h3>
     <div id="tme-ev-cards"></div>
+  </div>
+
+</div>
+
+<!-- Anastomosis Evidence Page -->
+<div class="view" id="v-robotic-anast">
+
+  <!-- Best Practice -->
+  <div class="ev-section">
+    <h3>&#x1F48A; 現行證據摘要</h3>
+    <div class="flow-card" style="font-size:0.95rem; line-height:1.7">
+
+      <div style="background:#f0fff4;border-radius:10px;padding:14px 16px;margin:10px 0">
+        <div style="font-weight:700;color:#276749;font-size:1.0rem;margin-bottom:6px">&#x1F7E2; Intracorporeal vs Extracorporeal Anastomosis</div>
+        <div style="font-size:0.9rem;color:var(--text-sec)">
+          <strong>適用場景：</strong>右側結腸切除術（right hemicolectomy）的迴結腸吻合<br><br>
+          <strong>ICA 優勢（RCT Meta-analysis, 7 trials, N=750）：</strong><br>
+          &bull; 術後麻痺性腸阻塞較低（RR 0.62, p=0.04）<br>
+          &bull; 切口長度較短（-1.38 cm, p&lt;0.00001）<br>
+          &bull; 手術部位感染較低（3.65% vs 16.67%, p=0.008, IVEA study）<br>
+          &bull; 術後疼痛較低<br><br>
+          <strong>ICA 劣勢：</strong><br>
+          &bull; 手術時間較長（+10.7 min, p=0.008）<br><br>
+          <strong>兩者相當：</strong>吻合處滲漏率、整體併發症、住院天數、淋巴結數目
+        </div>
+        <hr style="border:none;border-top:1px dashed #c6f6d5;margin:8px 0">
+        <div style="font-size:0.88rem;color:var(--text-sec)">
+          <strong>Robotic ICA RCT（Dohrn, Ann Surg 2022）：</strong>在優化的 ERAS 環境下，robotic ICA vs ECA 在病患自評恢復（QoR-15）上無顯著差異。ICA 吻合時間較長（17 vs 13 min）。
+        </div>
+      </div>
+
+      <div style="background:#ebf8ff;border-radius:10px;padding:14px 16px;margin:10px 0">
+        <div style="font-weight:700;color:#2c5282;font-size:1.0rem;margin-bottom:6px">&#x1F535; Single-Stapled vs Double-Stapled Anastomosis</div>
+        <div style="font-size:0.9rem;color:var(--text-sec)">
+          <strong>適用場景：</strong>低位前位切除術（LAR）的直腸吻合<br><br>
+          <strong>Double-Stapled Technique (DST)：</strong><br>
+          &bull; 傳統標準技術，使用線性 stapler 橫斷直腸 + circular stapler 吻合<br>
+          &bull; 「Dog-ear」交叉釘合線為潛在弱點<br>
+          &bull; 吻合滲漏率約 4-10%（視距離肛門高度而定）<br><br>
+          <strong>Single-Stapled Technique (SST) / TTSS：</strong><br>
+          &bull; 經肛門橫斷直腸（purse-string）+ circular stapler 吻合<br>
+          &bull; 消除「dog-ear」問題，理論上減少滲漏<br>
+          &bull; <strong>RiSSA（Robotic Intracorporeal Single-Stapled Anastomosis）</strong>：Wu/Huang, Kaohsiung VGH — 首創以 robotic 全腔內 purse-string + circular stapler 完成 single-stapled 吻合<br>
+          &bull; RiSSA vs DSA pilot study（J Robot Surg 2025）：RiSSA 組滲漏率 <strong>0%</strong> vs DSA 9.5%，手術時間較短、恢復較快、造口率較低<br>
+          &bull; RiSSA learning curve（Int J Colorectal Dis 2026）：RA-CUSUM 分析顯示約 17 例達到技術熟練<br>
+          &bull; RPC-RiSSA 在 St Mark's Hospital（Tech Coloproctol 2024）：FAP 病患無吻合滲漏（0% vs 傳統 RPC 9%）<br>
+          &bull; Safe Anastomosis Project（Kim, DCR 2026）：SST + reinforcement 組滲漏率 <strong>6.3%</strong>，保護性造口率僅 <strong>18.8%</strong><br>
+          &bull; TTSS 初始系列（Vivas López, 2024）：滲漏率 9.1%，所有病患均達完整 TME
+        </div>
+      </div>
+
+      <div style="background:#fffbeb;border-left:3px solid #d69e2e;padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.9rem;margin-top:8px">
+        <strong>趨勢：</strong>ICA 在右側結腸手術中越來越被採用，尤其搭配 robotic 平台。SST 在直腸手術中作為減少滲漏的策略正在興起，但目前缺乏大型 RCT。COLOR IV 和 INEX 等試驗結果值得關注。
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="ev-section">
+    <h3>&#x1F4C5; 證據演進時間軸</h3>
+    <div class="tl-legend">
+      <span><span class="dot-b"></span> Intra vs Extracorporeal</span>
+      <span><span class="dot-g"></span> Single vs Double Stapled</span>
+    </div>
+    <div class="timeline-scroll">
+      <div class="timeline" id="tl-anast"></div>
+    </div>
+  </div>
+
+  <!-- Evidence Cards -->
+  <div class="ev-section">
+    <h3>&#x1F4D6; 關鍵文獻摘要</h3>
+    <div id="anast-ev-cards"></div>
   </div>
 
 </div>
@@ -631,6 +705,7 @@ function navigate(viewId, title, subtitle) {
   window.scrollTo(0, 0);
   if (viewId === 'v-braf') renderEvidence();
   if (viewId === 'v-robotic-tme') renderTME();
+  if (viewId === 'v-robotic-anast') renderAnast();
 }
 function goBack() {
   if (!history_stack.length) return;
@@ -950,6 +1025,113 @@ function renderTmeChart() {
       <div class="bar-hr">${b.hr}</div>
     </div>`;
   }).join('');
+}
+
+// === ANASTOMOSIS DATA ===
+const TL_ANAST = [
+  { yr:'2021', venue:'SLET', cls:'beacon', finding:'IVEA RCT<br>ICA SSI <strong>3.7%</strong><br>vs ECA 16.7%', file:'https://doi.org/10.1097/SLE.0000000000000937' },
+  { yr:'2022', venue:'Ann Surg', cls:'beacon', finding:'Robotic ICA RCT<br>QoR-15 NS<br>N=89', file:'https://doi.org/10.1097/SLA.0000000000005254' },
+  { yr:'2023', venue:'IJCD', cls:'beacon', finding:'ICA MA (7 RCTs)<br>腸阻塞 RR <strong>0.62</strong>', file:'https://doi.org/10.1007/s00384-023-04445-2' },
+  { yr:'2024', venue:'Colorectal Dis', cls:'breakwater', finding:'RiSSA + NOSE<br>Video vignette', file:'https://doi.org/10.1111/codi.17211' },
+  { yr:'2024', venue:'IJCD', cls:'breakwater', finding:'TTSS 初始系列<br>AL <strong>9.1%</strong><br>N=22', file:'https://doi.org/10.1007/s00384-024-04646-3' },
+  { yr:'2024', venue:'Tech Coloproctol', cls:'breakwater', finding:'RPC-RiSSA<br>St Mark\'s<br>AL <strong>0%</strong>', file:'https://doi.org/10.1007/s10151-024-03021-2' },
+  { yr:'2025', venue:'J Robot Surg', cls:'breakwater', finding:'RiSSA vs DSA<br>AL <strong>0%</strong> vs 9.5%<br>N=49', file:'https://doi.org/10.1007/s11701-025-02609-6' },
+  { yr:'2025', venue:'Ann Coloproctol', cls:'breakwater', finding:'RiSSA<br>Technical note', file:'https://doi.org/10.3393/ac.2025.00486.0069' },
+  { yr:'2026', venue:'IJCD', cls:'breakwater', finding:'RiSSA Learning<br>RA-CUSUM<br><strong>17 例</strong>', file:'https://doi.org/10.1007/s00384-025-05078-3' },
+  { yr:'2026', venue:'DCR', cls:'breakwater', finding:'Safe Anast Project<br>SST+reinf <strong>6.3%</strong>', file:'https://doi.org/10.1097/DCR.0000000000004107' },
+];
+
+const ANAST_CARDS = [
+  { title:'RiSSA vs DSA Pilot Study（J Robot Surg 2025）', tag:'RiSSA', body:`
+    <p><strong>Wu/Huang, 高雄榮總</strong> — Robotic intracorporeal single-stapled vs extracorporeal double-stapled anastomosis</p>
+    <p>N=49（RiSSA 31, DSA 18），左側大腸直腸癌，IPTW 校正</p>
+    <table>
+      <tr><th></th><th>RiSSA (n=31)</th><th>DSA (n=18)</th></tr>
+      <tr><td>吻合滲漏</td><td><strong>0%</strong></td><td>9.5%</td></tr>
+      <tr><td>手術時間</td><td colspan="2">RiSSA 較短</td></tr>
+      <tr><td>腸功能恢復</td><td colspan="2">RiSSA 較快</td></tr>
+      <tr><td>住院天數</td><td colspan="2">RiSSA 較短</td></tr>
+      <tr><td>造口率</td><td colspan="2">RiSSA 較低</td></tr>
+    </table>
+    <p><a href="https://doi.org/10.1007/s11701-025-02609-6" target="_blank">&#x1F4C4; DOI: 10.1007/s11701-025-02609-6</a></p>` },
+  { title:'RiSSA Learning Curve — RA-CUSUM（IJCD 2026）', tag:'RiSSA', body:`
+    <p><strong>Huang/Wu, 高雄榮總</strong> — 36 例連續 RiSSA 的學習曲線分析</p>
+    <p>使用影片標準化 8 個時間點，RA-CUSUM 分析</p>
+    <table>
+      <tr><th>指標</th><th>轉折點</th></tr>
+      <tr><td>Pure RiSSA interval</td><td><strong>第 17 例</strong></td></tr>
+      <tr><td>Purse-string suture time</td><td><strong>第 11 例</strong></td></tr>
+    </table>
+    <p>技術效率在轉折點後顯著改善。提供可重現的技術評估指標。</p>
+    <p><a href="https://doi.org/10.1007/s00384-025-05078-3" target="_blank">&#x1F4C4; DOI: 10.1007/s00384-025-05078-3</a></p>` },
+  { title:'RiSSA Technical Note（Ann Coloproctol 2025）', tag:'RiSSA', body:`
+    <p><strong>Wu/Huang, 高雄榮總 + St Mark\'s</strong></p>
+    <p>詳細描述 robotic 左側大腸直腸切除術中 RiSSA 的標準化技術步驟。</p>
+    <p><a href="https://doi.org/10.3393/ac.2025.00486.0069" target="_blank">&#x1F4C4; DOI: 10.3393/ac.2025.00486.0069</a></p>` },
+  { title:'RiSSA + NOSE Video Vignette（Colorectal Dis 2024）', tag:'RiSSA', body:`
+    <p><strong>Huang/Wu, 高雄榮總</strong></p>
+    <p>影片展示 RiSSA 結合 Natural Orifice Specimen Extraction（NOSE）應用於 robotic TME 的完整手術流程。</p>
+    <p><a href="https://doi.org/10.1111/codi.17211" target="_blank">&#x1F4C4; DOI: 10.1111/codi.17211</a></p>` },
+  { title:'RPC-RiSSA at St Mark\'s（Tech Coloproctol 2024）', tag:'RiSSA / FAP', body:`
+    <p><strong>Alves Martins/Faiz, St Mark\'s Hospital</strong></p>
+    <p>FAP 病患接受 RPC-RiSSA（自 2019 年導入）：吻合滲漏 <strong>0%</strong>，對比傳統 RPC 的 9%（p=0.3）。</p>
+    <p>253 例 FAP 恢復性手術，15 年經驗，展示技術演進。</p>
+    <p><a href="https://doi.org/10.1007/s10151-024-03021-2" target="_blank">&#x1F4C4; DOI: 10.1007/s10151-024-03021-2</a></p>` },
+  { title:'ICA vs ECA Meta-analysis（IJCD 2023, 7 RCTs）', tag:'ICA vs ECA', body:`
+    <p>7 個 RCT 的統合分析（N=750），比較腹腔內吻合 vs 體外吻合</p>
+    <table>
+      <tr><th>指標</th><th>ICA 優勢？</th><th>效果量</th></tr>
+      <tr><td>術後腸阻塞</td><td>&#x2713;</td><td>RR 0.62, p=0.04</td></tr>
+      <tr><td>切口長度</td><td>&#x2713;</td><td>-1.38 cm, p&lt;0.00001</td></tr>
+      <tr><td>手術時間</td><td>&#x2717;</td><td>+10.7 min, p=0.008</td></tr>
+      <tr><td>滲漏率</td><td>—</td><td>NS</td></tr>
+      <tr><td>住院天數</td><td>—</td><td>NS</td></tr>
+    </table>
+    <p><a href="https://doi.org/10.1007/s00384-023-04445-2" target="_blank">&#x1F4C4; DOI: 10.1007/s00384-023-04445-2</a></p>` },
+  { title:'Robotic ICA vs ECA RCT（Ann Surg 2022）', tag:'ICA vs ECA', body:`
+    <p><strong>Dohrn et al.</strong> — 多中心三盲 RCT，N=89，robotic right colectomy</p>
+    <p>在優化的 ERAS 環境下，ICA vs ECA 在 QoR-15（主要終點）上無顯著差異。ICA 吻合時間較長（17 vs 13 min, p=0.003）。其餘手術和病理指標均無差異。</p>
+    <p><a href="https://doi.org/10.1097/SLA.0000000000005254" target="_blank">&#x1F4C4; DOI: 10.1097/SLA.0000000000005254</a></p>` },
+  { title:'Safe Anastomosis Project（DCR 2026）', tag:'SST', body:`
+    <p><strong>Kim et al., Kyungpook National University</strong></p>
+    <p>前瞻性世代研究，N=99，評估「延後造口」策略</p>
+    <table>
+      <tr><th>技術組別</th><th>保護性造口率</th><th>滲漏率</th></tr>
+      <tr><td>SST + reinforcement</td><td><strong>18.8%</strong></td><td><strong>6.3%</strong></td></tr>
+      <tr><td>SST alone</td><td>—</td><td>—</td></tr>
+      <tr><td>DST + reinforcement</td><td>—</td><td>—</td></tr>
+    </table>
+    <p>SST + reinforcement + robotic 組合展現最佳結果。78.1% 使用機器人手術。</p>
+    <p><a href="https://doi.org/10.1097/DCR.0000000000004107" target="_blank">&#x1F4C4; DOI: 10.1097/DCR.0000000000004107</a></p>` },
+  { title:'TTSS — 經肛門橫斷 + SSA（IJCD 2024）', tag:'SST', body:`
+    <p><strong>Vivas López et al.</strong> — 初始 22 例系列</p>
+    <p>中低位直腸癌，腹腔鏡 TME + transanal transection + single-stapled anastomosis</p>
+    <p>滲漏率 9.1%，住院中位數 5 天，全部達完整 TME + 切緣陰性。</p>
+    <p><a href="https://doi.org/10.1007/s00384-024-04646-3" target="_blank">&#x1F4C4; DOI: 10.1007/s00384-024-04646-3</a></p>` },
+];
+
+function renderAnast() {
+  // Timeline
+  document.getElementById('tl-anast').innerHTML = TL_ANAST.map(n => `
+    <a class="tl-node ${n.cls}" href="${n.file}" target="_blank">
+      <div class="tl-dot"></div>
+      <div class="tl-line"></div>
+      <div class="tl-yr">${n.yr}</div>
+      <div class="tl-venue">${n.venue}</div>
+      <div class="tl-finding">${n.finding}</div>
+    </a>
+  `).join('');
+  // Evidence cards
+  document.getElementById('anast-ev-cards').innerHTML = ANAST_CARDS.map((c,i) => `
+    <div class="ev-card" data-i="${i}">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>${c.title}</h4>
+        <span style="font-size:0.8rem;padding:2px 8px;border-radius:8px;background:#ebf8ff;color:var(--accent)">${c.tag}</span>
+        <span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">${c.body}</div>
+    </div>
+  `).join('');
 }
 
 // === SERVICE WORKER ===
