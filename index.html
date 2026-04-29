@@ -169,19 +169,19 @@
 
 <header>
   <h1>CRS Knowledge Base</h1>
-  <p>Colorectal Surgery</p>
+  <p>大腸直腸外科</p>
 </header>
 
 <div class="search-wrap">
-  <input type="search" id="search" placeholder="Search..." autocomplete="off">
+  <input type="search" id="search" placeholder="搜尋..." autocomplete="off">
 </div>
 
 <div class="tabs" id="tabs">
   <button class="tab active" data-cat="all">All</button>
   <button class="tab" data-cat="mcrc">mCRC</button>
-  <button class="tab" data-cat="anal">Anal Surgery</button>
-  <button class="tab" data-cat="robotic">Robotic Surgery</button>
-  <button class="tab" data-cat="others">Others</button>
+  <button class="tab" data-cat="anal">肛門手術</button>
+  <button class="tab" data-cat="robotic">機器人手術</button>
+  <button class="tab" data-cat="others">其他</button>
 </div>
 
 <div class="page active" id="page-kb">
@@ -195,18 +195,18 @@
 <div class="page" id="page-about">
   <main>
     <div class="card open">
-      <div class="card-hdr"><h3>About</h3></div>
+      <div class="card-hdr"><h3>關於</h3></div>
       <div class="card-body" style="display:block">
-        <p>CRS Knowledge Base is a Progressive Web App for Colorectal Surgery reference. Designed for mobile-first, offline-capable access to key clinical evidence and surgical knowledge.</p>
-        <h4>Categories</h4>
+        <p>CRS Knowledge Base 是一款大腸直腸外科參考用漸進式網頁應用程式（PWA），專為行動裝置優先設計，支援離線存取重要臨床證據與手術知識。</p>
+        <h4>分類</h4>
         <ul>
-          <li><strong>mCRC</strong> - Metastatic colorectal cancer: targeted therapy, clinical trials, molecular biomarkers</li>
-          <li><strong>Anal Surgery</strong> - Hemorrhoids, fistula, abscess, anal cancer</li>
-          <li><strong>Robotic Surgery</strong> - Robotic colorectal procedures, platforms, outcomes</li>
-          <li><strong>Others</strong> - IBD, diverticular disease, functional disorders, etc.</li>
+          <li><strong>mCRC</strong> — 轉移性大腸直腸癌：標靶治療、臨床試驗、分子生物標記</li>
+          <li><strong>肛門手術</strong> — 痔瘡、肛門廔管、膿瘍、肛門癌</li>
+          <li><strong>機器人手術</strong> — 機器人大腸直腸手術、平台、成果</li>
+          <li><strong>其他</strong> — 發炎性腸道疾病、憩室疾病、功能性疾患等</li>
         </ul>
-        <h4>Disclaimer</h4>
-        <p>For educational purposes only. Clinical decisions should be based on individual patient assessment and current evidence-based guidelines.</p>
+        <h4>免責聲明</h4>
+        <p>本內容僅供教學參考。臨床決策應依據個別病患評估及現行實證醫學指引。</p>
         <div class="ref">v1.0</div>
       </div>
     </div>
@@ -216,15 +216,15 @@
 <nav class="bottom">
   <button class="active" data-page="page-kb">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-    Knowledge
+    知識庫
   </button>
   <button data-page="page-docs">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-    Documents
+    文獻
   </button>
   <button data-page="page-about">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-    About
+    關於
   </button>
 </nav>
 
@@ -237,187 +237,187 @@ const KB = [
 // ---- mCRC ----
 {
   id: "braf-v600e-overview",
-  title: "BRAF V600E mCRC: Overview & Biology",
+  title: "BRAF V600E 轉移性大腸直腸癌：總覽與生物學機制",
   cat: "mcrc",
   tag: "BRAF",
   body: `
-    <h4>Epidemiology</h4>
+    <h4>流行病學</h4>
     <ul>
-      <li>BRAF V600E mutations occur in 8&ndash;12% of mCRC</li>
-      <li>Associated with right-sided tumors, female sex, older age, MSI-H (~20%)</li>
-      <li>Poor prognosis: historically mOS ~12 months in 1L, ~5&ndash;6 months in 2L+</li>
+      <li>BRAF V600E 突變約佔 mCRC 的 8&ndash;12%</li>
+      <li>與右側腫瘤、女性、高齡、MSI-H（約 20%）相關</li>
+      <li>預後不佳：歷史數據一線 mOS 約 12 個月，二線以上約 5&ndash;6 個月</li>
     </ul>
-    <h4>Biology & Rationale for Dual Blockade</h4>
-    <p>BRAF V600E causes constitutive MAPK pathway activation. Single-agent BRAF inhibition in CRC leads to rapid EGFR-mediated feedback reactivation (unlike melanoma). Therefore, simultaneous BRAF + EGFR inhibition (encorafenib + cetuximab) is required.</p>
+    <h4>生物學機制與雙標靶阻斷原理</h4>
+    <p>BRAF V600E 導致 MAPK 訊號通路持續性活化。在大腸直腸癌中，單用 BRAF 抑制劑會導致 EGFR 介導的快速回饋再活化（與黑色素瘤不同）。因此需要同時進行 BRAF + EGFR 抑制（encorafenib + cetuximab）。</p>
     <ul>
-      <li><strong>Encorafenib</strong>: Highly selective BRAF inhibitor with prolonged pharmacodynamic activity; 300 mg PO QD</li>
-      <li><strong>Cetuximab</strong>: Anti-EGFR mAb; blocks feedback reactivation through EGFR; 400/250 mg/m&sup2; QW or Q2W</li>
+      <li><strong>Encorafenib</strong>：高度選擇性 BRAF 抑制劑，具有延長的藥效動力學活性；300 mg PO QD</li>
+      <li><strong>Cetuximab</strong>：Anti-EGFR 單株抗體；透過阻斷 EGFR 回饋再活化；400/250 mg/m&sup2; QW 或 Q2W</li>
     </ul>
-    <div class="note">Adding chemotherapy backbone (mFOLFOX6 or FOLFIRI) to EC further enhances efficacy through cytotoxic synergy and suppression of resistance clone emergence (BREAKWATER data).</div>
+    <div class="note">在 EC 基礎上加入化療骨幹（mFOLFOX6 或 FOLFIRI），可透過細胞毒性協同作用及抑制抗藥性克隆產生，進一步提升療效（BREAKWATER 數據）。</div>
     <div class="ref">Prahallad A et al. Nature 2012;483:100-103. Corcoran RB et al. Cancer Discov 2012;2:227-235.</div>
   `
 },
 {
   id: "beacon-trial",
-  title: "BEACON CRC Trial (2L+): EC Doublet",
+  title: "BEACON 試驗（二線以上）：EC 雙標靶",
   cat: "mcrc",
   tag: "BEACON",
   body: `
-    <h4>Study Design</h4>
-    <p>Phase 3, randomized, open-label, 3-arm (N=665). RAS wt / BRAF V600E mt mCRC, 1&ndash;2 prior lines. 1:1:1 randomization.</p>
+    <h4>試驗設計</h4>
+    <p>第三期、隨機、開放標籤、三臂試驗（N=665）。RAS wt / BRAF V600E mt mCRC，曾接受 1&ndash;2 線治療。1:1:1 隨機分配。</p>
     <table>
-      <tr><th>Arm</th><th>Regimen</th><th>N</th></tr>
-      <tr><td>Triplet</td><td>Encorafenib + binimetinib + cetuximab</td><td>224</td></tr>
-      <tr><td>Doublet</td><td>Encorafenib + cetuximab (EC)</td><td>220</td></tr>
-      <tr><td>Control</td><td>Cetuximab + FOLFIRI/irinotecan</td><td>221</td></tr>
+      <tr><th>組別</th><th>治療方案</th><th>N</th></tr>
+      <tr><td>三標靶</td><td>Encorafenib + binimetinib + cetuximab</td><td>224</td></tr>
+      <tr><td>雙標靶</td><td>Encorafenib + cetuximab (EC)</td><td>220</td></tr>
+      <tr><td>對照組</td><td>Cetuximab + FOLFIRI/irinotecan</td><td>221</td></tr>
     </table>
-    <h4>Key Results (median f/u 12.8 mo)</h4>
+    <h4>主要結果（中位追蹤 12.8 個月）</h4>
     <table>
-      <tr><th></th><th>Triplet</th><th>EC Doublet</th><th>Control</th></tr>
+      <tr><th></th><th>三標靶</th><th>EC 雙標靶</th><th>對照組</th></tr>
       <tr><td>mOS</td><td>9.3 mo</td><td>9.3 mo</td><td>5.9 mo</td></tr>
-      <tr><td>OS HR vs ctrl</td><td>0.60</td><td>0.61</td><td>Ref</td></tr>
+      <tr><td>OS HR vs 對照</td><td>0.60</td><td>0.61</td><td>Ref</td></tr>
       <tr><td>mPFS</td><td>4.5 mo</td><td>4.3 mo</td><td>1.5 mo</td></tr>
-      <tr><td>PFS HR vs ctrl</td><td>0.42</td><td>0.44</td><td>Ref</td></tr>
+      <tr><td>PFS HR vs 對照</td><td>0.42</td><td>0.44</td><td>Ref</td></tr>
       <tr><td>ORR</td><td>26.8%</td><td>19.5%</td><td>1.8%</td></tr>
     </table>
-    <h4>Key Conclusions</h4>
+    <h4>重要結論</h4>
     <ul>
-      <li>Triplet and doublet showed identical mOS (9.3 mo); adding binimetinib offered no additional OS/PFS benefit</li>
-      <li>FDA/EMA approved <strong>doublet (EC)</strong> only</li>
-      <li>OS benefit consistent across all subgroups (left/right, prior lines, ECOG, MSI)</li>
-      <li>Grade &ge;3 AEs: Doublet 57% vs Control 64%; doublet safety was favorable</li>
-      <li>QoL maintenance significantly longer with doublet vs control (HR ~0.49&ndash;0.54)</li>
+      <li>三標靶與雙標靶 mOS 相同（9.3 mo）；加入 binimetinib 未帶來額外 OS/PFS 效益</li>
+      <li>FDA/EMA 僅核准<strong>雙標靶（EC）</strong></li>
+      <li>OS 效益在所有亞組中一致（左側/右側、先前治療線數、ECOG、MSI）</li>
+      <li>Grade &ge;3 不良事件：雙標靶 57% vs 對照組 64%；雙標靶安全性較佳</li>
+      <li>生活品質維持時間顯著較長：雙標靶 vs 對照組（HR ~0.49&ndash;0.54）</li>
     </ul>
     <div class="ref">Kopetz S et al. N Engl J Med 2019;381:1632&ndash;1643. Tabernero J et al. J Clin Oncol 2021;39:273&ndash;284.</div>
   `
 },
 {
   id: "breakwater-ph3",
-  title: "BREAKWATER Phase 3 (1L): EC + mFOLFOX6",
+  title: "BREAKWATER 第三期試驗（一線）：EC + mFOLFOX6",
   cat: "mcrc",
   tag: "BREAKWATER",
   body: `
-    <h4>Study Design</h4>
-    <p>Phase 3, randomized, 1:1:1 (NCT04607421). Previously untreated BRAF V600E mCRC. Excluded: prior BRAF/EGFR inhibitors, MSI-H/dMMR (unless ICI-ineligible), RAS mutation.</p>
+    <h4>試驗設計</h4>
+    <p>第三期、隨機、1:1:1（NCT04607421）。未曾接受治療之 BRAF V600E mCRC。排除條件：曾使用 BRAF/EGFR 抑制劑、MSI-H/dMMR（除非不適用免疫治療）、RAS 突變。</p>
     <table>
-      <tr><th>Arm</th><th>N</th></tr>
+      <tr><th>組別</th><th>N</th></tr>
       <tr><td>EC + mFOLFOX6</td><td>236</td></tr>
-      <tr><td>EC alone (chemo-free)</td><td>158</td></tr>
-      <tr><td>Control (chemo &plusmn; bev)</td><td>243</td></tr>
+      <tr><td>EC 單獨使用（無化療）</td><td>158</td></tr>
+      <tr><td>對照組（化療 &plusmn; bev）</td><td>243</td></tr>
     </table>
-    <p>Dual primary endpoints: ORR by BICR, PFS by BICR. Key secondary: OS.</p>
+    <p>雙主要終點：BICR 評估之 ORR、BICR 評估之 PFS。關鍵次要終點：OS。</p>
 
-    <h4>Results (2025 ASCO)</h4>
+    <h4>結果（2025 ASCO）</h4>
     <table>
-      <tr><th></th><th>EC+mFOLFOX6</th><th>EC alone</th><th>Control</th></tr>
+      <tr><th></th><th>EC+mFOLFOX6</th><th>EC 單獨</th><th>對照組</th></tr>
       <tr><td>ORR (BICR)</td><td><strong>65.7%</strong></td><td>45.6%</td><td>37.4%</td></tr>
       <tr><td>mPFS (BICR)</td><td><strong>12.8 mo</strong></td><td>6.8 mo</td><td>7.1 mo</td></tr>
       <tr><td>mOS</td><td><strong>30.3 mo</strong></td><td>19.5 mo</td><td>15.1 mo</td></tr>
-      <tr><td>OS HR vs ctrl</td><td><strong>0.49</strong></td><td>&mdash;</td><td>Ref</td></tr>
+      <tr><td>OS HR vs 對照</td><td><strong>0.49</strong></td><td>&mdash;</td><td>Ref</td></tr>
     </table>
 
-    <div class="note">EC + mFOLFOX6 met all primary and key secondary endpoints. OS HR 0.49 = 51% reduction in death risk. mOS 30.3 months is unprecedented for BRAF V600E mCRC. US FDA granted accelerated approval (Project FrontRunner).</div>
+    <div class="note">EC + mFOLFOX6 達成所有主要及關鍵次要終點。OS HR 0.49 = 降低 51% 死亡風險。mOS 30.3 個月為 BRAF V600E mCRC 前所未有之成績。美國 FDA 已授予加速核准（Project FrontRunner）。</div>
 
-    <h4>Surgical Conversion</h4>
-    <p>EC + mFOLFOX6: 5.2% had curative-intent surgery; 3.0% achieved complete resection (R0).</p>
+    <h4>手術轉換率</h4>
+    <p>EC + mFOLFOX6：5.2% 接受治癒性手術；3.0% 達到完全切除（R0）。</p>
 
     <div class="ref">&Eacute;lez E et al. N Engl J Med 2025;392:2425&ndash;2437. Kopetz S et al. Nat Med 2025;31:901&ndash;908.</div>
   `
 },
 {
   id: "breakwater-ctdna",
-  title: "BREAKWATER ctDNA Analysis (2025 ESMO)",
+  title: "BREAKWATER ctDNA 分析（2025 ESMO）",
   cat: "mcrc",
   tag: "BREAKWATER",
   body: `
-    <h4>ctDNA &amp; Tissue Concordance</h4>
-    <p>BRAF V600E ctDNA vs tumor tissue: overall agreement <strong>87.4%</strong>. Supports liquid biopsy for BRAF V600E molecular profiling.</p>
+    <h4>ctDNA 與組織一致性</h4>
+    <p>BRAF V600E ctDNA vs 腫瘤組織：整體一致率 <strong>87.4%</strong>。支持以液態切片進行 BRAF V600E 分子分型。</p>
 
-    <h4>Baseline VAF &amp; Efficacy</h4>
-    <p>Dichotomized at median VAF 9.2%. EC + mFOLFOX6 benefit was independent of baseline VAF:</p>
+    <h4>基線 VAF 與療效</h4>
+    <p>以中位 VAF 9.2% 進行二分法分析。EC + mFOLFOX6 之效益不受基線 VAF 影響：</p>
     <table>
-      <tr><th></th><th>Low VAF (&lt;9.2%)</th><th>High VAF (&ge;9.2%)</th></tr>
+      <tr><th></th><th>低 VAF（&lt;9.2%）</th><th>高 VAF（&ge;9.2%）</th></tr>
       <tr><td>ORR (EC+mFOLFOX6)</td><td>74.7%</td><td>62.5%</td></tr>
-      <tr><td>OS HR vs ctrl</td><td>0.38</td><td>0.50</td></tr>
+      <tr><td>OS HR vs 對照</td><td>0.38</td><td>0.50</td></tr>
     </table>
 
-    <h4>On-treatment ctDNA Dynamics</h4>
-    <p>BRAF V600E detected &rarr; undetectable (D/ND) at C2D15 (week 8):</p>
+    <h4>治療中 ctDNA 動態變化</h4>
+    <p>BRAF V600E 從可偵測 &rarr; 不可偵測（D/ND），於 C2D15（第 8 週）：</p>
     <ul>
-      <li>EC + mFOLFOX6: <strong>67.1%</strong></li>
-      <li>EC alone: 45.2%</li>
-      <li>Control: 37.5%</li>
+      <li>EC + mFOLFOX6：<strong>67.1%</strong></li>
+      <li>EC 單獨：45.2%</li>
+      <li>對照組：37.5%</li>
     </ul>
-    <p>D/ND status correlated with OS: In EC+mFOLFOX6 arm, D/ND patients had mOS = NE (HR 0.30 vs D/D patients with mOS 16.2 mo).</p>
+    <p>D/ND 狀態與 OS 相關：EC+mFOLFOX6 組中，D/ND 病患 mOS = NE（HR 0.30，相較 D/D 病患 mOS 16.2 mo）。</p>
 
-    <h4>Resistance Mutations at C7D1 (month 6)</h4>
-    <p>Acquired genomic resistance alterations (KRAS, NRAS, MAP2K1 mutations; MET amplification; BRAF exon deletions):</p>
+    <h4>C7D1（第 6 個月）抗藥性突變</h4>
+    <p>後天基因抗藥性變異（KRAS、NRAS、MAP2K1 突變；MET 擴增；BRAF exon 缺失）：</p>
     <ul>
-      <li>EC + mFOLFOX6: <strong>6.6%</strong></li>
-      <li>EC alone: <strong>37.9%</strong></li>
+      <li>EC + mFOLFOX6：<strong>6.6%</strong></li>
+      <li>EC 單獨：<strong>37.9%</strong></li>
     </ul>
-    <div class="note">Chemotherapy backbone suppresses resistance clone emergence, providing the mechanistic basis for superior PFS with EC + mFOLFOX6 vs EC alone.</div>
+    <div class="note">化療骨幹可抑制抗藥性克隆產生，為 EC + mFOLFOX6 優於 EC 單獨使用之 PFS 提供機制基礎。</div>
 
     <div class="ref">Kopetz S et al. ESMO 2025 (Oral Presentation).</div>
   `
 },
 {
   id: "breakwater-subsequent",
-  title: "BREAKWATER Subsequent Therapies (2025 ESMO)",
+  title: "BREAKWATER 後續治療分析（2025 ESMO）",
   cat: "mcrc",
   tag: "BREAKWATER",
   body: `
-    <h4>Subsequent Treatment Patterns</h4>
+    <h4>後續治療模式</h4>
     <table>
-      <tr><th></th><th>EC+mFOLFOX6</th><th>EC alone</th><th>Control</th></tr>
-      <tr><td>Discontinued study tx</td><td>71.6%</td><td>92.4%</td><td>93.4%</td></tr>
-      <tr><td>Any subsequent tx</td><td>63.9%</td><td>73.3%</td><td>61.2%</td></tr>
-      <tr><td>Subsequent BRAF inh</td><td>17.6%</td><td>19.6%</td><td><strong>71.9%</strong></td></tr>
-      <tr><td>Subsequent EC</td><td>13.9%</td><td>13.1%</td><td><strong>55.4%</strong></td></tr>
+      <tr><th></th><th>EC+mFOLFOX6</th><th>EC 單獨</th><th>對照組</th></tr>
+      <tr><td>停止試驗用藥</td><td>71.6%</td><td>92.4%</td><td>93.4%</td></tr>
+      <tr><td>接受任何後續治療</td><td>63.9%</td><td>73.3%</td><td>61.2%</td></tr>
+      <tr><td>後續使用 BRAF 抑制劑</td><td>17.6%</td><td>19.6%</td><td><strong>71.9%</strong></td></tr>
+      <tr><td>後續使用 EC</td><td>13.9%</td><td>13.1%</td><td><strong>55.4%</strong></td></tr>
     </table>
-    <p>Control arm patients overwhelmingly received EC as subsequent therapy, validating the comparator arm against real-world practice.</p>
+    <p>對照組病患絕大多數在後續治療中接受了 EC，驗證了對照組與真實世界臨床實務的一致性。</p>
 
-    <h4>PFS2 Analysis</h4>
-    <p>Time from randomization to second progression or death:</p>
+    <h4>PFS2 分析</h4>
+    <p>從隨機分配到第二次疾病進展或死亡之時間：</p>
     <ul>
-      <li>EC + mFOLFOX6 (1L): mPFS2 = <strong>20.7 months</strong></li>
-      <li>Control &rarr; subsequent EC (sequential): mPFS2 = <strong>12.9 months</strong></li>
+      <li>EC + mFOLFOX6（一線）：mPFS2 = <strong>20.7 個月</strong></li>
+      <li>對照組 &rarr; 後續 EC（序貫治療）：mPFS2 = <strong>12.9 個月</strong></li>
     </ul>
 
-    <div class="note">PFS2 data definitively shows that upfront EC + chemo is superior to sequential 1L chemo &rarr; 2L EC. "Best treatment first" strategy confirmed.</div>
+    <div class="note">PFS2 數據明確顯示，一線即使用 EC + 化療優於序貫式一線化療 &rarr; 二線 EC。「最佳治療優先」策略獲得證實。</div>
 
     <div class="ref">Kopetz S et al. ESMO 2025 (Poster).</div>
   `
 },
 {
   id: "breakwater-cohort3",
-  title: "BREAKWATER Cohort 3 (1L): EC + FOLFIRI",
+  title: "BREAKWATER 世代 3（一線）：EC + FOLFIRI",
   cat: "mcrc",
   tag: "ASCO GI 2026",
   body: `
-    <h4>Study Design</h4>
-    <p>EC + FOLFIRI (n=73) vs Control: FOLFIRI &plusmn; bevacizumab (n=74). Primary endpoint: ORR by BICR.</p>
+    <h4>試驗設計</h4>
+    <p>EC + FOLFIRI（n=73）vs 對照組：FOLFIRI &plusmn; bevacizumab（n=74）。主要終點：BICR 評估之 ORR。</p>
 
-    <h4>Results</h4>
+    <h4>結果</h4>
     <table>
-      <tr><th></th><th>EC + FOLFIRI</th><th>Control</th></tr>
+      <tr><th></th><th>EC + FOLFIRI</th><th>對照組</th></tr>
       <tr><td>ORR (BICR)</td><td><strong>64.4%</strong> (52.9&ndash;74.4)</td><td>39.2% (28.9&ndash;50.6)</td></tr>
       <tr><td>CR</td><td>4.1%</td><td>1.4%</td></tr>
       <tr><td>PR</td><td>60.3%</td><td>37.8%</td></tr>
       <tr><td>Odds ratio</td><td colspan="2">2.756 (1.420&ndash;5.348), p=0.0011</td></tr>
-      <tr><td>TTR (median)</td><td>6.9 weeks</td><td>7.1 weeks</td></tr>
+      <tr><td>TTR（中位數）</td><td>6.9 weeks</td><td>7.1 weeks</td></tr>
       <tr><td>DOR &ge;6 mo</td><td>57.4%</td><td>34.5%</td></tr>
-      <tr><td>OS HR</td><td colspan="2">0.49 (0.237&ndash;1.032) &mdash; trend</td></tr>
+      <tr><td>OS HR</td><td colspan="2">0.49 (0.237&ndash;1.032) &mdash; 趨勢</td></tr>
     </table>
 
-    <h4>Subgroup: Liver Metastases</h4>
-    <p>EC + FOLFIRI ORR in liver mets: <strong>79.1%</strong> vs control 37.0% (OR 6.44, 95% CI: 2.50&ndash;16.63)</p>
+    <h4>亞組分析：肝轉移</h4>
+    <p>EC + FOLFIRI 肝轉移之 ORR：<strong>79.1%</strong> vs 對照組 37.0%（OR 6.44, 95% CI: 2.50&ndash;16.63）</p>
 
-    <h4>Clinical Significance</h4>
+    <h4>臨床意義</h4>
     <ul>
-      <li>Provides FOLFIRI as alternative chemo backbone (for oxaliplatin-intolerant/contraindicated patients)</li>
-      <li>EC + FOLFIRI safety profile consistent with known AE profiles of each component</li>
-      <li>PFS and OS data still maturing</li>
+      <li>提供 FOLFIRI 作為替代化療骨幹（適用於 oxaliplatin 不耐受或有禁忌之病患）</li>
+      <li>EC + FOLFIRI 安全性與各組成藥物之已知不良事件一致</li>
+      <li>PFS 及 OS 數據仍在成熟中</li>
     </ul>
 
     <div class="ref">Kopetz S et al. ASCO GI 2026.</div>
@@ -425,31 +425,31 @@ const KB = [
 },
 {
   id: "beacon-breakwater-summary",
-  title: "BEACON + BREAKWATER: Cross-Trial Data Summary",
+  title: "BEACON + BREAKWATER 跨試驗數據總整理",
   cat: "mcrc",
   tag: "Summary",
   body: `
-    <h4>Comprehensive Efficacy Comparison</h4>
+    <h4>完整療效比較</h4>
     <table>
-      <tr><th>Trial</th><th>Line</th><th>Regimen</th><th>ORR</th><th>mPFS</th><th>mOS</th><th>OS HR</th></tr>
-      <tr><td>BEACON</td><td>2L+</td><td>EC Doublet</td><td>19.5%</td><td>4.3 mo</td><td>9.3 mo</td><td>0.61</td></tr>
-      <tr><td>BEACON</td><td>2L+</td><td>Triplet (ECB)</td><td>26.8%</td><td>4.5 mo</td><td>9.3 mo</td><td>0.60</td></tr>
-      <tr><td>BEACON</td><td>2L+</td><td>Control</td><td>1.8%</td><td>1.5 mo</td><td>5.9 mo</td><td>Ref</td></tr>
+      <tr><th>試驗</th><th>線別</th><th>治療方案</th><th>ORR</th><th>mPFS</th><th>mOS</th><th>OS HR</th></tr>
+      <tr><td>BEACON</td><td>2L+</td><td>EC 雙標靶</td><td>19.5%</td><td>4.3 mo</td><td>9.3 mo</td><td>0.61</td></tr>
+      <tr><td>BEACON</td><td>2L+</td><td>三標靶 (ECB)</td><td>26.8%</td><td>4.5 mo</td><td>9.3 mo</td><td>0.60</td></tr>
+      <tr><td>BEACON</td><td>2L+</td><td>對照組</td><td>1.8%</td><td>1.5 mo</td><td>5.9 mo</td><td>Ref</td></tr>
       <tr style="background:#f0f5ff"><td>BW Ph3</td><td>1L</td><td>EC+mFOLFOX6</td><td><strong>65.7%</strong></td><td><strong>12.8 mo</strong></td><td><strong>30.3 mo</strong></td><td><strong>0.49</strong></td></tr>
-      <tr><td>BW Ph3</td><td>1L</td><td>EC alone</td><td>45.6%</td><td>6.8 mo</td><td>19.5 mo</td><td>&mdash;</td></tr>
-      <tr><td>BW Ph3</td><td>1L</td><td>Control</td><td>37.4%</td><td>7.1 mo</td><td>15.1 mo</td><td>Ref</td></tr>
-      <tr style="background:#f0fff4"><td>BW C3</td><td>1L</td><td>EC+FOLFIRI</td><td><strong>64.4%</strong></td><td>Ongoing</td><td>Ongoing</td><td>0.49*</td></tr>
-      <tr><td>BW C3</td><td>1L</td><td>Control</td><td>39.2%</td><td>Ongoing</td><td>Ongoing</td><td>Ref</td></tr>
+      <tr><td>BW Ph3</td><td>1L</td><td>EC 單獨</td><td>45.6%</td><td>6.8 mo</td><td>19.5 mo</td><td>&mdash;</td></tr>
+      <tr><td>BW Ph3</td><td>1L</td><td>對照組</td><td>37.4%</td><td>7.1 mo</td><td>15.1 mo</td><td>Ref</td></tr>
+      <tr style="background:#f0fff4"><td>BW C3</td><td>1L</td><td>EC+FOLFIRI</td><td><strong>64.4%</strong></td><td>進行中</td><td>進行中</td><td>0.49*</td></tr>
+      <tr><td>BW C3</td><td>1L</td><td>對照組</td><td>39.2%</td><td>進行中</td><td>進行中</td><td>Ref</td></tr>
     </table>
-    <p style="font-size:0.75rem">*Immature data. BW = BREAKWATER; ECB = encorafenib + cetuximab + binimetinib.</p>
+    <p style="font-size:0.75rem">*數據尚未成熟。BW = BREAKWATER; ECB = encorafenib + cetuximab + binimetinib。</p>
 
-    <h4>Key Takeaways</h4>
+    <h4>重點整理</h4>
     <ol>
-      <li>EC + chemo in 1L: ORR triples (20% &rarr; 66%), mOS triples (9.3 &rarr; 30.3 mo) compared to 2L</li>
-      <li>Both mFOLFOX6 and FOLFIRI are viable chemo backbones with EC</li>
-      <li>EC + mFOLFOX6 suppresses resistance mutations (6.6% vs 37.9% at 6 mo)</li>
-      <li>PFS2 confirms 1L EC + chemo &gt; sequential chemo &rarr; EC (20.7 vs 12.9 mo)</li>
-      <li>ctDNA clearance at week 8 strongly predicts OS</li>
+      <li>一線 EC + 化療：ORR 提升三倍（20% &rarr; 66%），mOS 提升三倍（9.3 &rarr; 30.3 mo），相較二線使用</li>
+      <li>mFOLFOX6 和 FOLFIRI 皆為可行的 EC 化療骨幹</li>
+      <li>EC + mFOLFOX6 可抑制抗藥性突變（第 6 個月 6.6% vs 37.9%）</li>
+      <li>PFS2 證實一線 EC + 化療 &gt; 序貫式化療 &rarr; EC（20.7 vs 12.9 mo）</li>
+      <li>第 8 週 ctDNA 清除率可強力預測 OS</li>
     </ol>
 
     <div class="ref">Kopetz S et al. N Engl J Med 2019. Tabernero J et al. JCO 2021. &Eacute;lez E et al. NEJM 2025. Kopetz S et al. Nat Med 2025. Kopetz S et al. ESMO 2025. Kopetz S et al. ASCO GI 2026.</div>
@@ -459,28 +459,28 @@ const KB = [
 // ---- Anal Surgery (placeholder) ----
 {
   id: "anal-placeholder",
-  title: "Anal Surgery: Coming Soon",
+  title: "肛門手術：內容建置中",
   cat: "anal",
   tag: "Planned",
-  body: `<p>Content for anal surgery topics (hemorrhoids, fistula, abscess, anal cancer, etc.) will be added in future updates.</p>`
+  body: `<p>肛門手術相關主題（痔瘡、肛門廔管、膿瘍、肛門癌等）將於後續更新中新增。</p>`
 },
 
 // ---- Robotic Surgery (placeholder) ----
 {
   id: "robotic-placeholder",
-  title: "Robotic Surgery: Coming Soon",
+  title: "機器人手術：內容建置中",
   cat: "robotic",
   tag: "Planned",
-  body: `<p>Content for robotic colorectal surgery (platforms, techniques, outcomes) will be added in future updates.</p>`
+  body: `<p>機器人大腸直腸手術相關主題（平台、技術、成果）將於後續更新中新增。</p>`
 },
 
 // ---- Others (placeholder) ----
 {
   id: "others-placeholder",
-  title: "Others: Coming Soon",
+  title: "其他主題：內容建置中",
   cat: "others",
   tag: "Planned",
-  body: `<p>Content for other colorectal surgery topics (IBD, diverticular disease, functional disorders, etc.) will be added in future updates.</p>`
+  body: `<p>其他大腸直腸外科主題（發炎性腸道疾病、憩室疾病、功能性疾患等）將於後續更新中新增。</p>`
 }
 ];
 
@@ -488,13 +488,13 @@ const KB = [
 // DOCUMENTS DATA
 // =====================
 const DOCS = [
-  { cat: "mcrc", subcategory: "BRAF V600E", title: "Kopetz S et al. NEJM 2019 - BEACON CRC Phase 3", file: "docs/mCRC-BRAF-V600E/Kopetz_NEJM_2019_BEACON.pdf" },
-  { cat: "mcrc", subcategory: "BRAF V600E", title: "Tabernero J et al. JCO 2021 - BEACON Updated Analysis", file: "docs/mCRC-BRAF-V600E/Tabernero_JCO_2021_BEACON.pdf" },
-  { cat: "mcrc", subcategory: "BRAF V600E", title: "\u00C9lez E et al. NEJM 2025 - BREAKWATER Phase 3 PFS/OS", file: "docs/mCRC-BRAF-V600E/Elez_NEJM_2025_BREAKWATER.pdf" },
-  { cat: "mcrc", subcategory: "BRAF V600E", title: "Kopetz S et al. Nat Med 2025 - BREAKWATER ORR/Safety", file: "docs/mCRC-BRAF-V600E/Kopetz_NatMed_2025_BREAKWATER.pdf" },
-  { cat: "mcrc", subcategory: "BRAF V600E", title: "Kopetz S et al. ESMO 2025 - BREAKWATER ctDNA Analysis", file: "docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.pdf" },
-  { cat: "mcrc", subcategory: "BRAF V600E", title: "Kopetz S et al. ESMO 2025 - BREAKWATER Subsequent Therapies", file: "docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.pdf" },
-  { cat: "mcrc", subcategory: "BRAF V600E", title: "Kopetz S et al. ASCO GI 2026 - BREAKWATER Cohort 3 EC+FOLFIRI", file: "docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.pdf" },
+  { cat: "mcrc", subcategory: "mCRC / BRAF V600E", title: "Kopetz S et al. NEJM 2019 - BEACON CRC Phase 3", file: "docs/mCRC-BRAF-V600E/Kopetz_NEJM_2019_BEACON.html" },
+  { cat: "mcrc", subcategory: "mCRC / BRAF V600E", title: "Tabernero J et al. JCO 2021 - BEACON Updated Analysis", file: "docs/mCRC-BRAF-V600E/Tabernero_JCO_2021_BEACON.html" },
+  { cat: "mcrc", subcategory: "mCRC / BRAF V600E", title: "\u00C9lez E et al. NEJM 2025 - BREAKWATER Phase 3 PFS/OS", file: "docs/mCRC-BRAF-V600E/Elez_NEJM_2025_BREAKWATER.html" },
+  { cat: "mcrc", subcategory: "mCRC / BRAF V600E", title: "Kopetz S et al. Nat Med 2025 - BREAKWATER ORR/Safety", file: "docs/mCRC-BRAF-V600E/Kopetz_NatMed_2025_BREAKWATER.html" },
+  { cat: "mcrc", subcategory: "mCRC / BRAF V600E", title: "Kopetz S et al. ESMO 2025 - BREAKWATER ctDNA Analysis", file: "docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.html" },
+  { cat: "mcrc", subcategory: "mCRC / BRAF V600E", title: "Kopetz S et al. ESMO 2025 - BREAKWATER Subsequent Therapies", file: "docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.html" },
+  { cat: "mcrc", subcategory: "mCRC / BRAF V600E", title: "Kopetz S et al. ASCO GI 2026 - BREAKWATER Cohort 3 EC+FOLFIRI", file: "docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html" },
 ];
 
 // =====================
@@ -504,7 +504,7 @@ let currentCat = 'all';
 
 function renderCards(data) {
   const el = document.getElementById('content');
-  if (!data.length) { el.innerHTML = '<div class="empty"><p>No matching topics</p></div>'; return; }
+  if (!data.length) { el.innerHTML = '<div class="empty"><p>找不到相符的主題</p></div>'; return; }
   el.innerHTML = data.map(d => `
     <div class="card" data-id="${d.id}">
       <div class="card-hdr" onclick="this.closest('.card').classList.toggle('open')">
@@ -537,7 +537,7 @@ function renderDocs() {
     });
     html += '</div>';
   }
-  if (!html) html = '<div class="empty"><p>No documents yet</p></div>';
+  if (!html) html = '<div class="empty"><p>尚無文獻</p></div>';
   el.innerHTML = html;
 }
 
