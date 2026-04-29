@@ -13,567 +13,577 @@
       --primary: #1a365d;
       --primary-light: #2c5282;
       --accent: #3182ce;
+      --green: #38a169;
       --bg: #f7fafc;
       --card-bg: #ffffff;
       --text: #1a202c;
-      --text-secondary: #4a5568;
+      --text-sec: #4a5568;
       --border: #e2e8f0;
-      --radius: 12px;
-      --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+      --radius: 14px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      min-height: 100vh;
-      padding-bottom: 72px;
+      background: var(--bg); color: var(--text); line-height: 1.6;
+      min-height: 100vh; -webkit-font-smoothing: antialiased;
     }
 
     /* Header */
-    header {
+    .hdr {
       background: linear-gradient(135deg, var(--primary), var(--primary-light));
-      color: white;
-      padding: 20px 16px 14px;
+      color: #fff; padding: 18px 16px 14px;
       position: sticky; top: 0; z-index: 100;
-      box-shadow: var(--shadow-lg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
-    header h1 { font-size: 1.25rem; font-weight: 700; }
-    header p { font-size: 0.78rem; opacity: 0.85; margin-top: 2px; }
+    .hdr-row { display: flex; align-items: center; gap: 10px; }
+    .hdr .back {
+      background: none; border: none; color: #fff; font-size: 1.3rem;
+      cursor: pointer; padding: 2px 4px; display: none; line-height: 1;
+    }
+    .hdr h1 { font-size: 1.15rem; font-weight: 700; flex: 1; }
+    .hdr p { font-size: 0.72rem; opacity: 0.8; margin-top: 1px; }
 
-    /* Search */
-    .search-wrap {
-      padding: 10px 16px;
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--border);
-      position: sticky; top: 62px; z-index: 99;
-    }
-    #search {
-      width: 100%; padding: 9px 12px 9px 36px;
-      border: 1px solid var(--border); border-radius: 8px;
-      font-size: 0.92rem; outline: none; background: var(--bg);
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' fill='%234a5568' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: 11px center;
-      transition: border-color .2s;
-    }
-    #search:focus { border-color: var(--accent); }
+    /* View container */
+    .view { display: none; padding: 16px; padding-bottom: 24px; }
+    .view.active { display: block; }
 
-    /* Tabs */
-    .tabs {
-      display: flex; overflow-x: auto; gap: 4px;
-      padding: 10px 16px 6px;
-      -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    /* Topic cards (home) */
+    .topic-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
     }
-    .tabs::-webkit-scrollbar { display: none; }
-    .tab {
-      flex-shrink: 0; padding: 5px 13px; border-radius: 18px;
-      border: 1px solid var(--border); background: var(--card-bg);
-      font-size: 0.8rem; color: var(--text-secondary);
-      cursor: pointer; transition: all .2s; white-space: nowrap;
+    .topic-card {
+      background: var(--card-bg); border-radius: var(--radius);
+      box-shadow: var(--shadow-md); padding: 20px 14px;
+      text-align: center; cursor: pointer; transition: all .2s;
+      border: 2px solid transparent; text-decoration: none; color: var(--text);
     }
-    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-
-    /* Main */
-    main { padding: 6px 16px 16px; }
-
-    /* Breadcrumb */
-    .breadcrumb {
-      font-size: 0.78rem; color: var(--text-secondary);
-      padding: 8px 0 4px; display: none;
+    .topic-card:hover, .topic-card:active {
+      border-color: var(--accent); transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
     }
-    .breadcrumb a { color: var(--accent); text-decoration: none; }
+    .topic-card .tc-icon { font-size: 2rem; margin-bottom: 8px; }
+    .topic-card .tc-title { font-size: 0.88rem; font-weight: 700; color: var(--primary); }
+    .topic-card .tc-desc { font-size: 0.7rem; color: var(--text-sec); margin-top: 4px; line-height: 1.4; }
+    .topic-card.disabled { opacity: 0.45; pointer-events: none; }
 
-    /* Card */
-    .card {
+    /* Sub-topic list */
+    .sub-card {
+      background: var(--card-bg); border-radius: var(--radius);
+      box-shadow: var(--shadow); margin-bottom: 10px;
+      padding: 14px 16px; cursor: pointer; transition: all .15s;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .sub-card:active { background: #f0f5ff; }
+    .sub-card .sc-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .sub-card .sc-body { flex: 1; }
+    .sub-card .sc-title { font-size: 0.88rem; font-weight: 600; color: var(--primary); }
+    .sub-card .sc-desc { font-size: 0.72rem; color: var(--text-sec); margin-top: 2px; }
+    .sub-card .sc-arrow { color: #cbd5e0; font-size: 1rem; }
+    .sub-card.disabled { opacity: 0.4; pointer-events: none; }
+
+    /* Evidence page */
+    .ev-section { margin-bottom: 22px; }
+    .ev-section > h3 {
+      font-size: 0.88rem; font-weight: 700; color: var(--primary);
+      padding-bottom: 6px; border-bottom: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+
+    /* Timeline */
+    .tl-legend {
+      display: flex; gap: 14px; font-size: 0.68rem; color: var(--text-sec); margin-bottom: 6px;
+    }
+    .tl-legend span { display: flex; align-items: center; gap: 4px; }
+    .tl-legend .dot-b { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    .tl-legend .dot-g { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+    .timeline-scroll {
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      padding-bottom: 8px; scrollbar-width: none;
+    }
+    .timeline-scroll::-webkit-scrollbar { display: none; }
+    .timeline {
+      display: flex; min-width: max-content; padding: 4px 0;
+    }
+    .tl-node {
+      width: 130px; flex-shrink: 0; display: flex; flex-direction: column;
+      align-items: center; position: relative; cursor: pointer;
+      text-decoration: none; color: inherit;
+    }
+    .tl-dot {
+      width: 16px; height: 16px; border-radius: 50%; border: 3px solid;
+      z-index: 2; transition: transform .2s;
+    }
+    .tl-node:hover .tl-dot { transform: scale(1.4); }
+    .tl-node.beacon .tl-dot { border-color: var(--accent); background: #ebf8ff; }
+    .tl-node.breakwater .tl-dot { border-color: var(--green); background: #f0fff4; }
+    .tl-line {
+      position: absolute; top: 8px; left: 50%; width: 130px; height: 2px; z-index: 1;
+    }
+    .tl-node.beacon .tl-line { background: var(--accent); }
+    .tl-node.breakwater .tl-line { background: var(--green); }
+    .tl-node:last-child .tl-line { display: none; }
+    .tl-yr { font-size: 0.7rem; font-weight: 700; margin-top: 6px; }
+    .tl-venue { font-size: 0.62rem; color: #718096; }
+    .tl-finding {
+      font-size: 0.66rem; text-align: center; margin-top: 4px;
+      line-height: 1.3; padding: 0 4px; color: var(--text-sec);
+    }
+    .tl-finding strong { color: var(--primary); font-weight: 700; }
+
+    /* Staircase chart */
+    .chart-toggles { display: flex; gap: 4px; margin-bottom: 10px; }
+    .chart-toggle {
+      padding: 4px 11px; border-radius: 14px; border: 1px solid var(--border);
+      background: var(--card-bg); font-size: 0.72rem; cursor: pointer;
+      color: var(--text-sec); transition: all .15s;
+    }
+    .chart-toggle.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .chart-wrap {
+      background: var(--card-bg); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 14px; overflow-x: auto;
+    }
+    .bar-chart {
+      display: flex; align-items: flex-end; gap: 6px;
+      height: 200px; padding-top: 10px;
+    }
+    .bar-col {
+      flex: 1; min-width: 48px; display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-end; height: 100%;
+    }
+    .bar-val {
+      font-size: 0.68rem; font-weight: 700; color: var(--primary);
+      margin-bottom: 3px; white-space: nowrap;
+    }
+    .bar-rect {
+      width: 100%; border-radius: 6px 6px 0 0; transition: height .4s ease;
+      min-height: 4px;
+    }
+    .bar-label {
+      font-size: 0.58rem; color: var(--text-sec); text-align: center;
+      margin-top: 5px; line-height: 1.2; word-break: keep-all;
+    }
+    .bar-hr { font-size: 0.56rem; color: #718096; margin-top: 1px; }
+    .bar-ongoing {
+      background: repeating-linear-gradient(135deg, #c6f6d5, #c6f6d5 4px, #f0fff4 4px, #f0fff4 8px) !important;
+    }
+
+    /* Flow */
+    .flow-card {
+      background: var(--card-bg); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 14px; font-size: 0.78rem;
+    }
+    .fl-step {
+      display: flex; align-items: stretch; gap: 8px; margin-bottom: 8px;
+    }
+    .fl-box {
+      border-radius: 10px; padding: 10px 11px; flex: 1; min-width: 0;
+    }
+    .fl-box.start { background: var(--primary); color: #fff; text-align: center; font-weight: 600; font-size: 0.82rem; display:flex; align-items:center; justify-content:center; }
+    .fl-box.test { background: #ebf8ff; border: 1px solid #bee3f8; text-align: center; display:flex; align-items:center; justify-content:center; font-weight: 600; }
+    .fl-box.rx { background: var(--card-bg); box-shadow: var(--shadow); }
+    .fl-box.rx.g { border-left: 3px solid var(--green); }
+    .fl-box.rx.b { border-left: 3px solid var(--accent); }
+    .fl-box .rx-title { font-weight: 700; color: var(--primary); font-size: 0.78rem; }
+    .fl-box .rx-data { font-size: 0.68rem; color: var(--text-sec); margin-top: 2px; }
+    .fl-box .rx-trial { font-size: 0.6rem; color: #a0aec0; }
+    .fl-arr { display: flex; align-items: center; justify-content: center; color: #a0aec0; flex-shrink: 0; width: 18px; font-size: 1rem; }
+    .fl-branch { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .fl-tag {
+      font-size: 0.65rem; font-weight: 700; padding: 1px 6px;
+      border-radius: 4px; align-self: flex-start;
+    }
+    .fl-tag.y { background: #c6f6d5; color: #276749; }
+    .fl-tag.n { background: #fed7d7; color: #c53030; }
+    .fl-divider { border: none; border-top: 1px dashed var(--border); margin: 4px 0; }
+
+    /* Summary card on evidence page */
+    .ev-card {
       background: var(--card-bg); border-radius: var(--radius);
       box-shadow: var(--shadow); margin-bottom: 10px; overflow: hidden;
     }
-    .card-hdr {
-      padding: 13px 14px; cursor: pointer;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .card-hdr h3 { font-size: 0.92rem; font-weight: 600; color: var(--primary); flex: 1; min-width: 0; }
-    .tag {
-      font-size: 0.68rem; padding: 2px 7px; border-radius: 10px;
-      background: #ebf8ff; color: var(--accent); font-weight: 500;
-      flex-shrink: 0; margin-left: 6px; white-space: nowrap;
-    }
-    .arrow { color: var(--text-secondary); transition: transform .25s; flex-shrink: 0; margin-left: 6px; font-size: 0.7rem; }
-    .card.open .arrow { transform: rotate(180deg); }
-    .card-body {
-      display: none; padding: 0 14px 14px;
-      font-size: 0.86rem; color: var(--text-secondary); line-height: 1.7;
-    }
-    .card.open .card-body { display: block; }
-    .card-body h4 { color: var(--primary); font-size: 0.86rem; margin: 10px 0 5px; }
-    .card-body h4:first-child { margin-top: 0; }
-    .card-body ul, .card-body ol { padding-left: 1.15em; margin: 3px 0; }
-    .card-body li { margin: 2px 0; }
-    .card-body table { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 0.8rem; }
-    .card-body th, .card-body td { border: 1px solid var(--border); padding: 5px 7px; text-align: left; }
-    .card-body th { background: #edf2f7; font-weight: 600; color: var(--primary); }
-    .card-body .note {
-      background: #fffbeb; border-left: 3px solid #d69e2e;
-      padding: 7px 10px; margin: 7px 0; border-radius: 0 6px 6px 0; font-size: 0.82rem;
-    }
-    .card-body .ref {
-      font-size: 0.73rem; color: #718096; margin-top: 8px;
-      border-top: 1px solid var(--border); padding-top: 6px;
-    }
-    .card-body a { color: var(--accent); }
-
-    /* Doc link card */
-    .doc-link {
+    .ev-card-hdr {
+      padding: 12px 14px; cursor: pointer;
       display: flex; align-items: center; gap: 8px;
-      padding: 10px 12px; background: #f0f5ff; border-radius: 8px;
-      margin: 5px 0; font-size: 0.82rem; color: var(--primary);
-      text-decoration: none; transition: background .2s;
     }
-    .doc-link:hover { background: #dbeafe; }
-    .doc-link svg { flex-shrink: 0; width: 18px; height: 18px; }
-
-    /* Empty */
-    .empty { text-align: center; padding: 36px 16px; color: var(--text-secondary); }
-    .empty p { font-size: 0.88rem; }
-
-    /* Bottom nav */
-    nav.bottom {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--card-bg); border-top: 1px solid var(--border);
-      display: flex; justify-content: space-around;
-      padding: 6px 0; padding-bottom: max(6px, env(safe-area-inset-bottom)); z-index: 100;
+    .ev-card-hdr h4 { font-size: 0.84rem; font-weight: 600; color: var(--primary); flex: 1; }
+    .ev-card-hdr .arrow { color: #cbd5e0; transition: transform .2s; font-size: 0.7rem; }
+    .ev-card.open .ev-card-hdr .arrow { transform: rotate(180deg); }
+    .ev-card-body {
+      display: none; padding: 0 14px 14px; font-size: 0.8rem;
+      color: var(--text-sec); line-height: 1.65;
     }
-    nav.bottom button {
-      background: none; border: none; display: flex; flex-direction: column;
-      align-items: center; gap: 1px; color: var(--text-secondary);
-      font-size: 0.62rem; cursor: pointer; padding: 3px 10px;
+    .ev-card.open .ev-card-body { display: block; }
+    .ev-card-body table { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 0.75rem; }
+    .ev-card-body th, .ev-card-body td { border: 1px solid var(--border); padding: 4px 6px; text-align: left; }
+    .ev-card-body th { background: #edf2f7; color: var(--primary); font-weight: 600; }
+    .ev-card-body a { color: var(--accent); }
+    .ev-card-body .note {
+      background: #fffbeb; border-left: 3px solid #d69e2e;
+      padding: 6px 10px; margin: 6px 0; border-radius: 0 6px 6px 0; font-size: 0.75rem;
     }
-    nav.bottom button.active { color: var(--accent); }
-    nav.bottom button svg { width: 20px; height: 20px; }
 
-    .offline-banner {
-      display: none; background: #fed7d7; color: #c53030;
-      text-align: center; padding: 5px; font-size: 0.75rem;
-    }
-    body.offline .offline-banner { display: block; }
-
-    .page { display: none; }
-    .page.active { display: block; }
+    .offline-banner { display:none; background:#fed7d7; color:#c53030; text-align:center; padding:5px; font-size:0.75rem; }
+    body.offline .offline-banner { display:block; }
   </style>
 </head>
 <body>
 
 <div class="offline-banner">Offline Mode</div>
 
-<header>
-  <h1>CRS Knowledge Base</h1>
-  <p>大腸直腸外科</p>
-</header>
-
-<div class="search-wrap">
-  <input type="search" id="search" placeholder="搜尋..." autocomplete="off">
+<div class="hdr">
+  <div class="hdr-row">
+    <button class="back" id="back-btn" onclick="goBack()">&#8249;</button>
+    <div>
+      <h1 id="hdr-title">CRS Knowledge Base</h1>
+      <p id="hdr-sub">大腸直腸外科</p>
+    </div>
+  </div>
 </div>
 
-<div class="tabs" id="tabs">
-  <button class="tab active" data-cat="all">All</button>
-  <button class="tab" data-cat="mcrc">mCRC</button>
-  <button class="tab" data-cat="anal">肛門手術</button>
-  <button class="tab" data-cat="robotic">機器人手術</button>
-  <button class="tab" data-cat="others">其他</button>
+<!-- HOME -->
+<div class="view active" id="v-home">
+  <div class="topic-grid">
+    <div class="topic-card" onclick="navigate('v-mcrc','mCRC','轉移性大腸直腸癌')">
+      <div class="tc-icon">&#x1F9EC;</div>
+      <div class="tc-title">mCRC</div>
+      <div class="tc-desc">轉移性大腸直腸癌<br>標靶治療 &middot; 臨床試驗</div>
+    </div>
+    <div class="topic-card disabled">
+      <div class="tc-icon">&#x1FA7A;</div>
+      <div class="tc-title">肛門手術</div>
+      <div class="tc-desc">內容建置中</div>
+    </div>
+    <div class="topic-card disabled">
+      <div class="tc-icon">&#x1F916;</div>
+      <div class="tc-title">機器人手術</div>
+      <div class="tc-desc">內容建置中</div>
+    </div>
+    <div class="topic-card disabled">
+      <div class="tc-icon">&#x1F4CB;</div>
+      <div class="tc-title">其他</div>
+      <div class="tc-desc">內容建置中</div>
+    </div>
+  </div>
 </div>
 
-<div class="page active" id="page-kb">
-  <main id="content"></main>
+<!-- mCRC sub-topics -->
+<div class="view" id="v-mcrc">
+  <div class="sub-card" onclick="navigate('v-braf','BRAF V600E','mCRC &rsaquo; RAS wt')">
+    <div class="sc-icon">&#x1F9EC;</div>
+    <div class="sc-body">
+      <div class="sc-title">BRAF V600E Mutant</div>
+      <div class="sc-desc">BEACON &middot; BREAKWATER &middot; EC 雙標靶 &middot; 證據演進圖</div>
+    </div>
+    <div class="sc-arrow">&#x203A;</div>
+  </div>
+  <div class="sub-card disabled">
+    <div class="sc-icon">&#x1F9EA;</div>
+    <div class="sc-body">
+      <div class="sc-title">RAS Wild-type / BRAF Wild-type</div>
+      <div class="sc-desc">Anti-EGFR 治療策略（內容建置中）</div>
+    </div>
+  </div>
+  <div class="sub-card disabled">
+    <div class="sc-icon">&#x1F52C;</div>
+    <div class="sc-body">
+      <div class="sc-title">MSI-H / dMMR</div>
+      <div class="sc-desc">免疫治療（內容建置中）</div>
+    </div>
+  </div>
+  <div class="sub-card disabled">
+    <div class="sc-icon">&#x1F4CA;</div>
+    <div class="sc-body">
+      <div class="sc-title">HER2 Amplification</div>
+      <div class="sc-desc">HER2 標靶治療（內容建置中）</div>
+    </div>
+  </div>
 </div>
 
-<div class="page" id="page-docs">
-  <main id="docs-content"></main>
-</div>
+<!-- BRAF V600E Evidence Page -->
+<div class="view" id="v-braf">
 
-<div class="page" id="page-about">
-  <main>
-    <div class="card open">
-      <div class="card-hdr"><h3>關於</h3></div>
-      <div class="card-body" style="display:block">
-        <p>CRS Knowledge Base 是一款大腸直腸外科參考用漸進式網頁應用程式（PWA），專為行動裝置優先設計，支援離線存取重要臨床證據與手術知識。</p>
-        <h4>分類</h4>
-        <ul>
-          <li><strong>mCRC</strong> — 轉移性大腸直腸癌：標靶治療、臨床試驗、分子生物標記</li>
-          <li><strong>肛門手術</strong> — 痔瘡、肛門廔管、膿瘍、肛門癌</li>
-          <li><strong>機器人手術</strong> — 機器人大腸直腸手術、平台、成果</li>
-          <li><strong>其他</strong> — 發炎性腸道疾病、憩室疾病、功能性疾患等</li>
-        </ul>
-        <h4>免責聲明</h4>
-        <p>本內容僅供教學參考。臨床決策應依據個別病患評估及現行實證醫學指引。</p>
-        <div class="ref">v1.0</div>
+  <!-- Section 0: Best Practice Summary -->
+  <div class="ev-section">
+    <h3>&#x1F48A; 現行治療方案最佳實踐</h3>
+    <div class="flow-card" style="font-size:0.8rem; line-height:1.65">
+      <p style="font-weight:600;color:var(--primary);margin-bottom:6px">適用族群：RAS wild-type、BRAF V600E 突變之轉移性大腸直腸癌</p>
+
+      <div style="background:#f0fff4;border-radius:10px;padding:10px 12px;margin:8px 0">
+        <div style="font-weight:700;color:#276749;font-size:0.82rem;margin-bottom:4px">&#x1F7E2; 第一線治療（1L）</div>
+        <div style="font-weight:600;color:var(--primary)">首選：Encorafenib + Cetuximab + mFOLFOX6</div>
+        <div style="font-size:0.72rem;color:var(--text-sec)">ORR 65.7% &middot; mPFS 12.8 mo &middot; mOS 30.3 mo &middot; OS HR 0.49<br>BREAKWATER Phase 3 &middot; US FDA 加速核准（2025）</div>
+        <hr style="border:none;border-top:1px dashed #c6f6d5;margin:6px 0">
+        <div style="font-weight:600;color:var(--primary)">替代方案：Encorafenib + Cetuximab + FOLFIRI</div>
+        <div style="font-size:0.72rem;color:var(--text-sec)">ORR 64.4% &middot; 適用 oxaliplatin 不耐受/禁忌<br>BREAKWATER Cohort 3 &middot; PFS/OS 數據成熟中</div>
+        <hr style="border:none;border-top:1px dashed #c6f6d5;margin:6px 0">
+        <div style="font-weight:600;color:var(--primary)">無法耐受化療：Encorafenib + Cetuximab（EC 單獨）</div>
+        <div style="font-size:0.72rem;color:var(--text-sec)">ORR 45.6% &middot; mOS 19.5 mo &middot; 無化療毒性<br>BREAKWATER EC arm</div>
+      </div>
+
+      <div style="background:#ebf8ff;border-radius:10px;padding:10px 12px;margin:8px 0">
+        <div style="font-weight:700;color:#2c5282;font-size:0.82rem;margin-bottom:4px">&#x1F535; 第二線以上治療（2L+）</div>
+        <div style="font-weight:600;color:var(--primary)">標準方案：Encorafenib + Cetuximab（EC 雙標靶）</div>
+        <div style="font-size:0.72rem;color:var(--text-sec)">ORR 19.5% &middot; mPFS 4.3 mo &middot; mOS 9.3 mo &middot; OS HR 0.61<br>BEACON Phase 3 &middot; FDA/EMA/TFDA 核准<br>台灣健保：預計 2026/5/1 生效，最長給付 24 週</div>
+      </div>
+
+      <div style="background:#fffbeb;border-left:3px solid #d69e2e;padding:8px 10px;border-radius:0 8px 8px 0;font-size:0.74rem;margin-top:6px">
+        <strong>關鍵原則：</strong>「最佳治療優先」——一線即使用 EC + 化療優於序貫式（一線化療 &rarr; 二線 EC），PFS2 證實：20.7 vs 12.9 個月。
+      </div>
+
+      <div style="font-size:0.68rem;color:#a0aec0;margin-top:8px;border-top:1px solid var(--border);padding-top:6px">
+        <strong>注意事項：</strong>MSI-H/dMMR 病患若適用免疫治療，應優先考慮 ICI（BREAKWATER 排除此族群）。SEAMARK 試驗正在評估 EC + pembrolizumab 用於 BRAF V600E + MSI-H mCRC。
       </div>
     </div>
-  </main>
+  </div>
+
+  <!-- Section 1: Timeline -->
+  <div class="ev-section">
+    <h3>&#x1F4C5; 證據演進時間軸</h3>
+    <div class="tl-legend">
+      <span><span class="dot-b"></span> BEACON（二線以上）</span>
+      <span><span class="dot-g"></span> BREAKWATER（一線）</span>
+    </div>
+    <div class="timeline-scroll">
+      <div class="timeline" id="timeline"></div>
+    </div>
+  </div>
+
+  <!-- Section 2: Efficacy Staircase -->
+  <div class="ev-section">
+    <h3>&#x1F4C8; 療效階梯圖</h3>
+    <div class="chart-toggles" id="chart-toggles"></div>
+    <div class="chart-wrap">
+      <div class="bar-chart" id="bar-chart"></div>
+    </div>
+  </div>
+
+  <!-- Section 3: Treatment Flow -->
+  <div class="ev-section">
+    <h3>&#x1F3AF; 治療決策流程</h3>
+    <div class="flow-card">
+      <div class="fl-step">
+        <div class="fl-box start">mCRC 確診</div>
+        <div class="fl-arr">&rarr;</div>
+        <div class="fl-box test">分子檢測<br>BRAF V600E?</div>
+      </div>
+      <div class="fl-step">
+        <div class="fl-branch">
+          <div class="fl-tag y">BRAF V600E (+)</div>
+          <div class="fl-box rx g">
+            <div class="rx-title">一線：EC + mFOLFOX6</div>
+            <div class="rx-data">ORR 65.7% &middot; mOS 30.3 mo &middot; HR 0.49</div>
+            <div class="rx-trial">BREAKWATER Phase 3</div>
+          </div>
+          <div class="fl-box rx g">
+            <div class="rx-title">一線替代：EC + FOLFIRI</div>
+            <div class="rx-data">ORR 64.4% &middot; 適用 oxaliplatin 禁忌</div>
+            <div class="rx-trial">BREAKWATER Cohort 3</div>
+          </div>
+          <hr class="fl-divider">
+          <div class="fl-box rx b">
+            <div class="rx-title">二線以上：EC 雙標靶</div>
+            <div class="rx-data">ORR 19.5% &middot; mOS 9.3 mo &middot; HR 0.61</div>
+            <div class="rx-trial">BEACON</div>
+          </div>
+        </div>
+      </div>
+      <div class="fl-step" style="margin-top:4px">
+        <div class="fl-branch">
+          <div class="fl-tag n">BRAF V600E (&minus;)</div>
+          <div class="fl-box rx" style="border-left:3px solid #e2e8f0; opacity:0.5">
+            <div class="rx-title">標準化療 &plusmn; 標靶</div>
+            <div class="rx-data">依 RAS / MSI / HER2 狀態選擇</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Evidence Cards (expandable) -->
+  <div class="ev-section">
+    <h3>&#x1F4D6; 試驗摘要卡片</h3>
+    <div id="ev-cards"></div>
+  </div>
+
 </div>
 
-<nav class="bottom">
-  <button class="active" data-page="page-kb">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-    知識庫
-  </button>
-  <button data-page="page-docs">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-    文獻
-  </button>
-  <button data-page="page-about">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-    關於
-  </button>
-</nav>
-
 <script>
-// =====================
-// KNOWLEDGE BASE DATA
-// =====================
-const KB = [
-
-// ---- mCRC ----
-{
-  id: "braf-v600e-overview",
-  title: "BRAF V600E 轉移性大腸直腸癌：總覽與生物學機制",
-  cat: "mcrc",
-  tag: "BRAF",
-  body: `
-    <h4>流行病學</h4>
-    <ul>
-      <li>BRAF V600E 突變約佔 mCRC 的 8&ndash;12%</li>
-      <li>與右側腫瘤、女性、高齡、MSI-H（約 20%）相關</li>
-      <li>預後不佳：歷史數據一線 mOS 約 12 個月，二線以上約 5&ndash;6 個月</li>
-    </ul>
-    <h4>生物學機制與雙標靶阻斷原理</h4>
-    <p>BRAF V600E 導致 MAPK 訊號通路持續性活化。在大腸直腸癌中，單用 BRAF 抑制劑會導致 EGFR 介導的快速回饋再活化（與黑色素瘤不同）。因此需要同時進行 BRAF + EGFR 抑制（encorafenib + cetuximab）。</p>
-    <ul>
-      <li><strong>Encorafenib</strong>：高度選擇性 BRAF 抑制劑，具有延長的藥效動力學活性；300 mg PO QD</li>
-      <li><strong>Cetuximab</strong>：Anti-EGFR 單株抗體；透過阻斷 EGFR 回饋再活化；400/250 mg/m&sup2; QW 或 Q2W</li>
-    </ul>
-    <div class="note">在 EC 基礎上加入化療骨幹（mFOLFOX6 或 FOLFIRI），可透過細胞毒性協同作用及抑制抗藥性克隆產生，進一步提升療效（BREAKWATER 數據）。</div>
-    <div class="ref">Prahallad A et al. Nature 2012;483:100-103. Corcoran RB et al. Cancer Discov 2012;2:227-235.</div>
-  `
-},
-{
-  id: "beacon-trial",
-  title: "BEACON 試驗（二線以上）：EC 雙標靶",
-  cat: "mcrc",
-  tag: "BEACON",
-  body: `
-    <h4>試驗設計</h4>
-    <p>第三期、隨機、開放標籤、三臂試驗（N=665）。RAS wt / BRAF V600E mt mCRC，曾接受 1&ndash;2 線治療。1:1:1 隨機分配。</p>
-    <table>
-      <tr><th>組別</th><th>治療方案</th><th>N</th></tr>
-      <tr><td>三標靶</td><td>Encorafenib + binimetinib + cetuximab</td><td>224</td></tr>
-      <tr><td>雙標靶</td><td>Encorafenib + cetuximab (EC)</td><td>220</td></tr>
-      <tr><td>對照組</td><td>Cetuximab + FOLFIRI/irinotecan</td><td>221</td></tr>
-    </table>
-    <h4>主要結果（中位追蹤 12.8 個月）</h4>
-    <table>
-      <tr><th></th><th>三標靶</th><th>EC 雙標靶</th><th>對照組</th></tr>
-      <tr><td>mOS</td><td>9.3 mo</td><td>9.3 mo</td><td>5.9 mo</td></tr>
-      <tr><td>OS HR vs 對照</td><td>0.60</td><td>0.61</td><td>Ref</td></tr>
-      <tr><td>mPFS</td><td>4.5 mo</td><td>4.3 mo</td><td>1.5 mo</td></tr>
-      <tr><td>PFS HR vs 對照</td><td>0.42</td><td>0.44</td><td>Ref</td></tr>
-      <tr><td>ORR</td><td>26.8%</td><td>19.5%</td><td>1.8%</td></tr>
-    </table>
-    <h4>重要結論</h4>
-    <ul>
-      <li>三標靶與雙標靶 mOS 相同（9.3 mo）；加入 binimetinib 未帶來額外 OS/PFS 效益</li>
-      <li>FDA/EMA 僅核准<strong>雙標靶（EC）</strong></li>
-      <li>OS 效益在所有亞組中一致（左側/右側、先前治療線數、ECOG、MSI）</li>
-      <li>Grade &ge;3 不良事件：雙標靶 57% vs 對照組 64%；雙標靶安全性較佳</li>
-      <li>生活品質維持時間顯著較長：雙標靶 vs 對照組（HR ~0.49&ndash;0.54）</li>
-    </ul>
-    <div class="ref">Kopetz S et al. N Engl J Med 2019;381:1632&ndash;1643. Tabernero J et al. J Clin Oncol 2021;39:273&ndash;284.</div>
-  `
-},
-{
-  id: "breakwater-ph3",
-  title: "BREAKWATER 第三期試驗（一線）：EC + mFOLFOX6",
-  cat: "mcrc",
-  tag: "BREAKWATER",
-  body: `
-    <h4>試驗設計</h4>
-    <p>第三期、隨機、1:1:1（NCT04607421）。未曾接受治療之 BRAF V600E mCRC。排除條件：曾使用 BRAF/EGFR 抑制劑、MSI-H/dMMR（除非不適用免疫治療）、RAS 突變。</p>
-    <table>
-      <tr><th>組別</th><th>N</th></tr>
-      <tr><td>EC + mFOLFOX6</td><td>236</td></tr>
-      <tr><td>EC 單獨使用（無化療）</td><td>158</td></tr>
-      <tr><td>對照組（化療 &plusmn; bev）</td><td>243</td></tr>
-    </table>
-    <p>雙主要終點：BICR 評估之 ORR、BICR 評估之 PFS。關鍵次要終點：OS。</p>
-
-    <h4>結果（2025 ASCO）</h4>
-    <table>
-      <tr><th></th><th>EC+mFOLFOX6</th><th>EC 單獨</th><th>對照組</th></tr>
-      <tr><td>ORR (BICR)</td><td><strong>65.7%</strong></td><td>45.6%</td><td>37.4%</td></tr>
-      <tr><td>mPFS (BICR)</td><td><strong>12.8 mo</strong></td><td>6.8 mo</td><td>7.1 mo</td></tr>
-      <tr><td>mOS</td><td><strong>30.3 mo</strong></td><td>19.5 mo</td><td>15.1 mo</td></tr>
-      <tr><td>OS HR vs 對照</td><td><strong>0.49</strong></td><td>&mdash;</td><td>Ref</td></tr>
-    </table>
-
-    <div class="note">EC + mFOLFOX6 達成所有主要及關鍵次要終點。OS HR 0.49 = 降低 51% 死亡風險。mOS 30.3 個月為 BRAF V600E mCRC 前所未有之成績。美國 FDA 已授予加速核准（Project FrontRunner）。</div>
-
-    <h4>手術轉換率</h4>
-    <p>EC + mFOLFOX6：5.2% 接受治癒性手術；3.0% 達到完全切除（R0）。</p>
-
-    <div class="ref">&Eacute;lez E et al. N Engl J Med 2025;392:2425&ndash;2437. Kopetz S et al. Nat Med 2025;31:901&ndash;908.</div>
-  `
-},
-{
-  id: "breakwater-ctdna",
-  title: "BREAKWATER ctDNA 分析（2025 ESMO）",
-  cat: "mcrc",
-  tag: "BREAKWATER",
-  body: `
-    <h4>ctDNA 與組織一致性</h4>
-    <p>BRAF V600E ctDNA vs 腫瘤組織：整體一致率 <strong>87.4%</strong>。支持以液態切片進行 BRAF V600E 分子分型。</p>
-
-    <h4>基線 VAF 與療效</h4>
-    <p>以中位 VAF 9.2% 進行二分法分析。EC + mFOLFOX6 之效益不受基線 VAF 影響：</p>
-    <table>
-      <tr><th></th><th>低 VAF（&lt;9.2%）</th><th>高 VAF（&ge;9.2%）</th></tr>
-      <tr><td>ORR (EC+mFOLFOX6)</td><td>74.7%</td><td>62.5%</td></tr>
-      <tr><td>OS HR vs 對照</td><td>0.38</td><td>0.50</td></tr>
-    </table>
-
-    <h4>治療中 ctDNA 動態變化</h4>
-    <p>BRAF V600E 從可偵測 &rarr; 不可偵測（D/ND），於 C2D15（第 8 週）：</p>
-    <ul>
-      <li>EC + mFOLFOX6：<strong>67.1%</strong></li>
-      <li>EC 單獨：45.2%</li>
-      <li>對照組：37.5%</li>
-    </ul>
-    <p>D/ND 狀態與 OS 相關：EC+mFOLFOX6 組中，D/ND 病患 mOS = NE（HR 0.30，相較 D/D 病患 mOS 16.2 mo）。</p>
-
-    <h4>C7D1（第 6 個月）抗藥性突變</h4>
-    <p>後天基因抗藥性變異（KRAS、NRAS、MAP2K1 突變；MET 擴增；BRAF exon 缺失）：</p>
-    <ul>
-      <li>EC + mFOLFOX6：<strong>6.6%</strong></li>
-      <li>EC 單獨：<strong>37.9%</strong></li>
-    </ul>
-    <div class="note">化療骨幹可抑制抗藥性克隆產生，為 EC + mFOLFOX6 優於 EC 單獨使用之 PFS 提供機制基礎。</div>
-
-    <div class="ref">Kopetz S et al. ESMO 2025 (Oral Presentation).</div>
-  `
-},
-{
-  id: "breakwater-subsequent",
-  title: "BREAKWATER 後續治療分析（2025 ESMO）",
-  cat: "mcrc",
-  tag: "BREAKWATER",
-  body: `
-    <h4>後續治療模式</h4>
-    <table>
-      <tr><th></th><th>EC+mFOLFOX6</th><th>EC 單獨</th><th>對照組</th></tr>
-      <tr><td>停止試驗用藥</td><td>71.6%</td><td>92.4%</td><td>93.4%</td></tr>
-      <tr><td>接受任何後續治療</td><td>63.9%</td><td>73.3%</td><td>61.2%</td></tr>
-      <tr><td>後續使用 BRAF 抑制劑</td><td>17.6%</td><td>19.6%</td><td><strong>71.9%</strong></td></tr>
-      <tr><td>後續使用 EC</td><td>13.9%</td><td>13.1%</td><td><strong>55.4%</strong></td></tr>
-    </table>
-    <p>對照組病患絕大多數在後續治療中接受了 EC，驗證了對照組與真實世界臨床實務的一致性。</p>
-
-    <h4>PFS2 分析</h4>
-    <p>從隨機分配到第二次疾病進展或死亡之時間：</p>
-    <ul>
-      <li>EC + mFOLFOX6（一線）：mPFS2 = <strong>20.7 個月</strong></li>
-      <li>對照組 &rarr; 後續 EC（序貫治療）：mPFS2 = <strong>12.9 個月</strong></li>
-    </ul>
-
-    <div class="note">PFS2 數據明確顯示，一線即使用 EC + 化療優於序貫式一線化療 &rarr; 二線 EC。「最佳治療優先」策略獲得證實。</div>
-
-    <div class="ref">Kopetz S et al. ESMO 2025 (Poster).</div>
-  `
-},
-{
-  id: "breakwater-cohort3",
-  title: "BREAKWATER 世代 3（一線）：EC + FOLFIRI",
-  cat: "mcrc",
-  tag: "ASCO GI 2026",
-  body: `
-    <h4>試驗設計</h4>
-    <p>EC + FOLFIRI（n=73）vs 對照組：FOLFIRI &plusmn; bevacizumab（n=74）。主要終點：BICR 評估之 ORR。</p>
-
-    <h4>結果</h4>
-    <table>
-      <tr><th></th><th>EC + FOLFIRI</th><th>對照組</th></tr>
-      <tr><td>ORR (BICR)</td><td><strong>64.4%</strong> (52.9&ndash;74.4)</td><td>39.2% (28.9&ndash;50.6)</td></tr>
-      <tr><td>CR</td><td>4.1%</td><td>1.4%</td></tr>
-      <tr><td>PR</td><td>60.3%</td><td>37.8%</td></tr>
-      <tr><td>Odds ratio</td><td colspan="2">2.756 (1.420&ndash;5.348), p=0.0011</td></tr>
-      <tr><td>TTR（中位數）</td><td>6.9 weeks</td><td>7.1 weeks</td></tr>
-      <tr><td>DOR &ge;6 mo</td><td>57.4%</td><td>34.5%</td></tr>
-      <tr><td>OS HR</td><td colspan="2">0.49 (0.237&ndash;1.032) &mdash; 趨勢</td></tr>
-    </table>
-
-    <h4>亞組分析：肝轉移</h4>
-    <p>EC + FOLFIRI 肝轉移之 ORR：<strong>79.1%</strong> vs 對照組 37.0%（OR 6.44, 95% CI: 2.50&ndash;16.63）</p>
-
-    <h4>臨床意義</h4>
-    <ul>
-      <li>提供 FOLFIRI 作為替代化療骨幹（適用於 oxaliplatin 不耐受或有禁忌之病患）</li>
-      <li>EC + FOLFIRI 安全性與各組成藥物之已知不良事件一致</li>
-      <li>PFS 及 OS 數據仍在成熟中</li>
-    </ul>
-
-    <div class="ref">Kopetz S et al. ASCO GI 2026.</div>
-  `
-},
-{
-  id: "beacon-breakwater-summary",
-  title: "BEACON + BREAKWATER 跨試驗數據總整理",
-  cat: "mcrc",
-  tag: "Summary",
-  body: `
-    <h4>完整療效比較</h4>
-    <table>
-      <tr><th>試驗</th><th>線別</th><th>治療方案</th><th>ORR</th><th>mPFS</th><th>mOS</th><th>OS HR</th></tr>
-      <tr><td>BEACON</td><td>2L+</td><td>EC 雙標靶</td><td>19.5%</td><td>4.3 mo</td><td>9.3 mo</td><td>0.61</td></tr>
-      <tr><td>BEACON</td><td>2L+</td><td>三標靶 (ECB)</td><td>26.8%</td><td>4.5 mo</td><td>9.3 mo</td><td>0.60</td></tr>
-      <tr><td>BEACON</td><td>2L+</td><td>對照組</td><td>1.8%</td><td>1.5 mo</td><td>5.9 mo</td><td>Ref</td></tr>
-      <tr style="background:#f0f5ff"><td>BW Ph3</td><td>1L</td><td>EC+mFOLFOX6</td><td><strong>65.7%</strong></td><td><strong>12.8 mo</strong></td><td><strong>30.3 mo</strong></td><td><strong>0.49</strong></td></tr>
-      <tr><td>BW Ph3</td><td>1L</td><td>EC 單獨</td><td>45.6%</td><td>6.8 mo</td><td>19.5 mo</td><td>&mdash;</td></tr>
-      <tr><td>BW Ph3</td><td>1L</td><td>對照組</td><td>37.4%</td><td>7.1 mo</td><td>15.1 mo</td><td>Ref</td></tr>
-      <tr style="background:#f0fff4"><td>BW C3</td><td>1L</td><td>EC+FOLFIRI</td><td><strong>64.4%</strong></td><td>進行中</td><td>進行中</td><td>0.49*</td></tr>
-      <tr><td>BW C3</td><td>1L</td><td>對照組</td><td>39.2%</td><td>進行中</td><td>進行中</td><td>Ref</td></tr>
-    </table>
-    <p style="font-size:0.75rem">*數據尚未成熟。BW = BREAKWATER; ECB = encorafenib + cetuximab + binimetinib。</p>
-
-    <h4>重點整理</h4>
-    <ol>
-      <li>一線 EC + 化療：ORR 提升三倍（20% &rarr; 66%），mOS 提升三倍（9.3 &rarr; 30.3 mo），相較二線使用</li>
-      <li>mFOLFOX6 和 FOLFIRI 皆為可行的 EC 化療骨幹</li>
-      <li>EC + mFOLFOX6 可抑制抗藥性突變（第 6 個月 6.6% vs 37.9%）</li>
-      <li>PFS2 證實一線 EC + 化療 &gt; 序貫式化療 &rarr; EC（20.7 vs 12.9 mo）</li>
-      <li>第 8 週 ctDNA 清除率可強力預測 OS</li>
-    </ol>
-
-    <div class="ref">Kopetz S et al. N Engl J Med 2019. Tabernero J et al. JCO 2021. &Eacute;lez E et al. NEJM 2025. Kopetz S et al. Nat Med 2025. Kopetz S et al. ESMO 2025. Kopetz S et al. ASCO GI 2026.</div>
-  `
-},
-
-// ---- Anal Surgery (placeholder) ----
-{
-  id: "anal-placeholder",
-  title: "肛門手術：內容建置中",
-  cat: "anal",
-  tag: "Planned",
-  body: `<p>肛門手術相關主題（痔瘡、肛門廔管、膿瘍、肛門癌等）將於後續更新中新增。</p>`
-},
-
-// ---- Robotic Surgery (placeholder) ----
-{
-  id: "robotic-placeholder",
-  title: "機器人手術：內容建置中",
-  cat: "robotic",
-  tag: "Planned",
-  body: `<p>機器人大腸直腸手術相關主題（平台、技術、成果）將於後續更新中新增。</p>`
-},
-
-// ---- Others (placeholder) ----
-{
-  id: "others-placeholder",
-  title: "其他主題：內容建置中",
-  cat: "others",
-  tag: "Planned",
-  body: `<p>其他大腸直腸外科主題（發炎性腸道疾病、憩室疾病、功能性疾患等）將於後續更新中新增。</p>`
+// === NAVIGATION ===
+const history_stack = [];
+function navigate(viewId, title, subtitle) {
+  const current = document.querySelector('.view.active');
+  history_stack.push({ id: current.id, title: document.getElementById('hdr-title').textContent, sub: document.getElementById('hdr-sub').textContent });
+  current.classList.remove('active');
+  document.getElementById(viewId).classList.add('active');
+  document.getElementById('hdr-title').textContent = title;
+  document.getElementById('hdr-sub').textContent = subtitle || '';
+  document.getElementById('back-btn').style.display = 'block';
+  window.scrollTo(0, 0);
+  if (viewId === 'v-braf') renderEvidence();
 }
+function goBack() {
+  if (!history_stack.length) return;
+  const prev = history_stack.pop();
+  document.querySelector('.view.active').classList.remove('active');
+  document.getElementById(prev.id).classList.add('active');
+  document.getElementById('hdr-title').textContent = prev.title;
+  document.getElementById('hdr-sub').textContent = prev.sub;
+  if (!history_stack.length) document.getElementById('back-btn').style.display = 'none';
+  window.scrollTo(0, 0);
+}
+
+// === TIMELINE DATA ===
+const TL = [
+  { yr:'2019', venue:'NEJM', cls:'beacon', finding:'BEACON 初始分析<br>mOS <strong>9.0</strong> vs 5.4 mo', file:'docs/mCRC-BRAF-V600E/Kopetz_NEJM_2019_BEACON.html' },
+  { yr:'2021', venue:'JCO', cls:'beacon', finding:'BEACON 更新<br>EC mOS <strong>9.3</strong> mo', file:'docs/mCRC-BRAF-V600E/Tabernero_JCO_2021_BEACON.html' },
+  { yr:'2025', venue:'Nat Med', cls:'breakwater', finding:'BREAKWATER ORR<br><strong>60.9%</strong> vs 40.0%', file:'docs/mCRC-BRAF-V600E/Kopetz_NatMed_2025_BREAKWATER.html' },
+  { yr:'2025', venue:'NEJM', cls:'breakwater', finding:'BW PFS/OS<br>mOS <strong>30.3</strong> mo', file:'docs/mCRC-BRAF-V600E/Elez_NEJM_2025_BREAKWATER.html' },
+  { yr:'2025', venue:'ESMO', cls:'breakwater', finding:'ctDNA 分析<br>清除率 <strong>67.1%</strong>', file:'docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.html' },
+  { yr:'2025', venue:'ESMO', cls:'breakwater', finding:'後續治療<br>PFS2 <strong>20.7</strong> mo', file:'docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.html' },
+  { yr:'2026', venue:'ASCO GI', cls:'breakwater', finding:'EC+FOLFIRI<br>ORR <strong>64.4%</strong>', file:'docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html' },
 ];
 
-// =====================
-// DOCUMENTS DATA
-// =====================
-const DOCS = [
-  { cat: "mcrc", subcategory: "mCRC / BRAF V600E", title: "Kopetz S et al. NEJM 2019 - BEACON CRC Phase 3", file: "docs/mCRC-BRAF-V600E/Kopetz_NEJM_2019_BEACON.html" },
-  { cat: "mcrc", subcategory: "mCRC / BRAF V600E", title: "Tabernero J et al. JCO 2021 - BEACON Updated Analysis", file: "docs/mCRC-BRAF-V600E/Tabernero_JCO_2021_BEACON.html" },
-  { cat: "mcrc", subcategory: "mCRC / BRAF V600E", title: "\u00C9lez E et al. NEJM 2025 - BREAKWATER Phase 3 PFS/OS", file: "docs/mCRC-BRAF-V600E/Elez_NEJM_2025_BREAKWATER.html" },
-  { cat: "mcrc", subcategory: "mCRC / BRAF V600E", title: "Kopetz S et al. Nat Med 2025 - BREAKWATER ORR/Safety", file: "docs/mCRC-BRAF-V600E/Kopetz_NatMed_2025_BREAKWATER.html" },
-  { cat: "mcrc", subcategory: "mCRC / BRAF V600E", title: "Kopetz S et al. ESMO 2025 - BREAKWATER ctDNA Analysis", file: "docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.html" },
-  { cat: "mcrc", subcategory: "mCRC / BRAF V600E", title: "Kopetz S et al. ESMO 2025 - BREAKWATER Subsequent Therapies", file: "docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.html" },
-  { cat: "mcrc", subcategory: "mCRC / BRAF V600E", title: "Kopetz S et al. ASCO GI 2026 - BREAKWATER Cohort 3 EC+FOLFIRI", file: "docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html" },
+// === CHART DATA ===
+const METRICS = {
+  mOS: {
+    label: 'mOS（月）', max: 35,
+    bars: [
+      { label:'對照組\n2L+', val:5.9, hr:'Ref', color:'#cbd5e0', trial:'BEACON' },
+      { label:'EC\n2L+', val:9.3, hr:'0.61', color:'#3182ce', trial:'BEACON' },
+      { label:'對照組\n1L', val:15.1, hr:'Ref', color:'#a0aec0', trial:'BW' },
+      { label:'EC\n1L', val:19.5, hr:'—', color:'#9ae6b4', trial:'BW' },
+      { label:'EC+\nmFOLFOX6', val:30.3, hr:'0.49', color:'#38a169', trial:'BW' },
+      { label:'EC+\nFOLFIRI', val:null, hr:'0.49*', color:'#38a169', trial:'BW C3', ongoing:true },
+    ]
+  },
+  ORR: {
+    label: 'ORR（%）', max: 80,
+    bars: [
+      { label:'對照組\n2L+', val:1.8, hr:'Ref', color:'#cbd5e0', trial:'BEACON' },
+      { label:'EC\n2L+', val:19.5, hr:'—', color:'#3182ce', trial:'BEACON' },
+      { label:'對照組\n1L', val:37.4, hr:'Ref', color:'#a0aec0', trial:'BW' },
+      { label:'EC\n1L', val:45.6, hr:'—', color:'#9ae6b4', trial:'BW' },
+      { label:'EC+\nmFOLFOX6', val:65.7, hr:'2.44†', color:'#38a169', trial:'BW' },
+      { label:'EC+\nFOLFIRI', val:64.4, hr:'2.76†', color:'#38a169', trial:'BW C3' },
+    ]
+  },
+  mPFS: {
+    label: 'mPFS（月）', max: 15,
+    bars: [
+      { label:'對照組\n2L+', val:1.5, hr:'Ref', color:'#cbd5e0', trial:'BEACON' },
+      { label:'EC\n2L+', val:4.3, hr:'0.44', color:'#3182ce', trial:'BEACON' },
+      { label:'對照組\n1L', val:7.1, hr:'Ref', color:'#a0aec0', trial:'BW' },
+      { label:'EC\n1L', val:6.8, hr:'—', color:'#9ae6b4', trial:'BW' },
+      { label:'EC+\nmFOLFOX6', val:12.8, hr:'0.53', color:'#38a169', trial:'BW' },
+      { label:'EC+\nFOLFIRI', val:null, hr:'—', color:'#38a169', trial:'BW C3', ongoing:true },
+    ]
+  }
+};
+
+// === EVIDENCE CARDS DATA ===
+const EV_CARDS = [
+  { title:'BEACON 試驗（二線以上）', tag:'BEACON', body:`
+    <table><tr><th></th><th>EC 雙標靶</th><th>對照組</th></tr>
+    <tr><td>mOS</td><td><strong>9.3 mo</strong></td><td>5.9 mo</td></tr>
+    <tr><td>OS HR</td><td><strong>0.61</strong></td><td>Ref</td></tr>
+    <tr><td>mPFS</td><td>4.3 mo</td><td>1.5 mo</td></tr>
+    <tr><td>ORR</td><td>19.5%</td><td>1.8%</td></tr></table>
+    <p>N=665，RAS wt / BRAF V600E mt mCRC，1-2 線後。FDA/EMA 核准 EC 雙標靶。</p>
+    <p><a href="docs/mCRC-BRAF-V600E/Tabernero_JCO_2021_BEACON.html" target="_blank">&#x1F4C4; 論文全文</a></p>` },
+  { title:'BREAKWATER Phase 3（一線）', tag:'BREAKWATER', body:`
+    <table><tr><th></th><th>EC+mFOLFOX6</th><th>對照組</th></tr>
+    <tr><td>ORR</td><td><strong>65.7%</strong></td><td>37.4%</td></tr>
+    <tr><td>mPFS</td><td><strong>12.8 mo</strong></td><td>7.1 mo</td></tr>
+    <tr><td>mOS</td><td><strong>30.3 mo</strong></td><td>15.1 mo</td></tr>
+    <tr><td>OS HR</td><td><strong>0.49</strong></td><td>Ref</td></tr></table>
+    <div class="note">mOS 30.3 個月 = BRAF V600E mCRC 前所未有。FDA 加速核准。</div>
+    <p><a href="docs/mCRC-BRAF-V600E/Elez_NEJM_2025_BREAKWATER.html" target="_blank">&#x1F4C4; 論文全文（NEJM 2025）</a></p>` },
+  { title:'BREAKWATER ctDNA 分析', tag:'2025 ESMO', body:`
+    <p>ctDNA vs 組織一致率 <strong>87.4%</strong>。C2D15 ctDNA 清除率：EC+mFOLFOX6 <strong>67.1%</strong> vs EC 45.2% vs 對照 37.5%。</p>
+    <p>抗藥性突變（C7D1）：EC+mFOLFOX6 <strong>6.6%</strong> vs EC alone <strong>37.9%</strong>。</p>
+    <p><a href="docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.html" target="_blank">&#x1F4C4; 摘要頁面</a></p>` },
+  { title:'BREAKWATER 後續治療 & PFS2', tag:'2025 ESMO', body:`
+    <p>對照組 71.9% 後續使用 BRAF 抑制劑。PFS2：EC+mFOLFOX6 <strong>20.7 mo</strong> vs 序貫 EC <strong>12.9 mo</strong>。</p>
+    <div class="note">「最佳治療優先」策略獲 PFS2 證實。</div>
+    <p><a href="docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.html" target="_blank">&#x1F4C4; 摘要頁面</a></p>` },
+  { title:'BREAKWATER Cohort 3：EC + FOLFIRI', tag:'2026 ASCO GI', body:`
+    <table><tr><th></th><th>EC+FOLFIRI</th><th>對照組</th></tr>
+    <tr><td>ORR</td><td><strong>64.4%</strong></td><td>39.2%</td></tr>
+    <tr><td>肝轉移 ORR</td><td><strong>79.1%</strong></td><td>37.0%</td></tr>
+    <tr><td>OS HR</td><td colspan="2">0.49（趨勢）</td></tr></table>
+    <p>提供 FOLFIRI 化療骨幹選擇。PFS/OS 數據成熟中。</p>
+    <p><a href="docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html" target="_blank">&#x1F4C4; 摘要頁面</a></p>` },
 ];
 
-// =====================
-// APP LOGIC
-// =====================
-let currentCat = 'all';
+// === RENDER FUNCTIONS ===
+let currentMetric = 'mOS';
 
-function renderCards(data) {
-  const el = document.getElementById('content');
-  if (!data.length) { el.innerHTML = '<div class="empty"><p>找不到相符的主題</p></div>'; return; }
-  el.innerHTML = data.map(d => `
-    <div class="card" data-id="${d.id}">
-      <div class="card-hdr" onclick="this.closest('.card').classList.toggle('open')">
-        <h3>${d.title}</h3>
-        <span class="tag">${d.tag}</span>
+function renderEvidence() {
+  renderTimeline();
+  renderChartToggles();
+  renderChart();
+  renderEvCards();
+}
+
+function renderTimeline() {
+  document.getElementById('timeline').innerHTML = TL.map(n => `
+    <a class="tl-node ${n.cls}" href="${n.file}" target="_blank">
+      <div class="tl-dot"></div>
+      <div class="tl-line"></div>
+      <div class="tl-yr">${n.yr}</div>
+      <div class="tl-venue">${n.venue}</div>
+      <div class="tl-finding">${n.finding}</div>
+    </a>
+  `).join('');
+}
+
+function renderChartToggles() {
+  document.getElementById('chart-toggles').innerHTML = Object.keys(METRICS).map(k =>
+    `<button class="chart-toggle ${k===currentMetric?'active':''}" onclick="switchMetric('${k}')">${METRICS[k].label}</button>`
+  ).join('');
+}
+
+function switchMetric(k) {
+  currentMetric = k;
+  renderChartToggles();
+  renderChart();
+}
+
+function renderChart() {
+  const m = METRICS[currentMetric];
+  const el = document.getElementById('bar-chart');
+  el.innerHTML = m.bars.map(b => {
+    const pct = b.val != null ? (b.val / m.max * 100) : 30;
+    const valText = b.val != null ? (currentMetric === 'ORR' ? b.val+'%' : b.val) : 'N/A';
+    const ongoingCls = b.ongoing ? 'bar-ongoing' : '';
+    return `<div class="bar-col">
+      <div class="bar-val">${valText}</div>
+      <div class="bar-rect ${ongoingCls}" style="height:${pct}%;background:${b.ongoing?'':b.color}"></div>
+      <div class="bar-label">${b.label.replace('\n','<br>')}</div>
+      <div class="bar-hr">${b.hr}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderEvCards() {
+  document.getElementById('ev-cards').innerHTML = EV_CARDS.map((c,i) => `
+    <div class="ev-card" data-i="${i}">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>${c.title}</h4>
+        <span style="font-size:0.65rem;padding:1px 6px;border-radius:8px;background:#ebf8ff;color:var(--accent)">${c.tag}</span>
         <span class="arrow">&#9662;</span>
       </div>
-      <div class="card-body">${d.body}</div>
+      <div class="ev-card-body">${c.body}</div>
     </div>
   `).join('');
 }
 
-function renderDocs() {
-  const el = document.getElementById('docs-content');
-  const groups = {};
-  DOCS.forEach(d => {
-    const key = d.subcategory || d.cat;
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(d);
-  });
-  let html = '';
-  for (const [group, docs] of Object.entries(groups)) {
-    html += `<div style="margin-bottom:16px">
-      <h3 style="font-size:0.9rem;color:var(--primary);padding:8px 0 4px">${group}</h3>`;
-    docs.forEach(d => {
-      html += `<a class="doc-link" href="${d.file}" target="_blank">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        ${d.title}
-      </a>`;
-    });
-    html += '</div>';
-  }
-  if (!html) html = '<div class="empty"><p>尚無文獻</p></div>';
-  el.innerHTML = html;
-}
-
-function filterAndRender() {
-  const q = document.getElementById('search').value.toLowerCase();
-  let data = KB;
-  if (currentCat !== 'all') data = data.filter(d => d.cat === currentCat);
-  if (q) data = data.filter(d => d.title.toLowerCase().includes(q) || d.body.toLowerCase().includes(q) || d.tag.toLowerCase().includes(q));
-  renderCards(data);
-}
-
-document.getElementById('tabs').addEventListener('click', e => {
-  const t = e.target.closest('.tab'); if (!t) return;
-  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-  t.classList.add('active');
-  currentCat = t.dataset.cat;
-  filterAndRender();
-});
-
-document.getElementById('search').addEventListener('input', filterAndRender);
-
-document.querySelectorAll('nav.bottom button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('nav.bottom button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(btn.dataset.page).classList.add('active');
-    if (btn.dataset.page === 'page-docs') renderDocs();
-  });
-});
-
+// === SERVICE WORKER ===
 window.addEventListener('online', () => document.body.classList.remove('offline'));
 window.addEventListener('offline', () => document.body.classList.add('offline'));
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-
-filterAndRender();
 </script>
 </body>
 </html>
