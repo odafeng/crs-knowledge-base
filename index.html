@@ -26,36 +26,38 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
-      background: var(--bg); color: var(--text); line-height: 1.6;
+      background: var(--bg); color: var(--text); line-height: 1.65;
       min-height: 100vh; -webkit-font-smoothing: antialiased;
+      font-size: 16px;
     }
 
     /* Header */
     .hdr {
       background: linear-gradient(135deg, var(--primary), var(--primary-light));
-      color: #fff; padding: 18px 16px 14px;
+      color: #fff; padding: 20px 18px 16px;
       position: sticky; top: 0; z-index: 100;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
-    .hdr-row { display: flex; align-items: center; gap: 10px; }
+    .hdr-row { display: flex; align-items: center; gap: 12px; }
     .hdr .back {
-      background: none; border: none; color: #fff; font-size: 1.3rem;
-      cursor: pointer; padding: 2px 4px; display: none; line-height: 1;
+      background: none; border: none; color: #fff; font-size: 1.6rem;
+      cursor: pointer; padding: 4px 8px; display: none; line-height: 1;
+      min-width: 36px; min-height: 36px;
     }
-    .hdr h1 { font-size: 1.15rem; font-weight: 700; flex: 1; }
-    .hdr p { font-size: 0.72rem; opacity: 0.8; margin-top: 1px; }
+    .hdr h1 { font-size: 1.3rem; font-weight: 700; flex: 1; }
+    .hdr p { font-size: 0.88rem; opacity: 0.8; margin-top: 2px; }
 
     /* View container */
-    .view { display: none; padding: 16px; padding-bottom: 24px; }
+    .view { display: none; padding: 18px; padding-bottom: 28px; }
     .view.active { display: block; }
 
     /* Topic cards (home) */
     .topic-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
     }
     .topic-card {
       background: var(--card-bg); border-radius: var(--radius);
-      box-shadow: var(--shadow-md); padding: 20px 14px;
+      box-shadow: var(--shadow-md); padding: 24px 16px;
       text-align: center; cursor: pointer; transition: all .2s;
       border: 2px solid transparent; text-decoration: none; color: var(--text);
     }
@@ -63,108 +65,108 @@
       border-color: var(--accent); transform: translateY(-2px);
       box-shadow: 0 6px 12px rgba(0,0,0,0.1);
     }
-    .topic-card .tc-icon { font-size: 2rem; margin-bottom: 8px; }
-    .topic-card .tc-title { font-size: 0.88rem; font-weight: 700; color: var(--primary); }
-    .topic-card .tc-desc { font-size: 0.7rem; color: var(--text-sec); margin-top: 4px; line-height: 1.4; }
+    .topic-card .tc-icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .topic-card .tc-title { font-size: 1.05rem; font-weight: 700; color: var(--primary); }
+    .topic-card .tc-desc { font-size: 0.85rem; color: var(--text-sec); margin-top: 5px; line-height: 1.45; }
     .topic-card.disabled { opacity: 0.45; pointer-events: none; }
 
     /* Sub-topic list */
     .sub-card {
       background: var(--card-bg); border-radius: var(--radius);
-      box-shadow: var(--shadow); margin-bottom: 10px;
-      padding: 14px 16px; cursor: pointer; transition: all .15s;
-      display: flex; align-items: center; gap: 12px;
+      box-shadow: var(--shadow); margin-bottom: 12px;
+      padding: 16px 18px; cursor: pointer; transition: all .15s;
+      display: flex; align-items: center; gap: 14px;
     }
     .sub-card:active { background: #f0f5ff; }
-    .sub-card .sc-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .sub-card .sc-icon { font-size: 1.8rem; flex-shrink: 0; }
     .sub-card .sc-body { flex: 1; }
-    .sub-card .sc-title { font-size: 0.88rem; font-weight: 600; color: var(--primary); }
-    .sub-card .sc-desc { font-size: 0.72rem; color: var(--text-sec); margin-top: 2px; }
-    .sub-card .sc-arrow { color: #cbd5e0; font-size: 1rem; }
+    .sub-card .sc-title { font-size: 1.0rem; font-weight: 600; color: var(--primary); }
+    .sub-card .sc-desc { font-size: 0.88rem; color: var(--text-sec); margin-top: 3px; }
+    .sub-card .sc-arrow { color: #cbd5e0; font-size: 1.2rem; }
     .sub-card.disabled { opacity: 0.4; pointer-events: none; }
 
     /* Evidence page */
-    .ev-section { margin-bottom: 22px; }
+    .ev-section { margin-bottom: 26px; }
     .ev-section > h3 {
-      font-size: 0.88rem; font-weight: 700; color: var(--primary);
-      padding-bottom: 6px; border-bottom: 1px solid var(--border);
-      margin-bottom: 10px;
+      font-size: 1.05rem; font-weight: 700; color: var(--primary);
+      padding-bottom: 8px; border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
     }
 
     /* Timeline */
     .tl-legend {
-      display: flex; gap: 14px; font-size: 0.68rem; color: var(--text-sec); margin-bottom: 6px;
+      display: flex; gap: 16px; font-size: 0.85rem; color: var(--text-sec); margin-bottom: 8px;
     }
-    .tl-legend span { display: flex; align-items: center; gap: 4px; }
-    .tl-legend .dot-b { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
-    .tl-legend .dot-g { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+    .tl-legend span { display: flex; align-items: center; gap: 5px; }
+    .tl-legend .dot-b { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+    .tl-legend .dot-g { width: 10px; height: 10px; border-radius: 50%; background: var(--green); }
     .timeline-scroll {
       overflow-x: auto; -webkit-overflow-scrolling: touch;
-      padding-bottom: 8px; scrollbar-width: none;
+      padding-bottom: 10px; scrollbar-width: none;
     }
     .timeline-scroll::-webkit-scrollbar { display: none; }
     .timeline {
-      display: flex; min-width: max-content; padding: 4px 0;
+      display: flex; min-width: max-content; padding: 6px 0;
     }
     .tl-node {
-      width: 130px; flex-shrink: 0; display: flex; flex-direction: column;
+      width: 140px; flex-shrink: 0; display: flex; flex-direction: column;
       align-items: center; position: relative; cursor: pointer;
       text-decoration: none; color: inherit;
     }
     .tl-dot {
-      width: 16px; height: 16px; border-radius: 50%; border: 3px solid;
+      width: 20px; height: 20px; border-radius: 50%; border: 3px solid;
       z-index: 2; transition: transform .2s;
     }
-    .tl-node:hover .tl-dot { transform: scale(1.4); }
+    .tl-node:hover .tl-dot { transform: scale(1.3); }
     .tl-node.beacon .tl-dot { border-color: var(--accent); background: #ebf8ff; }
     .tl-node.breakwater .tl-dot { border-color: var(--green); background: #f0fff4; }
     .tl-line {
-      position: absolute; top: 8px; left: 50%; width: 130px; height: 2px; z-index: 1;
+      position: absolute; top: 10px; left: 50%; width: 140px; height: 2px; z-index: 1;
     }
     .tl-node.beacon .tl-line { background: var(--accent); }
     .tl-node.breakwater .tl-line { background: var(--green); }
     .tl-node:last-child .tl-line { display: none; }
-    .tl-yr { font-size: 0.7rem; font-weight: 700; margin-top: 6px; }
-    .tl-venue { font-size: 0.62rem; color: #718096; }
+    .tl-yr { font-size: 0.88rem; font-weight: 700; margin-top: 8px; }
+    .tl-venue { font-size: 0.78rem; color: #718096; }
     .tl-finding {
-      font-size: 0.66rem; text-align: center; margin-top: 4px;
-      line-height: 1.3; padding: 0 4px; color: var(--text-sec);
+      font-size: 0.8rem; text-align: center; margin-top: 5px;
+      line-height: 1.35; padding: 0 4px; color: var(--text-sec);
     }
     .tl-finding strong { color: var(--primary); font-weight: 700; }
 
     /* Staircase chart */
-    .chart-toggles { display: flex; gap: 4px; margin-bottom: 10px; }
+    .chart-toggles { display: flex; gap: 6px; margin-bottom: 12px; }
     .chart-toggle {
-      padding: 4px 11px; border-radius: 14px; border: 1px solid var(--border);
-      background: var(--card-bg); font-size: 0.72rem; cursor: pointer;
+      padding: 6px 14px; border-radius: 16px; border: 1px solid var(--border);
+      background: var(--card-bg); font-size: 0.88rem; cursor: pointer;
       color: var(--text-sec); transition: all .15s;
     }
     .chart-toggle.active { background: var(--primary); color: #fff; border-color: var(--primary); }
     .chart-wrap {
       background: var(--card-bg); border-radius: var(--radius);
-      box-shadow: var(--shadow); padding: 14px; overflow-x: auto;
+      box-shadow: var(--shadow); padding: 16px; overflow-x: auto;
     }
     .bar-chart {
-      display: flex; align-items: flex-end; gap: 6px;
-      height: 200px; padding-top: 10px;
+      display: flex; align-items: flex-end; gap: 8px;
+      height: 220px; padding-top: 10px;
     }
     .bar-col {
-      flex: 1; min-width: 48px; display: flex; flex-direction: column;
+      flex: 1; min-width: 52px; display: flex; flex-direction: column;
       align-items: center; justify-content: flex-end; height: 100%;
     }
     .bar-val {
-      font-size: 0.68rem; font-weight: 700; color: var(--primary);
-      margin-bottom: 3px; white-space: nowrap;
+      font-size: 0.85rem; font-weight: 700; color: var(--primary);
+      margin-bottom: 4px; white-space: nowrap;
     }
     .bar-rect {
       width: 100%; border-radius: 6px 6px 0 0; transition: height .4s ease;
       min-height: 4px;
     }
     .bar-label {
-      font-size: 0.58rem; color: var(--text-sec); text-align: center;
-      margin-top: 5px; line-height: 1.2; word-break: keep-all;
+      font-size: 0.72rem; color: var(--text-sec); text-align: center;
+      margin-top: 6px; line-height: 1.25; word-break: keep-all;
     }
-    .bar-hr { font-size: 0.56rem; color: #718096; margin-top: 1px; }
+    .bar-hr { font-size: 0.7rem; color: #718096; margin-top: 2px; }
     .bar-ongoing {
       background: repeating-linear-gradient(135deg, #c6f6d5, #c6f6d5 4px, #f0fff4 4px, #f0fff4 8px) !important;
     }
@@ -172,56 +174,56 @@
     /* Flow */
     .flow-card {
       background: var(--card-bg); border-radius: var(--radius);
-      box-shadow: var(--shadow); padding: 14px; font-size: 0.78rem;
+      box-shadow: var(--shadow); padding: 16px; font-size: 0.92rem;
     }
     .fl-step {
-      display: flex; align-items: stretch; gap: 8px; margin-bottom: 8px;
+      display: flex; align-items: stretch; gap: 10px; margin-bottom: 10px;
     }
     .fl-box {
-      border-radius: 10px; padding: 10px 11px; flex: 1; min-width: 0;
+      border-radius: 10px; padding: 12px 14px; flex: 1; min-width: 0;
     }
-    .fl-box.start { background: var(--primary); color: #fff; text-align: center; font-weight: 600; font-size: 0.82rem; display:flex; align-items:center; justify-content:center; }
-    .fl-box.test { background: #ebf8ff; border: 1px solid #bee3f8; text-align: center; display:flex; align-items:center; justify-content:center; font-weight: 600; }
+    .fl-box.start { background: var(--primary); color: #fff; text-align: center; font-weight: 600; font-size: 1.0rem; display:flex; align-items:center; justify-content:center; }
+    .fl-box.test { background: #ebf8ff; border: 1px solid #bee3f8; text-align: center; display:flex; align-items:center; justify-content:center; font-weight: 600; font-size: 0.95rem; }
     .fl-box.rx { background: var(--card-bg); box-shadow: var(--shadow); }
-    .fl-box.rx.g { border-left: 3px solid var(--green); }
-    .fl-box.rx.b { border-left: 3px solid var(--accent); }
-    .fl-box .rx-title { font-weight: 700; color: var(--primary); font-size: 0.78rem; }
-    .fl-box .rx-data { font-size: 0.68rem; color: var(--text-sec); margin-top: 2px; }
-    .fl-box .rx-trial { font-size: 0.6rem; color: #a0aec0; }
-    .fl-arr { display: flex; align-items: center; justify-content: center; color: #a0aec0; flex-shrink: 0; width: 18px; font-size: 1rem; }
-    .fl-branch { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .fl-box.rx.g { border-left: 4px solid var(--green); }
+    .fl-box.rx.b { border-left: 4px solid var(--accent); }
+    .fl-box .rx-title { font-weight: 700; color: var(--primary); font-size: 0.92rem; }
+    .fl-box .rx-data { font-size: 0.82rem; color: var(--text-sec); margin-top: 3px; }
+    .fl-box .rx-trial { font-size: 0.75rem; color: #a0aec0; }
+    .fl-arr { display: flex; align-items: center; justify-content: center; color: #a0aec0; flex-shrink: 0; width: 22px; font-size: 1.2rem; }
+    .fl-branch { display: flex; flex-direction: column; gap: 8px; flex: 1; }
     .fl-tag {
-      font-size: 0.65rem; font-weight: 700; padding: 1px 6px;
+      font-size: 0.8rem; font-weight: 700; padding: 2px 8px;
       border-radius: 4px; align-self: flex-start;
     }
     .fl-tag.y { background: #c6f6d5; color: #276749; }
     .fl-tag.n { background: #fed7d7; color: #c53030; }
-    .fl-divider { border: none; border-top: 1px dashed var(--border); margin: 4px 0; }
+    .fl-divider { border: none; border-top: 1px dashed var(--border); margin: 6px 0; }
 
     /* Summary card on evidence page */
     .ev-card {
       background: var(--card-bg); border-radius: var(--radius);
-      box-shadow: var(--shadow); margin-bottom: 10px; overflow: hidden;
+      box-shadow: var(--shadow); margin-bottom: 12px; overflow: hidden;
     }
     .ev-card-hdr {
-      padding: 12px 14px; cursor: pointer;
-      display: flex; align-items: center; gap: 8px;
+      padding: 14px 16px; cursor: pointer;
+      display: flex; align-items: center; gap: 10px;
     }
-    .ev-card-hdr h4 { font-size: 0.84rem; font-weight: 600; color: var(--primary); flex: 1; }
-    .ev-card-hdr .arrow { color: #cbd5e0; transition: transform .2s; font-size: 0.7rem; }
+    .ev-card-hdr h4 { font-size: 1.0rem; font-weight: 600; color: var(--primary); flex: 1; }
+    .ev-card-hdr .arrow { color: #cbd5e0; transition: transform .2s; font-size: 0.85rem; }
     .ev-card.open .ev-card-hdr .arrow { transform: rotate(180deg); }
     .ev-card-body {
-      display: none; padding: 0 14px 14px; font-size: 0.8rem;
-      color: var(--text-sec); line-height: 1.65;
+      display: none; padding: 0 16px 16px; font-size: 0.92rem;
+      color: var(--text-sec); line-height: 1.7;
     }
     .ev-card.open .ev-card-body { display: block; }
-    .ev-card-body table { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 0.75rem; }
-    .ev-card-body th, .ev-card-body td { border: 1px solid var(--border); padding: 4px 6px; text-align: left; }
+    .ev-card-body table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 0.88rem; }
+    .ev-card-body th, .ev-card-body td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
     .ev-card-body th { background: #edf2f7; color: var(--primary); font-weight: 600; }
-    .ev-card-body a { color: var(--accent); }
+    .ev-card-body a { color: var(--accent); font-size: 0.92rem; }
     .ev-card-body .note {
       background: #fffbeb; border-left: 3px solid #d69e2e;
-      padding: 6px 10px; margin: 6px 0; border-radius: 0 6px 6px 0; font-size: 0.75rem;
+      padding: 8px 12px; margin: 8px 0; border-radius: 0 6px 6px 0; font-size: 0.88rem;
     }
 
     .offline-banner { display:none; background:#fed7d7; color:#c53030; text-align:center; padding:5px; font-size:0.75rem; }
@@ -307,32 +309,32 @@
   <!-- Section 0: Best Practice Summary -->
   <div class="ev-section">
     <h3>&#x1F48A; 現行治療方案最佳實踐</h3>
-    <div class="flow-card" style="font-size:0.8rem; line-height:1.65">
-      <p style="font-weight:600;color:var(--primary);margin-bottom:6px">適用族群：RAS wild-type、BRAF V600E 突變之轉移性大腸直腸癌</p>
+    <div class="flow-card" style="font-size:0.95rem; line-height:1.7">
+      <p style="font-weight:600;color:var(--primary);margin-bottom:8px;font-size:1.0rem">適用族群：RAS wild-type、BRAF V600E 突變之轉移性大腸直腸癌</p>
 
-      <div style="background:#f0fff4;border-radius:10px;padding:10px 12px;margin:8px 0">
-        <div style="font-weight:700;color:#276749;font-size:0.82rem;margin-bottom:4px">&#x1F7E2; 第一線治療（1L）</div>
-        <div style="font-weight:600;color:var(--primary)">首選：Encorafenib + Cetuximab + mFOLFOX6</div>
-        <div style="font-size:0.72rem;color:var(--text-sec)">ORR 65.7% &middot; mPFS 12.8 mo &middot; mOS 30.3 mo &middot; OS HR 0.49<br>BREAKWATER Phase 3 &middot; US FDA 加速核准（2025）</div>
-        <hr style="border:none;border-top:1px dashed #c6f6d5;margin:6px 0">
-        <div style="font-weight:600;color:var(--primary)">替代方案：Encorafenib + Cetuximab + FOLFIRI</div>
-        <div style="font-size:0.72rem;color:var(--text-sec)">ORR 64.4% &middot; 適用 oxaliplatin 不耐受/禁忌<br>BREAKWATER Cohort 3 &middot; PFS/OS 數據成熟中</div>
-        <hr style="border:none;border-top:1px dashed #c6f6d5;margin:6px 0">
-        <div style="font-weight:600;color:var(--primary)">無法耐受化療：Encorafenib + Cetuximab（EC 單獨）</div>
-        <div style="font-size:0.72rem;color:var(--text-sec)">ORR 45.6% &middot; mOS 19.5 mo &middot; 無化療毒性<br>BREAKWATER EC arm</div>
+      <div style="background:#f0fff4;border-radius:10px;padding:14px 16px;margin:10px 0">
+        <div style="font-weight:700;color:#276749;font-size:1.0rem;margin-bottom:6px">&#x1F7E2; 第一線治療（1L）</div>
+        <div style="font-weight:600;color:var(--primary);font-size:0.95rem">首選：Encorafenib + Cetuximab + mFOLFOX6</div>
+        <div style="font-size:0.88rem;color:var(--text-sec);margin-top:2px">ORR 65.7% &middot; mPFS 12.8 mo &middot; mOS 30.3 mo &middot; OS HR 0.49<br>BREAKWATER Phase 3 &middot; US FDA 加速核准（2025）</div>
+        <hr style="border:none;border-top:1px dashed #c6f6d5;margin:8px 0">
+        <div style="font-weight:600;color:var(--primary);font-size:0.95rem">替代方案：Encorafenib + Cetuximab + FOLFIRI</div>
+        <div style="font-size:0.88rem;color:var(--text-sec);margin-top:2px">ORR 64.4% &middot; 適用 oxaliplatin 不耐受/禁忌<br>BREAKWATER Cohort 3 &middot; PFS/OS 數據成熟中</div>
+        <hr style="border:none;border-top:1px dashed #c6f6d5;margin:8px 0">
+        <div style="font-weight:600;color:var(--primary);font-size:0.95rem">無法耐受化療：Encorafenib + Cetuximab（EC 單獨）</div>
+        <div style="font-size:0.88rem;color:var(--text-sec);margin-top:2px">ORR 45.6% &middot; mOS 19.5 mo &middot; 無化療毒性<br>BREAKWATER EC arm</div>
       </div>
 
-      <div style="background:#ebf8ff;border-radius:10px;padding:10px 12px;margin:8px 0">
-        <div style="font-weight:700;color:#2c5282;font-size:0.82rem;margin-bottom:4px">&#x1F535; 第二線以上治療（2L+）</div>
-        <div style="font-weight:600;color:var(--primary)">標準方案：Encorafenib + Cetuximab（EC 雙標靶）</div>
-        <div style="font-size:0.72rem;color:var(--text-sec)">ORR 19.5% &middot; mPFS 4.3 mo &middot; mOS 9.3 mo &middot; OS HR 0.61<br>BEACON Phase 3 &middot; FDA/EMA/TFDA 核准<br>台灣健保：預計 2026/5/1 生效，最長給付 24 週</div>
+      <div style="background:#ebf8ff;border-radius:10px;padding:14px 16px;margin:10px 0">
+        <div style="font-weight:700;color:#2c5282;font-size:1.0rem;margin-bottom:6px">&#x1F535; 第二線以上治療（2L+）</div>
+        <div style="font-weight:600;color:var(--primary);font-size:0.95rem">標準方案：Encorafenib + Cetuximab（EC 雙標靶）</div>
+        <div style="font-size:0.88rem;color:var(--text-sec);margin-top:2px">ORR 19.5% &middot; mPFS 4.3 mo &middot; mOS 9.3 mo &middot; OS HR 0.61<br>BEACON Phase 3 &middot; FDA/EMA/TFDA 核准<br>台灣健保：預計 2026/5/1 生效，最長給付 24 週</div>
       </div>
 
-      <div style="background:#fffbeb;border-left:3px solid #d69e2e;padding:8px 10px;border-radius:0 8px 8px 0;font-size:0.74rem;margin-top:6px">
+      <div style="background:#fffbeb;border-left:3px solid #d69e2e;padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.9rem;margin-top:8px">
         <strong>關鍵原則：</strong>「最佳治療優先」——一線即使用 EC + 化療優於序貫式（一線化療 &rarr; 二線 EC），PFS2 證實：20.7 vs 12.9 個月。
       </div>
 
-      <div style="font-size:0.68rem;color:#a0aec0;margin-top:8px;border-top:1px solid var(--border);padding-top:6px">
+      <div style="font-size:0.85rem;color:#718096;margin-top:10px;border-top:1px solid var(--border);padding-top:8px">
         <strong>注意事項：</strong>MSI-H/dMMR 病患若適用免疫治療，應優先考慮 ICI（BREAKWATER 排除此族群）。SEAMARK 試驗正在評估 EC + pembrolizumab 用於 BRAF V600E + MSI-H mCRC。
       </div>
     </div>
@@ -572,7 +574,7 @@ function renderEvCards() {
     <div class="ev-card" data-i="${i}">
       <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
         <h4>${c.title}</h4>
-        <span style="font-size:0.65rem;padding:1px 6px;border-radius:8px;background:#ebf8ff;color:var(--accent)">${c.tag}</span>
+        <span style="font-size:0.8rem;padding:2px 8px;border-radius:8px;background:#ebf8ff;color:var(--accent)">${c.tag}</span>
         <span class="arrow">&#9662;</span>
       </div>
       <div class="ev-card-body">${c.body}</div>
