@@ -162,23 +162,6 @@ Colorectal Surgeon, Kaohsiung Veterans General Hospital
 - 🐙 [@odafeng](https://github.com/odafeng)
 - 🆔 ORCID: [0000-0002-8037-4074](https://orcid.org/0000-0002-8037-4074)
 
-「**Colon & Code**」— 一名外科醫師的資料科學實驗場。
-
----
-
-## 引用本專案
-
-若本知識庫有助於您的臨床教學或研究，歡迎引用：
-
-```bibtex
-@misc{huang_crs_kb_2026,
-  author       = {Huang, Shih-Feng},
-  title        = {CRS Knowledge Base: A Progressive Web App for Colorectal Surgery},
-  year         = {2026},
-  howpublished = {\url{https://github.com/odafeng/crs-knowledge-base}}
-}
-```
-
 ---
 
 ## 授權
