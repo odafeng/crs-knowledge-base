@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crs-kb-v9';
+const CACHE_NAME = 'crs-kb-v10';
 const ASSETS = [
   './',
   './index.html',

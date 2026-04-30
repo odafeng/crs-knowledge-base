@@ -280,26 +280,138 @@
     </div>
     <div class="sc-arrow">&#x203A;</div>
   </div>
-  <div class="sub-card disabled">
+  <div class="sub-card" onclick="navigate('v-krasg12c','KRAS G12C','mCRC')">
     <div class="sc-icon">&#x1F9EA;</div>
     <div class="sc-body">
-      <div class="sc-title">RAS Wild-type / BRAF Wild-type</div>
-      <div class="sc-desc">Anti-EGFR 治療策略（內容建置中）</div>
+      <div class="sc-title">KRAS G12C</div>
+      <div class="sc-desc">CodeBreaK 300 &middot; KRYSTAL &middot; Divarasib &middot; ~3% of CRC</div>
     </div>
+    <div class="sc-arrow">&#x203A;</div>
   </div>
-  <div class="sub-card disabled">
+  <div class="sub-card" onclick="navigate('v-msih','MSI-H / dMMR','mCRC')">
     <div class="sc-icon">&#x1F52C;</div>
     <div class="sc-body">
       <div class="sc-title">MSI-H / dMMR</div>
-      <div class="sc-desc">免疫治療（內容建置中）</div>
+      <div class="sc-desc">KEYNOTE-177 &middot; CheckMate 142 &middot; NICHE-2 &middot; Dostarlimab</div>
     </div>
+    <div class="sc-arrow">&#x203A;</div>
   </div>
-  <div class="sub-card disabled">
+  <div class="sub-card" onclick="navigate('v-her2','HER2+','mCRC')">
     <div class="sc-icon">&#x1F4CA;</div>
     <div class="sc-body">
       <div class="sc-title">HER2 Amplification</div>
-      <div class="sc-desc">HER2 標靶治療（內容建置中）</div>
+      <div class="sc-desc">MOUNTAINEER &middot; DESTINY-CRC &middot; MyPathway &middot; TRIUMPH</div>
     </div>
+    <div class="sc-arrow">&#x203A;</div>
+  </div>
+  <div class="sub-card disabled">
+    <div class="sc-icon">&#x1F9EC;</div>
+    <div class="sc-body">
+      <div class="sc-title">RAS Wild-type / BRAF Wild-type</div>
+      <div class="sc-desc">PARADIGM &middot; FIRE-3 &middot; Anti-EGFR 策略（建置中）</div>
+    </div>
+  </div>
+</div>
+
+<!-- KRAS G12C Page -->
+<div class="view" id="v-krasg12c">
+  <div class="ev-section">
+    <h3>&#x1F48A; 現行治療方案</h3>
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F7E2; KRAS G12C 標靶治療（後線）</h4><span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">
+        <p><strong>盛行率：</strong>約 3-4% of all CRC（~17% of KRAS-mutant CRC）。預後較其他 KRAS 突變差。</p>
+        <table>
+          <tr><th>方案</th><th>ORR</th><th>mPFS</th><th>mOS</th><th>Phase</th></tr>
+          <tr><td><strong>Sotorasib + panitumumab</strong></td><td>26-30%</td><td>5.6 mo</td><td>HR 0.70</td><td>Phase 3</td></tr>
+          <tr><td><strong>Adagrasib + cetuximab</strong></td><td>34-46%</td><td>6.9 mo</td><td>15.9 mo</td><td>Phase 1/2</td></tr>
+          <tr><td><strong>Divarasib + cetuximab</strong></td><td>62.5%</td><td>8.1 mo</td><td>—</td><td>Phase 1b</td></tr>
+        </table>
+        <div class="note">所有 G12C 抑制劑搭配 anti-EGFR 效果遠優於單用。Divarasib 早期數據最亮眼但需 RCT 確認。</div>
+      </div>
+    </div>
+  </div>
+  <div class="ev-section">
+    <h3>&#x1F4C5; 證據時間軸</h3>
+    <div class="timeline-scroll"><div class="timeline" id="tl-g12c"></div></div>
+  </div>
+  <div class="ev-section">
+    <h3>&#x1F4D6; 結構化試驗卡片</h3>
+    <div id="g12c-cards"></div>
+  </div>
+</div>
+
+<!-- MSI-H / dMMR Page -->
+<div class="view" id="v-msih">
+  <div class="ev-section">
+    <h3>&#x1F48A; 現行治療方案</h3>
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F7E2; 一線免疫治療（轉移性）</h4><span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">
+        <table>
+          <tr><th>方案</th><th>ORR</th><th>mPFS</th><th>Phase</th></tr>
+          <tr><td><strong>Pembrolizumab</strong></td><td>43.8%</td><td>16.5 mo</td><td>Phase 3 (KEYNOTE-177)</td></tr>
+          <tr><td>Nivo + low-dose Ipi</td><td>69%</td><td>NR</td><td>Phase 2 (CM142 1L)</td></tr>
+        </table>
+        <div class="note">Pembrolizumab 為一線標準（KEYNOTE-177）。Nivo+ipi 1L ORR 更高但為 Phase 2。</div>
+      </div>
+    </div>
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F535; 新輔助免疫治療（非轉移性）</h4><span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">
+        <table>
+          <tr><th>試驗</th><th>pCR</th><th>Path response</th><th>復發</th></tr>
+          <tr><td><strong>NICHE-2</strong>（結腸癌）</td><td>68%</td><td>98%</td><td>0%</td></tr>
+          <tr><td><strong>Dostarlimab</strong>（直腸癌）</td><td>cCR 100%</td><td>—</td><td>0%</td></tr>
+        </table>
+        <div class="note">NICHE-2（NEJM 2024）：neoadjuvant nivo+ipi 後 98% 病理反應、0 復發。Dostarlimab（NEJM 2022）：12/12 dMMR 直腸癌 cCR，免除手術和放療。</div>
+      </div>
+    </div>
+  </div>
+  <div class="ev-section">
+    <h3>&#x1F4C5; 證據時間軸</h3>
+    <div class="timeline-scroll"><div class="timeline" id="tl-msih"></div></div>
+  </div>
+  <div class="ev-section">
+    <h3>&#x1F4D6; 結構化試驗卡片</h3>
+    <div id="msih-cards"></div>
+  </div>
+</div>
+
+<!-- HER2+ Page -->
+<div class="view" id="v-her2">
+  <div class="ev-section">
+    <h3>&#x1F48A; 現行治療方案</h3>
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F7E2; HER2+ mCRC 標靶治療（後線）</h4><span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">
+        <p><strong>盛行率：</strong>約 3-5% of mCRC。多為 RAS wild-type。</p>
+        <table>
+          <tr><th>方案</th><th>ORR</th><th>Trial</th><th>備註</th></tr>
+          <tr><td><strong>Tucatinib + trastuzumab</strong></td><td>38.1%</td><td>MOUNTAINEER</td><td>首個 FDA 核准 HER2 Rx in mCRC</td></tr>
+          <tr><td>T-DXd 5.4 mg/kg</td><td>37.8%</td><td>DESTINY-CRC02</td><td>含 RAS-mut 有效；注意 ILD</td></tr>
+          <tr><td>T-DXd（HER2+ cohort）</td><td>45.3%</td><td>DESTINY-CRC01</td><td>僅 IHC3+ / ISH+ 有效</td></tr>
+          <tr><td>Pertuzumab + trastuzumab</td><td>30-32%</td><td>MyPathway / TRIUMPH</td><td>TRIUMPH 用 ctDNA 選病患</td></tr>
+        </table>
+        <div class="note">Tucatinib + trastuzumab（MOUNTAINEER）為首選。T-DXd 對 RAS-mut 也有效但需注意 ILD。MOUNTAINEER-03（Phase 3, 1L）進行中。</div>
+      </div>
+    </div>
+  </div>
+  <div class="ev-section">
+    <h3>&#x1F4C5; 證據時間軸</h3>
+    <div class="timeline-scroll"><div class="timeline" id="tl-her2"></div></div>
+  </div>
+  <div class="ev-section">
+    <h3>&#x1F4D6; 結構化試驗卡片</h3>
+    <div id="her2-cards"></div>
   </div>
 </div>
 
@@ -717,6 +829,9 @@ function navigate(viewId, title, subtitle) {
   document.getElementById('back-btn').style.display = 'block';
   window.scrollTo(0, 0);
   if (viewId === 'v-braf') renderEvidence();
+  if (viewId === 'v-krasg12c') renderTopic(G12C_PAPERS, 'tl-g12c', 'g12c-cards');
+  if (viewId === 'v-msih') renderTopic(MSIH_PAPERS, 'tl-msih', 'msih-cards');
+  if (viewId === 'v-her2') renderTopic(HER2_PAPERS, 'tl-her2', 'her2-cards');
   if (viewId === 'v-robotic-tme') renderTME();
   if (viewId === 'v-robotic-anast') renderAnast();
 }
@@ -923,6 +1038,144 @@ function renderPaperCards(papers, elId) {
     </div>`;
   }).join('');
 }
+
+// === GENERIC TOPIC RENDERER ===
+function renderTopic(papers, tlId, cardsId) {
+  renderPaperTimeline(papers, tlId);
+  renderPaperCards(papers, cardsId);
+}
+
+// === KRAS G12C PAPERS ===
+const G12C_PAPERS = [
+  { id:'cb101', year:2024, journal:'Nat Med', studyType:'Phase 1b',
+    n:48, regimen:'Sotorasib + panitumumab',
+    endpoint:'ORR', result:'ORR 30%, mPFS 5.7 mo, mOS 15.2 mo',
+    bottomLine:'CodeBreaK 101 劑量探索確認 sotorasib+panitumumab 組合活性',
+    doi:'10.1038/s41591-023-02717-6', file:null,
+    relations:[] },
+  { id:'cb300', year:2023, journal:'NEJM', studyType:'Phase 3 RCT',
+    n:160, regimen:'Sotorasib 960mg + panitumumab vs TAS-102/regorafenib',
+    endpoint:'PFS (primary)', result:'mPFS 5.6 vs 2.2 mo, HR 0.49, p=0.006; ORR 26.4% vs 0%',
+    bottomLine:'首個 KRAS G12C Phase 3 RCT——sotorasib+panitumumab 顯著優於標準後線治療',
+    doi:'10.1056/NEJMoa2308795', file:null,
+    relations:[{targetId:'cb101', type:'builds_on'}] },
+  { id:'cb300-os', year:2025, journal:'JCO', studyType:'Phase 3 RCT (updated)',
+    n:160, regimen:'Sotorasib 960mg + panitumumab vs control',
+    endpoint:'OS (updated)', result:'Updated ORR 30.2%; OS HR 0.70 (NS)',
+    bottomLine:'OS 趨勢有利但未達顯著——可能受後線交叉影響',
+    doi:'10.1200/JCO-24-02026', file:null,
+    relations:[{targetId:'cb300', type:'supersedes'}] },
+  { id:'krystal1', year:2022, journal:'NEJM', studyType:'Phase 1-2',
+    n:76, regimen:'Adagrasib ± cetuximab',
+    endpoint:'ORR', result:'Mono ORR 19%; Combo ORR 46%, mPFS 6.9 mo',
+    bottomLine:'Adagrasib+cetuximab ORR 達 46%——確認 G12C 抑制劑+anti-EGFR 的協同效應',
+    doi:'10.1056/NEJMoa2212419', file:null,
+    relations:[] },
+  { id:'krystal1-exp', year:2024, journal:'Cancer Discov', studyType:'Phase 1-2 (expanded)',
+    n:94, regimen:'Adagrasib + cetuximab',
+    endpoint:'ORR, OS', result:'ORR 34%, mPFS 6.9 mo, mOS 15.9 mo',
+    bottomLine:'擴展世代確認療效穩定，獲 FDA 加速核准（2024）',
+    doi:'10.1158/2159-8290.CD-24-0217', file:null,
+    relations:[{targetId:'krystal1', type:'supersedes'}] },
+  { id:'divarasib-mono', year:2023, journal:'NEJM', studyType:'Phase 1',
+    n:137, regimen:'Divarasib monotherapy (all tumors)',
+    endpoint:'ORR', result:'CRC subset: ORR 29.1%, mPFS 5.6 mo',
+    bottomLine:'Divarasib 單藥在 CRC 活性有限，但在 NSCLC 表現優異',
+    doi:'10.1056/NEJMoa2303810', file:null,
+    relations:[] },
+  { id:'divarasib-combo', year:2023, journal:'Nat Med', studyType:'Phase 1b',
+    n:48, regimen:'Divarasib + cetuximab (CRC)',
+    endpoint:'ORR', result:'ORR 62.5%, mPFS 8.1 mo',
+    bottomLine:'Divarasib+cetuximab ORR 高達 62.5%——三個 G12C 抑制劑中早期數據最佳，待 RCT 確認',
+    doi:'10.1038/s41591-023-02696-8', file:null,
+    relations:[{targetId:'divarasib-mono', type:'builds_on'}] },
+];
+
+// === MSI-H / dMMR PAPERS ===
+const MSIH_PAPERS = [
+  { id:'kn177', year:2020, journal:'NEJM', studyType:'Phase 3 RCT',
+    n:307, regimen:'Pembrolizumab vs chemotherapy (1L)',
+    endpoint:'PFS (primary)', result:'mPFS 16.5 vs 8.2 mo, HR 0.60; ORR 43.8% vs 33.1%',
+    bottomLine:'Pembrolizumab 成為 MSI-H mCRC 一線標準——PFS 翻倍，Grade 3+ AE 僅 22% vs 66%',
+    doi:'10.1056/NEJMoa2017699', file:null,
+    relations:[] },
+  { id:'kn177-os', year:2022, journal:'Lancet Oncol', studyType:'Phase 3 RCT (final OS)',
+    n:307, regimen:'Pembrolizumab vs chemotherapy (1L)',
+    endpoint:'OS (final)', result:'mOS NR vs 36.7 mo, HR 0.74; 60% crossover',
+    bottomLine:'OS 趨勢有利但因 60% crossover 未達預設顯著性（HR 0.74, p=0.036 vs alpha 0.025）',
+    doi:'10.1016/S1470-2045(22)00197-8', file:null,
+    relations:[{targetId:'kn177', type:'supersedes'}] },
+  { id:'cm142-mono', year:2017, journal:'Lancet Oncol', studyType:'Phase 2',
+    n:74, regimen:'Nivolumab monotherapy (2L+)',
+    endpoint:'ORR', result:'ORR 31.1%, DCR 69%, 12-mo OS 73%',
+    bottomLine:'Nivolumab 單藥在 dMMR mCRC 有活性——開啟免疫治療在 CRC 的大門',
+    doi:'10.1016/S1470-2045(17)30422-9', file:null,
+    relations:[] },
+  { id:'cm142-combo', year:2018, journal:'JCO', studyType:'Phase 2',
+    n:119, regimen:'Nivolumab + ipilimumab (2L+)',
+    endpoint:'ORR', result:'ORR 55%, DCR 80%, 12-mo OS 85%',
+    bottomLine:'雙免疫 ORR 55%——較單藥大幅提升，Grade 3-4 AE 32%',
+    doi:'10.1200/JCO.2017.76.9901', file:null,
+    relations:[{targetId:'cm142-mono', type:'builds_on'}] },
+  { id:'cm142-1l', year:2021, journal:'JCO', studyType:'Phase 2',
+    n:45, regimen:'Nivolumab + low-dose ipilimumab (1L)',
+    endpoint:'ORR', result:'ORR 69%, CR 13%, 24-mo PFS 74%, 24-mo OS 79%',
+    bottomLine:'一線雙免疫 ORR 69%——最高反應率，但為 Phase 2 單臂',
+    doi:'10.1200/JCO.21.01015', file:null,
+    relations:[{targetId:'cm142-combo', type:'builds_on'}] },
+  { id:'niche', year:2020, journal:'Nat Med', studyType:'Phase 2 (exploratory)',
+    n:40, regimen:'Neoadjuvant nivo + ipi (colon)',
+    endpoint:'Pathological response', result:'dMMR: 100% path response, 60% pCR; pMMR: 27%',
+    bottomLine:'Neoadjuvant 免疫治療在 dMMR 結腸癌近乎 100% 有效——里程碑概念驗證',
+    doi:'10.1038/s41591-020-0805-8', file:null,
+    relations:[] },
+  { id:'niche2', year:2024, journal:'NEJM', studyType:'Phase 2',
+    n:115, regimen:'Neoadjuvant nivo + ipi → surgery (dMMR colon)',
+    endpoint:'pCR', result:'pCR 68%, path response 98%, 0 recurrences (f/u 26 mo)',
+    bottomLine:'NICHE-2 確認：neoadjuvant 雙免疫後 98% 病理反應、零復發。可能改變 dMMR 結腸癌的手術策略',
+    doi:'10.1056/NEJMoa2400634', file:null,
+    relations:[{targetId:'niche', type:'supersedes'}] },
+  { id:'dostarlimab', year:2022, journal:'NEJM', studyType:'Phase 2',
+    n:12, regimen:'Dostarlimab monotherapy (dMMR rectal)',
+    endpoint:'Clinical complete response', result:'cCR 100% (12/12), 免除手術和放療',
+    bottomLine:'12/12 dMMR 直腸癌達臨床完全緩解——「watch and wait without any treatment」的極致',
+    doi:'10.1056/NEJMoa2201445', file:null,
+    relations:[] },
+];
+
+// === HER2+ PAPERS ===
+const HER2_PAPERS = [
+  { id:'mypathway', year:2019, journal:'Lancet Oncol', studyType:'Phase 2a (basket)',
+    n:57, regimen:'Pertuzumab + trastuzumab',
+    endpoint:'ORR', result:'ORR 32% (1 CR, 17 PR)',
+    bottomLine:'Basket 試驗首次顯示 dual-HER2 blockade 在 HER2+ mCRC 有活性',
+    doi:'10.1016/S1470-2045(18)30904-5', file:null,
+    relations:[] },
+  { id:'triumph', year:2021, journal:'Nat Med', studyType:'Phase 2',
+    n:30, regimen:'Pertuzumab + trastuzumab (ctDNA-guided)',
+    endpoint:'ORR', result:'ORR 30% (tissue+), 28% (ctDNA+)',
+    bottomLine:'ctDNA 可作為 HER2 擴增的篩選工具——日本核准 pertuzumab+trastuzumab',
+    doi:'10.1038/s41591-021-01553-w', file:null,
+    relations:[{targetId:'mypathway', type:'builds_on'}] },
+  { id:'destiny-crc01', year:2021, journal:'Lancet Oncol', studyType:'Phase 2',
+    n:78, regimen:'Trastuzumab deruxtecan (T-DXd)',
+    endpoint:'ORR', result:'ORR 45.3% (HER2+ cohort); 0% in HER2-low',
+    bottomLine:'T-DXd 在 HER2+ mCRC 高度有效（ORR 45%），但僅限 IHC3+/ISH+。注意 ILD 風險',
+    doi:'10.1016/S1470-2045(21)00086-3', file:null,
+    relations:[] },
+  { id:'mountaineer', year:2023, journal:'Lancet Oncol', studyType:'Phase 2',
+    n:84, regimen:'Tucatinib + trastuzumab (RAS wt)',
+    endpoint:'ORR by BICR', result:'ORR 38.1% (3 CR, 29 PR)',
+    bottomLine:'首個 FDA 核准的 HER2 標靶方案用於 mCRC——口服 TKI 方便、耐受性佳',
+    doi:'10.1016/S1470-2045(23)00150-X', file:null,
+    relations:[{targetId:'mypathway', type:'builds_on'}] },
+  { id:'destiny-crc02', year:2024, journal:'Lancet Oncol', studyType:'Phase 2 RCT',
+    n:122, regimen:'T-DXd 5.4 vs 6.4 mg/kg',
+    endpoint:'ORR', result:'ORR 37.8% (5.4) vs 27.5% (6.4); RAS-mut 也有效',
+    bottomLine:'5.4 mg/kg 為最佳劑量。突破：RAS mutant + HER2+ 也有效（不同於 anti-HER2 mAb）',
+    doi:'10.1016/S1470-2045(24)00380-2', file:null,
+    relations:[{targetId:'destiny-crc01', type:'supersedes'}] },
+];
 
 // === TME DATA ===
 const TL_TME = [
