@@ -304,12 +304,67 @@
     </div>
     <div class="sc-arrow">&#x203A;</div>
   </div>
-  <div class="sub-card disabled">
+  <div class="sub-card" onclick="navigate('v-raswt','RAS-wt Anti-EGFR','mCRC')">
     <div class="sc-icon">&#x1F9EC;</div>
     <div class="sc-body">
       <div class="sc-title">RAS Wild-type / BRAF Wild-type</div>
-      <div class="sc-desc">PARADIGM &middot; FIRE-3 &middot; Anti-EGFR 策略（建置中）</div>
+      <div class="sc-desc">PARADIGM &middot; FIRE-3 &middot; 左右側性 &middot; Rechallenge</div>
     </div>
+    <div class="sc-arrow">&#x203A;</div>
+  </div>
+</div>
+
+<!-- RAS-wt Anti-EGFR Page -->
+<div class="view" id="v-raswt">
+  <div class="ev-section">
+    <h3>&#x1F48A; 現行治療策略</h3>
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F7E2; 一線：Anti-EGFR vs Anti-VEGF</h4><span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">
+        <table>
+          <tr><th>試驗</th><th>Anti-EGFR arm OS</th><th>Anti-VEGF arm OS</th><th>HR</th></tr>
+          <tr><td><strong>PARADIGM</strong>（左側）</td><td>37.9 mo</td><td>34.3 mo</td><td>0.82*</td></tr>
+          <tr><td>FIRE-3（ext RAS wt）</td><td>33.1 mo</td><td>25.6 mo</td><td>0.70*</td></tr>
+          <tr><td>CALGB 80405</td><td>30.0 mo</td><td>29.0 mo</td><td>0.88 (NS)</td></tr>
+          <tr><td>PEAK（ext RAS wt）</td><td>41.3 mo</td><td>28.9 mo</td><td>0.63</td></tr>
+        </table>
+        <div class="note"><strong>左側 RAS-wt mCRC：anti-EGFR 為首選</strong>（PARADIGM 為唯一達 OS 主要終點的 Phase 3）。右側：anti-EGFR 無效益甚至有害，應用 bevacizumab。</div>
+      </div>
+    </div>
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F535; 左右側性（Sidedness）</h4><span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">
+        <table>
+          <tr><th></th><th>左側 anti-EGFR</th><th>右側 anti-EGFR</th></tr>
+          <tr><td>OS HR vs control</td><td><strong>0.75</strong></td><td>1.12（無效益）</td></tr>
+          <tr><td>PFS HR vs control</td><td><strong>0.78</strong></td><td>1.12（無效益）</td></tr>
+          <tr><td>Interaction p</td><td colspan="2">&lt;0.001</td></tr>
+        </table>
+        <p>Pooled analysis of 6 RCTs (N=2159)：anti-EGFR 效益完全侷限於左側腫瘤。</p>
+      </div>
+    </div>
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F7E1; Maintenance &amp; Rechallenge</h4><span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">
+        <p><strong>Maintenance（PANAMA）：</strong>Panitumumab + 5-FU/LV maintenance 優於 5-FU/LV alone（PFS 8.8 vs 5.7 mo），但 TFS 無差異。</p>
+        <p><strong>VALENTINO：</strong>Panitumumab alone maintenance 劣於 Pmab + 5-FU/LV（HR 1.55）——不可單獨用 anti-EGFR 維持。</p>
+        <p><strong>Rechallenge（CHRONOS）：</strong>ctDNA 引導的 panitumumab rechallenge ORR 30%——液態切片篩選後再挑戰有意義。</p>
+      </div>
+    </div>
+  </div>
+  <div class="ev-section">
+    <h3>&#x1F4C5; 證據時間軸</h3>
+    <div class="timeline-scroll"><div class="timeline" id="tl-raswt"></div></div>
+  </div>
+  <div class="ev-section">
+    <h3>&#x1F4D6; 結構化試驗卡片</h3>
+    <div id="raswt-cards"></div>
   </div>
 </div>
 
@@ -829,6 +884,7 @@ function navigate(viewId, title, subtitle) {
   document.getElementById('back-btn').style.display = 'block';
   window.scrollTo(0, 0);
   if (viewId === 'v-braf') renderEvidence();
+  if (viewId === 'v-raswt') renderTopic(RASWT_PAPERS, 'tl-raswt', 'raswt-cards');
   if (viewId === 'v-krasg12c') renderTopic(G12C_PAPERS, 'tl-g12c', 'g12c-cards');
   if (viewId === 'v-msih') renderTopic(MSIH_PAPERS, 'tl-msih', 'msih-cards');
   if (viewId === 'v-her2') renderTopic(HER2_PAPERS, 'tl-her2', 'her2-cards');
@@ -1044,6 +1100,64 @@ function renderTopic(papers, tlId, cardsId) {
   renderPaperTimeline(papers, tlId);
   renderPaperCards(papers, cardsId);
 }
+
+// === RAS-WT ANTI-EGFR PAPERS ===
+const RASWT_PAPERS = [
+  { id:'fire3', year:2014, journal:'Lancet Oncol', studyType:'Phase 3 RCT',
+    n:592, regimen:'FOLFIRI + cetuximab vs FOLFIRI + bevacizumab (1L)',
+    endpoint:'ORR (primary)', result:'ORR 62% vs 58% (NS); OS 28.7 vs 25.0 mo, HR 0.77',
+    bottomLine:'ORR/PFS 無差異但 OS 顯著優於 bev——anti-EGFR 可能有 OS 獲益但機制不明',
+    doi:'10.1016/S1470-2045(14)70330-4', file:null,
+    relations:[] },
+  { id:'fire3-final', year:2020, journal:'Br J Cancer', studyType:'Phase 3 RCT (final)',
+    n:400, regimen:'FOLFIRI + cetuximab vs bev (ext RAS wt)',
+    endpoint:'OS (extended RAS wt)', result:'OS 33.1 vs 25.6 mo, HR 0.70, p=0.006',
+    bottomLine:'Extended RAS wt 分析：OS 差距擴大到 7.5 個月——精準選病患放大 anti-EGFR 效益',
+    doi:'10.1038/s41416-020-01140-9', file:null,
+    relations:[{targetId:'fire3', type:'supersedes'}] },
+  { id:'calgb', year:2017, journal:'JAMA', studyType:'Phase 3 RCT',
+    n:1137, regimen:'Cetuximab vs bevacizumab + chemo (1L)',
+    endpoint:'OS (primary)', result:'OS 30.0 vs 29.0 mo, HR 0.88 (NS)',
+    bottomLine:'整體族群無差異——但左右側亞組分析揭示 sidedness 是關鍵（左側 cetux OS 39.3 mo）',
+    doi:'10.1001/jama.2017.7105', file:null,
+    relations:[] },
+  { id:'peak', year:2014, journal:'JCO', studyType:'Phase 2 RCT',
+    n:285, regimen:'Panitumumab vs bevacizumab + mFOLFOX6 (1L)',
+    endpoint:'PFS (primary)', result:'PFS HR 0.87 (NS); OS 34.2 vs 24.3 mo, HR 0.62',
+    bottomLine:'PFS 無差異但 OS 大幅有利 panitumumab——與 FIRE-3 pattern 一致',
+    doi:'10.1200/JCO.2013.53.2473', file:null,
+    relations:[{targetId:'fire3', type:'same_regimen'}] },
+  { id:'paradigm', year:2023, journal:'JAMA', studyType:'Phase 3 RCT',
+    n:802, regimen:'Panitumumab vs bevacizumab + mFOLFOX6 (1L, left-sided)',
+    endpoint:'OS left-sided (primary)', result:'Left: OS 37.9 vs 34.3 mo, HR 0.82, p=0.03; R0 resection 18.3% vs 11.6%',
+    bottomLine:'PARADIGM 定論：左側 RAS-wt mCRC 一線用 anti-EGFR + chemo 為標準。唯一達 OS 主要終點的 Phase 3',
+    doi:'10.1001/jama.2023.4428', file:null,
+    relations:[{targetId:'fire3', type:'builds_on'},{targetId:'calgb', type:'builds_on'}] },
+  { id:'sidedness-pooled', year:2017, journal:'Ann Oncol', studyType:'Pooled analysis',
+    n:2159, regimen:'Anti-EGFR vs control (6 RCTs pooled)',
+    endpoint:'OS/PFS by sidedness', result:'Left: OS HR 0.75, PFS HR 0.78; Right: OS HR 1.12 (no benefit)',
+    bottomLine:'左右側性是 anti-EGFR 最重要的預測因子——右側完全無效益。P for interaction <0.001',
+    doi:'10.1093/annonc/mdx175', file:null,
+    relations:[{targetId:'fire3', type:'subgroup_of'},{targetId:'calgb', type:'subgroup_of'}] },
+  { id:'valentino', year:2019, journal:'JCO', studyType:'Phase 2 RCT',
+    n:229, regimen:'Panitumumab + 5-FU/LV vs panitumumab alone (maintenance)',
+    endpoint:'PFS (maintenance)', result:'PFS 13.0 vs 10.2 mo, HR 1.55 (Pmab alone inferior)',
+    bottomLine:'Panitumumab 單藥維持劣於 Pmab + 5-FU/LV——不可單獨用 anti-EGFR 維持',
+    doi:'10.1200/JCO.19.01254', file:null,
+    relations:[] },
+  { id:'panama', year:2022, journal:'JCO', studyType:'Phase 2 RCT',
+    n:248, regimen:'FU/FA + panitumumab vs FU/FA alone (maintenance)',
+    endpoint:'PFS (primary)', result:'PFS 8.8 vs 5.7 mo, HR 0.72; TFS 17.1 vs 15.7 mo (NS)',
+    bottomLine:'加 panitumumab 延長 maintenance PFS 但 re-induction PFS 更短——TFS 打平。OS 數值有利',
+    doi:'10.1200/JCO.21.01332', file:null,
+    relations:[{targetId:'valentino', type:'builds_on'}] },
+  { id:'chronos', year:2022, journal:'Nat Med', studyType:'Phase 2',
+    n:27, regimen:'ctDNA-guided panitumumab rechallenge',
+    endpoint:'ORR (primary)', result:'ORR 30%, DCR 63%; 31% screened out by ctDNA mutations',
+    bottomLine:'液態切片篩選後 anti-EGFR rechallenge ORR 30%——proof of concept，優於標準後線',
+    doi:'10.1038/s41591-022-01886-0', file:null,
+    relations:[] },
+];
 
 // === KRAS G12C PAPERS ===
 const G12C_PAPERS = [
