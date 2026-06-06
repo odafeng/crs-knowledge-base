@@ -6,6 +6,17 @@ from unittest.mock import MagicMock, patch
 from classify import classify_all, classify_paper
 
 
+def _mock_response(text, stop_reason="end_turn"):
+    """Create a mock API response with proper content block structure."""
+    block = MagicMock()
+    block.type = "text"
+    block.text = text
+    resp = MagicMock()
+    resp.stop_reason = stop_reason
+    resp.content = [block]
+    return resp
+
+
 class TestClassifyAll:
     def test_skips_when_no_api_key(self, sample_candidate):
         with patch("classify.ANTHROPIC_API_KEY", ""):
@@ -29,16 +40,14 @@ class TestClassifyPaper:
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
     def test_parses_json_response(self, sample_candidate):
         mock_client = MagicMock()
-        mock_client.messages.create.return_value = MagicMock(
-            content=[MagicMock(text=json.dumps({
-                "relevance_score": 5,
-                "contextual_analysis": "Very important paper",
-                "bottom_line": "Game changer",
-                "suggested_js": {"id": "test-2026"},
-                "suggested_filename": "Test_NEJM_2026.html",
-                "relations": [],
-            }))]
-        )
+        mock_client.messages.create.return_value = _mock_response(json.dumps({
+            "relevance_score": 5,
+            "contextual_analysis": "Very important paper",
+            "bottom_line": "Game changer",
+            "suggested_js": {"id": "test-2026"},
+            "suggested_filename": "Test_NEJM_2026.html",
+            "relations": [],
+        }))
 
         result = classify_paper(mock_client, sample_candidate)
         assert result["ai_score"] == 5
@@ -48,8 +57,8 @@ class TestClassifyPaper:
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
     def test_handles_markdown_wrapped_json(self, sample_candidate):
         mock_client = MagicMock()
-        mock_client.messages.create.return_value = MagicMock(
-            content=[MagicMock(text='Here is my analysis:\n```json\n{"relevance_score": 3, "contextual_analysis": "Moderate"}\n```')]
+        mock_client.messages.create.return_value = _mock_response(
+            'Here is my analysis:\n```json\n{"relevance_score": 3, "contextual_analysis": "Moderate"}\n```'
         )
 
         result = classify_paper(mock_client, sample_candidate)
@@ -58,8 +67,8 @@ class TestClassifyPaper:
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
     def test_handles_malformed_response(self, sample_candidate):
         mock_client = MagicMock()
-        mock_client.messages.create.return_value = MagicMock(
-            content=[MagicMock(text="This is not JSON at all, just plain text analysis.")]
+        mock_client.messages.create.return_value = _mock_response(
+            "This is not JSON at all, just plain text analysis."
         )
 
         result = classify_paper(mock_client, sample_candidate)
