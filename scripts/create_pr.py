@@ -1,0 +1,302 @@
+"""Auto-PR creation for score-5 papers.
+
+For practice-changing papers (score 5), automatically:
+1. Create a feature branch
+2. Generate a full HTML evidence page via Claude API
+3. Insert the JS paper object into index.html
+4. Create a PR for review
+"""
+
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+from anthropic import Anthropic
+
+from config import ANTHROPIC_API_KEY, GITHUB_TOKEN, INDEX_HTML, PROJECT_ROOT
+
+
+# Map topic to the JS array variable name and the docs subfolder
+TOPIC_CONFIG = {
+    "mCRC-BRAF-V600E": {"var": "BRAF_PAPERS", "docs_dir": "mCRC-BRAF-V600E"},
+    "mCRC-KRAS-G12C": {"var": "G12C_PAPERS", "docs_dir": "mCRC-KRAS-G12C"},
+    "mCRC-MSI-H": {"var": "MSIH_PAPERS", "docs_dir": "mCRC-MSI-H"},
+    "mCRC-HER2": {"var": "HER2_PAPERS", "docs_dir": "mCRC-HER2"},
+    "mCRC-RAS-wt": {"var": "RASWT_PAPERS", "docs_dir": "mCRC-RAS-wt"},
+    "robotic-surgery": {"var": None, "docs_dir": "robotic-surgery"},
+}
+
+# Reference HTML for style matching
+REFERENCE_HTML = (PROJECT_ROOT / "docs" / "mCRC-BRAF-V600E" / "Kopetz_NEJM_2019_BEACON.html").read_text()
+
+HTML_GEN_PROMPT = """你是一位醫學文獻摘要撰寫專家。請根據以下論文資訊，產出一個完整的 HTML 證據頁面。
+
+## 格式要求
+- 必須完全遵循以下參考頁面的 HTML 結構和 CSS 樣式（直接複製 <style> 區塊）
+- 包含：<title>, <h1>, .meta 區塊（Authors, Journal, DOI, PMID, Study）, Abstract（Design + Arms）, Key Results（表格）, Conclusions
+- 表格需要結構化數據（Endpoint, Experimental, Control）
+- 如果 abstract 資訊不足以填滿所有欄位，用合理的推斷或標註 "Data not available"
+- 輸出純 HTML，不要 markdown code block
+
+## 參考頁面（請完全複製其 CSS 和結構）
+```html
+{reference}
+```
+
+## 論文資訊
+Title: {title}
+Authors: {authors}
+Journal: {journal} {year}
+DOI: {doi}
+PMID: {pmid}
+
+Abstract:
+{abstract}
+
+請直接輸出完整的 HTML 頁面（從 <!DOCTYPE html> 開始）。"""
+
+
+def _run_cmd(cmd, cwd=None):
+    """Run a shell command. Returns (success, stdout)."""
+    try:
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=30, cwd=cwd or PROJECT_ROOT
+        )
+        if result.returncode != 0:
+            print(f"  [WARN] Command failed: {' '.join(cmd)}\n    {result.stderr.strip()}", file=sys.stderr)
+            return False, result.stderr
+        return True, result.stdout.strip()
+    except Exception as e:
+        print(f"  [ERROR] {e}", file=sys.stderr)
+        return False, ""
+
+
+def _run_gh(args):
+    """Run gh CLI command."""
+    env = os.environ.copy()
+    if GITHUB_TOKEN:
+        env["GH_TOKEN"] = GITHUB_TOKEN
+    try:
+        result = subprocess.run(
+            ["gh"] + args, capture_output=True, text=True, timeout=60, cwd=PROJECT_ROOT, env=env
+        )
+        if result.returncode != 0:
+            print(f"  [WARN] gh failed: {result.stderr.strip()}", file=sys.stderr)
+            return False, result.stderr
+        return True, result.stdout.strip()
+    except Exception as e:
+        print(f"  [ERROR] gh: {e}", file=sys.stderr)
+        return False, ""
+
+
+def generate_html_page(paper):
+    """Use Claude API to generate a full HTML evidence page."""
+    if not ANTHROPIC_API_KEY:
+        print("  [WARN] No API key, using placeholder HTML", file=sys.stderr)
+        return _placeholder_html(paper)
+
+    client = Anthropic(api_key=ANTHROPIC_API_KEY)
+    prompt = HTML_GEN_PROMPT.format(
+        reference=REFERENCE_HTML,
+        title=paper.get("title", ""),
+        authors=paper.get("authors", ""),
+        journal=paper.get("journal", ""),
+        year=paper.get("year", ""),
+        doi=paper.get("doi", ""),
+        pmid=paper.get("pmid", ""),
+        abstract=paper.get("abstract", ""),
+    )
+
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=4000,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    html = response.content[0].text
+    # Strip markdown wrapper if present
+    if html.startswith("```"):
+        html = re.sub(r"^```\w*\n", "", html)
+        html = re.sub(r"\n```$", "", html)
+
+    return html
+
+
+def _placeholder_html(paper):
+    """Minimal HTML when no API key is available."""
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{paper.get('title', '')}</title>
+<style>
+body {{ font-family: -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 16px; line-height: 1.7; }}
+h1 {{ font-size: 1.3rem; color: #1a365d; border-bottom: 2px solid #3182ce; padding-bottom: 8px; }}
+.meta {{ background: #f7fafc; padding: 12px; border-radius: 8px; margin: 12px 0; font-size: 0.88rem; }}
+</style>
+</head>
+<body>
+<h1>{paper.get('title', '')}</h1>
+<div class="meta">
+<strong>Authors:</strong> {paper.get('authors', '')}<br>
+<strong>Journal:</strong> <em>{paper.get('journal', '')}</em> {paper.get('year', '')}<br>
+<strong>DOI:</strong> <a href="https://doi.org/{paper.get('doi', '')}">{paper.get('doi', '')}</a><br>
+<strong>PMID:</strong> {paper.get('pmid', '')}
+</div>
+<h2>Abstract</h2>
+<p>{paper.get('abstract', '')}</p>
+</body>
+</html>"""
+
+
+def insert_js_object(topic, js_obj):
+    """Insert a new paper JS object into the appropriate array in index.html.
+
+    Returns True if successful.
+    """
+    config = TOPIC_CONFIG.get(topic)
+    if not config or not config["var"]:
+        print(f"  [WARN] No JS array mapping for topic: {topic}", file=sys.stderr)
+        return False
+
+    var_name = config["var"]
+    html = INDEX_HTML.read_text(encoding="utf-8")
+
+    # Format the JS object
+    js_str = json.dumps(js_obj, indent=2, ensure_ascii=False)
+    # Convert JSON to JS style (unquote keys, single quotes for values)
+    # Keep it as valid JSON-in-JS for simplicity — it's valid either way
+    js_entry = "  " + js_str.replace("\n", "\n  ")
+
+    # Find the closing ]; of the array and insert before it
+    pattern = rf"(const {var_name}\s*=\s*\[.*?)(^\];)"
+    match = re.search(pattern, html, re.DOTALL | re.MULTILINE)
+    if not match:
+        print(f"  [ERROR] Could not find {var_name} array in index.html", file=sys.stderr)
+        return False
+
+    # Insert new entry before the closing ];
+    insertion_point = match.start(2)
+    new_html = html[:insertion_point] + js_entry + ",\n" + html[insertion_point:]
+    INDEX_HTML.write_text(new_html, encoding="utf-8")
+    return True
+
+
+def create_pr_for_paper(paper, dry_run=False):
+    """Create a complete PR for a score-5 paper.
+
+    Steps:
+    1. Create branch
+    2. Generate HTML evidence page
+    3. Insert JS object into index.html
+    4. Commit and push
+    5. Create PR
+    """
+    topic = paper.get("topic", "")
+    filename = paper.get("ai_suggested_filename", "")
+    js_obj = paper.get("ai_suggested_js", {})
+    analysis = paper.get("ai_analysis", "")
+    bottom_line = paper.get("ai_bottom_line", "")
+
+    if not filename or not js_obj:
+        print(f"  [WARN] Missing filename or JS object, falling back to issue", file=sys.stderr)
+        return False
+
+    config = TOPIC_CONFIG.get(topic, {})
+    docs_dir = config.get("docs_dir", topic)
+
+    # Branch name from filename
+    branch_safe = re.sub(r"[^a-zA-Z0-9_-]", "-", filename.replace(".html", ""))
+    branch_name = f"paper/{branch_safe}"
+
+    print(f"[Auto-PR] Creating PR for: {filename}")
+    print(f"  Branch: {branch_name}")
+
+    if dry_run:
+        print(f"  [DRY RUN] Would create branch, HTML, and PR")
+        return True
+
+    # 1. Create and checkout branch
+    _run_cmd(["git", "checkout", "-b", branch_name])
+
+    # 2. Generate HTML page
+    print(f"  Generating HTML evidence page...")
+    html_content = generate_html_page(paper)
+    docs_path = PROJECT_ROOT / "docs" / docs_dir
+    docs_path.mkdir(parents=True, exist_ok=True)
+    html_file = docs_path / filename
+    html_file.write_text(html_content, encoding="utf-8")
+    print(f"  Written: {html_file.relative_to(PROJECT_ROOT)}")
+
+    # 3. Update JS object with file path
+    js_obj["file"] = f"docs/{docs_dir}/{filename}"
+    if config.get("var"):
+        print(f"  Inserting JS object into {config['var']}...")
+        insert_js_object(topic, js_obj)
+
+    # 4. Commit
+    _run_cmd(["git", "add", str(html_file), str(INDEX_HTML)])
+    commit_msg = f"feat: add {filename}\n\nAuto-generated by paper-watch pipeline.\nRelevance score: 5/5\n\n{bottom_line}"
+    _run_cmd(["git", "commit", "-m", commit_msg])
+
+    # 5. Push branch
+    ok, _ = _run_cmd(["git", "push", "-u", "origin", branch_name])
+    if not ok:
+        print(f"  [ERROR] Failed to push branch", file=sys.stderr)
+        _run_cmd(["git", "checkout", "main"])
+        _run_cmd(["git", "branch", "-D", branch_name])
+        return False
+
+    # 6. Create PR
+    pr_body = f"""## Auto-generated Paper Addition
+
+**Topic**: `{topic}`
+**Relevance Score**: 5/5 (Practice-changing)
+**DOI**: [{paper.get('doi', '')}](https://doi.org/{paper.get('doi', '')})
+
+## AI Contextual Analysis
+{analysis}
+
+> **Bottom Line**: {bottom_line}
+
+## Changes
+- Added evidence page: `docs/{docs_dir}/{filename}`
+{f"- Added JS paper object to `{config['var']}` in `index.html`" if config.get('var') else ""}
+
+---
+Auto-generated by paper-watch pipeline. Please review before merging.
+"""
+    ok, pr_url = _run_gh([
+        "pr", "create",
+        "--title", f"[Auto] Add {filename}",
+        "--body", pr_body,
+        "--base", "main",
+        "--head", branch_name,
+    ])
+
+    # Switch back to main
+    _run_cmd(["git", "checkout", "main"])
+
+    if ok:
+        print(f"  Created PR: {pr_url}")
+        return True
+    else:
+        print(f"  [ERROR] Failed to create PR", file=sys.stderr)
+        return False
+
+
+def create_prs(papers, dry_run=False):
+    """Create PRs for a list of score-5 papers."""
+    if not papers:
+        return
+
+    created = 0
+    for paper in papers:
+        ok = create_pr_for_paper(paper, dry_run=dry_run)
+        if ok:
+            created += 1
+
+    print(f"\n[Auto-PR] Created {created}/{len(papers)} PRs.")

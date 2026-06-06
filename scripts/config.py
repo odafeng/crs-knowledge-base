@@ -28,6 +28,10 @@ CLASSIFY_MODEL = "claude-sonnet-4-6"
 GITHUB_TOKEN = os.environ.get("GH_TOKEN", os.environ.get("GITHUB_TOKEN", ""))
 GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY", "")
 
+# LINE push notification
+LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
+LINE_USER_ID = os.environ.get("LINE_USER_ID", "")
+
 # Search window
 PUBMED_RELDATE = 14  # days
 

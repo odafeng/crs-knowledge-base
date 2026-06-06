@@ -18,6 +18,8 @@ from fetch_rss import fetch_rss
 from fetch_conferences import fetch_conferences
 from classify import classify_all
 from create_issues import create_issues
+from create_pr import create_prs
+from notify_line import notify_papers
 
 
 def is_conference_season():
@@ -97,9 +99,21 @@ def run_pipeline(topic=None, skip_conferences=False, dry_run=False, daily_mode=F
         print("[Pipeline] No high-relevance papers. Done.")
         return
 
-    # Layer 3: Create GitHub Issues
+    # Layer 3: Route by score — PR for 5, Issue for 4
+    score_5 = [c for c in classified if c.get("ai_score") and c["ai_score"] >= 5]
+    score_4 = [c for c in classified if c not in score_5]
+
+    if score_5:
+        print(f"\n[Pipeline] {len(score_5)} practice-changing papers → Auto-PR")
+        create_prs(score_5, dry_run=dry_run)
+
+    if score_4:
+        print(f"\n[Pipeline] {len(score_4)} high-impact papers → GitHub Issues")
+        create_issues(score_4, dry_run=dry_run)
+
+    # LINE notification for all high-relevance papers
     print()
-    create_issues(classified, dry_run=dry_run)
+    notify_papers(classified, dry_run=dry_run)
 
     # Update tracking files (unless dry run)
     if not dry_run:
