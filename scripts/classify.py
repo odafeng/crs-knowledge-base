@@ -36,11 +36,19 @@ def classify_paper(client, paper):
     for turn in range(MAX_AGENT_TURNS):
         response = client.messages.create(
             model=CLASSIFY_MODEL,
-            max_tokens=4000,
+            max_tokens=8000,
+            thinking={"type": "enabled", "budget_tokens": 4000},
             system=system_prompt,
             tools=AGENT_TOOLS,
             messages=messages,
         )
+
+        # Log thinking blocks (chain of thought)
+        for block in response.content:
+            if block.type == "thinking" and block.thinking.strip():
+                # Truncate for logs but show enough to understand reasoning
+                thought = block.thinking.strip().replace("\n", " ")
+                print(f"    [CoT] {thought[:300]}")
 
         # If agent is done (no more tool calls), extract final answer
         if response.stop_reason == "end_turn":
@@ -48,6 +56,11 @@ def classify_paper(client, paper):
 
         # If agent wants to use tools
         if response.stop_reason == "tool_use":
+            # Log agent's reasoning before tool calls
+            for block in response.content:
+                if block.type == "text" and block.text.strip():
+                    print(f"    [Think] {block.text.strip()[:200]}")
+
             # Append assistant response (with tool_use blocks)
             messages.append({"role": "assistant", "content": response.content})
 
