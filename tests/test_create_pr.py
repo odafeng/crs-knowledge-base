@@ -3,7 +3,7 @@
 import json
 from unittest.mock import MagicMock, patch
 
-from create_pr import TOPIC_CONFIG, insert_js_object, _placeholder_html
+from create_pr import TOPIC_CONFIG, insert_js_object, apply_chart_updates, _placeholder_html
 
 
 class TestTopicConfig:
@@ -56,4 +56,55 @@ const BRAF_PAPERS = [
     def test_returns_false_for_robotic(self, mock_index):
         # robotic-surgery has no JS array (var is None)
         result = insert_js_object("robotic-surgery", {"id": "test"})
+        assert result is False
+
+
+class TestApplyChartUpdates:
+    @patch("create_pr.INDEX_HTML")
+    def test_add_bar(self, mock_index):
+        mock_index.read_text.return_value = """
+const METRICS = {
+  mOS: {
+    label: 'mOS', max: 35,
+    bars: [
+      { label:'EC', val:9.3, hr:'0.61', color:'#3182ce' }
+    ]
+  }
+};"""
+        updates = {
+            "mOS": {
+                "action": "add",
+                "bar": {"label": "NewArm", "val": 25.0, "hr": "0.55", "color": "#38a169"},
+            }
+        }
+        result = apply_chart_updates("mCRC-BRAF-V600E", updates)
+        assert result is True
+        written = mock_index.write_text.call_args[0][0]
+        assert "NewArm" in written
+        assert "25.0" in written
+
+    @patch("create_pr.INDEX_HTML")
+    def test_update_max(self, mock_index):
+        mock_index.read_text.return_value = """
+const METRICS = {
+  mOS: {
+    label: 'mOS', max: 35,
+    bars: [
+      { label:'EC', val:9.3, hr:'0.61', color:'#3182ce' }
+    ]
+  }
+};"""
+        updates = {
+            "mOS": {
+                "action": "add",
+                "bar": {"label": "New", "val": 40.0, "hr": "0.5", "color": "#38a169"},
+                "new_max": 45,
+            }
+        }
+        apply_chart_updates("mCRC-BRAF-V600E", updates)
+        written = mock_index.write_text.call_args[0][0]
+        assert "45" in written
+
+    def test_returns_false_for_no_metrics(self):
+        result = apply_chart_updates("mCRC-HER2", {"mOS": {"action": "add", "bar": {}}})
         assert result is False

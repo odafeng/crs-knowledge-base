@@ -38,6 +38,28 @@ def _extract_papers_from_html():
 
 _PAPERS_JS = _extract_papers_from_html()
 
+
+def _extract_metrics_from_html():
+    """Parse METRICS and TME_METRICS from index.html."""
+    html = INDEX_HTML.read_text(encoding="utf-8")
+
+    metrics_map = {
+        "METRICS": "mCRC-BRAF-V600E",
+        "TME_METRICS": "robotic-surgery",
+    }
+
+    metrics_by_topic = {}
+    for var_name, topic in metrics_map.items():
+        pattern = rf"const {var_name}\s*=\s*(\{{.*?\}});"
+        match = re.search(pattern, html, re.DOTALL)
+        if match:
+            metrics_by_topic[topic] = match.group(1).strip()
+
+    return metrics_by_topic
+
+
+_METRICS_JS = _extract_metrics_from_html()
+
 # ---------------------------------------------------------------------------
 # Topic-specific system prompts
 # ---------------------------------------------------------------------------
@@ -127,6 +149,7 @@ def build_system_prompt(topic):
     """Build a topic-specific system prompt for the Claude API classifier."""
     context = _TOPIC_CONTEXTS.get(topic, "")
     existing_js = _PAPERS_JS.get(topic, "")
+    existing_metrics = _METRICS_JS.get(topic, "")
 
     return f"""你是一位大腸直腸癌（CRC）臨床研究專家 AI agent，專精於「{topic}」領域。
 你的角色是**主動研究**新發表的文獻，判斷其臨床重要性，並以該領域的既有知識脈絡解釋新發現的意義。
@@ -154,6 +177,17 @@ def build_system_prompt(topic):
 {existing_js}
 ```
 
+## 目前的柱狀圖數據
+{f'''```javascript
+{existing_metrics}
+```
+
+柱狀圖用於視覺比較不同方案的療效指標（mOS、ORR、mPFS 等）。
+每根柱子格式：{{ label:"顯示名稱", val:數值, hr:"HR 或統計量", color:"色碼" }}
+- color 規則：對照組用灰色（#cbd5e0/#a0aec0）、實驗組用主題色
+- ongoing:true 表示數據尚未成熟
+- val:null 表示尚未報告''' if existing_metrics else '（此主題目前沒有柱狀圖）'}
+
 ## 你的任務
 
 對每篇新候選文獻：
@@ -176,6 +210,13 @@ def build_system_prompt(topic):
    - studyType 只能用：Phase 3 RCT, Phase 3 RCT (updated), Phase 2 RCT, Phase 2, Phase 1-2, Phase 1, Phase 1b, Biomarker (exploratory), Post-hoc analysis, Meta-analysis, Pooled analysis, Phase 3 (Cohort N), Phase 2 (exploratory)
    - relations 中的 targetId 必須是既有文獻中的 id
 
+4. **Chart Updates**（只有當新文獻有明確的療效數據可加入柱狀圖時才產出）：
+   - 判斷新文獻是否有 mOS/ORR/mPFS 等數據值得加入比較圖
+   - 如果是更新既有 bar 的數據（例如 ongoing trial 報告了最終數據），指明要更新哪根柱子
+   - 如果是新增 bar（例如新的治療組合），提供完整的 bar 物件
+   - 如果 max 值需要調整（新數據超過目前的 max），也要指明
+   - 不是所有文獻都需要更新圖表——只有帶有直接可比較的療效數據才需要
+
 ## 輸出格式
 
 ```json
@@ -185,12 +226,29 @@ def build_system_prompt(topic):
   "bottom_line": "...",
   "suggested_js": {{...}},
   "suggested_filename": "Author_Journal_Year_TrialName.html",
-  "relations": [{{"targetId": "...", "type": "builds_on"}}]
+  "relations": [{{"targetId": "...", "type": "builds_on"}}],
+  "chart_updates": {{
+    "mOS": {{
+      "action": "add",
+      "bar": {{ "label": "New\\nArm", "val": 25.0, "hr": "0.65", "color": "#38a169" }},
+      "new_max": 35
+    }},
+    "ORR": {{
+      "action": "update",
+      "match_label": "EC+\\nFOLFIRI",
+      "updates": {{ "val": 64.4, "ongoing": false }}
+    }}
+  }}
 }}
 ```
 
-只有 score >= 4 才需要 suggested_js / suggested_filename / relations。
-Score < 4 時只需 relevance_score + contextual_analysis。"""
+chart_updates 規則：
+- action "add"：在該 metric 的 bars 陣列末端加入新的 bar
+- action "update"：找到 match_label 對應的既有 bar，更新其欄位（常見：ongoing trial 報告最終數據時把 val 從 null 改為實際值、ongoing 從 true 改為 false）
+- new_max：如果新的 val 超過目前的 max，需要調高 max
+- chart_updates 是選填——沒有圖表數據的文獻不要加這個欄位
+- 只有 score >= 4 才需要 suggested_js / suggested_filename / relations / chart_updates
+- Score < 4 時只需 relevance_score + contextual_analysis"""
 
 
 def build_paper_prompt(paper):

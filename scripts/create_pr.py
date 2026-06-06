@@ -21,12 +21,12 @@ from config import ANTHROPIC_API_KEY, GITHUB_TOKEN, INDEX_HTML, PROJECT_ROOT
 
 # Map topic to the JS array variable name and the docs subfolder
 TOPIC_CONFIG = {
-    "mCRC-BRAF-V600E": {"var": "BRAF_PAPERS", "docs_dir": "mCRC-BRAF-V600E"},
-    "mCRC-KRAS-G12C": {"var": "G12C_PAPERS", "docs_dir": "mCRC-KRAS-G12C"},
-    "mCRC-MSI-H": {"var": "MSIH_PAPERS", "docs_dir": "mCRC-MSI-H"},
-    "mCRC-HER2": {"var": "HER2_PAPERS", "docs_dir": "mCRC-HER2"},
-    "mCRC-RAS-wt": {"var": "RASWT_PAPERS", "docs_dir": "mCRC-RAS-wt"},
-    "robotic-surgery": {"var": None, "docs_dir": "robotic-surgery"},
+    "mCRC-BRAF-V600E": {"var": "BRAF_PAPERS", "docs_dir": "mCRC-BRAF-V600E", "metrics_var": "METRICS"},
+    "mCRC-KRAS-G12C": {"var": "G12C_PAPERS", "docs_dir": "mCRC-KRAS-G12C", "metrics_var": None},
+    "mCRC-MSI-H": {"var": "MSIH_PAPERS", "docs_dir": "mCRC-MSI-H", "metrics_var": None},
+    "mCRC-HER2": {"var": "HER2_PAPERS", "docs_dir": "mCRC-HER2", "metrics_var": None},
+    "mCRC-RAS-wt": {"var": "RASWT_PAPERS", "docs_dir": "mCRC-RAS-wt", "metrics_var": None},
+    "robotic-surgery": {"var": None, "docs_dir": "robotic-surgery", "metrics_var": "TME_METRICS"},
 }
 
 # Reference HTML for style matching
@@ -185,8 +185,94 @@ def insert_js_object(topic, js_obj):
     return True
 
 
+def apply_chart_updates(topic, chart_updates):
+    """Apply chart bar additions/updates to the METRICS object in index.html.
+
+    chart_updates is a dict like:
+    {
+      "mOS": {"action": "add", "bar": {...}, "new_max": 35},
+      "ORR": {"action": "update", "match_label": "EC+\\nFOLFIRI", "updates": {"val": 64.4}}
+    }
+    """
+    config = TOPIC_CONFIG.get(topic, {})
+    metrics_var = config.get("metrics_var")
+    if not metrics_var or not chart_updates:
+        return False
+
+    html = INDEX_HTML.read_text(encoding="utf-8")
+    modified = False
+
+    for metric_key, update in chart_updates.items():
+        action = update.get("action")
+
+        if action == "add":
+            bar = update.get("bar", {})
+            bar_str = json.dumps(bar, ensure_ascii=False)
+
+            # Find the bars array for this metric within the METRICS var
+            # Pattern: metric_key: { ... bars: [ ... ] }
+            # We need to find the closing ] of the bars array for this metric
+            metric_pattern = rf'({metric_key}\s*:\s*\{{[^}}]*bars\s*:\s*\[)(.*?)(\s*\])'
+            match = re.search(metric_pattern, html, re.DOTALL)
+            if match:
+                # Insert new bar before the closing ]
+                html = html[:match.end(2)] + ",\n      " + bar_str + html[match.end(2):]
+                modified = True
+                print(f"  [Chart] Added bar to {metric_key}: {bar.get('label', '?')}")
+
+        elif action == "update":
+            match_label = update.get("match_label", "")
+            updates = update.get("updates", {})
+            if match_label and updates:
+                # Find the bar with this label and update its values
+                # Use a simple approach: find the bar object containing this label
+                escaped_label = re.escape(match_label)
+                bar_pattern = rf"(\{{\s*label\s*:\s*'{escaped_label}'[^}}]*)\}}"
+                match = re.search(bar_pattern, html)
+                if match:
+                    bar_text = match.group(1)
+                    new_bar_text = bar_text
+                    for key, value in updates.items():
+                        if isinstance(value, bool):
+                            val_str = "true" if value else "false"
+                        elif value is None:
+                            val_str = "null"
+                        elif isinstance(value, (int, float)):
+                            val_str = str(value)
+                        else:
+                            val_str = f"'{value}'"
+
+                        # Replace or append the key
+                        key_pattern = rf"{key}\s*:\s*[^,}}]+"
+                        if re.search(key_pattern, new_bar_text):
+                            new_bar_text = re.sub(key_pattern, f"{key}:{val_str}", new_bar_text)
+                        else:
+                            new_bar_text += f", {key}:{val_str}"
+
+                    html = html.replace(bar_text, new_bar_text)
+                    modified = True
+                    print(f"  [Chart] Updated bar '{match_label}' in {metric_key}")
+
+        # Update max if specified
+        new_max = update.get("new_max")
+        if new_max:
+            max_pattern = rf"({metric_key}\s*:\s*\{{[^}}]*max\s*:\s*)(\d+)"
+            match = re.search(max_pattern, html)
+            if match:
+                current_max = int(match.group(2))
+                if new_max > current_max:
+                    html = html[:match.start(2)] + str(new_max) + html[match.end(2):]
+                    modified = True
+                    print(f"  [Chart] Updated {metric_key} max: {current_max} → {new_max}")
+
+    if modified:
+        INDEX_HTML.write_text(html, encoding="utf-8")
+
+    return modified
+
+
 def create_pr_for_paper(paper, dry_run=False):
-    """Create a complete PR for a score-5 paper.
+    """Create a complete PR for a high-relevance paper.
 
     Steps:
     1. Create branch
@@ -236,6 +322,12 @@ def create_pr_for_paper(paper, dry_run=False):
     if config.get("var"):
         print(f"  Inserting JS object into {config['var']}...")
         insert_js_object(topic, js_obj)
+
+    # 3b. Apply chart updates if agent suggested them
+    chart_updates = paper.get("ai_chart_updates")
+    if chart_updates and config.get("metrics_var"):
+        print(f"  Applying chart updates to {config['metrics_var']}...")
+        apply_chart_updates(topic, chart_updates)
 
     # 4. Commit
     _run_cmd(["git", "add", str(html_file), str(INDEX_HTML)])

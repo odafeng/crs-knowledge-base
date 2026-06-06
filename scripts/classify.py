@@ -119,6 +119,7 @@ def _extract_classification(paper, response):
     paper["ai_suggested_js"] = result.get("suggested_js")
     paper["ai_suggested_filename"] = result.get("suggested_filename", "")
     paper["ai_relations"] = result.get("relations", [])
+    paper["ai_chart_updates"] = result.get("chart_updates")
 
     return paper
 
