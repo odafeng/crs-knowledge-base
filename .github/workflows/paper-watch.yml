@@ -63,6 +63,7 @@ jobs:
           NCBI_API_KEY: ${{ secrets.NCBI_API_KEY }}
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          OE_COOKIES_JSON: ${{ secrets.OE_COOKIES_JSON }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           ARGS=""

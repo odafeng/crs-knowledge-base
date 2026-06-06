@@ -15,11 +15,11 @@ class TestToolDefinitions:
             assert tool["input_schema"]["type"] == "object"
 
     def test_tool_count(self):
-        assert len(AGENT_TOOLS) == 4
+        assert len(AGENT_TOOLS) == 5
 
     def test_tool_names(self):
         names = {t["name"] for t in AGENT_TOOLS}
-        assert names == {"search_pubmed", "fetch_paper_details", "lookup_existing_papers", "web_fetch"}
+        assert names == {"search_pubmed", "fetch_paper_details", "lookup_existing_papers", "web_fetch", "query_guidelines"}
 
 
 class TestExecuteTool:
@@ -49,6 +49,47 @@ class TestExecuteTool:
         result = execute_tool("web_fetch", {"url": "http://example.com"})
         assert "Hello world" in result
         assert "<html>" not in result
+
+
+class TestQueryGuidelines:
+    @patch("agent_tools.OE_COOKIES_JSON", "")
+    @patch("agent_tools.OE_COOKIES_PATH")
+    def test_returns_fallback_when_no_credentials(self, mock_path):
+        mock_path.exists.return_value = False
+        result = execute_tool("query_guidelines", {"question": "What is the standard for BRAF V600E mCRC?"})
+        parsed = json.loads(result)
+        assert "error" in parsed
+        assert "not configured" in parsed["error"]
+        assert "fallback" in parsed
+
+    @patch("agent_tools._load_oe_cookies")
+    @patch("agent_tools.urllib.request.urlopen")
+    def test_returns_answer_on_success(self, mock_urlopen, mock_cookies):
+        mock_cookies.return_value = [{"name": "session", "value": "abc123"}]
+
+        # First call: submit question
+        submit_resp = MagicMock()
+        submit_resp.read.return_value = json.dumps({"id": "article-123"}).encode()
+        submit_resp.__enter__ = lambda s: s
+        submit_resp.__exit__ = MagicMock(return_value=False)
+
+        # Second call: poll — completed
+        poll_resp = MagicMock()
+        poll_resp.read.return_value = json.dumps({
+            "status": "completed",
+            "content": "ASCO recommends encorafenib+cetuximab for BRAF V600E mCRC.",
+            "citations": [{"title": "ASCO Guideline 2025", "journal": "JCO", "year": "2025"}],
+        }).encode()
+        poll_resp.__enter__ = lambda s: s
+        poll_resp.__exit__ = MagicMock(return_value=False)
+
+        mock_urlopen.side_effect = [submit_resp, poll_resp]
+
+        result = execute_tool("query_guidelines", {"question": "BRAF V600E mCRC guideline"})
+        parsed = json.loads(result)
+        assert "answer" in parsed
+        assert "encorafenib" in parsed["answer"]
+        assert parsed["source"] == "openevidence"
 
 
 class TestClassifyWithAgenticLoop:

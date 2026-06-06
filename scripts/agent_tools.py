@@ -15,7 +15,14 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
-from config import NCBI_API_KEY, PUBMED_FETCH_URL, PUBMED_SEARCH_URL, load_tracked_dois
+from config import (
+    NCBI_API_KEY,
+    OE_COOKIES_JSON,
+    OE_COOKIES_PATH,
+    PUBMED_FETCH_URL,
+    PUBMED_SEARCH_URL,
+    load_tracked_dois,
+)
 
 # ---------------------------------------------------------------------------
 # Tool definitions (JSON schema for Claude API)
@@ -96,6 +103,28 @@ AGENT_TOOLS = [
             "required": ["url"],
         },
     },
+    {
+        "name": "query_guidelines",
+        "description": (
+            "Query the latest ASCO/ESMO/NCCN clinical guidelines via OpenEvidence. "
+            "Use this to check what the current guideline recommendation is for a specific "
+            "biomarker, treatment line, or clinical scenario. This helps you determine whether "
+            "a new paper changes the standard of care. "
+            "Example questions: "
+            "'What is the ASCO guideline for first-line BRAF V600E mCRC treatment?', "
+            "'Does NCCN recommend immunotherapy for MSI-H mCRC in the neoadjuvant setting?'"
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": "A clinical guideline question in English. Be specific about the biomarker, disease stage, and treatment line.",
+                },
+            },
+            "required": ["question"],
+        },
+    },
 ]
 
 # ---------------------------------------------------------------------------
@@ -114,6 +143,8 @@ def execute_tool(tool_name, tool_input):
             return _tool_lookup_existing(tool_input)
         elif tool_name == "web_fetch":
             return _tool_web_fetch(tool_input)
+        elif tool_name == "query_guidelines":
+            return _tool_query_guidelines(tool_input)
         else:
             return json.dumps({"error": f"Unknown tool: {tool_name}"})
     except Exception as e:
@@ -225,6 +256,111 @@ def _tool_web_fetch(input_data):
         return text[:4000]
     except Exception as e:
         return json.dumps({"error": f"Failed to fetch {url}: {e}"})
+
+
+def _load_oe_cookies():
+    """Load OpenEvidence cookies from local file or env var."""
+    # Try env var first (for CI)
+    if OE_COOKIES_JSON:
+        try:
+            return json.loads(OE_COOKIES_JSON)
+        except json.JSONDecodeError:
+            return None
+
+    # Try local cookie file (for local dev)
+    if OE_COOKIES_PATH.exists():
+        try:
+            with open(OE_COOKIES_PATH) as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            return None
+
+    return None
+
+
+def _tool_query_guidelines(input_data):
+    """Query clinical guidelines via OpenEvidence API."""
+    question = input_data["question"]
+
+    cookies = _load_oe_cookies()
+    if not cookies:
+        return json.dumps({
+            "error": "OpenEvidence not configured. Skipping guideline query.",
+            "fallback": "Use your built-in domain knowledge and PubMed search to assess guideline relevance.",
+        })
+
+    # Build cookie header from stored cookies
+    cookie_header = "; ".join(
+        f"{c['name']}={c['value']}" for c in cookies if "name" in c and "value" in c
+    )
+
+    # Step 1: Submit question
+    payload = json.dumps({
+        "question": question,
+        "article_type": "Ask OpenEvidence Light with citations",
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://www.openevidence.com/api/articles",
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Cookie": cookie_header,
+            "User-Agent": "CRS-KB-Agent/1.0",
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read())
+    except Exception as e:
+        return json.dumps({"error": f"OpenEvidence API error: {e}"})
+
+    article_id = result.get("id") or result.get("article_id")
+    if not article_id:
+        # Maybe the response already contains the answer
+        content = result.get("content") or result.get("text") or result.get("answer")
+        if content:
+            return json.dumps({"answer": content[:3000], "source": "openevidence"})
+        return json.dumps({"error": "No article_id in response", "raw": str(result)[:500]})
+
+    # Step 2: Poll for completion
+    for _ in range(60):  # Max 60 polls × 2s = 120s
+        time.sleep(2)
+        poll_url = f"https://www.openevidence.com/api/articles/{article_id}"
+        poll_req = urllib.request.Request(
+            poll_url,
+            headers={"Cookie": cookie_header, "User-Agent": "CRS-KB-Agent/1.0"},
+        )
+        try:
+            with urllib.request.urlopen(poll_req, timeout=15) as resp:
+                article = json.loads(resp.read())
+        except Exception:
+            continue
+
+        status = article.get("status") or article.get("state")
+        if status in ("completed", "done", "finished"):
+            content = article.get("content") or article.get("text") or article.get("answer") or ""
+            citations = article.get("citations") or article.get("references") or []
+
+            # Extract citation summaries
+            cite_strs = []
+            for c in citations[:5]:
+                if isinstance(c, dict):
+                    cite_strs.append(f"- {c.get('title', '')} ({c.get('journal', '')}, {c.get('year', '')})")
+                elif isinstance(c, str):
+                    cite_strs.append(f"- {c}")
+
+            return json.dumps({
+                "answer": content[:3000],
+                "citations": cite_strs,
+                "source": "openevidence",
+            }, ensure_ascii=False)
+
+        if status in ("failed", "error"):
+            return json.dumps({"error": f"OpenEvidence query failed: {article.get('error', 'unknown')}"})
+
+    return json.dumps({"error": "OpenEvidence query timed out after 120s"})
 
 
 # ---------------------------------------------------------------------------
