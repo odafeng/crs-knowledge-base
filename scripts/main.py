@@ -99,17 +99,9 @@ def run_pipeline(topic=None, skip_conferences=False, dry_run=False, daily_mode=F
         print("[Pipeline] No high-relevance papers. Done.")
         return
 
-    # Layer 3: Route by score — PR for 5, Issue for 4
-    score_5 = [c for c in classified if c.get("ai_score") and c["ai_score"] >= 5]
-    score_4 = [c for c in classified if c not in score_5]
-
-    if score_5:
-        print(f"\n[Pipeline] {len(score_5)} practice-changing papers → Auto-PR")
-        create_prs(score_5, dry_run=dry_run)
-
-    if score_4:
-        print(f"\n[Pipeline] {len(score_4)} high-impact papers → GitHub Issues")
-        create_issues(score_4, dry_run=dry_run)
+    # Layer 3: All ≥4 papers get auto-PR with auto-merge
+    print(f"\n[Pipeline] {len(classified)} papers → Auto-PR + Auto-merge")
+    create_prs(classified, dry_run=dry_run)
 
     # LINE notification for all high-relevance papers
     print()
