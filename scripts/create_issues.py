@@ -34,6 +34,7 @@ def _ensure_labels(labels):
     """Create labels if they don't exist (idempotent)."""
     label_colors = {
         "new-paper": "0e8a16",
+        "priority:high": "b60205",
         "topic:braf-v600e": "d93f0b",
         "topic:kras-g12c": "e99695",
         "topic:msi-h": "0075ca",
@@ -116,7 +117,7 @@ def create_issues(papers, dry_run=False):
         return
 
     # Collect all labels we'll need
-    all_labels = {"new-paper"}
+    all_labels = {"new-paper", "priority:high"}
     for p in papers:
         lbl = _topic_to_label(p.get("topic", ""))
         if lbl:
