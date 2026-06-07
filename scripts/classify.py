@@ -1,11 +1,10 @@
 """Layer 2: Topic-specific AI agents with tool use for paper classification.
 
-Each agent runs in an agentic loop — it can autonomously search PubMed,
-fetch paper details, check existing KB papers, and browse web pages
-before making its final classification decision.
+Each agent runs in an agentic loop with research tools AND a mandatory
+submit_classification tool that forces structured JSON output.
+No more fragile regex-based JSON extraction from free-form text.
 """
 
-import argparse
 import json
 import sys
 
@@ -15,117 +14,156 @@ from agent_tools import AGENT_TOOLS, execute_tool
 from config import ANTHROPIC_API_KEY, CLASSIFY_MODEL, RELEVANCE_THRESHOLD
 from topic_agents import build_paper_prompt, build_system_prompt
 
-MAX_AGENT_TURNS = 6  # Max tool-use rounds per paper
+MAX_AGENT_TURNS = 8  # Max tool-use rounds per paper
+
+# The submit_classification tool forces the agent to output structured JSON.
+# This eliminates the fragile "parse JSON from free text" problem.
+SUBMIT_CLASSIFICATION_TOOL = {
+    "name": "submit_classification",
+    "description": (
+        "Submit your final classification for the candidate paper. "
+        "You MUST call this tool exactly once as your final action. "
+        "Do not write the classification as plain text — always use this tool."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "relevance_score": {
+                "type": "integer",
+                "description": "1-5 relevance score",
+                "enum": [1, 2, 3, 4, 5],
+            },
+            "contextual_analysis": {
+                "type": "string",
+                "description": "繁體中文 contextual analysis (150-200 chars)",
+            },
+            "bottom_line": {
+                "type": "string",
+                "description": "繁體中文 one-line summary (≤100 chars). Required for score ≥ 4.",
+            },
+            "suggested_js": {
+                "type": "object",
+                "description": "JS paper object draft. Required for score ≥ 4.",
+            },
+            "suggested_filename": {
+                "type": "string",
+                "description": "Evidence HTML filename. Required for score ≥ 4.",
+            },
+            "relations": {
+                "type": "array",
+                "description": "Relations to existing papers.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "targetId": {"type": "string"},
+                        "type": {"type": "string", "enum": ["builds_on", "supersedes", "subgroup_of", "same_regimen", "contradicts"]},
+                    },
+                    "required": ["targetId", "type"],
+                },
+            },
+            "chart_updates": {
+                "type": "object",
+                "description": "Optional chart bar additions/updates.",
+            },
+        },
+        "required": ["relevance_score", "contextual_analysis"],
+    },
+}
+
+ALL_TOOLS = AGENT_TOOLS + [SUBMIT_CLASSIFICATION_TOOL]
 
 
-def classify_paper(client, paper):
+def classify_paper(client: Anthropic, paper: dict) -> dict:
     """Classify a single paper using its topic-specific agent with tool use.
 
-    The agent runs in an agentic loop:
-    1. Receives the candidate paper
-    2. Can call tools (search_pubmed, fetch_paper_details, etc.)
-    3. Continues until it produces a final JSON classification
+    The agent MUST call submit_classification as its final action.
+    Research tools (search_pubmed, etc.) are called in earlier turns.
     """
     topic = paper.get("topic", "")
     system_prompt = build_system_prompt(topic)
     user_prompt = build_paper_prompt(paper)
 
-    messages = [{"role": "user", "content": user_prompt}]
+    messages: list[dict] = [{"role": "user", "content": user_prompt}]
 
-    # Agentic loop
     for turn in range(MAX_AGENT_TURNS):
         response = client.messages.create(
             model=CLASSIFY_MODEL,
             max_tokens=8000,
             thinking={"type": "enabled", "budget_tokens": 4000},
             system=system_prompt,
-            tools=AGENT_TOOLS,
+            tools=ALL_TOOLS,
             messages=messages,
         )
 
-        # Log thinking blocks (chain of thought)
+        # Log thinking blocks
         for block in response.content:
             if block.type == "thinking" and block.thinking.strip():
-                # Truncate for logs but show enough to understand reasoning
                 thought = block.thinking.strip().replace("\n", " ")
                 print(f"    [CoT] {thought[:300]}")
 
-        # If agent is done (no more tool calls), extract final answer
-        if response.stop_reason == "end_turn":
-            return _extract_classification(paper, response)
+        # Check for submit_classification tool call — this is the final answer
+        for block in response.content:
+            if block.type == "tool_use" and block.name == "submit_classification":
+                result = block.input  # Already structured JSON from tool schema
+                paper["ai_score"] = result.get("relevance_score", 0)
+                paper["ai_analysis"] = result.get("contextual_analysis", "")
+                paper["ai_bottom_line"] = result.get("bottom_line", "")
+                paper["ai_suggested_js"] = result.get("suggested_js")
+                paper["ai_suggested_filename"] = result.get("suggested_filename", "")
+                paper["ai_relations"] = result.get("relations", [])
+                paper["ai_chart_updates"] = result.get("chart_updates")
+                paper["ai_parse_failed"] = False
+                return paper
 
-        # If agent wants to use tools
+        # If agent wants to use research tools (not submit_classification)
         if response.stop_reason == "tool_use":
-            # Log agent's reasoning before tool calls
+            # Log reasoning text before tool calls
             for block in response.content:
                 if block.type == "text" and block.text.strip():
                     print(f"    [Think] {block.text.strip()[:200]}")
 
-            # Append assistant response (with tool_use blocks)
             messages.append({"role": "assistant", "content": response.content})
 
-            # Execute each tool call
             tool_results = []
             for block in response.content:
-                if block.type == "tool_use":
-                    tool_name = block.name
-                    tool_input = block.input
-                    print(f"    [Tool] {tool_name}({json.dumps(tool_input, ensure_ascii=False)[:80]})")
-
-                    result = execute_tool(tool_name, tool_input)
+                if block.type == "tool_use" and block.name != "submit_classification":
+                    print(f"    [Tool] {block.name}({json.dumps(block.input, ensure_ascii=False)[:80]})")
+                    result = execute_tool(block.name, block.input)
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": block.id,
                         "content": result,
                     })
 
-            # Append tool results
-            messages.append({"role": "user", "content": tool_results})
+            if tool_results:
+                messages.append({"role": "user", "content": tool_results})
             continue
 
-        # Any other stop reason — extract what we have
-        return _extract_classification(paper, response)
+        # end_turn without submit_classification — agent forgot to call the tool
+        if response.stop_reason == "end_turn":
+            print(f"    [WARN] Agent ended without calling submit_classification", file=sys.stderr)
+            break
 
-    # If we hit max turns, extract from last response
-    print(f"    [WARN] Agent hit max turns ({MAX_AGENT_TURNS})", file=sys.stderr)
-    return _extract_classification(paper, response)
-
-
-def _extract_classification(paper, response):
-    """Extract structured classification from the agent's final response."""
-    raw = ""
-    for block in response.content:
-        if block.type == "text":
-            raw += block.text
-
-    # Parse JSON from response
-    json_str = raw
-    if "```json" in raw:
-        json_str = raw.split("```json")[1].split("```")[0]
-    elif "```" in raw:
-        parts = raw.split("```")
-        if len(parts) >= 2:
-            json_str = parts[1]
-
-    try:
-        result = json.loads(json_str.strip())
-    except json.JSONDecodeError:
-        print(f"    [WARN] Failed to parse agent response as JSON", file=sys.stderr)
-        result = {"relevance_score": 0, "contextual_analysis": raw[:500]}
-
-    paper["ai_score"] = result.get("relevance_score", 0)
-    paper["ai_analysis"] = result.get("contextual_analysis", "")
-    paper["ai_bottom_line"] = result.get("bottom_line", "")
-    paper["ai_suggested_js"] = result.get("suggested_js")
-    paper["ai_suggested_filename"] = result.get("suggested_filename", "")
-    paper["ai_relations"] = result.get("relations", [])
-    paper["ai_chart_updates"] = result.get("chart_updates")
-
+    # If we get here, the agent never called submit_classification properly.
+    # Mark as parse failure — NOT as score 0. This goes to a review queue.
+    print(f"    [WARN] Classification parse failed — marking for manual review", file=sys.stderr)
+    paper["ai_score"] = None
+    paper["ai_analysis"] = "(Agent did not produce structured classification — needs manual review)"
+    paper["ai_bottom_line"] = ""
+    paper["ai_suggested_js"] = None
+    paper["ai_suggested_filename"] = ""
+    paper["ai_relations"] = []
+    paper["ai_chart_updates"] = None
+    paper["ai_parse_failed"] = True
     return paper
 
 
-def classify_all(candidates, dry_run=False):
-    """Classify a list of candidate papers using topic-specific agents."""
+def classify_all(candidates: list[dict], dry_run: bool = False) -> list[dict]:
+    """Classify a list of candidate papers using topic-specific agents.
+
+    Returns papers that pass the relevance threshold OR had parse failures
+    (parse failures go to review, not silently dropped).
+    """
     if not candidates:
         print("[Classify] No candidates to classify.")
         return []
@@ -135,6 +173,7 @@ def classify_all(candidates, dry_run=False):
         for c in candidates:
             c["ai_score"] = None
             c["ai_analysis"] = "(AI classification skipped — no API key)"
+            c["ai_parse_failed"] = False
         return candidates
 
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
@@ -147,39 +186,36 @@ def classify_all(candidates, dry_run=False):
         if dry_run:
             paper["ai_score"] = None
             paper["ai_analysis"] = "(dry run)"
+            paper["ai_parse_failed"] = False
             classified.append(paper)
             continue
 
         paper = classify_paper(client, paper)
         classified.append(paper)
-        print(f"  Score: {paper['ai_score']}/5")
 
-    # Filter by threshold
-    high_relevance = [c for c in classified if c.get("ai_score") is None or (c["ai_score"] and c["ai_score"] >= RELEVANCE_THRESHOLD)]
-    low_relevance = [c for c in classified if c.get("ai_score") is not None and c["ai_score"] and c["ai_score"] < RELEVANCE_THRESHOLD]
+        if paper.get("ai_parse_failed"):
+            print(f"  ⚠ Parse failed — will create review issue")
+        else:
+            print(f"  Score: {paper['ai_score']}/5")
+
+    # Keep papers that: pass threshold, OR had parse failures, OR had no API key
+    high_relevance = []
+    low_relevance = []
+    parse_failures = []
+
+    for c in classified:
+        if c.get("ai_parse_failed"):
+            parse_failures.append(c)
+        elif c.get("ai_score") is None:
+            high_relevance.append(c)  # No API key — pass through
+        elif c["ai_score"] >= RELEVANCE_THRESHOLD:
+            high_relevance.append(c)
+        else:
+            low_relevance.append(c)
 
     if low_relevance:
         print(f"[Classify] Filtered out {len(low_relevance)} low-relevance papers (score < {RELEVANCE_THRESHOLD})")
+    if parse_failures:
+        print(f"[Classify] {len(parse_failures)} papers had parse failures — sending to review")
 
-    return high_relevance
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Classify papers with topic-specific AI agents")
-    parser.add_argument("--input", help="JSON file with candidates (default: stdin)")
-    parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args()
-
-    if args.input:
-        with open(args.input) as f:
-            candidates = json.load(f)
-    else:
-        candidates = json.load(sys.stdin)
-
-    results = classify_all(candidates, dry_run=args.dry_run)
-
-    json.dump(results, sys.stdout, indent=2, ensure_ascii=False)
-
-
-if __name__ == "__main__":
-    main()
+    return high_relevance + parse_failures

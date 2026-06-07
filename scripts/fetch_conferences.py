@@ -286,23 +286,52 @@ def fetch_conferences(topic=None, dry_run=False):
 
     all_candidates = []
 
+    # ASCRS/ESCP cover all colorectal surgery — use terms from ALL topics
+    all_terms = set()
+    for cfg in topics_config.values():
+        all_terms.update(cfg.get("conference_terms", []))
+
+    print(f"[Conferences] ASCRS/ESCP: searching {len(all_terms)} terms across all topics")
+    ascrs_results = _scrape_ascrs(list(all_terms)[:8])  # Limit to avoid over-scraping
+    escp_results = _scrape_escp(list(all_terms)[:8])
+
     for t, cfg in topics_config.items():
         terms = cfg.get("conference_terms", [])
         if not terms:
             continue
 
-        print(f"[Conferences] Topic: {t}")
+        # ASCO/ESMO: per-topic search (oncology-focused)
+        print(f"[Conferences] Topic: {t} (ASCO/ESMO)")
         asco = _scrape_asco(terms)
         esmo = _scrape_esmo(terms)
-        ascrs = _scrape_ascrs(terms)
-        escp = _scrape_escp(terms)
 
-        for c in asco + esmo + ascrs + escp:
+        for c in asco + esmo:
             if c["abstract_id"] in tracked_ids:
                 continue
             if c["doi"] and c["doi"] in tracked_doi_set:
                 continue
             c["topic"] = t
+            all_candidates.append(c)
+
+    # ASCRS/ESCP results: assign topic by keyword matching
+    for c in ascrs_results + escp_results:
+        if c["abstract_id"] in tracked_ids:
+            continue
+        if c["doi"] and c["doi"] in tracked_doi_set:
+            continue
+        title_lower = c.get("title", "").lower()
+        # Match to best topic by keywords
+        assigned = False
+        for t, cfg in topics_config.items():
+            keywords = cfg.get("keywords", [])
+            if any(kw.lower() in title_lower for kw in keywords):
+                c["topic"] = t
+                all_candidates.append(c)
+                assigned = True
+                break
+        if not assigned:
+            # Default surgical abstracts to robotic-surgery
+            c["topic"] = "robotic-surgery"
             all_candidates.append(c)
 
     if dry_run:

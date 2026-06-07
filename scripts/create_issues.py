@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 from config import GITHUB_REPO, GITHUB_TOKEN
+from topics import LABEL_COLORS, TOPIC_LABELS, topic_from_str
 
 
 def _run_gh(args, input_text=None):
@@ -30,47 +31,35 @@ def _run_gh(args, input_text=None):
         return False, ""
 
 
-def _ensure_labels(labels):
+def _ensure_labels(labels: set[str]) -> None:
     """Create labels if they don't exist (idempotent)."""
-    label_colors = {
-        "new-paper": "0e8a16",
-        "priority:high": "b60205",
-        "topic:braf-v600e": "d93f0b",
-        "topic:kras-g12c": "e99695",
-        "topic:msi-h": "0075ca",
-        "topic:her2": "7057ff",
-        "topic:ras-wt": "fbca04",
-        "topic:agnostic": "c5def5",
-        "topic:robotic": "006b75",
-    }
-    for label, color in label_colors.items():
-        if label in labels:
+    for label in labels:
+        color = LABEL_COLORS.get(label)
+        if color:
             _run_gh(["label", "create", label, "--color", color, "--force"])
 
 
-def _topic_to_label(topic):
+def _topic_to_label(topic_str: str) -> str:
     """Convert topic key to GitHub label."""
-    mapping = {
-        "mCRC-BRAF-V600E": "topic:braf-v600e",
-        "mCRC-KRAS-G12C": "topic:kras-g12c",
-        "mCRC-MSI-H": "topic:msi-h",
-        "mCRC-HER2": "topic:her2",
-        "mCRC-RAS-wt": "topic:ras-wt",
-        "mCRC-agnostic": "topic:agnostic",
-        "robotic-surgery": "topic:robotic",
-    }
-    return mapping.get(topic, "")
+    topic = topic_from_str(topic_str)
+    return TOPIC_LABELS.get(topic, "") if topic else ""
 
 
-def format_issue_body(paper):
+def format_issue_body(paper: dict) -> str:
     """Format a paper into a GitHub Issue body (markdown)."""
     score = paper.get("ai_score", "?")
     analysis = paper.get("ai_analysis", "N/A")
     bottom_line = paper.get("ai_bottom_line", "")
+    parse_failed = paper.get("ai_parse_failed", False)
 
     lines = []
+
+    if parse_failed:
+        lines.append("> **Warning**: AI classification failed to produce structured output. Manual review required.")
+        lines.append("")
+
     lines.append(f"**Topic**: `{paper.get('topic', '')}`")
-    lines.append(f"**Relevance Score**: {score}/5")
+    lines.append(f"**Relevance Score**: {score}/5" if score is not None else "**Relevance Score**: N/A (parse failed)")
     lines.append(f"**Source**: {paper.get('source', 'pubmed').upper()}")
     lines.append(f"**Journal**: {paper.get('journal', '')} | **Year**: {paper.get('year', '')}")
 
@@ -112,14 +101,14 @@ def format_issue_body(paper):
     return "\n".join(lines)
 
 
-def create_issues(papers, dry_run=False):
-    """Create GitHub Issues for a list of classified papers."""
+def create_issues(papers: list[dict], dry_run: bool = False) -> None:
+    """Create GitHub Issues for classified papers."""
     if not papers:
         print("[Issues] No papers to create issues for.")
         return
 
     # Collect all labels we'll need
-    all_labels = {"new-paper", "priority:high"}
+    all_labels = {"new-paper", "priority:high", "parse-failed"}
     for p in papers:
         lbl = _topic_to_label(p.get("topic", ""))
         if lbl:
@@ -134,16 +123,21 @@ def create_issues(papers, dry_run=False):
         if len(title_short) > 100:
             title_short = title_short[:97] + "..."
 
-        issue_title = f"[New Paper] {title_short}"
+        parse_failed = paper.get("ai_parse_failed", False)
+        prefix = "[Review]" if parse_failed else "[New Paper]"
+        issue_title = f"{prefix} {title_short}"
         body = format_issue_body(paper)
         labels = ["new-paper"]
         topic_label = _topic_to_label(paper.get("topic", ""))
         if topic_label:
             labels.append(topic_label)
 
-        score = paper.get("ai_score")
-        if score and score >= 5:
-            labels.append("priority:high")
+        if parse_failed:
+            labels.append("parse-failed")
+        else:
+            score = paper.get("ai_score")
+            if score and score >= 5:
+                labels.append("priority:high")
 
         if dry_run:
             print(f"\n{'='*60}")

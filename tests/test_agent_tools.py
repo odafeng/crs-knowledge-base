@@ -84,39 +84,37 @@ class TestQueryGuidelines:
 
 
 class TestClassifyWithAgenticLoop:
-    """Test the agentic loop in classify.py."""
+    """Test the agentic loop with submit_classification tool."""
 
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
-    def test_agent_with_tool_use(self, sample_candidate):
-        """Test that the agent loop handles tool_use → tool_result → end_turn."""
+    def test_agent_with_tool_use_then_submit(self, sample_candidate):
+        """research tool → submit_classification."""
         from classify import classify_paper
 
         mock_client = MagicMock()
 
-        # First response: agent wants to use a tool
+        # First response: research tool
         tool_response = MagicMock()
         tool_response.stop_reason = "tool_use"
-        tool_use_block = MagicMock()
-        tool_use_block.type = "tool_use"
-        tool_use_block.name = "lookup_existing_papers"
-        tool_use_block.input = {"topic": "mCRC-BRAF-V600E"}
-        tool_use_block.id = "tool_123"
-        tool_response.content = [tool_use_block]
+        tool_block = MagicMock()
+        tool_block.type = "tool_use"
+        tool_block.name = "lookup_existing_papers"
+        tool_block.input = {"topic": "mCRC-BRAF-V600E"}
+        tool_block.id = "tool_123"
+        tool_response.content = [tool_block]
 
-        # Second response: agent gives final answer
+        # Second response: submit_classification
         final_response = MagicMock()
-        final_response.stop_reason = "end_turn"
-        text_block = MagicMock()
-        text_block.type = "text"
-        text_block.text = json.dumps({
+        final_response.stop_reason = "tool_use"
+        submit_block = MagicMock()
+        submit_block.type = "tool_use"
+        submit_block.name = "submit_classification"
+        submit_block.input = {
             "relevance_score": 4,
             "contextual_analysis": "Important paper after tool research",
-            "bottom_line": "Key finding",
-            "suggested_js": {"id": "test-2026"},
-            "suggested_filename": "Test_2026.html",
-            "relations": [],
-        })
-        final_response.content = [text_block]
+        }
+        submit_block.id = "submit_1"
+        final_response.content = [submit_block]
 
         mock_client.messages.create.side_effect = [tool_response, final_response]
 
@@ -124,28 +122,40 @@ class TestClassifyWithAgenticLoop:
             result = classify_paper(mock_client, sample_candidate)
 
         assert result["ai_score"] == 4
-        assert "tool research" in result["ai_analysis"]
-        # Verify two API calls were made (tool use + final)
+        assert result["ai_parse_failed"] is False
         assert mock_client.messages.create.call_count == 2
 
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
-    def test_agent_direct_answer(self, sample_candidate):
-        """Test agent that answers directly without tools."""
+    def test_agent_direct_submit(self, sample_candidate):
+        """Agent calls submit_classification directly (no research needed)."""
+        from classify import classify_paper
+
+        mock_client = MagicMock()
+        response = MagicMock()
+        response.stop_reason = "tool_use"
+        submit_block = MagicMock()
+        submit_block.type = "tool_use"
+        submit_block.name = "submit_classification"
+        submit_block.input = {"relevance_score": 2, "contextual_analysis": "Low relevance"}
+        submit_block.id = "submit_1"
+        response.content = [submit_block]
+        mock_client.messages.create.return_value = response
+
+        result = classify_paper(mock_client, sample_candidate)
+        assert result["ai_score"] == 2
+        assert mock_client.messages.create.call_count == 1
+
+    @patch("classify.ANTHROPIC_API_KEY", "test-key")
+    def test_no_submit_marks_parse_failure(self, sample_candidate):
+        """Agent that never calls submit_classification → parse_failed."""
         from classify import classify_paper
 
         mock_client = MagicMock()
         response = MagicMock()
         response.stop_reason = "end_turn"
-        text_block = MagicMock()
-        text_block.type = "text"
-        text_block.text = json.dumps({
-            "relevance_score": 2,
-            "contextual_analysis": "Low relevance paper",
-        })
-        response.content = [text_block]
+        response.content = [MagicMock(type="text", text="Just some text")]
         mock_client.messages.create.return_value = response
 
         result = classify_paper(mock_client, sample_candidate)
-        assert result["ai_score"] == 2
-        # Only one API call (no tool use)
-        assert mock_client.messages.create.call_count == 1
+        assert result["ai_parse_failed"] is True
+        assert result["ai_score"] is None

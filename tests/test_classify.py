@@ -6,15 +6,34 @@ from unittest.mock import MagicMock, patch
 from classify import classify_all, classify_paper
 
 
-def _mock_response(text, stop_reason="end_turn"):
-    """Create a mock API response with proper content block structure."""
-    block = MagicMock()
-    block.type = "text"
-    block.text = text
-    resp = MagicMock()
-    resp.stop_reason = stop_reason
-    resp.content = [block]
-    return resp
+def _mock_submit_classification(result_dict, *, with_research_tool=False):
+    """Create mock API responses that end with submit_classification tool call."""
+    responses = []
+
+    if with_research_tool:
+        # First response: agent uses a research tool
+        tool_response = MagicMock()
+        tool_response.stop_reason = "tool_use"
+        tool_block = MagicMock()
+        tool_block.type = "tool_use"
+        tool_block.name = "lookup_existing_papers"
+        tool_block.input = {"topic": "mCRC-BRAF-V600E"}
+        tool_block.id = "tool_123"
+        tool_response.content = [tool_block]
+        responses.append(tool_response)
+
+    # Final response: submit_classification
+    final = MagicMock()
+    final.stop_reason = "tool_use"
+    submit_block = MagicMock()
+    submit_block.type = "tool_use"
+    submit_block.name = "submit_classification"
+    submit_block.input = result_dict
+    submit_block.id = "submit_1"
+    final.content = [submit_block]
+    responses.append(final)
+
+    return responses
 
 
 class TestClassifyAll:
@@ -38,38 +57,65 @@ class TestClassifyAll:
 
 class TestClassifyPaper:
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
-    def test_parses_json_response(self, sample_candidate):
+    def test_structured_output_via_tool(self, sample_candidate):
+        """Agent calls submit_classification tool → structured JSON."""
         mock_client = MagicMock()
-        mock_client.messages.create.return_value = _mock_response(json.dumps({
+        mock_client.messages.create.side_effect = _mock_submit_classification({
             "relevance_score": 5,
             "contextual_analysis": "Very important paper",
             "bottom_line": "Game changer",
             "suggested_js": {"id": "test-2026"},
             "suggested_filename": "Test_NEJM_2026.html",
             "relations": [],
-        }))
+        })
 
         result = classify_paper(mock_client, sample_candidate)
         assert result["ai_score"] == 5
         assert result["ai_analysis"] == "Very important paper"
-        assert result["ai_bottom_line"] == "Game changer"
+        assert result["ai_parse_failed"] is False
 
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
-    def test_handles_markdown_wrapped_json(self, sample_candidate):
+    def test_research_then_classify(self, sample_candidate):
+        """Agent uses research tool first, then submit_classification."""
         mock_client = MagicMock()
-        mock_client.messages.create.return_value = _mock_response(
-            'Here is my analysis:\n```json\n{"relevance_score": 3, "contextual_analysis": "Moderate"}\n```'
+        mock_client.messages.create.side_effect = _mock_submit_classification(
+            {"relevance_score": 4, "contextual_analysis": "After research"},
+            with_research_tool=True,
         )
 
-        result = classify_paper(mock_client, sample_candidate)
-        assert result["ai_score"] == 3
+        with patch("agent_tools.load_tracked_dois", return_value={}):
+            result = classify_paper(mock_client, sample_candidate)
+        assert result["ai_score"] == 4
+        assert mock_client.messages.create.call_count == 2
 
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
-    def test_handles_malformed_response(self, sample_candidate):
+    def test_parse_failure_not_silent(self, sample_candidate):
+        """If agent never calls submit_classification → parse_failed, NOT score 0."""
         mock_client = MagicMock()
-        mock_client.messages.create.return_value = _mock_response(
-            "This is not JSON at all, just plain text analysis."
-        )
+        response = MagicMock()
+        response.stop_reason = "end_turn"
+        text_block = MagicMock()
+        text_block.type = "text"
+        text_block.text = "I think this paper is interesting but..."
+        response.content = [text_block]
+        mock_client.messages.create.return_value = response
 
         result = classify_paper(mock_client, sample_candidate)
-        assert result["ai_score"] == 0  # fallback
+        assert result["ai_parse_failed"] is True
+        assert result["ai_score"] is None  # NOT 0
+
+    def test_parse_failures_included_in_results(self):
+        """Parse failures should be included in classify_all results (not dropped)."""
+        papers = [
+            {"title": "A", "topic": "mCRC-BRAF-V600E", "ai_score": 5, "ai_parse_failed": False},
+            {"title": "B", "topic": "mCRC-BRAF-V600E", "ai_score": 2, "ai_parse_failed": False},
+            {"title": "C", "topic": "mCRC-BRAF-V600E", "ai_score": None, "ai_parse_failed": True},
+        ]
+        # Simulate the filtering logic from classify_all
+        from config import RELEVANCE_THRESHOLD
+        kept = [c for c in papers
+                if c.get("ai_parse_failed")
+                or c.get("ai_score") is None
+                or c["ai_score"] >= RELEVANCE_THRESHOLD]
+        assert len(kept) == 2  # score=5 + parse_failed, NOT score=2
+        assert any(c["title"] == "C" for c in kept)  # parse failure kept

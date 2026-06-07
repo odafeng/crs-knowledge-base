@@ -17,18 +17,7 @@ from pathlib import Path
 from anthropic import Anthropic
 
 from config import ANTHROPIC_API_KEY, GITHUB_TOKEN, INDEX_HTML, PROJECT_ROOT
-
-
-# Map topic to the JS array variable name and the docs subfolder
-TOPIC_CONFIG = {
-    "mCRC-BRAF-V600E": {"var": "BRAF_PAPERS", "docs_dir": "mCRC-BRAF-V600E", "metrics_var": "METRICS"},
-    "mCRC-KRAS-G12C": {"var": "G12C_PAPERS", "docs_dir": "mCRC-KRAS-G12C", "metrics_var": None},
-    "mCRC-MSI-H": {"var": "MSIH_PAPERS", "docs_dir": "mCRC-MSI-H", "metrics_var": None},
-    "mCRC-HER2": {"var": "HER2_PAPERS", "docs_dir": "mCRC-HER2", "metrics_var": None},
-    "mCRC-RAS-wt": {"var": "RASWT_PAPERS", "docs_dir": "mCRC-RAS-wt", "metrics_var": None},
-    "mCRC-agnostic": {"var": None, "docs_dir": "mCRC-agnostic", "metrics_var": None},
-    "robotic-surgery": {"var": None, "docs_dir": "robotic-surgery", "metrics_var": "TME_METRICS"},
-}
+from topics import TOPIC_DOCS_DIR, TOPIC_JS_VAR, TOPIC_METRICS_VAR, topic_from_str
 
 # Reference HTML for style matching
 REFERENCE_HTML = (PROJECT_ROOT / "docs" / "mCRC-BRAF-V600E" / "Kopetz_NEJM_2019_BEACON.html").read_text()
@@ -158,12 +147,11 @@ def insert_js_object(topic, js_obj):
 
     Returns True if successful.
     """
-    config = TOPIC_CONFIG.get(topic)
-    if not config or not config["var"]:
+    t = topic_from_str(topic)
+    var_name = TOPIC_JS_VAR.get(t) if t else None
+    if not var_name:
         print(f"  [WARN] No JS array mapping for topic: {topic}", file=sys.stderr)
         return False
-
-    var_name = config["var"]
     html = INDEX_HTML.read_text(encoding="utf-8")
 
     # Format the JS object
@@ -195,8 +183,8 @@ def apply_chart_updates(topic, chart_updates):
       "ORR": {"action": "update", "match_label": "EC+\\nFOLFIRI", "updates": {"val": 64.4}}
     }
     """
-    config = TOPIC_CONFIG.get(topic, {})
-    metrics_var = config.get("metrics_var")
+    t = topic_from_str(topic)
+    metrics_var = TOPIC_METRICS_VAR.get(t) if t else None
     if not metrics_var or not chart_updates:
         return False
 
@@ -292,8 +280,10 @@ def create_pr_for_paper(paper, dry_run=False):
         print(f"  [WARN] Missing filename or JS object, falling back to issue", file=sys.stderr)
         return False
 
-    config = TOPIC_CONFIG.get(topic, {})
-    docs_dir = config.get("docs_dir", topic)
+    t = topic_from_str(topic)
+    docs_dir = TOPIC_DOCS_DIR.get(t, topic) if t else topic
+    js_var = TOPIC_JS_VAR.get(t) if t else None
+    metrics_var = TOPIC_METRICS_VAR.get(t) if t else None
 
     # Branch name from filename
     branch_safe = re.sub(r"[^a-zA-Z0-9_-]", "-", filename.replace(".html", ""))
@@ -320,14 +310,14 @@ def create_pr_for_paper(paper, dry_run=False):
 
     # 3. Update JS object with file path
     js_obj["file"] = f"docs/{docs_dir}/{filename}"
-    if config.get("var"):
-        print(f"  Inserting JS object into {config['var']}...")
+    if js_var:
+        print(f"  Inserting JS object into {js_var}...")
         insert_js_object(topic, js_obj)
 
     # 3b. Apply chart updates if agent suggested them
     chart_updates = paper.get("ai_chart_updates")
-    if chart_updates and config.get("metrics_var"):
-        print(f"  Applying chart updates to {config['metrics_var']}...")
+    if chart_updates and metrics_var:
+        print(f"  Applying chart updates to {metrics_var}...")
         apply_chart_updates(topic, chart_updates)
 
     # 4. Commit
@@ -358,7 +348,7 @@ def create_pr_for_paper(paper, dry_run=False):
 
 ## Changes
 - Added evidence page: `docs/{docs_dir}/{filename}`
-{f"- Added JS paper object to `{config['var']}` in `index.html`" if config.get('var') else ""}
+{f"- Added JS paper object to `{js_var}` in `index.html`" if js_var else ""}
 
 ---
 Auto-generated and auto-merged by paper-watch pipeline.

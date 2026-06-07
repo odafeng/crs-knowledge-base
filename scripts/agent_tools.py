@@ -17,6 +17,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from config import NCBI_API_KEY, PUBMED_FETCH_URL, PUBMED_SEARCH_URL, load_tracked_dois
+from net import fetch_json, fetch_with_retry
 
 # ---------------------------------------------------------------------------
 # Tool definitions (JSON schema for Claude API)
@@ -126,23 +127,33 @@ AGENT_TOOLS = [
 # ---------------------------------------------------------------------------
 
 
-def execute_tool(tool_name, tool_input):
-    """Execute a tool and return the result string."""
+_TOOL_DISPATCH = {
+    "search_pubmed": lambda inp: _tool_search_pubmed(inp),
+    "fetch_paper_details": lambda inp: _tool_fetch_paper_details(inp),
+    "lookup_existing_papers": lambda inp: _tool_lookup_existing(inp),
+    "web_fetch": lambda inp: _tool_web_fetch(inp),
+    "query_guidelines": lambda inp: _tool_query_guidelines(inp),
+}
+
+
+def execute_tool(tool_name: str, tool_input: dict) -> str:
+    """Execute a tool and return the result string.
+
+    Network errors and known exceptions → error JSON for the agent.
+    Programming errors (KeyError, TypeError, etc.) → re-raised for debugging.
+    """
+    handler = _TOOL_DISPATCH.get(tool_name)
+    if not handler:
+        return json.dumps({"error": f"Unknown tool: {tool_name}"})
+
     try:
-        if tool_name == "search_pubmed":
-            return _tool_search_pubmed(tool_input)
-        elif tool_name == "fetch_paper_details":
-            return _tool_fetch_paper_details(tool_input)
-        elif tool_name == "lookup_existing_papers":
-            return _tool_lookup_existing(tool_input)
-        elif tool_name == "web_fetch":
-            return _tool_web_fetch(tool_input)
-        elif tool_name == "query_guidelines":
-            return _tool_query_guidelines(tool_input)
-        else:
-            return json.dumps({"error": f"Unknown tool: {tool_name}"})
-    except Exception as e:
-        return json.dumps({"error": str(e)})
+        return handler(tool_input)
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError) as e:
+        # Network errors — agent can decide to retry or use a different tool
+        return json.dumps({"error": f"Network error in {tool_name}: {e}"})
+    except (json.JSONDecodeError, ET.ParseError) as e:
+        # Parse errors — data was fetched but malformed
+        return json.dumps({"error": f"Parse error in {tool_name}: {e}"})
 
 
 def _tool_search_pubmed(input_data):
@@ -159,23 +170,19 @@ def _tool_search_pubmed(input_data):
         params["api_key"] = NCBI_API_KEY
 
     url = f"{PUBMED_SEARCH_URL}?{urllib.parse.urlencode(params)}"
-    with urllib.request.urlopen(url, timeout=15) as resp:
-        data = json.loads(resp.read())
+    data = fetch_json(url)
 
     pmids = data.get("esearchresult", {}).get("idlist", [])
     if not pmids:
         return json.dumps({"results": [], "count": 0})
 
-    time.sleep(0.3)
+    time.sleep(0.5)  # PubMed rate limiting (3 req/s without key)
 
-    # Fetch details
     fetch_params = {"db": "pubmed", "id": ",".join(pmids), "retmode": "xml"}
     if NCBI_API_KEY:
         fetch_params["api_key"] = NCBI_API_KEY
     fetch_url = f"{PUBMED_FETCH_URL}?{urllib.parse.urlencode(fetch_params)}"
-
-    with urllib.request.urlopen(fetch_url, timeout=15) as resp:
-        xml_data = resp.read()
+    xml_data = fetch_with_retry(fetch_url)
 
     root = ET.fromstring(xml_data)
     results = []
@@ -192,8 +199,7 @@ def _tool_fetch_paper_details(input_data):
         params["api_key"] = NCBI_API_KEY
 
     url = f"{PUBMED_FETCH_URL}?{urllib.parse.urlencode(params)}"
-    with urllib.request.urlopen(url, timeout=15) as resp:
-        xml_data = resp.read()
+    xml_data = fetch_with_retry(url)
 
     root = ET.fromstring(xml_data)
     article = root.find(".//PubmedArticle")

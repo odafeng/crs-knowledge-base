@@ -1,17 +1,14 @@
 """Tests for GitHub Issue creation."""
 
 from create_issues import _topic_to_label, format_issue_body
+from topics import Topic
 
 
 class TestTopicToLabel:
     def test_all_topics_have_labels(self):
-        topics = [
-            "mCRC-BRAF-V600E", "mCRC-KRAS-G12C", "mCRC-MSI-H",
-            "mCRC-HER2", "mCRC-RAS-wt", "robotic-surgery",
-        ]
-        for t in topics:
-            label = _topic_to_label(t)
-            assert label, f"No label for {t}"
+        for t in Topic:
+            label = _topic_to_label(t.value)
+            assert label, f"No label for {t.value}"
             assert label.startswith("topic:")
 
     def test_unknown_topic(self):
@@ -39,6 +36,15 @@ class TestFormatIssueBody:
     def test_handles_no_ai_results(self, sample_candidate):
         sample_candidate["ai_score"] = None
         sample_candidate["ai_analysis"] = "(skipped)"
+        sample_candidate["ai_parse_failed"] = False
         body = format_issue_body(sample_candidate)
         assert "**Topic**" in body
         assert "Suggested JS Object" not in body
+
+    def test_parse_failure_shows_warning(self, sample_candidate):
+        sample_candidate["ai_score"] = None
+        sample_candidate["ai_analysis"] = "(parse failed)"
+        sample_candidate["ai_parse_failed"] = True
+        body = format_issue_body(sample_candidate)
+        assert "Warning" in body
+        assert "Manual review" in body
