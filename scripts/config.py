@@ -32,10 +32,6 @@ GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY", "")
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
 LINE_USER_ID = os.environ.get("LINE_USER_ID", "")
 
-# OpenEvidence
-OE_COOKIES_PATH = Path.home() / ".openevidence-mcp" / "auth" / "cookies.json"
-OE_COOKIES_JSON = os.environ.get("OE_COOKIES_JSON", "")  # CI: store cookies as secret
-
 # Search window
 PUBMED_RELDATE = 14  # days
 

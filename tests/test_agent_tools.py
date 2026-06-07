@@ -52,32 +52,28 @@ class TestExecuteTool:
 
 
 class TestQueryGuidelines:
-    @patch("agent_tools.OE_COOKIES_JSON", "")
-    @patch("agent_tools.OE_COOKIES_PATH")
-    def test_returns_fallback_when_no_credentials(self, mock_path):
-        mock_path.exists.return_value = False
+    @patch("agent_tools._oe_relay_available", return_value=False)
+    def test_returns_fallback_when_relay_not_running(self, mock_relay):
         result = execute_tool("query_guidelines", {"question": "What is the standard for BRAF V600E mCRC?"})
         parsed = json.loads(result)
         assert "error" in parsed
-        assert "not configured" in parsed["error"]
+        assert "relay not running" in parsed["error"]
         assert "fallback" in parsed
 
-    @patch("agent_tools._load_oe_cookies")
+    @patch("agent_tools._oe_relay_available", return_value=True)
     @patch("agent_tools.urllib.request.urlopen")
-    def test_returns_answer_on_success(self, mock_urlopen, mock_cookies):
-        mock_cookies.return_value = [{"name": "session", "value": "abc123"}]
-
-        # First call: submit question
+    def test_returns_answer_on_success(self, mock_urlopen, mock_relay):
+        # First call: submit question → fire-and-forget
         submit_resp = MagicMock()
-        submit_resp.read.return_value = json.dumps({"id": "article-123"}).encode()
+        submit_resp.read.return_value = json.dumps({"article_id": "abc-123", "status": "pending"}).encode()
         submit_resp.__enter__ = lambda s: s
         submit_resp.__exit__ = MagicMock(return_value=False)
 
-        # Second call: poll — completed
+        # Second call: poll → completed
         poll_resp = MagicMock()
         poll_resp.read.return_value = json.dumps({
-            "status": "completed",
-            "content": "ASCO recommends encorafenib+cetuximab for BRAF V600E mCRC.",
+            "status": "success",
+            "extracted_answer_raw": "ASCO recommends encorafenib+cetuximab for BRAF V600E mCRC.",
             "citations": [{"title": "ASCO Guideline 2025", "journal": "JCO", "year": "2025"}],
         }).encode()
         poll_resp.__enter__ = lambda s: s

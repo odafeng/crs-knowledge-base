@@ -15,14 +15,7 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
-from config import (
-    NCBI_API_KEY,
-    OE_COOKIES_JSON,
-    OE_COOKIES_PATH,
-    PUBMED_FETCH_URL,
-    PUBMED_SEARCH_URL,
-    load_tracked_dois,
-)
+from config import NCBI_API_KEY, PUBMED_FETCH_URL, PUBMED_SEARCH_URL, load_tracked_dois
 
 # ---------------------------------------------------------------------------
 # Tool definitions (JSON schema for Claude API)
@@ -258,101 +251,90 @@ def _tool_web_fetch(input_data):
         return json.dumps({"error": f"Failed to fetch {url}: {e}"})
 
 
-def _load_oe_cookies():
-    """Load OpenEvidence cookies from local file or env var."""
-    # Try env var first (for CI)
-    if OE_COOKIES_JSON:
-        try:
-            return json.loads(OE_COOKIES_JSON)
-        except json.JSONDecodeError:
-            return None
+OE_RELAY_URL = "http://127.0.0.1:8787"
 
-    # Try local cookie file (for local dev)
-    if OE_COOKIES_PATH.exists():
-        try:
-            with open(OE_COOKIES_PATH) as f:
-                return json.load(f)
-        except (json.JSONDecodeError, OSError):
-            return None
 
-    return None
+def _oe_relay_available():
+    """Check if the OpenEvidence relay daemon is running locally."""
+    try:
+        req = urllib.request.Request(f"{OE_RELAY_URL}/health", method="GET")
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read())
+            return data.get("ok", False) and data.get("connected", False)
+    except Exception:
+        return False
 
 
 def _tool_query_guidelines(input_data):
-    """Query clinical guidelines via OpenEvidence API."""
+    """Query clinical guidelines via OpenEvidence relay daemon.
+
+    Uses htlin222/openevidence-mcp's relay architecture:
+    Agent → relay (127.0.0.1:8787) → browser extension → logged-in OE tab
+
+    Only works locally when the relay daemon + browser extension are running.
+    Gracefully falls back when not available (e.g., in GitHub Actions CI).
+    """
     question = input_data["question"]
 
-    cookies = _load_oe_cookies()
-    if not cookies:
+    if not _oe_relay_available():
         return json.dumps({
-            "error": "OpenEvidence not configured. Skipping guideline query.",
+            "error": "OpenEvidence relay not running. Skipping guideline query.",
             "fallback": "Use your built-in domain knowledge and PubMed search to assess guideline relevance.",
+            "hint": "To enable: cd openevidence-mcp && make all, then load the browser extension and stay logged in to openevidence.com",
         })
 
-    # Build cookie header from stored cookies
-    cookie_header = "; ".join(
-        f"{c['name']}={c['value']}" for c in cookies if "name" in c and "value" in c
-    )
-
-    # Step 1: Submit question
+    # Step 1: Submit question via relay
     payload = json.dumps({
         "question": question,
         "article_type": "Ask OpenEvidence Light with citations",
     }).encode("utf-8")
 
-    req = urllib.request.Request(
-        "https://www.openevidence.com/api/articles",
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Cookie": cookie_header,
-            "User-Agent": "CRS-KB-Agent/1.0",
-        },
-    )
-
     try:
+        req = urllib.request.Request(
+            f"{OE_RELAY_URL}/api/ask",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+        )
         with urllib.request.urlopen(req, timeout=30) as resp:
             result = json.loads(resp.read())
     except Exception as e:
-        return json.dumps({"error": f"OpenEvidence API error: {e}"})
+        return json.dumps({"error": f"OpenEvidence relay error: {e}"})
 
-    article_id = result.get("id") or result.get("article_id")
+    # Fire-and-forget: oe_ask returns article_id + status:pending
+    article_id = result.get("article_id") or result.get("id")
     if not article_id:
-        # Maybe the response already contains the answer
-        content = result.get("content") or result.get("text") or result.get("answer")
-        if content:
-            return json.dumps({"answer": content[:3000], "source": "openevidence"})
+        # Maybe already has the answer
+        answer = result.get("extracted_answer_raw") or result.get("content") or result.get("answer")
+        if answer:
+            return json.dumps({"answer": answer[:3000], "source": "openevidence"}, ensure_ascii=False)
         return json.dumps({"error": "No article_id in response", "raw": str(result)[:500]})
 
-    # Step 2: Poll for completion
-    for _ in range(60):  # Max 60 polls × 2s = 120s
+    # Step 2: Poll for completion via relay
+    for _ in range(90):  # Max 90 polls × 2s = 180s
         time.sleep(2)
-        poll_url = f"https://www.openevidence.com/api/articles/{article_id}"
-        poll_req = urllib.request.Request(
-            poll_url,
-            headers={"Cookie": cookie_header, "User-Agent": "CRS-KB-Agent/1.0"},
-        )
         try:
+            poll_req = urllib.request.Request(f"{OE_RELAY_URL}/api/article/{article_id}")
             with urllib.request.urlopen(poll_req, timeout=15) as resp:
                 article = json.loads(resp.read())
         except Exception:
             continue
 
-        status = article.get("status") or article.get("state")
-        if status in ("completed", "done", "finished"):
-            content = article.get("content") or article.get("text") or article.get("answer") or ""
+        status = article.get("status", "")
+        if status in ("success", "completed", "done"):
+            answer = article.get("extracted_answer_raw") or article.get("content") or ""
             citations = article.get("citations") or article.get("references") or []
 
-            # Extract citation summaries
             cite_strs = []
-            for c in citations[:5]:
+            for c in (citations[:5] if isinstance(citations, list) else []):
                 if isinstance(c, dict):
-                    cite_strs.append(f"- {c.get('title', '')} ({c.get('journal', '')}, {c.get('year', '')})")
+                    cite_strs.append(
+                        f"- {c.get('title', '')} ({c.get('journal', '')}, {c.get('year', '')})"
+                    )
                 elif isinstance(c, str):
                     cite_strs.append(f"- {c}")
 
             return json.dumps({
-                "answer": content[:3000],
+                "answer": answer[:3000],
                 "citations": cite_strs,
                 "source": "openevidence",
             }, ensure_ascii=False)
@@ -360,7 +342,7 @@ def _tool_query_guidelines(input_data):
         if status in ("failed", "error"):
             return json.dumps({"error": f"OpenEvidence query failed: {article.get('error', 'unknown')}"})
 
-    return json.dumps({"error": "OpenEvidence query timed out after 120s"})
+    return json.dumps({"error": "OpenEvidence query timed out after 180s"})
 
 
 # ---------------------------------------------------------------------------
