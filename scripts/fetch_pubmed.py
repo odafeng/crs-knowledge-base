@@ -113,6 +113,30 @@ def _parse_article(article_elem):
     }
 
 
+def _is_conference_season():
+    """Check if we're in a major conference window."""
+    from config import load_queries
+    queries = load_queries()
+    seasons = queries.get("conference_seasons", {})
+    today_md = date.today().strftime("%m-%d")
+    for season in seasons.values():
+        if season["start"] <= today_md <= season["end"]:
+            return True, season["name"]
+    return False, None
+
+
+# Conference abstract supplement queries — these catch meeting abstracts
+# that get indexed in PubMed via JCO/Ann Oncol supplements
+CONFERENCE_SUPPLEMENT_QUERIES = [
+    # ASCO Annual Meeting abstracts (JCO supplement)
+    '("J Clin Oncol"[jour]) AND ("Meeting Abstract"[pt]) AND (colorectal[ti] OR colon[ti] OR rectal[ti])',
+    # ESMO abstracts (Ann Oncol supplement)
+    '("Ann Oncol"[jour]) AND ("Meeting Abstract"[pt]) AND (colorectal[ti] OR colon[ti] OR rectal[ti])',
+    # ASCRS/ESCP (Dis Colon Rectum)
+    '("Dis Colon Rectum"[jour]) AND ("Meeting Abstract"[pt])',
+]
+
+
 def fetch_pubmed(topic=None, reldate=PUBMED_RELDATE, dry_run=False):
     """Fetch new papers from PubMed. Returns list of candidate dicts."""
     queries = load_queries()
@@ -121,6 +145,7 @@ def fetch_pubmed(topic=None, reldate=PUBMED_RELDATE, dry_run=False):
 
     topics = [topic] if topic else [t for t in queries if t not in ("rss_feeds", "conference_seasons")]
     candidates = []
+    seen_pmids = set()
 
     for t in topics:
         if t not in queries:
@@ -134,18 +159,59 @@ def fetch_pubmed(topic=None, reldate=PUBMED_RELDATE, dry_run=False):
         if not pmids:
             continue
 
-        # Rate limit: PubMed allows 3 req/s without API key, 10 with
-        time.sleep(0.4)
+        time.sleep(0.5)
 
         articles = efetch(pmids)
         for art in articles:
             if art["doi"] and art["doi"] in tracked_doi_set:
                 continue
+            if art["pmid"] in seen_pmids:
+                continue
+            seen_pmids.add(art["pmid"])
             art["topic"] = t
             candidates.append(art)
 
         print(f"  New candidates after dedup: {len([c for c in candidates if c['topic'] == t])}")
-        time.sleep(0.4)
+        time.sleep(0.5)
+
+    # During conference season: also search for meeting abstract supplements
+    in_season, conf_name = _is_conference_season()
+    if in_season:
+        print(f"\n[PubMed] Conference season ({conf_name}) — searching abstract supplements...")
+        supplement_reldate = 30  # Wider window for meeting abstracts
+
+        for supp_query in CONFERENCE_SUPPLEMENT_QUERIES:
+            pmids = esearch(supp_query, reldate=supplement_reldate)
+            if not pmids:
+                continue
+            time.sleep(0.5)
+
+            articles = efetch(pmids)
+            for art in articles:
+                if art["pmid"] in seen_pmids:
+                    continue
+                if art["doi"] and art["doi"] in tracked_doi_set:
+                    continue
+                seen_pmids.add(art["pmid"])
+
+                # Assign topic by keyword matching from title/abstract
+                assigned = False
+                title_abs = (art.get("title", "") + " " + art.get("abstract", "")).lower()
+                for t in topics:
+                    if t not in queries:
+                        continue
+                    keywords = queries[t].get("keywords", [])
+                    if any(kw.lower() in title_abs for kw in keywords):
+                        art["topic"] = t
+                        art["source"] = "pubmed_supplement"
+                        candidates.append(art)
+                        assigned = True
+                        break
+
+            time.sleep(0.5)
+
+        supp_count = len([c for c in candidates if c.get("source") == "pubmed_supplement"])
+        print(f"  Found {supp_count} new meeting abstract(s) from supplements")
 
     if dry_run:
         print(f"\n[DRY RUN] Total candidates: {len(candidates)}")

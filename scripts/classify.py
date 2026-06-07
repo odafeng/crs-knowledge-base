@@ -73,15 +73,56 @@ SUBMIT_CLASSIFICATION_TOOL = {
 ALL_TOOLS = AGENT_TOOLS + [SUBMIT_CLASSIFICATION_TOOL]
 
 
-def classify_paper(client: Anthropic, paper: dict) -> dict:
+def _build_batch_context(paper: dict, all_candidates: list[dict]) -> str:
+    """Build a summary of other papers in the same batch for cross-paper context."""
+    same_topic = [
+        c for c in all_candidates
+        if c.get("topic") == paper.get("topic")
+        and c.get("doi", "x") != paper.get("doi", "y")  # exclude self
+        and c.get("pmid", "x") != paper.get("pmid", "y")
+    ]
+    other_topics = [
+        c for c in all_candidates
+        if c.get("topic") != paper.get("topic")
+        and c.get("doi", "x") != paper.get("doi", "y")
+    ]
+
+    if not same_topic and not other_topics:
+        return ""
+
+    lines = ["\n\n---\n## 本批其他候選文獻（供相對判斷參考）\n"]
+
+    if same_topic:
+        lines.append(f"### 同主題（{paper.get('topic', '')}）")
+        for c in same_topic[:5]:
+            score_tag = f" [已評: {c['ai_score']}/5]" if c.get("ai_score") is not None else ""
+            lines.append(f"- {c.get('title', '')[:100]}{score_tag}")
+            if c.get("abstract"):
+                lines.append(f"  _{c['abstract'][:150]}..._")
+
+    if other_topics:
+        lines.append(f"\n### 其他主題")
+        for c in other_topics[:3]:
+            lines.append(f"- [{c.get('topic', '')}] {c.get('title', '')[:100]}")
+
+    lines.append("\n注意：如果你發現本篇與同批其他候選有「supersedes」或「contradicts」的關係，請在 contextual_analysis 中說明。")
+    return "\n".join(lines)
+
+
+def classify_paper(client: Anthropic, paper: dict, all_candidates: list[dict] | None = None) -> dict:
     """Classify a single paper using its topic-specific agent with tool use.
 
     The agent MUST call submit_classification as its final action.
     Research tools (search_pubmed, etc.) are called in earlier turns.
+    all_candidates: the full batch for cross-paper context.
     """
     topic = paper.get("topic", "")
     system_prompt = build_system_prompt(topic)
     user_prompt = build_paper_prompt(paper)
+
+    # Inject batch context so agent can make relative judgments
+    if all_candidates and len(all_candidates) > 1:
+        user_prompt += _build_batch_context(paper, all_candidates)
 
     messages: list[dict] = [{"role": "user", "content": user_prompt}]
 
@@ -179,9 +220,13 @@ def classify_all(candidates: list[dict], dry_run: bool = False) -> list[dict]:
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
     classified = []
 
-    for i, paper in enumerate(candidates):
+    # Sort by topic so same-topic papers are processed together.
+    # Earlier papers' scores become visible to later papers in the batch context.
+    candidates_sorted = sorted(candidates, key=lambda c: c.get("topic", ""))
+
+    for i, paper in enumerate(candidates_sorted):
         title_short = paper.get("title", "")[:60]
-        print(f"[Agent] ({i+1}/{len(candidates)}) [{paper.get('topic','')}] {title_short}...")
+        print(f"[Agent] ({i+1}/{len(candidates_sorted)}) [{paper.get('topic','')}] {title_short}...")
 
         if dry_run:
             paper["ai_score"] = None
@@ -190,7 +235,7 @@ def classify_all(candidates: list[dict], dry_run: bool = False) -> list[dict]:
             classified.append(paper)
             continue
 
-        paper = classify_paper(client, paper)
+        paper = classify_paper(client, paper, all_candidates=candidates_sorted)
         classified.append(paper)
 
         if paper.get("ai_parse_failed"):
