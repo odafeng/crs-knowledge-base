@@ -73,7 +73,7 @@
 | 2 | `fetch_paper_details` | 用 PMID 取得完整摘要 |
 | 3 | `lookup_existing_papers` | 查閱 KB 既有文獻（判斷 relations） |
 | 4 | `web_fetch` | 瀏覽 DOI 頁面（readability 智能提取） |
-| 5 | `query_guidelines` | 查詢 ASCO/ESMO/NCCN guideline（OE cache + PubMed fallback） |
+| 5 | `query_guidelines` | 搜尋 PubMed 上的 ASCO/ESMO/NCCN guideline 文章 |
 | 6 | `submit_classification` | 提交結構化評分結果（強制 JSON） |
 
 ---
@@ -147,7 +147,7 @@ PubMed    RSS
 |---|---|
 | AI | Claude Sonnet 4.6 + extended thinking + tool use |
 | 文獻來源 | PubMed E-utilities + RSS feeds + meeting abstract supplements |
-| Guideline | OpenEvidence cache + PubMed guideline search fallback |
+| Guideline | PubMed guideline article search |
 | 通知 | LINE Messaging API |
 | 網路 | exponential backoff retry (3x) |
 | 驗證 | `validate.py`（CI 自動跑） |
@@ -166,7 +166,6 @@ PubMed    RSS
 | `NCBI_API_KEY` | 選填 | PubMed rate limit 3→10 req/s。[申請](https://www.ncbi.nlm.nih.gov/account/settings/) |
 | `LINE_CHANNEL_ACCESS_TOKEN` | 選填 | LINE 推播 channel token |
 | `LINE_USER_ID` | 選填 | LINE 推播收件人 User ID（`U` 開頭） |
-| `OE_COOKIES_JSON` | 選填 | OpenEvidence session cookies（guideline cache refresh） |
 
 ### LINE 推播設定
 
@@ -174,17 +173,6 @@ PubMed    RSS
 2. Issue long-lived channel access token
 3. Basic settings 找到 User ID（`U` 開頭）
 4. 加入 GitHub Secrets
-
-### OpenEvidence Guideline Cache (Unofficial)
-
-> **Caveat**: This integration uses unofficial cookie-based Playwright scraping of openevidence.com. It is NOT an official API, MCP integration, or endorsed method. It may break if OpenEvidence changes their site structure or terms of service. For personal/private use only.
-
-```bash
-# 一次性設定
-pip install playwright && playwright install chromium
-python scripts/refresh_guidelines.py --export-cookies
-cat ~/.openevidence-mcp/auth/cookies.json | gh secret set OE_COOKIES_JSON
-```
 
 ---
 
@@ -200,7 +188,6 @@ python3 -m http.server 8000  # http://localhost:8000
 # Pipeline
 cp .env.example .env  # 填入 API keys
 pip install -r scripts/requirements.txt
-pip install playwright && playwright install chromium  # 選填，guideline refresh 用
 
 # 驗證 + 測試
 python scripts/validate.py

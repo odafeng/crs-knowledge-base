@@ -13,7 +13,6 @@ import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
-from pathlib import Path
 
 from config import NCBI_API_KEY, PUBMED_FETCH_URL, PUBMED_SEARCH_URL, load_tracked_dois
 from net import fetch_json, fetch_with_retry
@@ -100,7 +99,7 @@ AGENT_TOOLS = [
     {
         "name": "query_guidelines",
         "description": (
-            "Query the latest ASCO/ESMO/NCCN clinical guidelines from cached responses or PubMed. "
+            "Search PubMed for the latest ASCO/ESMO/NCCN clinical guideline articles. "
             "Use this to check what the current guideline recommendation is for a specific "
             "biomarker, treatment line, or clinical scenario. This helps you determine whether "
             "a new paper changes the standard of care. "
@@ -304,79 +303,18 @@ def _tool_web_fetch(input_data):
     )
 
 
-GUIDELINES_CACHE_DIR = Path(__file__).resolve().parent.parent / "data" / "guidelines"
-
-
 def _tool_query_guidelines(input_data):
-    """Query clinical guidelines from pre-cached responses (originally sourced
-    from OpenEvidence via unofficial cookie-based Playwright scraping) or
-    fall back to PubMed guideline article search.
+    """Search PubMed for guideline/consensus articles on the given topic."""
+    question = input_data["question"]
 
-    Guidelines are cached as JSON files in data/guidelines/.
-    Refresh with: python scripts/refresh_guidelines.py (requires OE relay).
-    """
-    question = input_data["question"].lower()
-
-    if not GUIDELINES_CACHE_DIR.exists():
-        return json.dumps(
-            {
-                "error": "No guideline cache found.",
-                "fallback": "Use your built-in domain knowledge and PubMed search to assess guideline relevance.",
-                "hint": "Run: python scripts/refresh_guidelines.py to populate the cache.",
-            }
-        )
-
-    # Match question to cached topic files
-    topic_keywords = {
-        "mCRC-BRAF-V600E": ["braf", "v600e", "encorafenib", "cetuximab"],
-        "mCRC-KRAS-G12C": ["kras", "g12c", "sotorasib", "adagrasib"],
-        "mCRC-MSI-H": ["msi-h", "dmmr", "mismatch repair", "pembrolizumab", "immunotherapy"],
-        "mCRC-HER2": ["her2", "erbb2", "trastuzumab", "tucatinib"],
-        "mCRC-RAS-wt": ["ras wild", "anti-egfr", "cetuximab", "panitumumab", "sidedness"],
-        "robotic-surgery": ["robotic", "robot", "tme", "cme", "laparoscop"],
-    }
-
-    matched_topics = []
-    for topic, keywords in topic_keywords.items():
-        if any(kw in question for kw in keywords):
-            matched_topics.append(topic)
-
-    if not matched_topics:
-        matched_topics = list(topic_keywords.keys())
-
-    # Try cached OE responses first
-    results = []
-    for topic in matched_topics:
-        cache_file = GUIDELINES_CACHE_DIR / f"{topic}.json"
-        if cache_file.exists():
-            try:
-                with open(cache_file) as f:
-                    cached = json.load(f)
-                results.append(
-                    {
-                        "topic": topic,
-                        "guideline_summary": cached.get("answer", "")[:2000],
-                        "citations": cached.get("citations", [])[:5],
-                        "cached_date": cached.get("date", "unknown"),
-                        "source": "openevidence (cached)",
-                    }
-                )
-            except (json.JSONDecodeError, OSError):
-                continue
-
-    if results:
-        return json.dumps(results, ensure_ascii=False)
-
-    # Fallback: search PubMed for guideline/consensus articles
     guideline_query = f"({question}) AND (guideline[PT] OR consensus[TI] OR recommendation[TI] OR NCCN[TI] OR ASCO[TI])"
     try:
-        pubmed_result = _tool_search_pubmed({"query": guideline_query, "max_results": 3})
+        pubmed_result = _tool_search_pubmed({"query": guideline_query, "max_results": 5})
         parsed = json.loads(pubmed_result)
         if parsed.get("results"):
             return json.dumps(
                 {
                     "source": "pubmed_guideline_search",
-                    "note": "No OpenEvidence cache available. Found these guideline articles from PubMed instead.",
                     "results": parsed["results"],
                 },
                 ensure_ascii=False,
@@ -386,7 +324,7 @@ def _tool_query_guidelines(input_data):
 
     return json.dumps(
         {
-            "error": f"No cached guidelines and PubMed fallback failed for: {', '.join(matched_topics)}",
+            "error": "No guideline articles found on PubMed for this query.",
             "fallback": "Use your built-in domain knowledge to assess guideline relevance.",
         }
     )

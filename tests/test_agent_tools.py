@@ -82,39 +82,24 @@ class TestExecuteTool:
 
 
 class TestQueryGuidelines:
-    @patch("agent_tools.GUIDELINES_CACHE_DIR")
-    def test_uses_cached_guidelines(self, mock_cache_dir, tmp_path):
-        # Create a mock cache file
-        cache_dir = tmp_path / "guidelines"
-        cache_dir.mkdir()
-        cache_file = cache_dir / "mCRC-BRAF-V600E.json"
-        cache_file.write_text(
-            json.dumps(
-                {
-                    "topic": "mCRC-BRAF-V600E",
-                    "answer": "ASCO recommends encorafenib+cetuximab for BRAF V600E mCRC first-line.",
-                    "citations": [{"title": "ASCO 2025", "journal": "JCO", "year": "2025"}],
-                    "date": "2026-06-01",
-                }
-            )
+    @patch("agent_tools._tool_search_pubmed")
+    def test_finds_guideline_via_pubmed(self, mock_pubmed):
+        mock_pubmed.return_value = json.dumps(
+            {
+                "results": [{"title": "NCCN CRC Guideline 2026", "pmid": "99999"}],
+                "count": 1,
+            }
         )
-        mock_cache_dir.__truediv__ = lambda self, name: cache_dir / name
-        mock_cache_dir.exists.return_value = True
-
-        result = execute_tool("query_guidelines", {"question": "What is the BRAF V600E mCRC guideline?"})
+        result = execute_tool("query_guidelines", {"question": "BRAF V600E mCRC guideline"})
         parsed = json.loads(result)
-        assert isinstance(parsed, list)
-        assert parsed[0]["source"] == "openevidence (cached)"
-        assert "encorafenib" in parsed[0]["guideline_summary"]
+        assert parsed["source"] == "pubmed_guideline_search"
+        assert len(parsed["results"]) > 0
 
-    @patch("agent_tools.GUIDELINES_CACHE_DIR")
-    def test_returns_hint_when_no_cache_dir(self, mock_cache_dir):
-        mock_cache_dir.exists.return_value = False
-
-        result = execute_tool("query_guidelines", {"question": "BRAF guideline"})
+    @patch("agent_tools._tool_search_pubmed", side_effect=Exception("fail"))
+    def test_fallback_when_pubmed_fails(self, mock_pubmed):
+        result = execute_tool("query_guidelines", {"question": "unknown guideline"})
         parsed = json.loads(result)
         assert "fallback" in parsed
-        assert "hint" in parsed
 
 
 class TestClassifyWithAgenticLoop:
