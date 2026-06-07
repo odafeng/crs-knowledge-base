@@ -40,6 +40,7 @@ KNOWN_STUDY_TYPES = {
     "Phase 1b",
     "Biomarker (exploratory)",
     "Post-hoc analysis",
+    "Editorial",
     "Meta-analysis",
     "Pooled analysis",
 }
