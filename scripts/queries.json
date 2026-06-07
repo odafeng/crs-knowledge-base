@@ -29,7 +29,7 @@
     "rss_filter_terms": ["cetuximab", "panitumumab", "anti-EGFR", "colorectal"],
     "conference_terms": ["anti-EGFR colorectal", "cetuximab colorectal first-line", "panitumumab rechallenge"]
   },
-  "mCRC-agnostic": {
+  "generic-CRS": {
     "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH]) AND (fruquintinib OR Fruzaqla OR FRESCO OR regorafenib OR trifluridine OR TAS-102 OR lonsurf OR bevacizumab) AND (metastatic OR advanced) AND (third-line OR refractory OR later-line OR salvage)",
     "keywords": ["fruquintinib", "Fruzaqla", "FRESCO", "regorafenib", "TAS-102", "trifluridine", "lonsurf", "later-line"],
     "rss_filter_terms": ["fruquintinib", "regorafenib", "trifluridine", "TAS-102", "colorectal"],

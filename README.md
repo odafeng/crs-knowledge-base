@@ -240,7 +240,7 @@ docs/<TopicSlug>/<FirstAuthor>_<Journal>_<Year>_<TrialName>[_<Subtopic>].html
 
 ## Roadmap
 
-- [ ] 為 mCRC-agnostic 和 robotic-surgery 加入 JS paper arrays + 前端頁面
+- [ ] 為 generic-CRS 和 robotic-surgery 加入 JS paper arrays + 前端頁面
 - [ ] ASCO 2026 Annual Meeting 最新資料收錄
 - [ ] 機器人手術 CME、TaTME 子主題
 - [ ] 肛門手術章節

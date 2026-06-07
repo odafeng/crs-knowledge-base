@@ -156,7 +156,7 @@ Examples:
   python main.py --topic mCRC-BRAF-V600E                # Single topic
   python main.py --daily                                # Conference-season aware daily scan
   python main.py --skip-conferences                     # PubMed + RSS only
-  python main.py --bootstrap --topic mCRC-agnostic      # Seed new topic with 2-year history
+  python main.py --bootstrap --topic generic-CRS      # Seed new topic with 2-year history
         """,
     )
     parser.add_argument("--topic", help="Single topic to process (default: all)")

@@ -116,7 +116,9 @@ _TOPIC_CONTEXTS = {
 - 新型 HER2 ADC 或 bispecific
 - HER2-low mCRC 的治療探索""",
 
-    "mCRC-agnostic": """## Biomarker-Agnostic 後線治療演進
+    "generic-CRS": """## 大腸直腸外科通用主題（不屬於特定 biomarker 或手術技術的文獻歸類於此）
+
+### Biomarker-Agnostic 後線治療
 - Regorafenib (CORRECT, 2013): 首個 3L+ mCRC 標靶，OS HR 0.77，但毒性高
 - TAS-102/Lonsurf (RECOURSE, 2015): 3L+ OS HR 0.68，口服方便，毒性較低
 - TAS-102 + bevacizumab (SUNLIGHT, 2023): OS HR 0.61，成為新的 3L 標準
@@ -128,7 +130,14 @@ _TOPIC_CONTEXTS = {
 - FRESCO-2 亞組分析和 real-world data
 - 新型 VEGFR 或多靶點 TKI
 - Biomarker-guided 後線選擇（ctDNA、TMB）
-- Regorafenib 低劑量策略（ReDOS）的前瞻性驗證""",
+- Regorafenib 低劑量策略（ReDOS）的前瞻性驗證
+
+### 其他
+此主題也接收無法歸類到其他 6 個特定主題的 CRC 相關文獻，例如：
+- 一般性 CRC 流行病學、篩檢、staging
+- 輔助化療（adjuvant chemotherapy）通用方案
+- 非特定 biomarker 的 mCRC 一線化療
+- 手術以外的 CRC 治療總論""",
 
     "mCRC-RAS-wt": """## RAS 野生型 Anti-EGFR 治療演進
 - FIRE-3/CALGB 80405: 確立左側 RAS-wt 一線 anti-EGFR 為標準
