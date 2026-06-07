@@ -252,15 +252,20 @@
       <div class="tc-title">mCRC</div>
       <div class="tc-desc">轉移性大腸直腸癌<br>標靶治療 &middot; 臨床試驗</div>
     </div>
-    <div class="topic-card disabled">
-      <div class="tc-icon">&#x1FA7A;</div>
-      <div class="tc-title">肛門手術</div>
-      <div class="tc-desc">內容建置中</div>
+    <div class="topic-card" onclick="navigate('v-conferences','醫學會議專區','Conference Highlights')">
+      <div class="tc-icon">&#x1F3E5;</div>
+      <div class="tc-title">醫學會議專區</div>
+      <div class="tc-desc">ASCO &middot; ESMO &middot; ASCRS &middot; ESCP<br>最新會議結論摘要</div>
     </div>
     <div class="topic-card" onclick="navigate('v-robotic','機器人手術','Robotic Colorectal Surgery')">
       <div class="tc-icon">&#x1F916;</div>
       <div class="tc-title">機器人手術</div>
       <div class="tc-desc">TME &middot; CME &middot; 臨床試驗</div>
+    </div>
+    <div class="topic-card disabled">
+      <div class="tc-icon">&#x1FA7A;</div>
+      <div class="tc-title">肛門手術</div>
+      <div class="tc-desc">內容建置中</div>
     </div>
     <div class="topic-card disabled">
       <div class="tc-icon">&#x1F4CB;</div>
@@ -468,6 +473,14 @@
     <h3>&#x1F4D6; 結構化試驗卡片</h3>
     <div id="her2-cards"></div>
   </div>
+</div>
+
+<!-- Conference Highlights -->
+<div class="view" id="v-conferences">
+  <p style="color:var(--text-sec);margin-bottom:16px">各大 CRC 相關醫學會議的重要摘要，按時間索引。由 AI Agent 自動追蹤並評分。</p>
+  <div id="conf-timeline" class="timeline"></div>
+  <div id="conf-cards"></div>
+  <p style="margin-top:24px;font-size:0.85rem;color:var(--text-sec)">資料來源：ASCO、ESMO、ASCRS、ESCP 會議 + PubMed meeting abstract supplements<br>更新頻率：會議季每日掃描，非會議季每週二、五</p>
 </div>
 
 <!-- Robotic Surgery sub-topics -->
@@ -884,6 +897,7 @@ const VIEW_META = {
   'v-krasg12c': { title: 'KRAS G12C', sub: 'G12C 抑制劑' },
   'v-msih': { title: 'MSI-H / dMMR', sub: '免疫治療' },
   'v-her2': { title: 'HER2', sub: 'HER2 標靶治療' },
+  'v-conferences': { title: '醫學會議專區', sub: 'Conference Highlights' },
   'v-robotic': { title: '機器人手術', sub: 'Robotic Surgery' },
   'v-robotic-tme': { title: 'Robotic TME', sub: '全直腸繫膜切除' },
   'v-robotic-anast': { title: 'Anastomosis', sub: '吻合技術' },
@@ -911,6 +925,7 @@ function _activateView(viewId, title, subtitle) {
   if (viewId === 'v-krasg12c') renderTopic(G12C_PAPERS, 'tl-g12c', 'g12c-cards');
   if (viewId === 'v-msih') renderTopic(MSIH_PAPERS, 'tl-msih', 'msih-cards');
   if (viewId === 'v-her2') renderTopic(HER2_PAPERS, 'tl-her2', 'her2-cards');
+  if (viewId === 'v-conferences') renderConferences();
   if (viewId === 'v-robotic-tme') renderTME();
   if (viewId === 'v-robotic-anast') renderAnast();
 }
@@ -1448,6 +1463,43 @@ const TME_CARDS = [
     <div class="note">真實世界大型登記研究顯示機器人直腸手術無 CRM 優勢，吻合口滲漏率更高，TME 品質反較差，僅轉換率有利。此結果 contradicts 2024 Network MA 的病理優勢結論，並與 REAL (2025) 形成張力；學習曲線與技術標準化為關鍵議題。</div>
     <p><a href="docs/robotic-surgery/Mertens_BJSOpen_2026_SwedishRegistry.html" target="_blank" rel="noopener noreferrer">&#x1F4D6; 詳細頁面</a> &middot; <a href="https://doi.org/10.1093/bjsopen/zrag050" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1093/bjsopen/zrag050</a></p>` },
 ];
+
+// === CONFERENCE HIGHLIGHTS ===
+const CONF_HIGHLIGHTS = [
+  { date: '2026-01', conf: 'ASCO GI', title: 'BREAKWATER Cohort 3: EC+FOLFIRI 1L ORR 64.4%', link: 'docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html' },
+  { date: '2025-10', conf: 'ESMO', title: 'BREAKWATER ctDNA dynamics — chemo suppresses resistance clones', link: 'docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.html' },
+  { date: '2025-10', conf: 'ESMO', title: 'BREAKWATER subsequent Tx — 1L EC+chemo > sequential', link: 'docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.html' },
+  { date: '2025-06', conf: 'ASCO', title: 'STELLAR-303: zanzalintinib+atezo vs regorafenib in MSS mCRC (Phase 3)', link: 'https://doi.org/10.1016/S0140-6736(25)02025-2' },
+];
+
+function renderConferences() {
+  const el = document.getElementById('conf-timeline');
+  const cards = document.getElementById('conf-cards');
+  const sorted = [...CONF_HIGHLIGHTS].sort((a, b) => b.date.localeCompare(a.date));
+
+  el.innerHTML = sorted.map(h => `
+    <a class="tl-node breakwater" href="${h.link}" target="_blank" rel="noopener noreferrer">
+      <div class="tl-dot"></div>
+      <div class="tl-line"></div>
+      <div class="tl-yr">${h.date}</div>
+      <div class="tl-venue">${h.conf}</div>
+      <div class="tl-finding"><strong>${h.title.split(':')[0]}</strong></div>
+    </a>
+  `).join('');
+
+  cards.innerHTML = sorted.map(h => `
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>${h.date} ${h.conf}</h4>
+        <span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">
+        <p><strong>${h.title}</strong></p>
+        <a href="${h.link}" target="_blank" rel="noopener noreferrer" style="font-size:0.85rem">&#x1F4C4; 查看詳情</a>
+      </div>
+    </div>
+  `).join('');
+}
 
 let currentTmeMetric = 'locoregional';
 
