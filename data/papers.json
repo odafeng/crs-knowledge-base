@@ -781,7 +781,7 @@
         "id": "stellar303-editorial",
         "year": 2026,
         "journal": "Med",
-        "studyType": "Post-hoc analysis",
+        "studyType": "Editorial",
         "n": 901,
         "regimen": "Zanzalintinib + Atezolizumab vs Regorafenib (3L+ MSS mCRC) [Editorial of STELLAR-303 Lancet 2025]",
         "endpoint": "OS (primary, ITT)",

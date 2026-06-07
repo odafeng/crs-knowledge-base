@@ -42,6 +42,7 @@ KNOWN_STUDY_TYPES = {
     "Post-hoc analysis",
     "Meta-analysis",
     "Pooled analysis",
+    "Editorial",
 }
 
 REQUIRED_FIELDS = ["id", "year", "journal", "studyType", "regimen", "endpoint", "result", "bottomLine"]
