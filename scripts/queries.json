@@ -35,6 +35,12 @@
     "rss_filter_terms": ["fruquintinib", "regorafenib", "trifluridine", "TAS-102", "colorectal"],
     "conference_terms": ["fruquintinib colorectal", "FRESCO colorectal", "regorafenib colorectal", "TAS-102 colorectal refractory"]
   },
+  "conference-highlights": {
+    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR rectal cancer[MeSH]) AND (\"Meeting Abstract\"[pt] OR congress[ti] OR annual meeting[ti] OR presidential[ti] OR plenary[ti] OR late-breaking[ti])",
+    "keywords": ["ASCO", "ESMO", "ASCRS", "ESCP", "plenary", "late-breaking", "presidential", "LBA", "oral presentation"],
+    "rss_filter_terms": ["ASCO", "ESMO", "congress", "annual meeting", "colorectal"],
+    "conference_terms": ["colorectal cancer plenary", "colorectal cancer late-breaking", "colorectal ASCO 2026", "colorectal ESMO 2026", "rectal cancer ASCRS 2026"]
+  },
   "robotic-surgery": {
     "pubmed_query": "(rectal cancer[MeSH] OR colon cancer[MeSH]) AND (robotic OR robot-assisted) AND (total mesorectal excision OR TME OR complete mesocolic excision OR CME OR anastomosis OR intracorporeal)",
     "keywords": ["robotic", "robot-assisted", "TME", "CME", "intracorporeal anastomosis", "REAL trial", "ROLARR"],

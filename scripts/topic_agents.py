@@ -153,6 +153,28 @@ _TOPIC_CONTEXTS = {
 - 新型 EGFR 標靶（bispecific、ADC）
 - Maintenance/de-escalation 的前瞻性策略""",
 
+    "conference-highlights": """## 醫學會議專區
+此主題專門收錄各大 CRC 相關醫學會議的重要摘要和結論。
+按會議和時間索引，作為會議 highlights 的集中地。
+
+追蹤的會議：
+- ASCO Annual Meeting（每年 5-6 月）
+- ASCO GI（每年 1 月）
+- ESMO Congress（每年 9-10 月）
+- ESMO World GI / WCGC（每年 7 月）
+- ASCRS Annual Meeting（每年 4-5 月）
+- ESCP Annual Meeting（每年 6-7 月）
+
+值得收錄的類型：
+- Plenary / Presidential session 的 late-breaking abstracts
+- Practice-changing 的 Phase 3 RCT 首次報告
+- Guideline 更新公告
+- 重要的 oral presentation（尤其是有 CRC 相關的）
+- 會議 key takeaways / expert commentary
+
+注意：此主題的評分標準側重「是否為會議上的重要發表」而非「是否改變治療標準」。
+即使一篇 abstract 在 PubMed 上還沒有正式 DOI，只要它是 plenary/LBA 級別的報告就值得收錄（score 4-5）。""",
+
     "robotic-surgery": """## 機器人結直腸手術演進
 - ROLARR (2017): robotic vs laparoscopic TME，轉換率 NS（N=471）
 - COLRAR (2023): TME 完整性 NS（N=295）
