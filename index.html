@@ -317,11 +317,11 @@
     </div>
     <div class="sc-arrow">&#x203A;</div>
   </div>
-  <div class="sub-card" onclick="navigate('v-generic','通用 / 跨分子型','mCRC')">
-    <div class="sc-icon">&#x1F4DA;</div>
+  <div class="sub-card" onclick="navigate('v-generic','mCRC 後線治療','mCRC &rsaquo; Agnostic')">
+    <div class="sc-icon">&#x1F4CB;</div>
     <div class="sc-body">
-      <div class="sc-title">通用 / 跨分子型策略</div>
-      <div class="sc-desc">抗血管生成 + ICI &middot; MSS 後線 &middot; salvage 探索</div>
+      <div class="sc-title">後線治療 / 跨分子型（Agnostic / 3L+）</div>
+      <div class="sc-desc">TAS-102/SUNLIGHT &middot; fruquintinib &middot; regorafenib &middot; NMA &middot; 抗血管生成 + ICI</div>
     </div>
     <div class="sc-arrow">&#x203A;</div>
   </div>
@@ -483,9 +483,21 @@
   </div>
 </div>
 
-<!-- Generic / cross-molecular CRS Page -->
+<!-- mCRC Agnostic / Later-line (generic-CRS) Page -->
 <div class="view" id="v-generic">
-  <p style="color:var(--text-sec);margin-bottom:16px">不限特定分子型的 mCRC 治療策略，涵蓋抗血管生成 + 免疫檢查點抑制劑（ICI）等跨族群後線探索。</p>
+  <p style="color:var(--text-sec);margin-bottom:16px">不限特定分子型的 mCRC 治療策略，涵蓋後線（3L+）標準方案與抗血管生成 + 免疫檢查點抑制劑（ICI）等跨族群探索。</p>
+  <div class="ev-section">
+    <h3>&#x1F48A; 後線治療概覽（3L+ mCRC）</h3>
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F7E2; Biomarker-agnostic 後線方案</h4><span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">
+        <p>難治型 mCRC 三線以上（3L+）治療選項，不以特定 biomarker 為主軸。主要方案包含 FTD-TPI（TAS-102）&plusmn; bevacizumab（SUNLIGHT）、fruquintinib（FRESCO）及 regorafenib。</p>
+        <div class="note">最新 NMA（Hoyek, Dig Liver Dis 2025）確立 FTD-TPI + bevacizumab 於整體族群療效最佳；曾接受 anti-VEGF 治療者，fruquintinib 或 regorafenib 80 mg 漸增劑量為可比較替代選項。</div>
+      </div>
+    </div>
+  </div>
   <div class="ev-section">
     <h3>&#x1F4C5; 證據時間軸</h3>
     <div class="timeline-scroll"><div class="timeline" id="tl-generic"></div></div>
@@ -918,7 +930,7 @@ const VIEW_META = {
   'v-krasg12c': { title: 'KRAS G12C', sub: 'G12C 抑制劑' },
   'v-msih': { title: 'MSI-H / dMMR', sub: '免疫治療' },
   'v-her2': { title: 'HER2', sub: 'HER2 標靶治療' },
-  'v-generic': { title: '通用 / 跨分子型', sub: 'mCRC 跨族群策略' },
+  'v-generic': { title: 'mCRC 後線治療', sub: 'Agnostic / 3L+ 跨族群策略' },
   'v-conferences': { title: '醫學會議專區', sub: 'Conference Highlights' },
   'v-robotic': { title: '機器人手術', sub: 'Robotic Surgery' },
   'v-robotic-tme': { title: 'Robotic TME', sub: '全直腸繫膜切除' },

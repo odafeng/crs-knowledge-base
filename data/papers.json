@@ -778,6 +778,20 @@
   "generic-CRS": {
     "papers": [
       {
+        "id": "Hoyek_DLD_2025_NMA3L",
+        "year": 2025,
+        "journal": "Dig Liver Dis",
+        "studyType": "Meta-analysis",
+        "n": "11 RCTs",
+        "regimen": "FTD-TPI±bev/RAM vs fruquintinib vs Rego160 vs Rego80+ vs BSC (NMA)",
+        "endpoint": "OS, PFS (NMA)",
+        "result": "FTD-TPI+bev 優於其他所有方案（vs fruquintinib OS HR 0.62；vs Rego160 OS HR 0.57）；曾接受 anti-VEGF 者 FTD-TPI+bev、fruquintinib、Rego80+ 療效相當",
+        "bottomLine": "3L mCRC NMA 確立 FTD-TPI+bev 整體最佳地位；anti-VEGF 前治療者可選 fruquintinib 或 Rego80+",
+        "doi": "10.1016/j.dld.2025.09.024",
+        "file": "docs/generic-CRS/Hoyek_DLD_2025_NMA3L.html",
+        "relations": []
+      },
+      {
         "id": "Liu_NatCommun_2025_RegoSinti",
         "year": 2025,
         "journal": "Nat Commun",
