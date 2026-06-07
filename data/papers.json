@@ -1190,5 +1190,23 @@
         "body": "\n    <p><strong>Vivas López et al.</strong> — 初始 22 例系列</p>\n    <p>中低位直腸癌，腹腔鏡 TME + transanal transection + single-stapled anastomosis</p>\n    <p>滲漏率 9.1%，住院中位數 5 天，全部達完整 TME + 切緣陰性。</p>\n    <p><a href=\"https://doi.org/10.1007/s00384-024-04646-3\" target=\"_blank\" rel=\"noopener noreferrer\">&#x1F4C4; DOI: 10.1007/s00384-024-04646-3</a></p>"
       }
     ]
+  },
+  "mCRC-agnostic": {
+    "papers": [
+      {
+        "id": "stellar303-editorial-2026",
+        "year": 2026,
+        "journal": "Med",
+        "studyType": "Post-hoc analysis",
+        "n": null,
+        "regimen": "Zanzalintinib + Atezolizumab vs. Regorafenib",
+        "endpoint": "OS（無肝轉移 MSS mCRC 族群）",
+        "result": "首個 Phase 3 免疫療法組合在 MSS mCRC 達顯著 OS 獲益（具體 HR/mOS 待原始報告）",
+        "bottomLine": "STELLAR-303 打破 MSS mCRC 免疫療法壁壘；zanzalintinib + atezolizumab vs. regorafenib 達 Phase 3 OS 獲益",
+        "doi": "10.1016/j.medj.2025.100957",
+        "file": "docs/mCRC-agnostic/Bando_Med_2026_STELLAR303.html",
+        "relations": []
+      }
+    ]
   }
 }
