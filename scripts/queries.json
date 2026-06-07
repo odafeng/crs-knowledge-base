@@ -1,68 +1,240 @@
 {
   "mCRC-BRAF-V600E": {
     "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH]) AND (BRAF V600E OR encorafenib OR BEACON CRC OR BREAKWATER) AND (metastatic OR advanced)",
-    "keywords": ["BRAF V600E", "encorafenib", "cetuximab", "BEACON", "BREAKWATER", "binimetinib"],
-    "rss_filter_terms": ["BRAF", "encorafenib", "colorectal"],
-    "conference_terms": ["BRAF V600E colorectal", "encorafenib colorectal", "BEACON CRC", "BREAKWATER"]
+    "keywords": [
+      "BRAF V600E",
+      "encorafenib",
+      "cetuximab",
+      "BEACON",
+      "BREAKWATER",
+      "binimetinib"
+    ],
+    "rss_filter_terms": [
+      "BRAF",
+      "encorafenib",
+      "colorectal"
+    ],
+    "conference_terms": [
+      "BRAF V600E colorectal",
+      "encorafenib colorectal",
+      "BEACON CRC",
+      "BREAKWATER"
+    ]
   },
   "mCRC-KRAS-G12C": {
     "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH]) AND (KRAS G12C OR sotorasib OR adagrasib OR divarasib OR CodeBreaK OR KRYSTAL) AND (metastatic OR advanced)",
-    "keywords": ["KRAS G12C", "sotorasib", "adagrasib", "divarasib", "CodeBreaK", "KRYSTAL"],
-    "rss_filter_terms": ["KRAS G12C", "sotorasib", "adagrasib", "divarasib", "colorectal"],
-    "conference_terms": ["KRAS G12C colorectal", "sotorasib colorectal", "adagrasib colorectal"]
+    "keywords": [
+      "KRAS G12C",
+      "sotorasib",
+      "adagrasib",
+      "divarasib",
+      "CodeBreaK",
+      "KRYSTAL"
+    ],
+    "rss_filter_terms": [
+      "KRAS G12C",
+      "sotorasib",
+      "adagrasib",
+      "divarasib",
+      "colorectal"
+    ],
+    "conference_terms": [
+      "KRAS G12C colorectal",
+      "sotorasib colorectal",
+      "adagrasib colorectal"
+    ]
   },
   "mCRC-MSI-H": {
     "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH]) AND (MSI-H OR dMMR OR mismatch repair deficient OR pembrolizumab OR nivolumab OR ipilimumab OR dostarlimab) AND (metastatic OR neoadjuvant)",
-    "keywords": ["MSI-H", "dMMR", "mismatch repair", "pembrolizumab", "nivolumab", "dostarlimab", "KEYNOTE-177"],
-    "rss_filter_terms": ["MSI-H", "dMMR", "mismatch repair", "colorectal"],
-    "conference_terms": ["MSI-H colorectal", "dMMR colorectal", "immunotherapy colorectal"]
+    "keywords": [
+      "MSI-H",
+      "dMMR",
+      "mismatch repair",
+      "pembrolizumab",
+      "nivolumab",
+      "dostarlimab",
+      "KEYNOTE-177"
+    ],
+    "rss_filter_terms": [
+      "MSI-H",
+      "dMMR",
+      "mismatch repair",
+      "colorectal"
+    ],
+    "conference_terms": [
+      "MSI-H colorectal",
+      "dMMR colorectal",
+      "immunotherapy colorectal"
+    ]
   },
   "mCRC-HER2": {
     "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH]) AND (HER2 OR ERBB2 OR trastuzumab deruxtecan OR tucatinib OR pertuzumab OR T-DXd) AND (metastatic OR advanced)",
-    "keywords": ["HER2", "ERBB2", "trastuzumab deruxtecan", "T-DXd", "tucatinib", "MOUNTAINEER", "DESTINY-CRC"],
-    "rss_filter_terms": ["HER2", "trastuzumab", "tucatinib", "colorectal"],
-    "conference_terms": ["HER2 colorectal", "trastuzumab deruxtecan colorectal", "tucatinib colorectal"]
+    "keywords": [
+      "HER2",
+      "ERBB2",
+      "trastuzumab deruxtecan",
+      "T-DXd",
+      "tucatinib",
+      "MOUNTAINEER",
+      "DESTINY-CRC"
+    ],
+    "rss_filter_terms": [
+      "HER2",
+      "trastuzumab",
+      "tucatinib",
+      "colorectal"
+    ],
+    "conference_terms": [
+      "HER2 colorectal",
+      "trastuzumab deruxtecan colorectal",
+      "tucatinib colorectal"
+    ]
   },
   "mCRC-RAS-wt": {
     "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH]) AND (RAS wild-type OR cetuximab OR panitumumab OR anti-EGFR) AND (first-line OR maintenance OR rechallenge OR sidedness) AND (metastatic)",
-    "keywords": ["RAS wild-type", "cetuximab", "panitumumab", "anti-EGFR", "PARADIGM", "rechallenge", "sidedness"],
-    "rss_filter_terms": ["cetuximab", "panitumumab", "anti-EGFR", "colorectal"],
-    "conference_terms": ["anti-EGFR colorectal", "cetuximab colorectal first-line", "panitumumab rechallenge"]
+    "keywords": [
+      "RAS wild-type",
+      "cetuximab",
+      "panitumumab",
+      "anti-EGFR",
+      "PARADIGM",
+      "rechallenge",
+      "sidedness"
+    ],
+    "rss_filter_terms": [
+      "cetuximab",
+      "panitumumab",
+      "anti-EGFR",
+      "colorectal"
+    ],
+    "conference_terms": [
+      "anti-EGFR colorectal",
+      "cetuximab colorectal first-line",
+      "panitumumab rechallenge"
+    ]
   },
   "generic-CRS": {
     "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH]) AND (fruquintinib OR Fruzaqla OR FRESCO OR regorafenib OR trifluridine OR TAS-102 OR lonsurf OR bevacizumab) AND (metastatic OR advanced) AND (third-line OR refractory OR later-line OR salvage)",
-    "keywords": ["fruquintinib", "Fruzaqla", "FRESCO", "regorafenib", "TAS-102", "trifluridine", "lonsurf", "later-line"],
-    "rss_filter_terms": ["fruquintinib", "regorafenib", "trifluridine", "TAS-102", "colorectal"],
-    "conference_terms": ["fruquintinib colorectal", "FRESCO colorectal", "regorafenib colorectal", "TAS-102 colorectal refractory"]
-  },
-  "conference-highlights": {
-    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR rectal cancer[MeSH]) AND (\"Meeting Abstract\"[pt] OR congress[ti] OR annual meeting[ti] OR presidential[ti] OR plenary[ti] OR late-breaking[ti])",
-    "keywords": ["ASCO", "ESMO", "ASCRS", "ESCP", "plenary", "late-breaking", "presidential", "LBA", "oral presentation"],
-    "rss_filter_terms": ["ASCO", "ESMO", "congress", "annual meeting", "colorectal"],
-    "conference_terms": ["colorectal cancer plenary", "colorectal cancer late-breaking", "colorectal ASCO 2026", "colorectal ESMO 2026", "rectal cancer ASCRS 2026"]
+    "keywords": [
+      "fruquintinib",
+      "Fruzaqla",
+      "FRESCO",
+      "regorafenib",
+      "TAS-102",
+      "trifluridine",
+      "lonsurf",
+      "later-line"
+    ],
+    "rss_filter_terms": [
+      "fruquintinib",
+      "regorafenib",
+      "trifluridine",
+      "TAS-102",
+      "colorectal"
+    ],
+    "conference_terms": [
+      "fruquintinib colorectal",
+      "FRESCO colorectal",
+      "regorafenib colorectal",
+      "TAS-102 colorectal refractory"
+    ]
   },
   "robotic-surgery": {
     "pubmed_query": "(rectal cancer[MeSH] OR colon cancer[MeSH]) AND (robotic OR robot-assisted) AND (total mesorectal excision OR TME OR complete mesocolic excision OR CME OR anastomosis OR intracorporeal)",
-    "keywords": ["robotic", "robot-assisted", "TME", "CME", "intracorporeal anastomosis", "REAL trial", "ROLARR"],
-    "rss_filter_terms": ["robotic", "robot-assisted", "rectal", "colon", "TME", "CME"],
-    "conference_terms": ["robotic rectal surgery", "robotic TME", "robotic CME", "intracorporeal anastomosis"]
+    "keywords": [
+      "robotic",
+      "robot-assisted",
+      "TME",
+      "CME",
+      "intracorporeal anastomosis",
+      "REAL trial",
+      "ROLARR"
+    ],
+    "rss_filter_terms": [
+      "robotic",
+      "robot-assisted",
+      "rectal",
+      "colon",
+      "TME",
+      "CME"
+    ],
+    "conference_terms": [
+      "robotic rectal surgery",
+      "robotic TME",
+      "robotic CME",
+      "intracorporeal anastomosis"
+    ]
   },
   "rss_feeds": [
-    {"name": "NEJM", "url": "https://www.nejm.org/action/showFeed?jc=nejm&type=etoc&feed=rss"},
-    {"name": "JCO", "url": "https://ascopubs.org/action/showFeed?type=etoc&feed=rss&jc=jco"},
-    {"name": "Lancet Oncol", "url": "https://www.thelancet.com/journals/lanonc/rss"},
-    {"name": "Nature Medicine", "url": "https://www.nature.com/nm.rss"},
-    {"name": "Annals of Oncology", "url": "https://www.annalsofoncology.org/rss/recent"},
-    {"name": "JAMA Oncology", "url": "https://jamanetwork.com/rss/site_12/67.xml"},
-    {"name": "Annals of Surgery", "url": "https://journals.lww.com/annalsofsurgery/_layouts/15/OAKS.Journals/feed.aspx?FeedType=MostRecentIssue"},
-    {"name": "BJS", "url": "https://academic.oup.com/bjs/rss"}
+    {
+      "name": "NEJM",
+      "url": "https://www.nejm.org/action/showFeed?jc=nejm&type=etoc&feed=rss"
+    },
+    {
+      "name": "JCO",
+      "url": "https://ascopubs.org/action/showFeed?type=etoc&feed=rss&jc=jco"
+    },
+    {
+      "name": "Lancet Oncol",
+      "url": "https://www.thelancet.com/journals/lanonc/rss"
+    },
+    {
+      "name": "Nature Medicine",
+      "url": "https://www.nature.com/nm.rss"
+    },
+    {
+      "name": "Annals of Oncology",
+      "url": "https://www.annalsofoncology.org/rss/recent"
+    },
+    {
+      "name": "JAMA Oncology",
+      "url": "https://jamanetwork.com/rss/site_12/67.xml"
+    },
+    {
+      "name": "Annals of Surgery",
+      "url": "https://journals.lww.com/annalsofsurgery/_layouts/15/OAKS.Journals/feed.aspx?FeedType=MostRecentIssue"
+    },
+    {
+      "name": "BJS",
+      "url": "https://academic.oup.com/bjs/rss"
+    }
   ],
   "conference_seasons": {
-    "ASCO_GI":  {"start": "01-05", "end": "02-15", "name": "ASCO GI", "url": "https://conferences.asco.org/gi/attend"},
-    "ASCRS":    {"start": "04-15", "end": "05-20", "name": "ASCRS Annual Meeting", "url": "https://www.fascrs.org/ascrs-annual-scientific-meeting"},
-    "ASCO":     {"start": "05-20", "end": "06-25", "name": "ASCO Annual Meeting", "url": "https://conferences.asco.org/am/attend"},
-    "ESCP":     {"start": "06-15", "end": "07-10", "name": "ESCP Annual Meeting", "url": "https://www.escp.eu.com/meetings/annual-meeting"},
-    "WCGC":     {"start": "06-25", "end": "07-25", "name": "ESMO World GI", "url": "https://www.esmo.org/meeting-calendar"},
-    "ESMO":     {"start": "09-05", "end": "11-05", "name": "ESMO Congress", "url": "https://www.esmo.org/meeting-calendar"}
+    "ASCO_GI": {
+      "start": "01-05",
+      "end": "02-15",
+      "name": "ASCO GI",
+      "url": "https://conferences.asco.org/gi/attend"
+    },
+    "ASCRS": {
+      "start": "04-15",
+      "end": "05-20",
+      "name": "ASCRS Annual Meeting",
+      "url": "https://www.fascrs.org/ascrs-annual-scientific-meeting"
+    },
+    "ASCO": {
+      "start": "05-20",
+      "end": "06-25",
+      "name": "ASCO Annual Meeting",
+      "url": "https://conferences.asco.org/am/attend"
+    },
+    "ESCP": {
+      "start": "06-15",
+      "end": "07-10",
+      "name": "ESCP Annual Meeting",
+      "url": "https://www.escp.eu.com/meetings/annual-meeting"
+    },
+    "WCGC": {
+      "start": "06-25",
+      "end": "07-25",
+      "name": "ESMO World GI",
+      "url": "https://www.esmo.org/meeting-calendar"
+    },
+    "ESMO": {
+      "start": "09-05",
+      "end": "11-05",
+      "name": "ESMO Congress",
+      "url": "https://www.esmo.org/meeting-calendar"
+    }
   }
 }

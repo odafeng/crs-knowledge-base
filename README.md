@@ -1,6 +1,6 @@
 # CRS Knowledge Base
 
-> 大腸直腸外科臨床決策知識庫 — PWA + 8 個 AI Agent 自動文獻追蹤
+> 大腸直腸外科臨床決策知識庫 — PWA + 7 個 AI Agent 自動文獻追蹤
 
 [![PWA](https://img.shields.io/badge/PWA-offline--ready-1a365d)](https://web.dev/progressive-web-apps/)
 [![Deploy](https://img.shields.io/badge/GitHub%20Pages-live-3182ce)](https://odafeng.github.io/crs-knowledge-base/)

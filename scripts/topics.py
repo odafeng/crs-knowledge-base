@@ -15,7 +15,6 @@ class Topic(str, Enum):
     HER2 = "mCRC-HER2"
     RAS_WT = "mCRC-RAS-wt"
     GENERIC = "generic-CRS"
-    CONFERENCES = "conference-highlights"
     ROBOTIC = "robotic-surgery"
 
 
@@ -27,7 +26,6 @@ TOPIC_LABELS: dict[Topic, str] = {
     Topic.HER2: "topic:her2",
     Topic.RAS_WT: "topic:ras-wt",
     Topic.GENERIC: "topic:generic-crs",
-    Topic.CONFERENCES: "topic:conferences",
     Topic.ROBOTIC: "topic:robotic",
 }
 
@@ -45,7 +43,6 @@ LABEL_COLORS: dict[str, str] = {
             ("topic:her2", "7057ff"),
             ("topic:ras-wt", "fbca04"),
             ("topic:generic-crs", "c5def5"),
-            ("topic:conferences", "e4e669"),
             ("topic:robotic", "006b75"),
         ]
     },
@@ -59,7 +56,6 @@ TOPIC_JS_VAR: dict[Topic, str | None] = {
     Topic.HER2: "HER2_PAPERS",
     Topic.RAS_WT: "RASWT_PAPERS",
     Topic.GENERIC: "GENERIC_PAPERS",
-    Topic.CONFERENCES: None,
     Topic.ROBOTIC: None,
 }
 
@@ -74,7 +70,6 @@ TOPIC_METRICS_VAR: dict[Topic, str | None] = {
     Topic.HER2: None,
     Topic.RAS_WT: None,
     Topic.GENERIC: None,
-    Topic.CONFERENCES: None,
     Topic.ROBOTIC: "TME_METRICS",
 }
 

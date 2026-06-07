@@ -73,7 +73,7 @@ AGENT_TOOLS = [
             "properties": {
                 "topic": {
                     "type": "string",
-                    "description": "Topic to look up. Options: mCRC-BRAF-V600E, mCRC-KRAS-G12C, mCRC-MSI-H, mCRC-HER2, mCRC-RAS-wt, generic-CRS, conference-highlights, robotic-surgery",
+                    "description": "Topic to look up. Options: mCRC-BRAF-V600E, mCRC-KRAS-G12C, mCRC-MSI-H, mCRC-HER2, mCRC-RAS-wt, generic-CRS, robotic-surgery",
                 },
             },
             "required": ["topic"],

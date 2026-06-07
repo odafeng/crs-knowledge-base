@@ -822,36 +822,6 @@
     ],
     "metrics": null
   },
-  "conference-highlights": {
-    "papers": [],
-    "metrics": null,
-    "highlights": [
-      {
-        "date": "2026-01",
-        "conf": "ASCO GI",
-        "title": "BREAKWATER Cohort 3: EC+FOLFIRI 1L ORR 64.4%",
-        "link": "docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html"
-      },
-      {
-        "date": "2025-10",
-        "conf": "ESMO",
-        "title": "BREAKWATER ctDNA dynamics — chemo suppresses resistance clones",
-        "link": "docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.html"
-      },
-      {
-        "date": "2025-10",
-        "conf": "ESMO",
-        "title": "BREAKWATER subsequent Tx — 1L EC+chemo > sequential",
-        "link": "docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.html"
-      },
-      {
-        "date": "2025-06",
-        "conf": "ASCO",
-        "title": "STELLAR-303: zanzalintinib+atezo vs regorafenib in MSS mCRC (Phase 3)",
-        "link": "https://doi.org/10.1016/S0140-6736(25)02025-2"
-      }
-    ]
-  },
   "robotic-surgery": {
     "papers": [],
     "metrics": {
