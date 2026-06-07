@@ -40,6 +40,7 @@ def _ensure_labels(labels):
         "topic:msi-h": "0075ca",
         "topic:her2": "7057ff",
         "topic:ras-wt": "fbca04",
+        "topic:agnostic": "c5def5",
         "topic:robotic": "006b75",
     }
     for label, color in label_colors.items():
@@ -55,6 +56,7 @@ def _topic_to_label(topic):
         "mCRC-MSI-H": "topic:msi-h",
         "mCRC-HER2": "topic:her2",
         "mCRC-RAS-wt": "topic:ras-wt",
+        "mCRC-agnostic": "topic:agnostic",
         "robotic-surgery": "topic:robotic",
     }
     return mapping.get(topic, "")

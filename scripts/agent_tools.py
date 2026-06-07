@@ -229,24 +229,71 @@ def _tool_lookup_existing(input_data):
 
 def _tool_web_fetch(input_data):
     url = input_data["url"]
+
+    # Try readability extraction first (better quality)
+    try:
+        from readability import Document
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+                "Accept": "text/html,application/xhtml+xml",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            raw_html = resp.read().decode("utf-8", errors="replace")
+
+        doc = Document(raw_html)
+        title = doc.title()
+        content = doc.summary()
+
+        # Strip remaining HTML tags from readability output
+        text = re.sub(r"<[^>]+>", " ", content)
+        text = re.sub(r"\s+", " ", text).strip()
+
+        if len(text) < 50:
+            return json.dumps({
+                "warning": "Page content is very short — may be JS-rendered. Try fetch_paper_details with PMID instead.",
+                "title": title,
+                "text": text[:500],
+            })
+
+        return json.dumps({
+            "title": title,
+            "text": text[:4000],
+        }, ensure_ascii=False)
+
+    except ImportError:
+        pass  # readability not installed, fall back to regex
+    except Exception:
+        pass
+
+    # Fallback: regex-based extraction
     try:
         req = urllib.request.Request(
             url,
             headers={
-                "User-Agent": "CRS-KB-Agent/1.0",
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
                 "Accept": "text/html,application/xhtml+xml,text/plain",
             },
         )
         with urllib.request.urlopen(req, timeout=15) as resp:
             content = resp.read().decode("utf-8", errors="replace")
 
-        # Strip HTML tags for readability, keep text
         text = re.sub(r"<script[^>]*>.*?</script>", "", content, flags=re.DOTALL)
         text = re.sub(r"<style[^>]*>.*?</style>", "", text, flags=re.DOTALL)
+        text = re.sub(r"<nav[^>]*>.*?</nav>", "", text, flags=re.DOTALL)
+        text = re.sub(r"<header[^>]*>.*?</header>", "", text, flags=re.DOTALL)
+        text = re.sub(r"<footer[^>]*>.*?</footer>", "", text, flags=re.DOTALL)
         text = re.sub(r"<[^>]+>", " ", text)
         text = re.sub(r"\s+", " ", text).strip()
 
-        # Truncate to avoid token overflow
+        if len(text) < 50:
+            return json.dumps({
+                "warning": "Page content is very short — likely JS-rendered. Use fetch_paper_details with PMID instead.",
+                "text": text[:500],
+            })
+
         return text[:4000]
     except Exception as e:
         return json.dumps({"error": f"Failed to fetch {url}: {e}"})

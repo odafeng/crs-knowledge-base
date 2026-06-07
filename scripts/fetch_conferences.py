@@ -1,140 +1,279 @@
-"""Layer 1c: Fetch new abstracts from ASCO/ESMO conference sites."""
+"""Layer 1c: Fetch new abstracts from ASCO/ESMO via headless Playwright.
+
+ASCO uses a Flutter SPA and ESMO uses bot protection, so plain HTTP
+requests don't work. Playwright renders the pages in headless Chromium.
+
+Falls back gracefully if Playwright is not installed (e.g., local dev
+without it) — the pipeline continues with PubMed + RSS only.
+"""
 
 import argparse
 import json
 import re
 import sys
 import time
-import urllib.parse
-import urllib.request
 
 from config import load_queries, load_tracked_abstracts, load_tracked_dois
 
 
-def _http_get_json(url, timeout=20):
-    """GET request returning parsed JSON, or None on failure."""
+def _playwright_available():
     try:
-        req = urllib.request.Request(url, headers={
-            "User-Agent": "CRS-KB-PaperWatch/1.0",
-            "Accept": "application/json",
-        })
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read())
-    except Exception as e:
-        print(f"  [WARN] Request failed: {url} — {e}", file=sys.stderr)
-        return None
+        from playwright.sync_api import sync_playwright
+        return True
+    except ImportError:
+        return False
 
 
-def _http_get_html(url, timeout=20):
-    """GET request returning HTML string, or empty string on failure."""
-    try:
-        req = urllib.request.Request(url, headers={
-            "User-Agent": "CRS-KB-PaperWatch/1.0",
-        })
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return resp.read().decode("utf-8", errors="replace")
-    except Exception as e:
-        print(f"  [WARN] Request failed: {url} — {e}", file=sys.stderr)
-        return ""
+def _scrape_asco(search_terms):
+    """Scrape ASCO abstract search results via Playwright."""
+    from playwright.sync_api import sync_playwright
 
-
-def fetch_asco_abstracts(search_terms):
-    """Search ASCO meeting abstracts. Returns list of candidate dicts."""
     candidates = []
-    base_url = "https://meetings.asco.org/api/search"
 
-    for term in search_terms:
-        print(f"  [ASCO] Searching: {term}")
-        params = urllib.parse.urlencode({"q": term, "type": "abstract", "limit": 20})
-        url = f"{base_url}?{params}"
-        data = _http_get_json(url)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
 
-        if not data or "results" not in data:
-            # Fallback: try HTML scraping
-            html_url = f"https://meetings.asco.org/abstracts-presentations/search?q={urllib.parse.quote(term)}"
-            html = _http_get_html(html_url)
-            if html:
-                # Extract abstract IDs from HTML
-                abstract_ids = re.findall(r'/abstract/(\d+)', html)
-                for aid in abstract_ids[:10]:
-                    candidates.append({
-                        "abstract_id": f"asco-{aid}",
-                        "title": f"ASCO Abstract #{aid}",
-                        "authors": "",
-                        "journal": "ASCO",
-                        "year": "",
-                        "abstract": "",
-                        "doi": "",
-                        "pmid": "",
-                        "topic": "",
-                        "source": "asco",
-                        "link": f"https://meetings.asco.org/abstracts-presentations/{aid}",
-                    })
-            continue
+        for term in search_terms:
+            print(f"  [ASCO] Searching: {term}")
+            try:
+                url = f"https://meetings.asco.org/abstracts-presentations/search?q={term}"
+                page.goto(url, wait_until="networkidle", timeout=30000)
+                page.wait_for_timeout(3000)  # Let Flutter render
 
-        for result in data.get("results", []):
-            candidates.append({
-                "abstract_id": f"asco-{result.get('id', '')}",
-                "title": result.get("title", ""),
-                "authors": result.get("authors", ""),
-                "journal": "ASCO",
-                "year": str(result.get("year", "")),
-                "abstract": result.get("abstract", "")[:1000],
-                "doi": result.get("doi", ""),
-                "pmid": "",
-                "topic": "",
-                "source": "asco",
-                "link": result.get("url", ""),
-            })
+                # Try to find abstract entries
+                # ASCO Flutter app renders abstract cards — extract text content
+                entries = page.locator('[class*="abstract"], [class*="search-result"], a[href*="/abstracts-presentations/"]')
+                count = entries.count()
 
-        time.sleep(0.5)
+                for i in range(min(count, 10)):
+                    try:
+                        el = entries.nth(i)
+                        text = el.inner_text()
+                        href = el.get_attribute("href") or ""
+
+                        if not text or len(text) < 20:
+                            continue
+
+                        # Extract abstract ID from URL
+                        aid_match = re.search(r'/(\d+)', href)
+                        aid = aid_match.group(1) if aid_match else f"asco-{i}"
+
+                        # Parse title (usually first line) and authors
+                        lines = [l.strip() for l in text.split("\n") if l.strip()]
+                        title = lines[0] if lines else text[:200]
+                        authors = lines[1] if len(lines) > 1 else ""
+
+                        candidates.append({
+                            "abstract_id": f"asco-2026-{aid}",
+                            "title": title[:300],
+                            "authors": authors[:200],
+                            "journal": "ASCO 2026",
+                            "year": "2026",
+                            "abstract": " ".join(lines[2:])[:500] if len(lines) > 2 else "",
+                            "doi": "",
+                            "pmid": "",
+                            "topic": "",
+                            "source": "asco",
+                            "link": f"https://meetings.asco.org{href}" if href.startswith("/") else href,
+                        })
+                    except Exception:
+                        continue
+
+            except Exception as e:
+                print(f"    [WARN] ASCO search failed for '{term}': {e}", file=sys.stderr)
+
+            time.sleep(2)
+
+        browser.close()
 
     return candidates
 
 
-def fetch_esmo_abstracts(search_terms):
-    """Search ESMO abstracts. Returns list of candidate dicts."""
+def _scrape_esmo(search_terms):
+    """Scrape ESMO abstract search results via Playwright."""
+    from playwright.sync_api import sync_playwright
+
     candidates = []
-    base_url = "https://oncologypro.esmo.org"
 
-    for term in search_terms:
-        print(f"  [ESMO] Searching: {term}")
-        search_url = f"{base_url}/search?q={urllib.parse.quote(term)}&type=abstract"
-        html = _http_get_html(search_url)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
 
-        if not html:
-            continue
+        for term in search_terms:
+            print(f"  [ESMO] Searching: {term}")
+            try:
+                url = f"https://oncologypro.esmo.org/meeting-resources?q={term}&type=abstract"
+                page.goto(url, wait_until="networkidle", timeout=30000)
+                page.wait_for_timeout(3000)
 
-        # Extract abstract links
-        links = re.findall(r'href="(/abstract[^"]*)"', html)
-        titles = re.findall(r'class="search-result-title[^"]*">([^<]+)<', html)
+                entries = page.locator('a[href*="abstract"], [class*="search-result"], [class*="abstract-card"]')
+                count = entries.count()
 
-        for i, link in enumerate(links[:10]):
-            title = titles[i] if i < len(titles) else f"ESMO Abstract"
-            abstract_id = re.search(r'/abstract/(\d+)', link)
-            aid = abstract_id.group(1) if abstract_id else link.split("/")[-1]
+                for i in range(min(count, 10)):
+                    try:
+                        el = entries.nth(i)
+                        text = el.inner_text()
+                        href = el.get_attribute("href") or ""
 
-            candidates.append({
-                "abstract_id": f"esmo-{aid}",
-                "title": title.strip(),
-                "authors": "",
-                "journal": "ESMO",
-                "year": "",
-                "abstract": "",
-                "doi": "",
-                "pmid": "",
-                "topic": "",
-                "source": "esmo",
-                "link": f"{base_url}{link}",
-            })
+                        if not text or len(text) < 20:
+                            continue
 
-        time.sleep(0.5)
+                        aid_match = re.search(r'/abstract/(\d+)', href)
+                        aid = aid_match.group(1) if aid_match else f"esmo-{i}"
+
+                        lines = [l.strip() for l in text.split("\n") if l.strip()]
+                        title = lines[0] if lines else text[:200]
+
+                        candidates.append({
+                            "abstract_id": f"esmo-{aid}",
+                            "title": title[:300],
+                            "authors": "",
+                            "journal": "ESMO",
+                            "year": "",
+                            "abstract": "",
+                            "doi": "",
+                            "pmid": "",
+                            "topic": "",
+                            "source": "esmo",
+                            "link": f"https://oncologypro.esmo.org{href}" if href.startswith("/") else href,
+                        })
+                    except Exception:
+                        continue
+
+            except Exception as e:
+                print(f"    [WARN] ESMO search failed for '{term}': {e}", file=sys.stderr)
+
+            time.sleep(2)
+
+        browser.close()
+
+    return candidates
+
+
+def _scrape_ascrs(search_terms):
+    """Scrape ASCRS abstract search results via Playwright."""
+    from playwright.sync_api import sync_playwright
+
+    candidates = []
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        for term in search_terms:
+            print(f"  [ASCRS] Searching: {term}")
+            try:
+                url = f"https://www.fascrs.org/search?q={term}"
+                page.goto(url, wait_until="networkidle", timeout=30000)
+                page.wait_for_timeout(3000)
+
+                entries = page.locator('a[href*="abstract"], [class*="search-result"], [class*="views-row"]')
+                count = entries.count()
+
+                for i in range(min(count, 10)):
+                    try:
+                        el = entries.nth(i)
+                        text = el.inner_text()
+                        href = el.get_attribute("href") or ""
+
+                        if not text or len(text) < 20:
+                            continue
+
+                        lines = [l.strip() for l in text.split("\n") if l.strip()]
+                        title = lines[0] if lines else text[:200]
+
+                        candidates.append({
+                            "abstract_id": f"ascrs-{i}-{hash(title) % 10000}",
+                            "title": title[:300],
+                            "authors": "",
+                            "journal": "ASCRS",
+                            "year": "",
+                            "abstract": "",
+                            "doi": "",
+                            "pmid": "",
+                            "topic": "",
+                            "source": "ascrs",
+                            "link": f"https://www.fascrs.org{href}" if href.startswith("/") else href,
+                        })
+                    except Exception:
+                        continue
+
+            except Exception as e:
+                print(f"    [WARN] ASCRS search failed for '{term}': {e}", file=sys.stderr)
+
+            time.sleep(2)
+
+        browser.close()
+
+    return candidates
+
+
+def _scrape_escp(search_terms):
+    """Scrape ESCP abstract search results via Playwright."""
+    from playwright.sync_api import sync_playwright
+
+    candidates = []
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        for term in search_terms:
+            print(f"  [ESCP] Searching: {term}")
+            try:
+                url = f"https://www.escp.eu.com/search?q={term}"
+                page.goto(url, wait_until="networkidle", timeout=30000)
+                page.wait_for_timeout(3000)
+
+                entries = page.locator('a[href*="abstract"], [class*="search-result"], [class*="views-row"]')
+                count = entries.count()
+
+                for i in range(min(count, 10)):
+                    try:
+                        el = entries.nth(i)
+                        text = el.inner_text()
+                        href = el.get_attribute("href") or ""
+
+                        if not text or len(text) < 20:
+                            continue
+
+                        lines = [l.strip() for l in text.split("\n") if l.strip()]
+                        title = lines[0] if lines else text[:200]
+
+                        candidates.append({
+                            "abstract_id": f"escp-{i}-{hash(title) % 10000}",
+                            "title": title[:300],
+                            "authors": "",
+                            "journal": "ESCP",
+                            "year": "",
+                            "abstract": "",
+                            "doi": "",
+                            "pmid": "",
+                            "topic": "",
+                            "source": "escp",
+                            "link": f"https://www.escp.eu.com{href}" if href.startswith("/") else href,
+                        })
+                    except Exception:
+                        continue
+
+            except Exception as e:
+                print(f"    [WARN] ESCP search failed for '{term}': {e}", file=sys.stderr)
+
+            time.sleep(2)
+
+        browser.close()
 
     return candidates
 
 
 def fetch_conferences(topic=None, dry_run=False):
     """Fetch new conference abstracts. Returns list of candidate dicts."""
+    if not _playwright_available():
+        print("[Conferences] Playwright not installed. Skipping conference scraping.", file=sys.stderr)
+        print("  Install: pip install playwright && playwright install chromium", file=sys.stderr)
+        return []
+
     queries = load_queries()
     tracked_abstracts = load_tracked_abstracts()
     tracked_dois = load_tracked_dois()
@@ -153,11 +292,12 @@ def fetch_conferences(topic=None, dry_run=False):
             continue
 
         print(f"[Conferences] Topic: {t}")
-        asco = fetch_asco_abstracts(terms)
-        esmo = fetch_esmo_abstracts(terms)
+        asco = _scrape_asco(terms)
+        esmo = _scrape_esmo(terms)
+        ascrs = _scrape_ascrs(terms)
+        escp = _scrape_escp(terms)
 
-        for c in asco + esmo:
-            # Dedup
+        for c in asco + esmo + ascrs + escp:
             if c["abstract_id"] in tracked_ids:
                 continue
             if c["doi"] and c["doi"] in tracked_doi_set:
@@ -174,7 +314,7 @@ def fetch_conferences(topic=None, dry_run=False):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Fetch conference abstracts")
+    parser = argparse.ArgumentParser(description="Fetch conference abstracts via Playwright")
     parser.add_argument("--topic", help="Single topic (default: all)")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()

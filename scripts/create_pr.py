@@ -26,6 +26,7 @@ TOPIC_CONFIG = {
     "mCRC-MSI-H": {"var": "MSIH_PAPERS", "docs_dir": "mCRC-MSI-H", "metrics_var": None},
     "mCRC-HER2": {"var": "HER2_PAPERS", "docs_dir": "mCRC-HER2", "metrics_var": None},
     "mCRC-RAS-wt": {"var": "RASWT_PAPERS", "docs_dir": "mCRC-RAS-wt", "metrics_var": None},
+    "mCRC-agnostic": {"var": None, "docs_dir": "mCRC-agnostic", "metrics_var": None},
     "robotic-surgery": {"var": None, "docs_dir": "robotic-surgery", "metrics_var": "TME_METRICS"},
 }
 

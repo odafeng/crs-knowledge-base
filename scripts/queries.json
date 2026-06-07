@@ -29,6 +29,12 @@
     "rss_filter_terms": ["cetuximab", "panitumumab", "anti-EGFR", "colorectal"],
     "conference_terms": ["anti-EGFR colorectal", "cetuximab colorectal first-line", "panitumumab rechallenge"]
   },
+  "mCRC-agnostic": {
+    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH]) AND (fruquintinib OR Fruzaqla OR FRESCO OR regorafenib OR trifluridine OR TAS-102 OR lonsurf OR bevacizumab) AND (metastatic OR advanced) AND (third-line OR refractory OR later-line OR salvage)",
+    "keywords": ["fruquintinib", "Fruzaqla", "FRESCO", "regorafenib", "TAS-102", "trifluridine", "lonsurf", "later-line"],
+    "rss_filter_terms": ["fruquintinib", "regorafenib", "trifluridine", "TAS-102", "colorectal"],
+    "conference_terms": ["fruquintinib colorectal", "FRESCO colorectal", "regorafenib colorectal", "TAS-102 colorectal refractory"]
+  },
   "robotic-surgery": {
     "pubmed_query": "(rectal cancer[MeSH] OR colon cancer[MeSH]) AND (robotic OR robot-assisted) AND (total mesorectal excision OR TME OR complete mesocolic excision OR CME OR anastomosis OR intracorporeal)",
     "keywords": ["robotic", "robot-assisted", "TME", "CME", "intracorporeal anastomosis", "REAL trial", "ROLARR"],
@@ -47,7 +53,9 @@
   ],
   "conference_seasons": {
     "ASCO_GI": {"start": "01-10", "end": "02-05", "name": "ASCO GI"},
+    "ASCRS": {"start": "04-25", "end": "05-10", "name": "ASCRS Annual Meeting"},
     "ASCO": {"start": "05-25", "end": "06-15", "name": "ASCO Annual Meeting"},
+    "ESCP": {"start": "06-20", "end": "07-05", "name": "ESCP Annual Meeting"},
     "WCGC": {"start": "07-01", "end": "07-15", "name": "ESMO World GI"},
     "ESMO": {"start": "09-10", "end": "10-31", "name": "ESMO Congress"}
   }

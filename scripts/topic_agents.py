@@ -116,6 +116,20 @@ _TOPIC_CONTEXTS = {
 - 新型 HER2 ADC 或 bispecific
 - HER2-low mCRC 的治療探索""",
 
+    "mCRC-agnostic": """## Biomarker-Agnostic 後線治療演進
+- Regorafenib (CORRECT, 2013): 首個 3L+ mCRC 標靶，OS HR 0.77，但毒性高
+- TAS-102/Lonsurf (RECOURSE, 2015): 3L+ OS HR 0.68，口服方便，毒性較低
+- TAS-102 + bevacizumab (SUNLIGHT, 2023): OS HR 0.61，成為新的 3L 標準
+- Fruquintinib/Fruzaqla (FRESCO-2, 2023): 選擇性 VEGFR-1/2/3 抑制劑，OS HR 0.66，FDA 2023 核准
+- 關鍵問題：fruquintinib vs regorafenib 頭對頭、fruquintinib + 其他藥物組合、最佳後線序貫策略
+
+值得注意的里程碑類型：
+- Fruquintinib 組合療法（+ anti-PD-1、+ TAS-102）
+- FRESCO-2 亞組分析和 real-world data
+- 新型 VEGFR 或多靶點 TKI
+- Biomarker-guided 後線選擇（ctDNA、TMB）
+- Regorafenib 低劑量策略（ReDOS）的前瞻性驗證""",
+
     "mCRC-RAS-wt": """## RAS 野生型 Anti-EGFR 治療演進
 - FIRE-3/CALGB 80405: 確立左側 RAS-wt 一線 anti-EGFR 為標準
 - PARADIGM: 唯一達 OS 主要終點的 Phase 3（左側 OS 37.9 mo）
