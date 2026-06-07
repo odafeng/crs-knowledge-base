@@ -14,7 +14,7 @@ The pipeline initially auto-created PRs and auto-merged them for score ≥4 pape
 
 All papers scoring ≥4 create a GitHub Issue (with AI analysis, suggested JS object, and suggested chart updates) + LINE push notification. The human (surgeon) reviews and decides whether to incorporate.
 
-`create_pr.py` is retained as dormant utility code but is NOT called by `main.py`. Contract tests enforce this boundary.
+`create_pr.py` was subsequently deleted entirely. Contract tests enforce that the pipeline uses only `create_issues`, never auto-PR.
 
 ## Consequences
 

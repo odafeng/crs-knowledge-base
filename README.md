@@ -1,12 +1,12 @@
 # CRS Knowledge Base
 
-> 大腸直腸外科臨床決策知識庫 — PWA + 7 個 AI Agent 自動文獻追蹤
+> 大腸直腸外科臨床決策知識庫 — PWA + 8 個 AI Agent 自動文獻追蹤
 
 [![PWA](https://img.shields.io/badge/PWA-offline--ready-1a365d)](https://web.dev/progressive-web-apps/)
 [![Deploy](https://img.shields.io/badge/GitHub%20Pages-live-3182ce)](https://odafeng.github.io/crs-knowledge-base/)
 [![CI](https://github.com/odafeng/crs-knowledge-base/actions/workflows/ci.yml/badge.svg)](https://github.com/odafeng/crs-knowledge-base/actions/workflows/ci.yml)
 [![Paper Watch](https://github.com/odafeng/crs-knowledge-base/actions/workflows/paper-watch.yml/badge.svg)](https://github.com/odafeng/crs-knowledge-base/actions/workflows/paper-watch.yml)
-[![Tests](https://img.shields.io/badge/tests-71%20passed-38a169)](#)
+[![Tests](https://img.shields.io/badge/tests-63%20passed-38a169)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-38a169)](#授權)
 
 **Live**：<https://odafeng.github.io/crs-knowledge-base/>
@@ -18,7 +18,7 @@
 **CRS Knowledge Base** 是一套面向**大腸直腸外科臨床醫師**的口袋型知識庫，搭載 **7 個 AI Agent 驅動的自動文獻追蹤系統**。
 
 - 讓主治醫師在 **30 秒內**查到關鍵試驗數據
-- **7 個 Topic-Specific AI Agent** 自動追蹤 ASCO、ESMO、ASCRS、ESCP 及主要期刊
+- **8 個 Topic-Specific AI Agent** 自動追蹤 PubMed + 主要期刊 RSS
 - 每個 agent 具備 **tool use + chain-of-thought** 能力，自主搜尋 PubMed、查閱 guideline、交叉比對既有文獻
 - 高分文獻自動建立 GitHub Issue + LINE 推播通知
 
@@ -44,7 +44,7 @@
 - **Chain-of-Thought** — extended thinking，推理過程完整記錄在 CI logs
 - **Cross-Paper Context** — 同批候選論文互相可見，支持相對判斷
 - **Structured Output** — 透過 `submit_classification` tool 強制 JSON 輸出，不依賴 regex 解析
-- **Conference Scraping** — Playwright headless 抓取 ASCO（Flutter SPA）、ESMO、ASCRS、ESCP
+- **Conference Season Supplement** — 會議季自動搜尋 JCO/Ann Oncol/DCR meeting abstract supplements
 - **Supplement Search** — 會議季自動搜尋 JCO/Ann Oncol/DCR meeting abstract supplements
 - **LINE 推播** — 有新的重要文獻時即時通知
 - **Data Validation** — CI 自動檢查 ID 重複、relation target、缺檔、欄位完整性
@@ -92,9 +92,8 @@
         │
   ┌─────┼─────────────┐
   ▼     ▼             ▼
-PubMed  RSS    Playwright
-(+suppl)       ASCO/ESMO
-               ASCRS/ESCP
+PubMed    RSS
+(+suppl)
         │
   deduplicate
         │
@@ -123,9 +122,7 @@ PubMed  RSS    Playwright
 | 會議 | 窗口 (±2w buffer) | 頻率 |
 |---|---|---|
 | ASCO GI | 1/5 ~ 2/15 | 每日 |
-| ASCRS | 4/15 ~ 5/20 | 每日 |
 | ASCO Annual | 5/20 ~ 6/25 | 每日 |
-| ESCP | 6/15 ~ 7/10 | 每日 |
 | ESMO World GI | 6/25 ~ 7/25 | 每日 |
 | ESMO Congress | 9/5 ~ 11/5 | 每日 |
 
@@ -149,7 +146,7 @@ PubMed  RSS    Playwright
 | 項目 | 選用 |
 |---|---|
 | AI | Claude Sonnet 4.6 + extended thinking + tool use |
-| 文獻來源 | PubMed E-utilities + RSS + Playwright (ASCO/ESMO/ASCRS/ESCP) |
+| 文獻來源 | PubMed E-utilities + RSS feeds + meeting abstract supplements |
 | Guideline | OpenEvidence cache + PubMed guideline search fallback |
 | 通知 | LINE Messaging API |
 | 網路 | exponential backoff retry (3x) |
@@ -203,7 +200,7 @@ python3 -m http.server 8000  # http://localhost:8000
 # Pipeline
 cp .env.example .env  # 填入 API keys
 pip install -r scripts/requirements.txt
-pip install playwright && playwright install chromium  # 選填，conference scraping 用
+pip install playwright && playwright install chromium  # 選填，guideline refresh 用
 
 # 驗證 + 測試
 python scripts/validate.py
