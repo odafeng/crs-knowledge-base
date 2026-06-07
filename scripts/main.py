@@ -99,9 +99,9 @@ def run_pipeline(topic=None, skip_conferences=False, dry_run=False, daily_mode=F
         print("[Pipeline] No high-relevance papers. Done.")
         return
 
-    # Layer 3: All ≥4 papers get auto-PR with auto-merge
-    print(f"\n[Pipeline] {len(classified)} papers → Auto-PR + Auto-merge")
-    create_prs(classified, dry_run=dry_run)
+    # Layer 3: All ≥4 papers get GitHub Issues for human review
+    print(f"\n[Pipeline] {len(classified)} papers → GitHub Issues")
+    create_issues(classified, dry_run=dry_run)
 
     # LINE notification for all high-relevance papers
     print()
