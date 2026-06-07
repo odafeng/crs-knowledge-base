@@ -1,10 +1,17 @@
-const CACHE_NAME = 'crs-kb-v11';
+const CACHE_NAME = 'crs-kb-v12';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './docs/mCRC-BRAF-V600E/Kopetz_NEJM_2019_BEACON.html',
+  './docs/mCRC-BRAF-V600E/Tabernero_JCO_2021_BEACON.html',
+  './docs/mCRC-BRAF-V600E/Kopetz_NatMed_2025_BREAKWATER.html',
+  './docs/mCRC-BRAF-V600E/Elez_NEJM_2025_BREAKWATER.html',
+  './docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.html',
+  './docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.html',
+  './docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html'
 ];
 
 self.addEventListener('install', e => {
@@ -24,12 +31,17 @@ self.addEventListener('activate', e => {
 });
 
 // Network-first: try network, fallback to cache
+// Only cache GET requests with successful (2xx) responses from same origin
 self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+
   e.respondWith(
     fetch(e.request)
       .then(res => {
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        if (res.ok && res.type !== 'opaque' && new URL(e.request.url).origin === self.location.origin) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        }
         return res;
       })
       .catch(() => caches.match(e.request))

@@ -19,6 +19,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r scripts/requirements.txt pytest
 
+      - name: Validate data integrity
+        run: python scripts/validate.py --ci
+
       - name: Run tests
         run: python -m pytest tests/ -v
 

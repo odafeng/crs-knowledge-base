@@ -874,14 +874,21 @@
 <script>
 // === NAVIGATION ===
 const history_stack = [];
-function navigate(viewId, title, subtitle) {
+function navigate(viewId, title, subtitle, skipHash) {
   const current = document.querySelector('.view.active');
   history_stack.push({ id: current.id, title: document.getElementById('hdr-title').textContent, sub: document.getElementById('hdr-sub').textContent });
-  current.classList.remove('active');
-  document.getElementById(viewId).classList.add('active');
-  document.getElementById('hdr-title').textContent = title;
+  _activateView(viewId, title, subtitle);
+  if (!skipHash) location.hash = viewId.replace('v-', '');
+}
+function _activateView(viewId, title, subtitle) {
+  const current = document.querySelector('.view.active');
+  if (current) current.classList.remove('active');
+  const target = document.getElementById(viewId);
+  if (!target) return;
+  target.classList.add('active');
+  document.getElementById('hdr-title').textContent = title || '';
   document.getElementById('hdr-sub').textContent = subtitle || '';
-  document.getElementById('back-btn').style.display = 'block';
+  document.getElementById('back-btn').style.display = history_stack.length ? 'block' : 'none';
   window.scrollTo(0, 0);
   if (viewId === 'v-braf') renderEvidence();
   if (viewId === 'v-raswt') renderTopic(RASWT_PAPERS, 'tl-raswt', 'raswt-cards');
@@ -894,13 +901,22 @@ function navigate(viewId, title, subtitle) {
 function goBack() {
   if (!history_stack.length) return;
   const prev = history_stack.pop();
-  document.querySelector('.view.active').classList.remove('active');
-  document.getElementById(prev.id).classList.add('active');
-  document.getElementById('hdr-title').textContent = prev.title;
-  document.getElementById('hdr-sub').textContent = prev.sub;
-  if (!history_stack.length) document.getElementById('back-btn').style.display = 'none';
-  window.scrollTo(0, 0);
+  _activateView(prev.id, prev.title, prev.sub);
+  if (history_stack.length) {
+    location.hash = prev.id.replace('v-', '');
+  } else {
+    history.replaceState(null, '', location.pathname);
+  }
 }
+// Deep link: restore view from URL hash on load
+window.addEventListener('DOMContentLoaded', () => {
+  const hash = location.hash.replace('#', '');
+  if (hash) {
+    const viewId = 'v-' + hash;
+    const target = document.getElementById(viewId);
+    if (target) navigate(viewId, hash, '', true);
+  }
+});
 
 // === STRUCTURED PAPER MODEL ===
 // Each paper: { id, year, journal, studyType, n, regimen, endpoint, result, bottomLine, doi, file, relations[] }
@@ -1024,7 +1040,7 @@ function renderPaperTimeline(papers, elId) {
   el.innerHTML = sorted.map(p => {
     const badgeColor = STUDY_BADGES[p.studyType] || '#4a5568';
     const isRCT = p.studyType.includes('Phase 3') || p.studyType.includes('Phase 2');
-    return `<a class="tl-node ${isRCT ? 'breakwater' : 'beacon'}" href="${p.file || (p.doi ? 'https://doi.org/'+p.doi : '#')}" target="_blank">
+    return `<a class="tl-node ${isRCT ? 'breakwater' : 'beacon'}" href="${p.file || (p.doi ? 'https://doi.org/'+p.doi : '#')}" target="_blank" rel="noopener noreferrer">
       <div class="tl-dot"></div>
       <div class="tl-line"></div>
       <div class="tl-yr">${p.year}</div>
@@ -1072,8 +1088,8 @@ function renderPaperCards(papers, elId) {
       if (!target) return '';
       return `<span style="font-size:0.75rem;color:${REL_COLORS[r.type] || '#718096'}">${REL_LABELS[r.type] || r.type} → ${target.year} ${target.journal}</span>`;
     }).filter(Boolean).join(' ');
-    const doiLink = p.doi ? `<a href="https://doi.org/${p.doi}" target="_blank" style="font-size:0.8rem">DOI</a>` : '';
-    const fileLink = p.file ? `<a href="${p.file}" target="_blank" style="font-size:0.8rem">&#x1F4C4; 全文/摘要</a>` : '';
+    const doiLink = p.doi ? `<a href="https://doi.org/${p.doi}" target="_blank" rel="noopener noreferrer" style="font-size:0.8rem">DOI</a>` : '';
+    const fileLink = p.file ? `<a href="${p.file}" target="_blank" rel="noopener noreferrer" style="font-size:0.8rem">&#x1F4C4; 全文/摘要</a>` : '';
     return `<div class="ev-card">
       <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
         <h4>${p.year} ${p.journal} — ${p.regimen.split(' vs ')[0]}</h4>
@@ -1353,7 +1369,7 @@ const TME_CARDS = [
     </table>
     <p>Robotic 組在術後 3、6、12 個月的泌尿功能、性功能和排便功能均顯著較佳。</p>
     <div class="note">REAL 是第一個證實 robotic 在腫瘤學結果上優於 laparoscopic 的大型 RCT，將 robotic rectal surgery 的證據等級從「非劣性」推向「優越性」。</div>
-    <p><a href="https://doi.org/10.1001/jama.2025.8123" target="_blank">&#x1F4C4; DOI: 10.1001/jama.2025.8123</a></p>` },
+    <p><a href="https://doi.org/10.1001/jama.2025.8123" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1001/jama.2025.8123</a></p>` },
   { title:'ROLARR 試驗（JAMA 2017）— 經典 RCT', tag:'ROLARR', body:`
     <p>多中心 RCT，10 國 29 中心，N=471</p>
     <table>
@@ -1363,7 +1379,7 @@ const TME_CARDS = [
     </table>
     <p>所有預設次要終點（併發症、病理、QoL、泌尿/性功能）均無顯著差異。</p>
     <div class="note">ROLARR 的結論是 robotic 未顯著降低轉換率。但批評者指出：許多參與醫師 robotic 經驗不足（learning curve 問題），且主要終點選擇（轉換率）可能不是最佳指標。</div>
-    <p><a href="https://doi.org/10.1001/jama.2017.7219" target="_blank">&#x1F4C4; DOI: 10.1001/jama.2017.7219</a></p>` },
+    <p><a href="https://doi.org/10.1001/jama.2017.7219" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1001/jama.2017.7219</a></p>` },
   { title:'COLRAR 試驗（Ann Surg 2023）', tag:'COLRAR', body:`
     <p>韓國多中心 RCT，N=295（因收案困難提前終止）</p>
     <table>
@@ -1373,7 +1389,7 @@ const TME_CARDS = [
       <tr><td>鴉片類使用時間</td><td colspan="2">Robotic 較短 (p=0.028)</td></tr>
     </table>
     <div class="note">TME 完整性未達顯著差異，但 CRM 陽性率在亞分析中 robotic 顯著較低（0% vs 6.1%）。提前終止限制了統計效力。</div>
-    <p><a href="https://doi.org/10.1097/SLA.0000000000005788" target="_blank">&#x1F4C4; DOI: 10.1097/SLA.0000000000005788</a></p>` },
+    <p><a href="https://doi.org/10.1097/SLA.0000000000005788" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1097/SLA.0000000000005788</a></p>` },
   { title:'RCT Meta-analysis 2025（7 trials, N=1731）', tag:'MA 2025', body:`
     <p>納入 7 個 RCT 的統合分析</p>
     <table>
@@ -1385,7 +1401,7 @@ const TME_CARDS = [
       <tr><td>手術時間</td><td>&#x2717;</td><td>+22.7 min</td></tr>
       <tr><td>TME 完整性</td><td>—</td><td>NS</td></tr>
     </table>
-    <p><a href="https://doi.org/10.1007/s11701-025-02628-3" target="_blank">&#x1F4C4; DOI: 10.1007/s11701-025-02628-3</a></p>` },
+    <p><a href="https://doi.org/10.1007/s11701-025-02628-3" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1007/s11701-025-02628-3</a></p>` },
   { title:'Bayesian Network MA 2024（27 RCTs, N=8696）', tag:'NMA 2024', body:`
     <p>比較四種手術方式：Robotic / TaTME / Laparoscopic / Open</p>
     <table>
@@ -1394,7 +1410,7 @@ const TME_CARDS = [
       <tr><td>第 2</td><td><strong>Robotic</strong></td><td><strong>Robotic</strong></td><td>Open</td></tr>
     </table>
     <p>Robotic 和 TaTME 的病理結果均優於 laparoscopic TME。</p>
-    <p><a href="https://doi.org/10.1016/j.ejso.2024.109481" target="_blank">&#x1F4C4; DOI: 10.1016/j.ejso.2024.109481</a></p>` },
+    <p><a href="https://doi.org/10.1016/j.ejso.2024.109481" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1016/j.ejso.2024.109481</a></p>` },
 ];
 
 let currentTmeMetric = 'locoregional';
@@ -1402,7 +1418,7 @@ let currentTmeMetric = 'locoregional';
 function renderTME() {
   // Timeline
   document.getElementById('tl-tme').innerHTML = TL_TME.map(n => `
-    <a class="tl-node ${n.cls}" href="${n.file}" target="_blank">
+    <a class="tl-node ${n.cls}" href="${n.file}" target="_blank" rel="noopener noreferrer">
       <div class="tl-dot"></div>
       <div class="tl-line"></div>
       <div class="tl-yr">${n.yr}</div>
@@ -1480,7 +1496,7 @@ const ANAST_CARDS = [
       <tr><td>住院天數</td><td colspan="2">RiSSA 較短</td></tr>
       <tr><td>造口率</td><td colspan="2">RiSSA 較低</td></tr>
     </table>
-    <p><a href="https://doi.org/10.1007/s11701-025-02609-6" target="_blank">&#x1F4C4; DOI: 10.1007/s11701-025-02609-6</a></p>` },
+    <p><a href="https://doi.org/10.1007/s11701-025-02609-6" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1007/s11701-025-02609-6</a></p>` },
   { title:'RiSSA Learning Curve — RA-CUSUM（IJCD 2026）', tag:'RiSSA', body:`
     <p><strong>Huang/Wu, 高雄榮總</strong> — 36 例連續 RiSSA 的學習曲線分析</p>
     <p>使用影片標準化 8 個時間點，RA-CUSUM 分析</p>
@@ -1490,20 +1506,20 @@ const ANAST_CARDS = [
       <tr><td>Purse-string suture time</td><td><strong>第 11 例</strong></td></tr>
     </table>
     <p>技術效率在轉折點後顯著改善。提供可重現的技術評估指標。</p>
-    <p><a href="https://doi.org/10.1007/s00384-025-05078-3" target="_blank">&#x1F4C4; DOI: 10.1007/s00384-025-05078-3</a></p>` },
+    <p><a href="https://doi.org/10.1007/s00384-025-05078-3" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1007/s00384-025-05078-3</a></p>` },
   { title:'RiSSA Technical Note（Ann Coloproctol 2025）', tag:'RiSSA', body:`
     <p><strong>Wu/Huang, 高雄榮總 + St Mark\'s</strong></p>
     <p>詳細描述 robotic 左側大腸直腸切除術中 RiSSA 的標準化技術步驟。</p>
-    <p><a href="https://doi.org/10.3393/ac.2025.00486.0069" target="_blank">&#x1F4C4; DOI: 10.3393/ac.2025.00486.0069</a></p>` },
+    <p><a href="https://doi.org/10.3393/ac.2025.00486.0069" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.3393/ac.2025.00486.0069</a></p>` },
   { title:'RiSSA + NOSE Video Vignette（Colorectal Dis 2024）', tag:'RiSSA', body:`
     <p><strong>Huang/Wu, 高雄榮總</strong></p>
     <p>影片展示 RiSSA 結合 Natural Orifice Specimen Extraction（NOSE）應用於 robotic TME 的完整手術流程。</p>
-    <p><a href="https://doi.org/10.1111/codi.17211" target="_blank">&#x1F4C4; DOI: 10.1111/codi.17211</a></p>` },
+    <p><a href="https://doi.org/10.1111/codi.17211" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1111/codi.17211</a></p>` },
   { title:'RPC-RiSSA at St Mark\'s（Tech Coloproctol 2024）', tag:'RiSSA / FAP', body:`
     <p><strong>Alves Martins/Faiz, St Mark\'s Hospital</strong></p>
     <p>FAP 病患接受 RPC-RiSSA（自 2019 年導入）：吻合滲漏 <strong>0%</strong>，對比傳統 RPC 的 9%（p=0.3）。</p>
     <p>253 例 FAP 恢復性手術，15 年經驗，展示技術演進。</p>
-    <p><a href="https://doi.org/10.1007/s10151-024-03021-2" target="_blank">&#x1F4C4; DOI: 10.1007/s10151-024-03021-2</a></p>` },
+    <p><a href="https://doi.org/10.1007/s10151-024-03021-2" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1007/s10151-024-03021-2</a></p>` },
   { title:'ICA vs ECA Meta-analysis（IJCD 2023, 7 RCTs）', tag:'ICA vs ECA', body:`
     <p>7 個 RCT 的統合分析（N=750），比較腹腔內吻合 vs 體外吻合</p>
     <table>
@@ -1514,11 +1530,11 @@ const ANAST_CARDS = [
       <tr><td>滲漏率</td><td>—</td><td>NS</td></tr>
       <tr><td>住院天數</td><td>—</td><td>NS</td></tr>
     </table>
-    <p><a href="https://doi.org/10.1007/s00384-023-04445-2" target="_blank">&#x1F4C4; DOI: 10.1007/s00384-023-04445-2</a></p>` },
+    <p><a href="https://doi.org/10.1007/s00384-023-04445-2" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1007/s00384-023-04445-2</a></p>` },
   { title:'Robotic ICA vs ECA RCT（Ann Surg 2022）', tag:'ICA vs ECA', body:`
     <p><strong>Dohrn et al.</strong> — 多中心三盲 RCT，N=89，robotic right colectomy</p>
     <p>在優化的 ERAS 環境下，ICA vs ECA 在 QoR-15（主要終點）上無顯著差異。ICA 吻合時間較長（17 vs 13 min, p=0.003）。其餘手術和病理指標均無差異。</p>
-    <p><a href="https://doi.org/10.1097/SLA.0000000000005254" target="_blank">&#x1F4C4; DOI: 10.1097/SLA.0000000000005254</a></p>` },
+    <p><a href="https://doi.org/10.1097/SLA.0000000000005254" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1097/SLA.0000000000005254</a></p>` },
   { title:'Safe Anastomosis Project（DCR 2026）', tag:'SST', body:`
     <p><strong>Kim et al., Kyungpook National University</strong></p>
     <p>前瞻性世代研究，N=99，評估「延後造口」策略</p>
@@ -1529,18 +1545,18 @@ const ANAST_CARDS = [
       <tr><td>DST + reinforcement</td><td>—</td><td>—</td></tr>
     </table>
     <p>SST + reinforcement + robotic 組合展現最佳結果。78.1% 使用機器人手術。</p>
-    <p><a href="https://doi.org/10.1097/DCR.0000000000004107" target="_blank">&#x1F4C4; DOI: 10.1097/DCR.0000000000004107</a></p>` },
+    <p><a href="https://doi.org/10.1097/DCR.0000000000004107" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1097/DCR.0000000000004107</a></p>` },
   { title:'TTSS — 經肛門橫斷 + SSA（IJCD 2024）', tag:'SST', body:`
     <p><strong>Vivas López et al.</strong> — 初始 22 例系列</p>
     <p>中低位直腸癌，腹腔鏡 TME + transanal transection + single-stapled anastomosis</p>
     <p>滲漏率 9.1%，住院中位數 5 天，全部達完整 TME + 切緣陰性。</p>
-    <p><a href="https://doi.org/10.1007/s00384-024-04646-3" target="_blank">&#x1F4C4; DOI: 10.1007/s00384-024-04646-3</a></p>` },
+    <p><a href="https://doi.org/10.1007/s00384-024-04646-3" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1007/s00384-024-04646-3</a></p>` },
 ];
 
 function renderAnast() {
   // Timeline
   document.getElementById('tl-anast').innerHTML = TL_ANAST.map(n => `
-    <a class="tl-node ${n.cls}" href="${n.file}" target="_blank">
+    <a class="tl-node ${n.cls}" href="${n.file}" target="_blank" rel="noopener noreferrer">
       <div class="tl-dot"></div>
       <div class="tl-line"></div>
       <div class="tl-yr">${n.yr}</div>
