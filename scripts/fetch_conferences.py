@@ -8,12 +8,19 @@ without it) — the pipeline continues with PubMed + RSS only.
 """
 
 import argparse
+import hashlib
 import json
 import re
 import sys
 import time
 
 from config import load_queries, load_tracked_abstracts, load_tracked_dois
+
+
+def _stable_id(prefix: str, text: str) -> str:
+    """Generate a deterministic ID from prefix + text content."""
+    digest = hashlib.sha256(text.encode()).hexdigest()[:12]
+    return f"{prefix}-{digest}"
 
 
 def _playwright_available():
@@ -184,7 +191,7 @@ def _scrape_ascrs(search_terms):
                         title = lines[0] if lines else text[:200]
 
                         candidates.append({
-                            "abstract_id": f"ascrs-{i}-{hash(title) % 10000}",
+                            "abstract_id": _stable_id("ascrs", title),
                             "title": title[:300],
                             "authors": "",
                             "journal": "ASCRS",
@@ -242,7 +249,7 @@ def _scrape_escp(search_terms):
                         title = lines[0] if lines else text[:200]
 
                         candidates.append({
-                            "abstract_id": f"escp-{i}-{hash(title) % 10000}",
+                            "abstract_id": _stable_id("escp", title),
                             "title": title[:300],
                             "authors": "",
                             "journal": "ESCP",

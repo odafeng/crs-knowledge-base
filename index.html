@@ -874,6 +874,21 @@
 <script>
 // === NAVIGATION ===
 const history_stack = [];
+
+// View metadata for deep links and header display
+const VIEW_META = {
+  'v-home': { title: 'CRS Knowledge Base', sub: '' },
+  'v-mcrc': { title: 'mCRC', sub: '轉移性大腸直腸癌' },
+  'v-braf': { title: 'BRAF V600E', sub: 'mCRC 標靶治療' },
+  'v-raswt': { title: 'RAS Wild-Type', sub: 'Anti-EGFR 治療' },
+  'v-krasg12c': { title: 'KRAS G12C', sub: 'G12C 抑制劑' },
+  'v-msih': { title: 'MSI-H / dMMR', sub: '免疫治療' },
+  'v-her2': { title: 'HER2', sub: 'HER2 標靶治療' },
+  'v-robotic': { title: '機器人手術', sub: 'Robotic Surgery' },
+  'v-robotic-tme': { title: 'Robotic TME', sub: '全直腸繫膜切除' },
+  'v-robotic-anast': { title: 'Anastomosis', sub: '吻合技術' },
+};
+
 function navigate(viewId, title, subtitle, skipHash) {
   const current = document.querySelector('.view.active');
   history_stack.push({ id: current.id, title: document.getElementById('hdr-title').textContent, sub: document.getElementById('hdr-sub').textContent });
@@ -886,8 +901,9 @@ function _activateView(viewId, title, subtitle) {
   const target = document.getElementById(viewId);
   if (!target) return;
   target.classList.add('active');
-  document.getElementById('hdr-title').textContent = title || '';
-  document.getElementById('hdr-sub').textContent = subtitle || '';
+  const meta = VIEW_META[viewId] || {};
+  document.getElementById('hdr-title').textContent = title || meta.title || '';
+  document.getElementById('hdr-sub').textContent = subtitle || meta.sub || '';
   document.getElementById('back-btn').style.display = history_stack.length ? 'block' : 'none';
   window.scrollTo(0, 0);
   if (viewId === 'v-braf') renderEvidence();
@@ -908,15 +924,19 @@ function goBack() {
     history.replaceState(null, '', location.pathname);
   }
 }
-// Deep link: restore view from URL hash on load
-window.addEventListener('DOMContentLoaded', () => {
+// Deep link + browser back/forward support
+function _handleHash() {
   const hash = location.hash.replace('#', '');
-  if (hash) {
-    const viewId = 'v-' + hash;
-    const target = document.getElementById(viewId);
-    if (target) navigate(viewId, hash, '', true);
+  if (!hash) return;
+  const viewId = 'v-' + hash;
+  const target = document.getElementById(viewId);
+  if (target) {
+    const meta = VIEW_META[viewId] || {};
+    _activateView(viewId, meta.title || hash, meta.sub || '');
   }
-});
+}
+window.addEventListener('DOMContentLoaded', _handleHash);
+window.addEventListener('hashchange', _handleHash);
 
 // === STRUCTURED PAPER MODEL ===
 // Each paper: { id, year, journal, studyType, n, regimen, endpoint, result, bottomLine, doi, file, relations[] }

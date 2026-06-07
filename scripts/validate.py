@@ -50,23 +50,27 @@ def _extract_papers() -> dict[str, list[dict]]:
         for obj_match in re.finditer(r"\{([^}]+)\}", raw):
             obj_text = obj_match.group(1)
 
+            # Match both JS-style (id:'...') and JSON-style ("id": "...")
+            def _field(name, text):
+                return re.search(rf'["\']?{name}["\']?\s*:\s*["\']([^"\']+)["\']', text)
+
             # Skip nested objects (relations, etc.) — they don't have 'id' + 'year'
-            id_match = re.search(r"id\s*:\s*['\"]([^'\"]+)['\"]", obj_text)
+            id_match = _field("id", obj_text)
             if not id_match:
                 continue
-            doi_match = re.search(r"doi\s*:\s*['\"]([^'\"]*)['\"]", obj_text)
-            file_match = re.search(r"file\s*:\s*['\"]([^'\"]+)['\"]", obj_text)
-            year_match = re.search(r"year\s*:\s*(\d+)", obj_text)
-            journal_match = re.search(r"journal\s*:\s*['\"]([^'\"]+)['\"]", obj_text)
-            study_match = re.search(r"studyType\s*:\s*['\"]([^'\"]+)['\"]", obj_text)
-            regimen_match = re.search(r"regimen\s*:\s*['\"]([^'\"]+)['\"]", obj_text)
-            endpoint_match = re.search(r"endpoint\s*:\s*['\"]([^'\"]+)['\"]", obj_text)
-            result_match = re.search(r"result\s*:\s*['\"]([^'\"]+)['\"]", obj_text)
-            bottom_match = re.search(r"bottomLine\s*:\s*['\"]([^'\"]+)['\"]", obj_text)
+            doi_match = re.search(r'["\']?doi["\']?\s*:\s*["\']([^"\']*)["\']', obj_text)
+            file_match = _field("file", obj_text)
+            year_match = re.search(r'["\']?year["\']?\s*:\s*(\d+)', obj_text)
+            journal_match = _field("journal", obj_text)
+            study_match = _field("studyType", obj_text)
+            regimen_match = _field("regimen", obj_text)
+            endpoint_match = _field("endpoint", obj_text)
+            result_match = _field("result", obj_text)
+            bottom_match = _field("bottomLine", obj_text)
 
             # Extract relation targetIds
             relations = []
-            for rel_match in re.finditer(r"targetId\s*:\s*['\"]([^'\"]+)['\"]", obj_text):
+            for rel_match in re.finditer(r'["\']?targetId["\']?\s*:\s*["\']([^"\']+)["\']', obj_text):
                 relations.append(rel_match.group(1))
 
             papers.append({
