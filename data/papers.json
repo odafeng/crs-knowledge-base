@@ -776,7 +776,22 @@
     "metrics": null
   },
   "generic-CRS": {
-    "papers": [],
+    "papers": [
+      {
+        "id": "STELLAR303_Lancet_2025",
+        "year": 2025,
+        "journal": "Lancet",
+        "studyType": "Phase 3 RCT",
+        "n": 901,
+        "regimen": "Zanzalintinib + Atezolizumab vs Regorafenib",
+        "endpoint": "OS (ITT; dual primary: ITT + no liver mets subset)",
+        "result": "mOS 10.9 vs 9.4 mo; HR 0.80 (95% CI 0.69-0.93), p=0.0045 [ITT]; no liver mets subset HR 0.79 (p=0.087, interim)",
+        "bottomLine": "首個在 MSS/pMMR mCRC 達到 Phase 3 OS 終點的免疫治療組合，頭對頭擊敗 regorafenib",
+        "doi": "10.1016/S0140-6736(25)02025-2",
+        "file": "docs/generic-CRS/Hecht_Lancet_2025_STELLAR303.html",
+        "relations": []
+      }
+    ],
     "metrics": null
   },
   "conference-highlights": {
