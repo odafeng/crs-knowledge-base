@@ -94,4 +94,5 @@ jobs:
           git config user.email "bot@users.noreply.github.com"
           git add data/tracked-dois.json data/tracked-abstracts.json
           git diff --cached --quiet || git commit -m "chore: update tracked DOIs [paper-watch]"
+          git pull --rebase || true
           git push
