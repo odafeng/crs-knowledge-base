@@ -776,7 +776,22 @@
     "metrics": null
   },
   "generic-CRS": {
-    "papers": [],
+    "papers": [
+      {
+        "id": "Liu_NatCommun_2025_RegoSinti",
+        "year": 2025,
+        "journal": "Nat Commun",
+        "studyType": "Phase 2",
+        "n": 84,
+        "regimen": "Regorafenib + Sintilimab (MSS mCRC, salvage)",
+        "endpoint": "OS (primary), PFS, ORR, DCR, DoR",
+        "result": "mOS 14.1m, mPFS 4.1m, ORR 21.4%, DCR 63.1%, DoR 13.0m; RAS/RAF wt 亞組 mOS 23.3m vs 突變型 12.1m",
+        "bottomLine": "Regorafenib + sintilimab 用於 MSS mCRC 後線治療：mOS 14.1m、ORR 21.4%（RAS/RAF wt 亞組 mOS 達 23.3m），為該難治族群提供重要概念驗證。",
+        "doi": "10.1038/s41467-025-56748-3",
+        "file": "docs/generic-CRS/Liu_NatCommun_2025_RegoSinti.html",
+        "relations": []
+      }
+    ],
     "metrics": null
   },
   "conference-highlights": {
