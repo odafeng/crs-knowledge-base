@@ -19,7 +19,6 @@ from fetch_conferences import fetch_conferences
 from fetch_news import fetch_news
 from classify import classify_all
 from create_issues import create_issues
-from create_pr import create_prs
 from notify_line import notify_papers
 
 

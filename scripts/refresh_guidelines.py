@@ -1,6 +1,10 @@
 """Refresh guideline cache by querying OpenEvidence via headless Playwright.
 
-Fully automated — runs in GitHub Actions without a real browser.
+IMPORTANT: This uses unofficial cookie-based scraping of OpenEvidence's
+website, NOT an official API or MCP integration. For personal/private use.
+OpenEvidence does not offer a public API; this approach may break if their
+site structure changes or if they update their terms of service.
+
 Uses stored cookies (OE_COOKIES_JSON secret) to maintain session.
 
 Usage:

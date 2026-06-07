@@ -101,7 +101,7 @@ AGENT_TOOLS = [
     {
         "name": "query_guidelines",
         "description": (
-            "Query the latest ASCO/ESMO/NCCN clinical guidelines via OpenEvidence. "
+            "Query the latest ASCO/ESMO/NCCN clinical guidelines from cached responses or PubMed. "
             "Use this to check what the current guideline recommendation is for a specific "
             "biomarker, treatment line, or clinical scenario. This helps you determine whether "
             "a new paper changes the standard of care. "
@@ -309,7 +309,9 @@ GUIDELINES_CACHE_DIR = Path(__file__).resolve().parent.parent / "data" / "guidel
 
 
 def _tool_query_guidelines(input_data):
-    """Query clinical guidelines from pre-cached OpenEvidence responses.
+    """Query clinical guidelines from pre-cached responses (originally sourced
+    from OpenEvidence via unofficial cookie-based Playwright scraping) or
+    fall back to PubMed guideline article search.
 
     Guidelines are cached as JSON files in data/guidelines/.
     Refresh with: python scripts/refresh_guidelines.py (requires OE relay).

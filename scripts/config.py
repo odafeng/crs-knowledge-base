@@ -36,7 +36,9 @@ LINE_USER_ID = os.environ.get("LINE_USER_ID", "")
 PUBMED_RELDATE = 14  # days
 
 # AI classification threshold
-RELEVANCE_THRESHOLD = 4  # 1-5 scale, only >= this gets an issue
+# Score ≥4 → GitHub Issue for human review + LINE notification.
+# No auto-PR or auto-merge. User decides whether to incorporate.
+RELEVANCE_THRESHOLD = 4
 
 
 def load_queries():

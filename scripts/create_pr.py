@@ -1,10 +1,16 @@
-"""Auto-PR creation for score-5 papers.
+"""Auto-PR utilities (NOT used by the default pipeline).
 
-For practice-changing papers (score 5), automatically:
+The default pipeline (main.py) creates GitHub Issues for human review.
+This module is retained as an optional utility — if you want to enable
+auto-PR or auto-merge in the future, you can import create_prs into
+main.py and route high-score papers here instead of to create_issues.
+
+Capabilities:
 1. Create a feature branch
 2. Generate a full HTML evidence page via Claude API
 3. Insert the JS paper object into index.html
-4. Create a PR for review
+4. Apply chart updates to METRICS
+5. Create a PR (optionally auto-merge)
 """
 
 import json

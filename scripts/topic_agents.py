@@ -207,7 +207,7 @@ def build_system_prompt(topic):
 2. **fetch_paper_details** — 用 PMID 獲取完整的論文資訊和摘要
 3. **lookup_existing_papers** — 查看知識庫中已有哪些文獻（幫助判斷 relations）
 4. **web_fetch** — 瀏覽網頁（DOI 頁面、會議 abstract 頁面等）
-5. **query_guidelines** — 查詢最新 ASCO/ESMO/NCCN 臨床指引（透過 OpenEvidence）
+5. **query_guidelines** — 查詢最新 ASCO/ESMO/NCCN 臨床指引（預快取或 PubMed fallback）
 
 **使用策略：**
 - 如果候選文獻的 abstract 資訊不足，用 fetch_paper_details 取得完整摘要
