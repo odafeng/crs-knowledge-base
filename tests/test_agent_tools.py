@@ -52,40 +52,35 @@ class TestExecuteTool:
 
 
 class TestQueryGuidelines:
-    @patch("agent_tools._oe_relay_available", return_value=False)
-    def test_returns_fallback_when_relay_not_running(self, mock_relay):
-        result = execute_tool("query_guidelines", {"question": "What is the standard for BRAF V600E mCRC?"})
+    @patch("agent_tools.GUIDELINES_CACHE_DIR")
+    def test_uses_cached_guidelines(self, mock_cache_dir, tmp_path):
+        # Create a mock cache file
+        cache_dir = tmp_path / "guidelines"
+        cache_dir.mkdir()
+        cache_file = cache_dir / "mCRC-BRAF-V600E.json"
+        cache_file.write_text(json.dumps({
+            "topic": "mCRC-BRAF-V600E",
+            "answer": "ASCO recommends encorafenib+cetuximab for BRAF V600E mCRC first-line.",
+            "citations": [{"title": "ASCO 2025", "journal": "JCO", "year": "2025"}],
+            "date": "2026-06-01",
+        }))
+        mock_cache_dir.__truediv__ = lambda self, name: cache_dir / name
+        mock_cache_dir.exists.return_value = True
+
+        result = execute_tool("query_guidelines", {"question": "What is the BRAF V600E mCRC guideline?"})
         parsed = json.loads(result)
-        assert "error" in parsed
-        assert "relay not running" in parsed["error"]
+        assert isinstance(parsed, list)
+        assert parsed[0]["source"] == "openevidence (cached)"
+        assert "encorafenib" in parsed[0]["guideline_summary"]
+
+    @patch("agent_tools.GUIDELINES_CACHE_DIR")
+    def test_returns_hint_when_no_cache_dir(self, mock_cache_dir):
+        mock_cache_dir.exists.return_value = False
+
+        result = execute_tool("query_guidelines", {"question": "BRAF guideline"})
+        parsed = json.loads(result)
         assert "fallback" in parsed
-
-    @patch("agent_tools._oe_relay_available", return_value=True)
-    @patch("agent_tools.urllib.request.urlopen")
-    def test_returns_answer_on_success(self, mock_urlopen, mock_relay):
-        # First call: submit question → fire-and-forget
-        submit_resp = MagicMock()
-        submit_resp.read.return_value = json.dumps({"article_id": "abc-123", "status": "pending"}).encode()
-        submit_resp.__enter__ = lambda s: s
-        submit_resp.__exit__ = MagicMock(return_value=False)
-
-        # Second call: poll → completed
-        poll_resp = MagicMock()
-        poll_resp.read.return_value = json.dumps({
-            "status": "success",
-            "extracted_answer_raw": "ASCO recommends encorafenib+cetuximab for BRAF V600E mCRC.",
-            "citations": [{"title": "ASCO Guideline 2025", "journal": "JCO", "year": "2025"}],
-        }).encode()
-        poll_resp.__enter__ = lambda s: s
-        poll_resp.__exit__ = MagicMock(return_value=False)
-
-        mock_urlopen.side_effect = [submit_resp, poll_resp]
-
-        result = execute_tool("query_guidelines", {"question": "BRAF V600E mCRC guideline"})
-        parsed = json.loads(result)
-        assert "answer" in parsed
-        assert "encorafenib" in parsed["answer"]
-        assert parsed["source"] == "openevidence"
+        assert "hint" in parsed
 
 
 class TestClassifyWithAgenticLoop:

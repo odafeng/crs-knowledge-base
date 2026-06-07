@@ -14,6 +14,7 @@ import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 from config import NCBI_API_KEY, PUBMED_FETCH_URL, PUBMED_SEARCH_URL, load_tracked_dois
 
@@ -251,98 +252,81 @@ def _tool_web_fetch(input_data):
         return json.dumps({"error": f"Failed to fetch {url}: {e}"})
 
 
-OE_RELAY_URL = "http://127.0.0.1:8787"
-
-
-def _oe_relay_available():
-    """Check if the OpenEvidence relay daemon is running locally."""
-    try:
-        req = urllib.request.Request(f"{OE_RELAY_URL}/health", method="GET")
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            data = json.loads(resp.read())
-            return data.get("ok", False) and data.get("connected", False)
-    except Exception:
-        return False
+GUIDELINES_CACHE_DIR = Path(__file__).resolve().parent.parent / "data" / "guidelines"
 
 
 def _tool_query_guidelines(input_data):
-    """Query clinical guidelines via OpenEvidence relay daemon.
+    """Query clinical guidelines from pre-cached OpenEvidence responses.
 
-    Uses htlin222/openevidence-mcp's relay architecture:
-    Agent → relay (127.0.0.1:8787) → browser extension → logged-in OE tab
-
-    Only works locally when the relay daemon + browser extension are running.
-    Gracefully falls back when not available (e.g., in GitHub Actions CI).
+    Guidelines are cached as JSON files in data/guidelines/.
+    Refresh with: python scripts/refresh_guidelines.py (requires OE relay).
     """
-    question = input_data["question"]
+    question = input_data["question"].lower()
 
-    if not _oe_relay_available():
+    if not GUIDELINES_CACHE_DIR.exists():
         return json.dumps({
-            "error": "OpenEvidence relay not running. Skipping guideline query.",
+            "error": "No guideline cache found.",
             "fallback": "Use your built-in domain knowledge and PubMed search to assess guideline relevance.",
-            "hint": "To enable: cd openevidence-mcp && make all, then load the browser extension and stay logged in to openevidence.com",
+            "hint": "Run: python scripts/refresh_guidelines.py to populate the cache.",
         })
 
-    # Step 1: Submit question via relay
-    payload = json.dumps({
-        "question": question,
-        "article_type": "Ask OpenEvidence Light with citations",
-    }).encode("utf-8")
+    # Match question to cached topic files
+    topic_keywords = {
+        "mCRC-BRAF-V600E": ["braf", "v600e", "encorafenib", "cetuximab"],
+        "mCRC-KRAS-G12C": ["kras", "g12c", "sotorasib", "adagrasib"],
+        "mCRC-MSI-H": ["msi-h", "dmmr", "mismatch repair", "pembrolizumab", "immunotherapy"],
+        "mCRC-HER2": ["her2", "erbb2", "trastuzumab", "tucatinib"],
+        "mCRC-RAS-wt": ["ras wild", "anti-egfr", "cetuximab", "panitumumab", "sidedness"],
+        "robotic-surgery": ["robotic", "robot", "tme", "cme", "laparoscop"],
+    }
 
+    matched_topics = []
+    for topic, keywords in topic_keywords.items():
+        if any(kw in question for kw in keywords):
+            matched_topics.append(topic)
+
+    if not matched_topics:
+        matched_topics = list(topic_keywords.keys())
+
+    # Try cached OE responses first
+    results = []
+    for topic in matched_topics:
+        cache_file = GUIDELINES_CACHE_DIR / f"{topic}.json"
+        if cache_file.exists():
+            try:
+                with open(cache_file) as f:
+                    cached = json.load(f)
+                results.append({
+                    "topic": topic,
+                    "guideline_summary": cached.get("answer", "")[:2000],
+                    "citations": cached.get("citations", [])[:5],
+                    "cached_date": cached.get("date", "unknown"),
+                    "source": "openevidence (cached)",
+                })
+            except (json.JSONDecodeError, OSError):
+                continue
+
+    if results:
+        return json.dumps(results, ensure_ascii=False)
+
+    # Fallback: search PubMed for guideline/consensus articles
+    guideline_query = f"({question}) AND (guideline[PT] OR consensus[TI] OR recommendation[TI] OR NCCN[TI] OR ASCO[TI])"
     try:
-        req = urllib.request.Request(
-            f"{OE_RELAY_URL}/api/ask",
-            data=payload,
-            headers={"Content-Type": "application/json"},
-        )
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            result = json.loads(resp.read())
-    except Exception as e:
-        return json.dumps({"error": f"OpenEvidence relay error: {e}"})
-
-    # Fire-and-forget: oe_ask returns article_id + status:pending
-    article_id = result.get("article_id") or result.get("id")
-    if not article_id:
-        # Maybe already has the answer
-        answer = result.get("extracted_answer_raw") or result.get("content") or result.get("answer")
-        if answer:
-            return json.dumps({"answer": answer[:3000], "source": "openevidence"}, ensure_ascii=False)
-        return json.dumps({"error": "No article_id in response", "raw": str(result)[:500]})
-
-    # Step 2: Poll for completion via relay
-    for _ in range(90):  # Max 90 polls × 2s = 180s
-        time.sleep(2)
-        try:
-            poll_req = urllib.request.Request(f"{OE_RELAY_URL}/api/article/{article_id}")
-            with urllib.request.urlopen(poll_req, timeout=15) as resp:
-                article = json.loads(resp.read())
-        except Exception:
-            continue
-
-        status = article.get("status", "")
-        if status in ("success", "completed", "done"):
-            answer = article.get("extracted_answer_raw") or article.get("content") or ""
-            citations = article.get("citations") or article.get("references") or []
-
-            cite_strs = []
-            for c in (citations[:5] if isinstance(citations, list) else []):
-                if isinstance(c, dict):
-                    cite_strs.append(
-                        f"- {c.get('title', '')} ({c.get('journal', '')}, {c.get('year', '')})"
-                    )
-                elif isinstance(c, str):
-                    cite_strs.append(f"- {c}")
-
+        pubmed_result = _tool_search_pubmed({"query": guideline_query, "max_results": 3})
+        parsed = json.loads(pubmed_result)
+        if parsed.get("results"):
             return json.dumps({
-                "answer": answer[:3000],
-                "citations": cite_strs,
-                "source": "openevidence",
+                "source": "pubmed_guideline_search",
+                "note": "No OpenEvidence cache available. Found these guideline articles from PubMed instead.",
+                "results": parsed["results"],
             }, ensure_ascii=False)
+    except Exception:
+        pass
 
-        if status in ("failed", "error"):
-            return json.dumps({"error": f"OpenEvidence query failed: {article.get('error', 'unknown')}"})
-
-    return json.dumps({"error": "OpenEvidence query timed out after 180s"})
+    return json.dumps({
+        "error": f"No cached guidelines and PubMed fallback failed for: {', '.join(matched_topics)}",
+        "fallback": "Use your built-in domain knowledge to assess guideline relevance.",
+    })
 
 
 # ---------------------------------------------------------------------------
