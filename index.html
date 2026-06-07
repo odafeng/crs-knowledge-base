@@ -1316,6 +1316,7 @@ const TL_TME = [
   { yr:'2025', venue:'J Robot Surg', cls:'breakwater', finding:'RCT MA (7 trials)<br>併發症 OR <strong>0.70</strong>', file:'https://doi.org/10.1007/s11701-025-02628-3' },
   { yr:'2025', venue:'J Robot Surg', cls:'breakwater', finding:'nCRT 後 MA<br>TME 完整 OR <strong>1.97</strong>', file:'https://doi.org/10.1007/s11701-025-02755-x' },
   { yr:'2025', venue:'BJS Open', cls:'beacon', finding:'TaTME MA<br>65 studies<br>N=13972', file:'https://doi.org/10.1093/bjsopen/zraf111' },
+  { yr:'2026', venue:'BJS Open', cls:'beacon', finding:'瑞典登記研究<br>CRM NS · AL <strong>10.9%</strong><br>N=5874', file:'docs/robotic-surgery/Mertens_BJSOpen_2026_SwedishRegistry.html' },
 ];
 
 const TME_METRICS = {
@@ -1338,12 +1339,14 @@ const TME_METRICS = {
     ]
   },
   conversion: {
-    label: '轉換率（%）', max: 15,
+    label: '轉換率（%）', max: 18,
     bars: [
       { label:'Robotic\nROLARR', val:8.1, hr:'OR 0.61', color:'var(--green)', trial:'ROLARR' },
       { label:'Lap\nROLARR', val:12.2, hr:'Ref', color:'#a0aec0', trial:'ROLARR' },
       { label:'Robotic\nMA 2025', val:2.7, hr:'OR 0.27', color:'var(--accent)', trial:'MA' },
       { label:'Lap\nMA 2025', val:9.5, hr:'Ref', color:'#cbd5e0', trial:'MA' },
+      { label:'Robotic\nSwedish', val:9.1, hr:'OR 0.51', color:'var(--green)', trial:'Swedish' },
+      { label:'Lap\nSwedish', val:16.1, hr:'Ref', color:'#a0aec0', trial:'Swedish' },
     ]
   },
   crm: {
@@ -1353,6 +1356,8 @@ const TME_METRICS = {
       { label:'Lap\nROLARR', val:6.3, hr:'Ref', color:'#a0aec0', trial:'ROLARR' },
       { label:'Robotic\nCOLRAR', val:0, hr:'0%*', color:'var(--accent)', trial:'COLRAR' },
       { label:'Lap\nCOLRAR', val:6.1, hr:'Ref', color:'#cbd5e0', trial:'COLRAR' },
+      { label:'Robotic\nSwedish', val:6.5, hr:'OR 0.99', color:'var(--green)', trial:'Swedish' },
+      { label:'Lap\nSwedish', val:5.9, hr:'Ref', color:'#a0aec0', trial:'Swedish' },
     ]
   }
 };
@@ -1411,6 +1416,17 @@ const TME_CARDS = [
     </table>
     <p>Robotic 和 TaTME 的病理結果均優於 laparoscopic TME。</p>
     <p><a href="https://doi.org/10.1016/j.ejso.2024.109481" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1016/j.ejso.2024.109481</a></p>` },
+  { title:'瑞典全國登記研究（BJS Open 2026, N=5874）', tag:'Swedish Registry', body:`
+    <p><strong>Mertens et al.</strong> — 瑞典結直腸癌登記資料庫大型回顧性世代研究（2014&ndash;2021），真實世界 robotic vs laparoscopic 直腸癌手術短期結果</p>
+    <table>
+      <tr><th></th><th>Robotic</th><th>Lap</th><th>效果量</th></tr>
+      <tr><td>CRM 陽性率（主要終點）</td><td>6.5%</td><td>5.9%</td><td>OR 0.99（NS）</td></tr>
+      <tr><td>轉換開腹率</td><td><strong>9.1%</strong></td><td>16.1%</td><td>OR 0.51</td></tr>
+      <tr><td>TME 完整性</td><td colspan="2">Robotic 較差</td><td>OR 0.66</td></tr>
+      <tr><td>吻合口滲漏率</td><td>10.9%</td><td>7.4%</td><td>顯著較高</td></tr>
+    </table>
+    <div class="note">真實世界大型登記研究顯示機器人直腸手術無 CRM 優勢，吻合口滲漏率更高，TME 品質反較差，僅轉換率有利。此結果 contradicts 2024 Network MA 的病理優勢結論，並與 REAL (2025) 形成張力；學習曲線與技術標準化為關鍵議題。</div>
+    <p><a href="docs/robotic-surgery/Mertens_BJSOpen_2026_SwedishRegistry.html" target="_blank" rel="noopener noreferrer">&#x1F4D6; 詳細頁面</a> &middot; <a href="https://doi.org/10.1093/bjsopen/zrag050" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1093/bjsopen/zrag050</a></p>` },
 ];
 
 let currentTmeMetric = 'locoregional';

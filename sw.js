@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crs-kb-v12';
+const CACHE_NAME = 'crs-kb-v13';
 const ASSETS = [
   './',
   './index.html',
@@ -11,7 +11,8 @@ const ASSETS = [
   './docs/mCRC-BRAF-V600E/Elez_NEJM_2025_BREAKWATER.html',
   './docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.html',
   './docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.html',
-  './docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html'
+  './docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html',
+  './docs/robotic-surgery/Mertens_BJSOpen_2026_SwedishRegistry.html'
 ];
 
 self.addEventListener('install', e => {
