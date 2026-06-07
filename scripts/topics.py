@@ -58,7 +58,7 @@ TOPIC_JS_VAR: dict[Topic, str | None] = {
     Topic.MSI_H: "MSIH_PAPERS",
     Topic.HER2: "HER2_PAPERS",
     Topic.RAS_WT: "RASWT_PAPERS",
-    Topic.GENERIC: None,
+    Topic.GENERIC: "GENERIC_PAPERS",
     Topic.CONFERENCES: None,
     Topic.ROBOTIC: None,
 }
