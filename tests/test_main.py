@@ -36,6 +36,29 @@ class TestDeduplicateCandidates:
         assert len(result) == 2
 
 
+class TestPipelineContract:
+    """Contract tests: verify the pipeline behaves as documented."""
+
+    def test_no_auto_pr_import_in_main(self):
+        """main.py must NOT import or call create_prs — all papers go to Issues."""
+        import importlib
+        import main as main_module
+        source = importlib.util.find_spec("main").origin
+        with open(source) as f:
+            code = f.read()
+        assert "create_prs" not in code, "main.py must not use create_prs — all papers go to Issues only"
+        assert "from create_pr" not in code, "main.py must not import from create_pr"
+
+    def test_score_4_goes_to_issues_not_pr(self):
+        """Score 4 papers must result in Issues, never auto-PR/merge."""
+        # This is a specification test: the pipeline's Layer 3 must be create_issues
+        from main import run_pipeline
+        import inspect
+        source = inspect.getsource(run_pipeline)
+        assert "create_issues" in source
+        assert "create_prs" not in source
+
+
 class TestIsConferenceSeason:
     @patch("main.date")
     def test_asco_season(self, mock_date):

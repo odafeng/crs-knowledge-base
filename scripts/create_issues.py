@@ -90,6 +90,14 @@ def format_issue_body(paper: dict) -> str:
         lines.append(f"## Suggested Filename")
         lines.append(f"`docs/{paper.get('topic', 'unknown')}/{paper['ai_suggested_filename']}`")
 
+    if paper.get("ai_chart_updates"):
+        lines.append("")
+        lines.append("## Suggested Chart Updates")
+        lines.append("_Agent suggests these bar chart changes (apply manually after verification):_")
+        lines.append("```json")
+        lines.append(json.dumps(paper["ai_chart_updates"], indent=2, ensure_ascii=False))
+        lines.append("```")
+
     if paper.get("abstract"):
         lines.append("")
         lines.append("<details><summary>Original Abstract</summary>")
