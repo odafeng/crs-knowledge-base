@@ -1,6 +1,5 @@
 """Shared fixtures for paper-watch tests."""
 
-import json
 import sys
 from pathlib import Path
 
@@ -63,19 +62,21 @@ def sample_candidate():
 def sample_classified_paper(sample_candidate):
     """A candidate that has been through AI classification."""
     paper = sample_candidate.copy()
-    paper.update({
-        "ai_score": 5,
-        "ai_analysis": "這是一篇重要的 Phase 3 RCT 更新",
-        "ai_bottom_line": "EC+化療一線治療確認 OS 獲益",
-        "ai_suggested_js": {
-            "id": "test-2026",
-            "year": 2026,
-            "journal": "NEJM",
-            "studyType": "Phase 3 RCT",
-        },
-        "ai_suggested_filename": "Smith_NEJM_2026_TestTrial.html",
-        "ai_relations": [{"targetId": "beacon-2019", "type": "builds_on"}],
-    })
+    paper.update(
+        {
+            "ai_score": 5,
+            "ai_analysis": "這是一篇重要的 Phase 3 RCT 更新",
+            "ai_bottom_line": "EC+化療一線治療確認 OS 獲益",
+            "ai_suggested_js": {
+                "id": "test-2026",
+                "year": 2026,
+                "journal": "NEJM",
+                "studyType": "Phase 3 RCT",
+            },
+            "ai_suggested_filename": "Smith_NEJM_2026_TestTrial.html",
+            "ai_relations": [{"targetId": "beacon-2019", "type": "builds_on"}],
+        }
+    )
     return paper
 
 

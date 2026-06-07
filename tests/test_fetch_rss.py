@@ -54,8 +54,20 @@ class TestFetchRss:
             "rss_feeds": [{"name": "NEJM", "url": "http://example.com/rss"}],
         }
         mock_feed.return_value = [
-            {"title": "BRAF V600E colorectal cancer update", "description": "", "doi": "10.1056/test1", "link": "", "pub_date": ""},
-            {"title": "Lung cancer immunotherapy", "description": "", "doi": "10.1056/test2", "link": "", "pub_date": ""},
+            {
+                "title": "BRAF V600E colorectal cancer update",
+                "description": "",
+                "doi": "10.1056/test1",
+                "link": "",
+                "pub_date": "",
+            },
+            {
+                "title": "Lung cancer immunotherapy",
+                "description": "",
+                "doi": "10.1056/test2",
+                "link": "",
+                "pub_date": "",
+            },
         ]
         results = fetch_rss()
         assert len(results) == 1

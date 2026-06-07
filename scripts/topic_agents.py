@@ -5,7 +5,6 @@ treatment landscape) so it can explain WHY a new finding matters in context.
 """
 
 import json
-from pathlib import Path
 
 from config import PROJECT_ROOT
 
@@ -14,6 +13,7 @@ PAPERS_JSON = PROJECT_ROOT / "data" / "papers.json"
 # ---------------------------------------------------------------------------
 # Load existing papers from data/papers.json (single source of truth)
 # ---------------------------------------------------------------------------
+
 
 def _load_papers_json():
     """Load papers data from JSON. Returns dict keyed by topic."""
@@ -55,7 +55,6 @@ _TOPIC_CONTEXTS = {
 - 非 EC 的 BRAF 標靶（如 dabrafenib/trametinib combo）
 - BRAF V600E 在 neoadjuvant 或 perioperative 場景的應用
 - ctDNA-guided 治療決策的前瞻性驗證""",
-
     "mCRC-KRAS-G12C": """## KRAS G12C mCRC 治療演進
 - CodeBreaK 101/300: sotorasib+panitumumab 是首個 Phase 3 陽性結果（PFS HR 0.49）
 - KRYSTAL-1: adagrasib+cetuximab ORR 46%，已獲 FDA 加速核准
@@ -68,7 +67,6 @@ _TOPIC_CONTEXTS = {
 - Divarasib Phase 3 RCT 結果
 - 新一代共價/非共價 G12C 抑制劑
 - G12C 在一線治療的探索""",
-
     "mCRC-MSI-H": """## MSI-H/dMMR CRC 治療演進
 - KEYNOTE-177: pembrolizumab 一線標準（PFS HR 0.60）
 - CheckMate 142: nivo+ipi 雙免疫 ORR 55-69%
@@ -81,7 +79,6 @@ _TOPIC_CONTEXTS = {
 - 雙免疫 vs pembrolizumab 的頭對頭 Phase 3
 - Non-operative management 的前瞻性確認
 - pMMR CRC 的免疫治療突破""",
-
     "mCRC-HER2": """## HER2+ mCRC 治療演進
 - MyPathway/TRIUMPH: pertuzumab+trastuzumab proof of concept
 - DESTINY-CRC01/02: T-DXd ORR 45% (IHC3+/ISH+)，5.4 mg/kg 為最佳劑量
@@ -94,7 +91,6 @@ _TOPIC_CONTEXTS = {
 - HER2 標靶在一線的前瞻性數據
 - 新型 HER2 ADC 或 bispecific
 - HER2-low mCRC 的治療探索""",
-
     "generic-CRS": """## 大腸直腸外科通用主題（不屬於特定 biomarker 或手術技術的文獻歸類於此）
 
 ### Biomarker-Agnostic 後線治療
@@ -117,7 +113,6 @@ _TOPIC_CONTEXTS = {
 - 輔助化療（adjuvant chemotherapy）通用方案
 - 非特定 biomarker 的 mCRC 一線化療
 - 手術以外的 CRC 治療總論""",
-
     "mCRC-RAS-wt": """## RAS 野生型 Anti-EGFR 治療演進
 - FIRE-3/CALGB 80405: 確立左側 RAS-wt 一線 anti-EGFR 為標準
 - PARADIGM: 唯一達 OS 主要終點的 Phase 3（左側 OS 37.9 mo）
@@ -131,7 +126,6 @@ _TOPIC_CONTEXTS = {
 - Anti-EGFR + 免疫治療組合
 - 新型 EGFR 標靶（bispecific、ADC）
 - Maintenance/de-escalation 的前瞻性策略""",
-
     "conference-highlights": """## 醫學會議專區
 此主題專門收錄各大 CRC 相關醫學會議的重要摘要和結論。
 按會議和時間索引，作為會議 highlights 的集中地。
@@ -153,7 +147,6 @@ _TOPIC_CONTEXTS = {
 
 注意：此主題的評分標準側重「是否為會議上的重要發表」而非「是否改變治療標準」。
 即使一篇 abstract 在 PubMed 上還沒有正式 DOI，只要它是 plenary/LBA 級別的報告就值得收錄（score 4-5）。""",
-
     "robotic-surgery": """## 機器人結直腸手術演進
 - ROLARR (2017): robotic vs laparoscopic TME，轉換率 NS（N=471）
 - COLRAR (2023): TME 完整性 NS（N=295）
@@ -205,7 +198,8 @@ def build_system_prompt(topic):
 ```
 
 ## 目前的柱狀圖數據
-{f'''```javascript
+{
+        f'''```javascript
 {existing_metrics}
 ```
 
@@ -213,7 +207,10 @@ def build_system_prompt(topic):
 每根柱子格式：{{ label:"顯示名稱", val:數值, hr:"HR 或統計量", color:"色碼" }}
 - color 規則：對照組用灰色（#cbd5e0/#a0aec0）、實驗組用主題色
 - ongoing:true 表示數據尚未成熟
-- val:null 表示尚未報告''' if existing_metrics else '（此主題目前沒有柱狀圖）'}
+- val:null 表示尚未報告'''
+        if existing_metrics
+        else "（此主題目前沒有柱狀圖）"
+    }
 
 ## 你的任務
 
@@ -280,7 +277,7 @@ chart_updates 規則：
 
 def build_paper_prompt(paper):
     """Build the user message for a single candidate paper."""
-    parts = [f"# 新候選文獻\n"]
+    parts = ["# 新候選文獻\n"]
     parts.append(f"**Title:** {paper.get('title', 'N/A')}")
     parts.append(f"**Authors:** {paper.get('authors', 'N/A')}")
     parts.append(f"**Journal:** {paper.get('journal', 'N/A')}")

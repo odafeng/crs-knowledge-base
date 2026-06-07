@@ -7,7 +7,7 @@ import sys
 import time
 import urllib.request
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from config import load_queries, load_tracked_dois
 

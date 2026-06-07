@@ -1,24 +1,21 @@
 """Main entry point: orchestrate Layer 1 → 2 → 3 pipeline."""
 
 import argparse
-import json
-import sys
 from datetime import date, datetime
 
+from classify import classify_all
 from config import (
-    DATA_DIR,
     load_queries,
     load_tracked_abstracts,
     load_tracked_dois,
     save_tracked_abstracts,
     save_tracked_dois,
 )
-from fetch_pubmed import fetch_pubmed
-from fetch_rss import fetch_rss
+from create_issues import create_issues
 from fetch_conferences import fetch_conferences
 from fetch_news import fetch_news
-from classify import classify_all
-from create_issues import create_issues
+from fetch_pubmed import fetch_pubmed
+from fetch_rss import fetch_rss
 from notify_line import notify_papers
 
 
@@ -29,7 +26,7 @@ def is_conference_season():
     today = date.today()
     today_md = today.strftime("%m-%d")
 
-    for key, season in seasons.items():
+    for _key, season in seasons.items():
         if season["start"] <= today_md <= season["end"]:
             return True, season["name"]
     return False, None
@@ -71,7 +68,7 @@ def run_pipeline(topic=None, skip_conferences=False, dry_run=False, daily_mode=F
     print(f"  Topic filter: {topic or 'all'}")
     print(f"  Dry run: {dry_run}")
     if bootstrap:
-        print(f"  Bootstrap mode: 730-day PubMed window")
+        print("  Bootstrap mode: 730-day PubMed window")
     print()
 
     # Layer 1: Fetch from all sources

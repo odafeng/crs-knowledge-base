@@ -36,16 +36,19 @@ LABEL_COLORS: dict[str, str] = {
     "new-paper": "0e8a16",
     "priority:high": "b60205",
     "parse-failed": "d93f0b",
-    **{label: color for label, color in [
-        ("topic:braf-v600e", "d93f0b"),
-        ("topic:kras-g12c", "e99695"),
-        ("topic:msi-h", "0075ca"),
-        ("topic:her2", "7057ff"),
-        ("topic:ras-wt", "fbca04"),
-        ("topic:generic-crs", "c5def5"),
-        ("topic:conferences", "e4e669"),
-        ("topic:robotic", "006b75"),
-    ]},
+    **{
+        label: color
+        for label, color in [
+            ("topic:braf-v600e", "d93f0b"),
+            ("topic:kras-g12c", "e99695"),
+            ("topic:msi-h", "0075ca"),
+            ("topic:her2", "7057ff"),
+            ("topic:ras-wt", "fbca04"),
+            ("topic:generic-crs", "c5def5"),
+            ("topic:conferences", "e4e669"),
+            ("topic:robotic", "006b75"),
+        ]
+    },
 }
 
 # JS array variable names in index.html (None = no array)

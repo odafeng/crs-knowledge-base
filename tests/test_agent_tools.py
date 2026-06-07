@@ -3,7 +3,7 @@
 import json
 from unittest.mock import MagicMock, patch
 
-from agent_tools import AGENT_TOOLS, execute_tool, _parse_article_brief
+from agent_tools import AGENT_TOOLS, execute_tool
 
 
 class TestToolDefinitions:
@@ -19,7 +19,13 @@ class TestToolDefinitions:
 
     def test_tool_names(self):
         names = {t["name"] for t in AGENT_TOOLS}
-        assert names == {"search_pubmed", "fetch_paper_details", "lookup_existing_papers", "web_fetch", "query_guidelines"}
+        assert names == {
+            "search_pubmed",
+            "fetch_paper_details",
+            "lookup_existing_papers",
+            "web_fetch",
+            "query_guidelines",
+        }
 
 
 class TestExecuteTool:
@@ -82,12 +88,16 @@ class TestQueryGuidelines:
         cache_dir = tmp_path / "guidelines"
         cache_dir.mkdir()
         cache_file = cache_dir / "mCRC-BRAF-V600E.json"
-        cache_file.write_text(json.dumps({
-            "topic": "mCRC-BRAF-V600E",
-            "answer": "ASCO recommends encorafenib+cetuximab for BRAF V600E mCRC first-line.",
-            "citations": [{"title": "ASCO 2025", "journal": "JCO", "year": "2025"}],
-            "date": "2026-06-01",
-        }))
+        cache_file.write_text(
+            json.dumps(
+                {
+                    "topic": "mCRC-BRAF-V600E",
+                    "answer": "ASCO recommends encorafenib+cetuximab for BRAF V600E mCRC first-line.",
+                    "citations": [{"title": "ASCO 2025", "journal": "JCO", "year": "2025"}],
+                    "date": "2026-06-01",
+                }
+            )
+        )
         mock_cache_dir.__truediv__ = lambda self, name: cache_dir / name
         mock_cache_dir.exists.return_value = True
 

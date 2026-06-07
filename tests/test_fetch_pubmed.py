@@ -1,12 +1,9 @@
 """Tests for PubMed fetcher."""
 
-import json
-from unittest.mock import MagicMock, patch
-
-import pytest
-
-from fetch_pubmed import _parse_article, efetch, esearch, fetch_pubmed
 import xml.etree.ElementTree as ET
+from unittest.mock import patch
+
+from fetch_pubmed import _parse_article, fetch_pubmed
 
 
 class TestParseArticle:
@@ -39,9 +36,7 @@ class TestParseArticle:
             <Author><LastName>C</LastName><Initials>D</Initials></Author>
             <Author><LastName>E</LastName><Initials>F</Initials></Author>
         """
-        xml = sample_pubmed_xml.replace(
-            b"</AuthorList>", extra_authors + b"</AuthorList>"
-        )
+        xml = sample_pubmed_xml.replace(b"</AuthorList>", extra_authors + b"</AuthorList>")
         root = ET.fromstring(xml)
         article = root.find(".//PubmedArticle")
         result = _parse_article(article)
@@ -61,15 +56,17 @@ class TestFetchPubmed:
                 "pubmed_query": "test query",
             }
         }
-        mock_efetch.return_value = [{
-            "pmid": "12345678",
-            "doi": "10.1056/NEJMoa9999999",
-            "title": "Test",
-            "authors": "Smith J",
-            "journal": "NEJM",
-            "year": "2026",
-            "abstract": "Test abstract",
-        }]
+        mock_efetch.return_value = [
+            {
+                "pmid": "12345678",
+                "doi": "10.1056/NEJMoa9999999",
+                "title": "Test",
+                "authors": "Smith J",
+                "journal": "NEJM",
+                "year": "2026",
+                "abstract": "Test abstract",
+            }
+        ]
 
         results = fetch_pubmed(topic="mCRC-BRAF-V600E")
         assert len(results) == 1
@@ -84,15 +81,17 @@ class TestFetchPubmed:
             "mCRC-BRAF-V600E": {"pubmed_query": "test"},
         }
         mock_tracked.return_value = {"10.1056/NEJMoa9999999": {"topic": "mCRC-BRAF-V600E"}}
-        mock_efetch.return_value = [{
-            "pmid": "12345678",
-            "doi": "10.1056/NEJMoa9999999",
-            "title": "Already tracked",
-            "authors": "",
-            "journal": "",
-            "year": "",
-            "abstract": "",
-        }]
+        mock_efetch.return_value = [
+            {
+                "pmid": "12345678",
+                "doi": "10.1056/NEJMoa9999999",
+                "title": "Already tracked",
+                "authors": "",
+                "journal": "",
+                "year": "",
+                "abstract": "",
+            }
+        ]
 
         results = fetch_pubmed(topic="mCRC-BRAF-V600E")
         assert len(results) == 0

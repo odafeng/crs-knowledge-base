@@ -1,10 +1,10 @@
 """Tests for auto-PR creation."""
 
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from create_pr import insert_js_object, apply_chart_updates, _placeholder_html
-from topics import Topic, TOPIC_DOCS_DIR, TOPIC_JS_VAR, TOPIC_METRICS_VAR
+from create_pr import _placeholder_html, apply_chart_updates, insert_js_object
+from topics import TOPIC_DOCS_DIR, TOPIC_JS_VAR, TOPIC_METRICS_VAR, Topic
 
 
 class TestTopicConfig:
@@ -33,9 +33,13 @@ class TestPlaceholderHtml:
 class TestInsertJsObject:
     def test_inserts_into_json(self, tmp_path):
         papers_file = tmp_path / "papers.json"
-        papers_file.write_text(json.dumps({
-            "mCRC-BRAF-V600E": {"papers": [{"id": "beacon-2019"}], "metrics": None},
-        }))
+        papers_file.write_text(
+            json.dumps(
+                {
+                    "mCRC-BRAF-V600E": {"papers": [{"id": "beacon-2019"}], "metrics": None},
+                }
+            )
+        )
 
         with patch("create_pr.PAPERS_JSON", papers_file):
             result = insert_js_object("mCRC-BRAF-V600E", {"id": "test-2026", "year": 2026})
@@ -58,19 +62,27 @@ class TestInsertJsObject:
 class TestApplyChartUpdates:
     def test_add_bar(self, tmp_path):
         papers_file = tmp_path / "papers.json"
-        papers_file.write_text(json.dumps({
-            "mCRC-BRAF-V600E": {
-                "papers": [],
-                "metrics": {"mOS": {"label": "mOS", "max": 35, "bars": [
-                    {"label": "EC", "val": 9.3, "hr": "0.61", "color": "#3182ce"}
-                ]}}
-            }
-        }))
+        papers_file.write_text(
+            json.dumps(
+                {
+                    "mCRC-BRAF-V600E": {
+                        "papers": [],
+                        "metrics": {
+                            "mOS": {
+                                "label": "mOS",
+                                "max": 35,
+                                "bars": [{"label": "EC", "val": 9.3, "hr": "0.61", "color": "#3182ce"}],
+                            }
+                        },
+                    }
+                }
+            )
+        )
 
         with patch("create_pr.PAPERS_JSON", papers_file):
-            result = apply_chart_updates("mCRC-BRAF-V600E", {
-                "mOS": {"action": "add", "bar": {"label": "NewArm", "val": 25.0}}
-            })
+            result = apply_chart_updates(
+                "mCRC-BRAF-V600E", {"mOS": {"action": "add", "bar": {"label": "NewArm", "val": 25.0}}}
+            )
 
         assert result is True
         data = json.loads(papers_file.read_text())
@@ -80,17 +92,14 @@ class TestApplyChartUpdates:
 
     def test_update_max(self, tmp_path):
         papers_file = tmp_path / "papers.json"
-        papers_file.write_text(json.dumps({
-            "mCRC-BRAF-V600E": {
-                "papers": [],
-                "metrics": {"mOS": {"label": "mOS", "max": 35, "bars": []}}
-            }
-        }))
+        papers_file.write_text(
+            json.dumps({"mCRC-BRAF-V600E": {"papers": [], "metrics": {"mOS": {"label": "mOS", "max": 35, "bars": []}}}})
+        )
 
         with patch("create_pr.PAPERS_JSON", papers_file):
-            apply_chart_updates("mCRC-BRAF-V600E", {
-                "mOS": {"action": "add", "bar": {"label": "X", "val": 40}, "new_max": 45}
-            })
+            apply_chart_updates(
+                "mCRC-BRAF-V600E", {"mOS": {"action": "add", "bar": {"label": "X", "val": 40}, "new_max": 45}}
+            )
 
         data = json.loads(papers_file.read_text())
         assert data["mCRC-BRAF-V600E"]["metrics"]["mOS"]["max"] == 45

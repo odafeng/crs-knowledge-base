@@ -116,6 +116,7 @@ def _parse_article(article_elem):
 def _is_conference_season():
     """Check if we're in a major conference window."""
     from config import load_queries
+
     queries = load_queries()
     seasons = queries.get("conference_seasons", {})
     today_md = date.today().strftime("%m-%d")
@@ -195,7 +196,6 @@ def fetch_pubmed(topic=None, reldate=PUBMED_RELDATE, dry_run=False):
                 seen_pmids.add(art["pmid"])
 
                 # Assign topic by keyword matching from title/abstract
-                assigned = False
                 title_abs = (art.get("title", "") + " " + art.get("abstract", "")).lower()
                 for t in topics:
                     if t not in queries:
@@ -205,7 +205,6 @@ def fetch_pubmed(topic=None, reldate=PUBMED_RELDATE, dry_run=False):
                         art["topic"] = t
                         art["source"] = "pubmed_supplement"
                         candidates.append(art)
-                        assigned = True
                         break
 
             time.sleep(0.5)

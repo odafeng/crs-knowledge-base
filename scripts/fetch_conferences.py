@@ -25,7 +25,8 @@ def _stable_id(prefix: str, text: str) -> str:
 
 def _playwright_available():
     try:
-        from playwright.sync_api import sync_playwright
+        from playwright.sync_api import sync_playwright  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -50,7 +51,9 @@ def _scrape_asco(search_terms):
 
                 # Try to find abstract entries
                 # ASCO Flutter app renders abstract cards — extract text content
-                entries = page.locator('[class*="abstract"], [class*="search-result"], a[href*="/abstracts-presentations/"]')
+                entries = page.locator(
+                    '[class*="abstract"], [class*="search-result"], a[href*="/abstracts-presentations/"]'
+                )
                 count = entries.count()
 
                 for i in range(min(count, 10)):
@@ -63,27 +66,29 @@ def _scrape_asco(search_terms):
                             continue
 
                         # Extract abstract ID from URL
-                        aid_match = re.search(r'/(\d+)', href)
+                        aid_match = re.search(r"/(\d+)", href)
                         aid = aid_match.group(1) if aid_match else f"asco-{i}"
 
                         # Parse title (usually first line) and authors
-                        lines = [l.strip() for l in text.split("\n") if l.strip()]
+                        lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
                         title = lines[0] if lines else text[:200]
                         authors = lines[1] if len(lines) > 1 else ""
 
-                        candidates.append({
-                            "abstract_id": f"asco-2026-{aid}",
-                            "title": title[:300],
-                            "authors": authors[:200],
-                            "journal": "ASCO 2026",
-                            "year": "2026",
-                            "abstract": " ".join(lines[2:])[:500] if len(lines) > 2 else "",
-                            "doi": "",
-                            "pmid": "",
-                            "topic": "",
-                            "source": "asco",
-                            "link": f"https://meetings.asco.org{href}" if href.startswith("/") else href,
-                        })
+                        candidates.append(
+                            {
+                                "abstract_id": f"asco-2026-{aid}",
+                                "title": title[:300],
+                                "authors": authors[:200],
+                                "journal": "ASCO 2026",
+                                "year": "2026",
+                                "abstract": " ".join(lines[2:])[:500] if len(lines) > 2 else "",
+                                "doi": "",
+                                "pmid": "",
+                                "topic": "",
+                                "source": "asco",
+                                "link": f"https://meetings.asco.org{href}" if href.startswith("/") else href,
+                            }
+                        )
                     except Exception:
                         continue
 
@@ -126,25 +131,27 @@ def _scrape_esmo(search_terms):
                         if not text or len(text) < 20:
                             continue
 
-                        aid_match = re.search(r'/abstract/(\d+)', href)
+                        aid_match = re.search(r"/abstract/(\d+)", href)
                         aid = aid_match.group(1) if aid_match else f"esmo-{i}"
 
-                        lines = [l.strip() for l in text.split("\n") if l.strip()]
+                        lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
                         title = lines[0] if lines else text[:200]
 
-                        candidates.append({
-                            "abstract_id": f"esmo-{aid}",
-                            "title": title[:300],
-                            "authors": "",
-                            "journal": "ESMO",
-                            "year": "",
-                            "abstract": "",
-                            "doi": "",
-                            "pmid": "",
-                            "topic": "",
-                            "source": "esmo",
-                            "link": f"https://oncologypro.esmo.org{href}" if href.startswith("/") else href,
-                        })
+                        candidates.append(
+                            {
+                                "abstract_id": f"esmo-{aid}",
+                                "title": title[:300],
+                                "authors": "",
+                                "journal": "ESMO",
+                                "year": "",
+                                "abstract": "",
+                                "doi": "",
+                                "pmid": "",
+                                "topic": "",
+                                "source": "esmo",
+                                "link": f"https://oncologypro.esmo.org{href}" if href.startswith("/") else href,
+                            }
+                        )
                     except Exception:
                         continue
 
@@ -187,22 +194,24 @@ def _scrape_ascrs(search_terms):
                         if not text or len(text) < 20:
                             continue
 
-                        lines = [l.strip() for l in text.split("\n") if l.strip()]
+                        lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
                         title = lines[0] if lines else text[:200]
 
-                        candidates.append({
-                            "abstract_id": _stable_id("ascrs", title),
-                            "title": title[:300],
-                            "authors": "",
-                            "journal": "ASCRS",
-                            "year": "",
-                            "abstract": "",
-                            "doi": "",
-                            "pmid": "",
-                            "topic": "",
-                            "source": "ascrs",
-                            "link": f"https://www.fascrs.org{href}" if href.startswith("/") else href,
-                        })
+                        candidates.append(
+                            {
+                                "abstract_id": _stable_id("ascrs", title),
+                                "title": title[:300],
+                                "authors": "",
+                                "journal": "ASCRS",
+                                "year": "",
+                                "abstract": "",
+                                "doi": "",
+                                "pmid": "",
+                                "topic": "",
+                                "source": "ascrs",
+                                "link": f"https://www.fascrs.org{href}" if href.startswith("/") else href,
+                            }
+                        )
                     except Exception:
                         continue
 
@@ -245,22 +254,24 @@ def _scrape_escp(search_terms):
                         if not text or len(text) < 20:
                             continue
 
-                        lines = [l.strip() for l in text.split("\n") if l.strip()]
+                        lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
                         title = lines[0] if lines else text[:200]
 
-                        candidates.append({
-                            "abstract_id": _stable_id("escp", title),
-                            "title": title[:300],
-                            "authors": "",
-                            "journal": "ESCP",
-                            "year": "",
-                            "abstract": "",
-                            "doi": "",
-                            "pmid": "",
-                            "topic": "",
-                            "source": "escp",
-                            "link": f"https://www.escp.eu.com{href}" if href.startswith("/") else href,
-                        })
+                        candidates.append(
+                            {
+                                "abstract_id": _stable_id("escp", title),
+                                "title": title[:300],
+                                "authors": "",
+                                "journal": "ESCP",
+                                "year": "",
+                                "abstract": "",
+                                "doi": "",
+                                "pmid": "",
+                                "topic": "",
+                                "source": "escp",
+                                "link": f"https://www.escp.eu.com{href}" if href.startswith("/") else href,
+                            }
+                        )
                     except Exception:
                         continue
 

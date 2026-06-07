@@ -1,6 +1,6 @@
 """Tests for topic agent prompt generation."""
 
-from topic_agents import build_paper_prompt, build_system_prompt, _PAPERS_JS
+from topic_agents import _PAPERS_JS, build_paper_prompt, build_system_prompt
 
 
 class TestBuildSystemPrompt:
@@ -22,8 +22,12 @@ class TestBuildSystemPrompt:
 
     def test_all_topics_have_prompts(self):
         topics = [
-            "mCRC-BRAF-V600E", "mCRC-KRAS-G12C", "mCRC-MSI-H",
-            "mCRC-HER2", "mCRC-RAS-wt", "robotic-surgery",
+            "mCRC-BRAF-V600E",
+            "mCRC-KRAS-G12C",
+            "mCRC-MSI-H",
+            "mCRC-HER2",
+            "mCRC-RAS-wt",
+            "robotic-surgery",
         ]
         for topic in topics:
             prompt = build_system_prompt(topic)

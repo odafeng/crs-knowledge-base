@@ -9,7 +9,6 @@ Each agent can autonomously decide to:
 
 import json
 import re
-import sys
 import time
 import urllib.parse
 import urllib.request
@@ -214,9 +213,7 @@ def _tool_lookup_existing(input_data):
     tracked = load_tracked_dois()
 
     # Filter by topic
-    topic_papers = {
-        doi: info for doi, info in tracked.items() if info.get("topic") == topic
-    }
+    topic_papers = {doi: info for doi, info in tracked.items() if info.get("topic") == topic}
 
     # Also get the JS paper objects from topic_agents
     from topic_agents import _PAPERS_JS
@@ -258,43 +255,53 @@ def _tool_web_fetch(input_data):
     # 1. Try trafilatura (best quality, handles boilerplate removal)
     try:
         import trafilatura
+
         text = trafilatura.extract(raw_html, include_comments=False, include_tables=True)
         if text and len(text) > 50:
             title = trafilatura.extract_metadata(raw_html)
             title_str = title.title if title and title.title else ""
-            return json.dumps({
-                "title": title_str,
-                "text": text[:4000],
-                "extractor": "trafilatura",
-            }, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "title": title_str,
+                    "text": text[:4000],
+                    "extractor": "trafilatura",
+                },
+                ensure_ascii=False,
+            )
     except ImportError:
         pass
 
     # 2. Fallback: readability-lxml
     try:
         from readability import Document
+
         doc = Document(raw_html)
         title = doc.title()
         content = doc.summary()
         text = re.sub(r"<[^>]+>", " ", content)
         text = re.sub(r"\s+", " ", text).strip()
         if len(text) > 50:
-            return json.dumps({
-                "title": title,
-                "text": text[:4000],
-                "extractor": "readability",
-            }, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "title": title,
+                    "text": text[:4000],
+                    "extractor": "readability",
+                },
+                ensure_ascii=False,
+            )
     except ImportError:
         pass
 
     # 3. Both extractors failed or returned empty — tell the agent honestly
-    return json.dumps({
-        "warning": "Could not extract meaningful content from this URL. "
-                   "The page is likely JS-rendered (SPA) or behind authentication. "
-                   "Use fetch_paper_details with PMID instead, or search_pubmed for the paper title.",
-        "url": url,
-        "raw_length": len(raw_html) if raw_html else 0,
-    })
+    return json.dumps(
+        {
+            "warning": "Could not extract meaningful content from this URL. "
+            "The page is likely JS-rendered (SPA) or behind authentication. "
+            "Use fetch_paper_details with PMID instead, or search_pubmed for the paper title.",
+            "url": url,
+            "raw_length": len(raw_html) if raw_html else 0,
+        }
+    )
 
 
 GUIDELINES_CACHE_DIR = Path(__file__).resolve().parent.parent / "data" / "guidelines"
@@ -311,11 +318,13 @@ def _tool_query_guidelines(input_data):
     question = input_data["question"].lower()
 
     if not GUIDELINES_CACHE_DIR.exists():
-        return json.dumps({
-            "error": "No guideline cache found.",
-            "fallback": "Use your built-in domain knowledge and PubMed search to assess guideline relevance.",
-            "hint": "Run: python scripts/refresh_guidelines.py to populate the cache.",
-        })
+        return json.dumps(
+            {
+                "error": "No guideline cache found.",
+                "fallback": "Use your built-in domain knowledge and PubMed search to assess guideline relevance.",
+                "hint": "Run: python scripts/refresh_guidelines.py to populate the cache.",
+            }
+        )
 
     # Match question to cached topic files
     topic_keywords = {
@@ -343,13 +352,15 @@ def _tool_query_guidelines(input_data):
             try:
                 with open(cache_file) as f:
                     cached = json.load(f)
-                results.append({
-                    "topic": topic,
-                    "guideline_summary": cached.get("answer", "")[:2000],
-                    "citations": cached.get("citations", [])[:5],
-                    "cached_date": cached.get("date", "unknown"),
-                    "source": "openevidence (cached)",
-                })
+                results.append(
+                    {
+                        "topic": topic,
+                        "guideline_summary": cached.get("answer", "")[:2000],
+                        "citations": cached.get("citations", [])[:5],
+                        "cached_date": cached.get("date", "unknown"),
+                        "source": "openevidence (cached)",
+                    }
+                )
             except (json.JSONDecodeError, OSError):
                 continue
 
@@ -362,18 +373,23 @@ def _tool_query_guidelines(input_data):
         pubmed_result = _tool_search_pubmed({"query": guideline_query, "max_results": 3})
         parsed = json.loads(pubmed_result)
         if parsed.get("results"):
-            return json.dumps({
-                "source": "pubmed_guideline_search",
-                "note": "No OpenEvidence cache available. Found these guideline articles from PubMed instead.",
-                "results": parsed["results"],
-            }, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "source": "pubmed_guideline_search",
+                    "note": "No OpenEvidence cache available. Found these guideline articles from PubMed instead.",
+                    "results": parsed["results"],
+                },
+                ensure_ascii=False,
+            )
     except Exception:
         pass
 
-    return json.dumps({
-        "error": f"No cached guidelines and PubMed fallback failed for: {', '.join(matched_topics)}",
-        "fallback": "Use your built-in domain knowledge to assess guideline relevance.",
-    })
+    return json.dumps(
+        {
+            "error": f"No cached guidelines and PubMed fallback failed for: {', '.join(matched_topics)}",
+            "fallback": "Use your built-in domain knowledge to assess guideline relevance.",
+        }
+    )
 
 
 # ---------------------------------------------------------------------------

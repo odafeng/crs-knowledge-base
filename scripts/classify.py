@@ -56,7 +56,10 @@ SUBMIT_CLASSIFICATION_TOOL = {
                     "type": "object",
                     "properties": {
                         "targetId": {"type": "string"},
-                        "type": {"type": "string", "enum": ["builds_on", "supersedes", "subgroup_of", "same_regimen", "contradicts"]},
+                        "type": {
+                            "type": "string",
+                            "enum": ["builds_on", "supersedes", "subgroup_of", "same_regimen", "contradicts"],
+                        },
                     },
                     "required": ["targetId", "type"],
                 },
@@ -70,21 +73,20 @@ SUBMIT_CLASSIFICATION_TOOL = {
     },
 }
 
-ALL_TOOLS = AGENT_TOOLS + [SUBMIT_CLASSIFICATION_TOOL]
+ALL_TOOLS = [*AGENT_TOOLS, SUBMIT_CLASSIFICATION_TOOL]
 
 
 def _build_batch_context(paper: dict, all_candidates: list[dict]) -> str:
     """Build a summary of other papers in the same batch for cross-paper context."""
     same_topic = [
-        c for c in all_candidates
+        c
+        for c in all_candidates
         if c.get("topic") == paper.get("topic")
         and c.get("doi", "x") != paper.get("doi", "y")  # exclude self
         and c.get("pmid", "x") != paper.get("pmid", "y")
     ]
     other_topics = [
-        c for c in all_candidates
-        if c.get("topic") != paper.get("topic")
-        and c.get("doi", "x") != paper.get("doi", "y")
+        c for c in all_candidates if c.get("topic") != paper.get("topic") and c.get("doi", "x") != paper.get("doi", "y")
     ]
 
     if not same_topic and not other_topics:
@@ -101,11 +103,13 @@ def _build_batch_context(paper: dict, all_candidates: list[dict]) -> str:
                 lines.append(f"  _{c['abstract'][:150]}..._")
 
     if other_topics:
-        lines.append(f"\n### 其他主題")
+        lines.append("\n### 其他主題")
         for c in other_topics[:3]:
             lines.append(f"- [{c.get('topic', '')}] {c.get('title', '')[:100]}")
 
-    lines.append("\n注意：如果你發現本篇與同批其他候選有「supersedes」或「contradicts」的關係，請在 contextual_analysis 中說明。")
+    lines.append(
+        "\n注意：如果你發現本篇與同批其他候選有「supersedes」或「contradicts」的關係，請在 contextual_analysis 中說明。"
+    )
     return "\n".join(lines)
 
 
@@ -126,7 +130,7 @@ def classify_paper(client: Anthropic, paper: dict, all_candidates: list[dict] | 
 
     messages: list[dict] = [{"role": "user", "content": user_prompt}]
 
-    for turn in range(MAX_AGENT_TURNS):
+    for _turn in range(MAX_AGENT_TURNS):
         response = client.messages.create(
             model=CLASSIFY_MODEL,
             max_tokens=8000,
@@ -170,11 +174,13 @@ def classify_paper(client: Anthropic, paper: dict, all_candidates: list[dict] | 
                 if block.type == "tool_use" and block.name != "submit_classification":
                     print(f"    [Tool] {block.name}({json.dumps(block.input, ensure_ascii=False)[:80]})")
                     result = execute_tool(block.name, block.input)
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": result,
-                    })
+                    tool_results.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": result,
+                        }
+                    )
 
             if tool_results:
                 messages.append({"role": "user", "content": tool_results})
@@ -182,12 +188,12 @@ def classify_paper(client: Anthropic, paper: dict, all_candidates: list[dict] | 
 
         # end_turn without submit_classification — agent forgot to call the tool
         if response.stop_reason == "end_turn":
-            print(f"    [WARN] Agent ended without calling submit_classification", file=sys.stderr)
+            print("    [WARN] Agent ended without calling submit_classification", file=sys.stderr)
             break
 
     # If we get here, the agent never called submit_classification properly.
     # Mark as parse failure — NOT as score 0. This goes to a review queue.
-    print(f"    [WARN] Classification parse failed — marking for manual review", file=sys.stderr)
+    print("    [WARN] Classification parse failed — marking for manual review", file=sys.stderr)
     paper["ai_score"] = None
     paper["ai_analysis"] = "(Agent did not produce structured classification — needs manual review)"
     paper["ai_bottom_line"] = ""
@@ -226,7 +232,7 @@ def classify_all(candidates: list[dict], dry_run: bool = False) -> list[dict]:
 
     for i, paper in enumerate(candidates_sorted):
         title_short = paper.get("title", "")[:60]
-        print(f"[Agent] ({i+1}/{len(candidates_sorted)}) [{paper.get('topic','')}] {title_short}...")
+        print(f"[Agent] ({i + 1}/{len(candidates_sorted)}) [{paper.get('topic', '')}] {title_short}...")
 
         if dry_run:
             paper["ai_score"] = None
@@ -239,7 +245,7 @@ def classify_all(candidates: list[dict], dry_run: bool = False) -> list[dict]:
         classified.append(paper)
 
         if paper.get("ai_parse_failed"):
-            print(f"  ⚠ Parse failed — will create review issue")
+            print("  ⚠ Parse failed — will create review issue")
         else:
             print(f"  Score: {paper['ai_score']}/5")
 

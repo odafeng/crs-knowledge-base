@@ -5,19 +5,23 @@ import json
 import subprocess
 import sys
 
-from config import GITHUB_REPO, GITHUB_TOKEN
+from config import GITHUB_TOKEN
 from topics import LABEL_COLORS, TOPIC_LABELS, topic_from_str
 
 
 def _run_gh(args, input_text=None):
     """Run a gh CLI command. Returns (success, stdout)."""
-    cmd = ["gh"] + args
+    cmd = ["gh", *args]
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=30,
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=30,
             input=input_text,
             env={"GH_TOKEN": GITHUB_TOKEN, "PATH": "/usr/bin:/usr/local/bin:/opt/homebrew/bin"}
-            if GITHUB_TOKEN else None,
+            if GITHUB_TOKEN
+            else None,
         )
         if result.returncode != 0:
             print(f"  [WARN] gh command failed: {result.stderr.strip()}", file=sys.stderr)
@@ -87,7 +91,7 @@ def format_issue_body(paper: dict) -> str:
 
     if paper.get("ai_suggested_filename"):
         lines.append("")
-        lines.append(f"## Suggested Filename")
+        lines.append("## Suggested Filename")
         lines.append(f"`docs/{paper.get('topic', 'unknown')}/{paper['ai_suggested_filename']}`")
 
     if paper.get("ai_chart_updates"):
@@ -148,22 +152,20 @@ def create_issues(papers: list[dict], dry_run: bool = False) -> None:
                 labels.append("priority:high")
 
         if dry_run:
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print(f"ISSUE: {issue_title}")
             print(f"LABELS: {', '.join(labels)}")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
             print(body[:500])
             print("...")
             created += 1
             continue
 
         label_args = []
-        for l in labels:
-            label_args.extend(["--label", l])
+        for label in labels:
+            label_args.extend(["--label", label])
 
-        ok, url = _run_gh(
-            ["issue", "create", "--title", issue_title] + label_args + ["--body", body]
-        )
+        ok, url = _run_gh(["issue", "create", "--title", issue_title, *label_args, "--body", body])
         if ok:
             print(f"  Created issue: {url}")
             created += 1

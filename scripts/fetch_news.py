@@ -11,14 +11,11 @@ Sources:
 - Cancer Network (cancernetwork.com)
 """
 
-import json
-import re
 import sys
 import time
 from datetime import datetime
 
-from config import load_queries, load_tracked_dois
-
+from config import load_queries
 
 NEWS_SOURCES = [
     {
@@ -41,7 +38,8 @@ NEWS_SOURCES = [
 
 def _playwright_available():
     try:
-        from playwright.sync_api import sync_playwright
+        from playwright.sync_api import sync_playwright  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -76,15 +74,29 @@ def _scrape_news_site(search_url: str, source_name: str) -> list[dict]:
                     if not href or href == "#":
                         continue
                     # Skip non-article links
-                    skip_patterns = ["login", "subscribe", "about", "contact", "privacy", "terms", "search", "tag", "category"]
+                    skip_patterns = [
+                        "login",
+                        "subscribe",
+                        "about",
+                        "contact",
+                        "privacy",
+                        "terms",
+                        "search",
+                        "tag",
+                        "category",
+                    ]
                     if any(p in href.lower() for p in skip_patterns):
                         continue
 
-                    results.append({
-                        "title": text,
-                        "link": href if href.startswith("http") else f"https://{source_name.lower().replace(' ', '')}.com{href}",
-                        "source_name": source_name,
-                    })
+                    results.append(
+                        {
+                            "title": text,
+                            "link": href
+                            if href.startswith("http")
+                            else f"https://{source_name.lower().replace(' ', '')}.com{href}",
+                            "source_name": source_name,
+                        }
+                    )
                 except Exception:
                     continue
 
@@ -105,8 +117,6 @@ def fetch_news(topic: str | None = None, dry_run: bool = False) -> list[dict]:
         return []
 
     queries_data = load_queries()
-    tracked = load_tracked_dois()
-    tracked_doi_set = set(tracked.keys())
 
     topics_config = {k: v for k, v in queries_data.items() if k not in ("rss_feeds", "conference_seasons")}
     if topic:
@@ -136,18 +146,20 @@ def fetch_news(topic: str | None = None, dry_run: bool = False) -> list[dict]:
                         continue
                     seen_titles.add(title)
 
-                    candidates.append({
-                        "pmid": "",
-                        "doi": "",
-                        "title": title,
-                        "authors": "",
-                        "journal": f"{source['name']} (conference coverage)",
-                        "year": str(datetime.now().year),
-                        "abstract": "",
-                        "topic": t,
-                        "source": "news",
-                        "link": art["link"],
-                    })
+                    candidates.append(
+                        {
+                            "pmid": "",
+                            "doi": "",
+                            "title": title,
+                            "authors": "",
+                            "journal": f"{source['name']} (conference coverage)",
+                            "year": str(datetime.now().year),
+                            "abstract": "",
+                            "topic": t,
+                            "source": "news",
+                            "link": art["link"],
+                        }
+                    )
 
                 time.sleep(1)
 

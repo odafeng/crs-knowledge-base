@@ -42,7 +42,7 @@ class TestPipelineContract:
     def test_no_auto_pr_import_in_main(self):
         """main.py must NOT import or call create_prs — all papers go to Issues."""
         import importlib
-        import main as main_module
+
         source = importlib.util.find_spec("main").origin
         with open(source) as f:
             code = f.read()
@@ -52,8 +52,10 @@ class TestPipelineContract:
     def test_score_4_goes_to_issues_not_pr(self):
         """Score 4 papers must result in Issues, never auto-PR/merge."""
         # This is a specification test: the pipeline's Layer 3 must be create_issues
-        from main import run_pipeline
         import inspect
+
+        from main import run_pipeline
+
         source = inspect.getsource(run_pipeline)
         assert "create_issues" in source
         assert "create_prs" not in source

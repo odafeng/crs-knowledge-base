@@ -28,19 +28,19 @@ def _format_paper_message(paper):
         lines.append(f"📄 High-Impact (Score {score}/5)")
 
     lines.append(f"📌 {topic}")
-    lines.append(f"")
+    lines.append("")
     lines.append(title)
     lines.append(f"{journal} {year}")
 
     if bottom_line:
-        lines.append(f"")
+        lines.append("")
         lines.append(f"💡 {bottom_line}")
 
     if doi:
-        lines.append(f"")
+        lines.append("")
         lines.append(f"🔗 https://doi.org/{doi}")
 
-    lines.append(f"")
+    lines.append("")
     lines.append(f"→ {action} created on GitHub")
 
     return "\n".join(lines)
@@ -68,7 +68,7 @@ def format_digest(papers):
 
     msg = "\n".join(lines)
     if len(msg) > MAX_LENGTH:
-        msg = msg[:MAX_LENGTH - 3] + "..."
+        msg = msg[: MAX_LENGTH - 3] + "..."
     return msg
 
 
@@ -78,10 +78,12 @@ def send_line(message):
         print("[LINE] No LINE credentials configured. Skipping notification.", file=sys.stderr)
         return False
 
-    payload = json.dumps({
-        "to": LINE_USER_ID,
-        "messages": [{"type": "text", "text": message}],
-    }).encode("utf-8")
+    payload = json.dumps(
+        {
+            "to": LINE_USER_ID,
+            "messages": [{"type": "text", "text": message}],
+        }
+    ).encode("utf-8")
 
     req = urllib.request.Request(
         LINE_API_URL,

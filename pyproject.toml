@@ -1,0 +1,41 @@
+[project]
+name = "crs-knowledge-base"
+version = "1.0.0"
+requires-python = ">=3.12"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+src = ["scripts", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "E",     # pycodestyle errors
+  "W",     # pycodestyle warnings
+  "F",     # pyflakes
+  "I",     # isort
+  "N",     # pep8-naming
+  "UP",    # pyupgrade
+  "B",     # flake8-bugbear
+  "SIM",   # flake8-simplify
+  "TCH",   # type-checking imports
+  "RUF",   # ruff-specific
+]
+ignore = [
+  "E501",    # line too long (handled by formatter)
+  "B008",    # function call in default argument (common in CLI)
+  "SIM108",  # ternary instead of if-else (readability)
+  "RUF001",  # ambiguous unicode — we use fullwidth CJK characters intentionally
+  "RUF003",  # same for comments
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["config", "topics", "net", "agent_tools", "topic_agents", "classify", "fetch_pubmed", "fetch_rss", "fetch_conferences", "fetch_news", "create_pr", "create_issues", "notify_line"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+include = ["scripts"]
+exclude = ["scripts/migrate_to_json.js"]
+reportMissingImports = true
+reportMissingTypeStubs = false

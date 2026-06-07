@@ -2,6 +2,7 @@
 
 import json
 import time
+import urllib.error
 import urllib.request
 from typing import Any
 
@@ -36,7 +37,7 @@ def fetch_with_retry(
             last_error = e
 
         if attempt < max_retries - 1:
-            delay = backoff_base * (2 ** attempt)
+            delay = backoff_base * (2**attempt)
             time.sleep(delay)
 
     raise last_error  # type: ignore[misc]

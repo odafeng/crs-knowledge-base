@@ -92,14 +92,22 @@ def _query_oe_playwright(question, cookies):
 
         # Wait for the answer content to appear
         try:
-            page.wait_for_selector('[class*="answer"], [class*="response"], [class*="article-content"], main article', timeout=120000)
+            page.wait_for_selector(
+                '[class*="answer"], [class*="response"], [class*="article-content"], main article', timeout=120000
+            )
             page.wait_for_timeout(3000)  # Let it finish rendering
         except Exception:
             pass
 
         # Extract answer text
         answer = ""
-        for selector in ['[class*="answer"]', '[class*="response"]', 'main article', '[class*="article-content"]', '.prose']:
+        for selector in [
+            '[class*="answer"]',
+            '[class*="response"]',
+            "main article",
+            '[class*="article-content"]',
+            ".prose",
+        ]:
             elements = page.locator(selector)
             if elements.count() > 0:
                 answer = elements.first.inner_text()
@@ -152,7 +160,7 @@ def export_cookies():
         json.dump(cookies, f, indent=2)
 
     print(f"[OE] Saved {len(cookies)} cookies to {cookie_file}")
-    print(f"\n  For GitHub Actions, run:")
+    print("\n  For GitHub Actions, run:")
     print(f"  cat {cookie_file} | gh secret set OE_COOKIES_JSON")
 
     return cookies
@@ -167,9 +175,12 @@ def refresh(topics=None):
         return False
 
     try:
-        from playwright.sync_api import sync_playwright
+        from playwright.sync_api import sync_playwright  # noqa: F401
     except ImportError:
-        print("[ERROR] playwright not installed. Run: pip install playwright && playwright install chromium", file=sys.stderr)
+        print(
+            "[ERROR] playwright not installed. Run: pip install playwright && playwright install chromium",
+            file=sys.stderr,
+        )
         return False
 
     GUIDELINES_DIR.mkdir(parents=True, exist_ok=True)
@@ -182,7 +193,7 @@ def refresh(topics=None):
             result = _query_oe_playwright(question, cookies)
 
             if not result["answer"] or len(result["answer"]) < 50:
-                print(f"  [WARN] Answer too short, might need re-login", file=sys.stderr)
+                print("  [WARN] Answer too short, might need re-login", file=sys.stderr)
                 continue
 
             cache = {

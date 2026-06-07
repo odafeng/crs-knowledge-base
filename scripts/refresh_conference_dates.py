@@ -18,12 +18,30 @@ QUERIES_FILE = Path(__file__).resolve().parent / "queries.json"
 
 # Month name → number mapping
 MONTHS = {
-    "january": 1, "february": 2, "march": 3, "april": 4,
-    "may": 5, "june": 6, "july": 7, "august": 8,
-    "september": 9, "october": 10, "november": 11, "december": 12,
-    "jan": 1, "feb": 2, "mar": 3, "apr": 4,
-    "jun": 6, "jul": 7, "aug": 8, "sep": 9, "sept": 9,
-    "oct": 10, "nov": 11, "dec": 12,
+    "january": 1,
+    "february": 2,
+    "march": 3,
+    "april": 4,
+    "may": 5,
+    "june": 6,
+    "july": 7,
+    "august": 8,
+    "september": 9,
+    "october": 10,
+    "november": 11,
+    "december": 12,
+    "jan": 1,
+    "feb": 2,
+    "mar": 3,
+    "apr": 4,
+    "jun": 6,
+    "jul": 7,
+    "aug": 8,
+    "sep": 9,
+    "sept": 9,
+    "oct": 10,
+    "nov": 11,
+    "dec": 12,
 }
 
 BUFFER_DAYS = 14  # ±2 weeks around actual dates
@@ -96,6 +114,7 @@ def _fetch_page_text(url: str) -> str:
     """Fetch a page and return stripped text content."""
     try:
         from playwright.sync_api import sync_playwright
+
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
@@ -107,10 +126,11 @@ def _fetch_page_text(url: str) -> str:
     except ImportError:
         # Fallback to urllib
         import urllib.request
+
         try:
-            req = urllib.request.Request(url, headers={
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-            })
+            req = urllib.request.Request(
+                url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+            )
             with urllib.request.urlopen(req, timeout=15) as resp:
                 html = resp.read().decode("utf-8", errors="replace")
             text = re.sub(r"<[^>]+>", " ", html)
@@ -129,7 +149,7 @@ def refresh_dates(dry_run: bool = False) -> bool:
     updated = False
     next_year = datetime.now().year + 1
 
-    for key, conf in seasons.items():
+    for _key, conf in seasons.items():
         url = conf.get("url", "")
         if not url:
             continue
@@ -137,7 +157,7 @@ def refresh_dates(dry_run: bool = False) -> bool:
         print(f"[Dates] {conf['name']}...")
         text = _fetch_page_text(url)
         if not text:
-            print(f"  Could not fetch page")
+            print("  Could not fetch page")
             continue
 
         # Look for dates mentioning next year or current year
@@ -146,12 +166,12 @@ def refresh_dates(dry_run: bool = False) -> bool:
             dates = _extract_dates_from_text(text, datetime.now().year)
 
         if not dates:
-            print(f"  No dates found on page")
+            print("  No dates found on page")
             continue
 
         window = _dates_to_window(dates)
         if not window:
-            print(f"  Could not parse date window")
+            print("  Could not parse date window")
             continue
 
         new_start, new_end = window
@@ -169,13 +189,14 @@ def refresh_dates(dry_run: bool = False) -> bool:
     if updated:
         with open(QUERIES_FILE, "w") as f:
             json.dump(queries, f, indent=2, ensure_ascii=False)
-        print(f"\n[Dates] Updated queries.json")
+        print("\n[Dates] Updated queries.json")
 
     return updated
 
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="Refresh conference dates from official websites")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()

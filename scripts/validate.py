@@ -25,14 +25,23 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PAPERS_JSON = PROJECT_ROOT / "data" / "papers.json"
 
 KNOWN_STUDY_TYPES = {
-    "Phase 3 RCT", "Phase 3 RCT (updated)", "Phase 3 RCT (final)",
-    "Phase 3 RCT (final OS)", "Phase 3 (Cohort 3)",
-    "Phase 2 RCT", "Phase 2", "Phase 2 (exploratory)",
+    "Phase 3 RCT",
+    "Phase 3 RCT (updated)",
+    "Phase 3 RCT (final)",
+    "Phase 3 RCT (final OS)",
+    "Phase 3 (Cohort 3)",
+    "Phase 2 RCT",
+    "Phase 2",
+    "Phase 2 (exploratory)",
     "Phase 2a (basket)",
-    "Phase 1-2", "Phase 1-2 (expanded)",
-    "Phase 1", "Phase 1b",
-    "Biomarker (exploratory)", "Post-hoc analysis",
-    "Meta-analysis", "Pooled analysis",
+    "Phase 1-2",
+    "Phase 1-2 (expanded)",
+    "Phase 1",
+    "Phase 1b",
+    "Biomarker (exploratory)",
+    "Post-hoc analysis",
+    "Meta-analysis",
+    "Pooled analysis",
 }
 
 REQUIRED_FIELDS = ["id", "year", "journal", "studyType", "regimen", "endpoint", "result", "bottomLine"]
@@ -99,7 +108,7 @@ def validate() -> list[str]:
                 if target and target not in all_ids:
                     # Check if it's in a later topic (forward reference)
                     found = False
-                    for t2, t2_data in data.items():
+                    for _t2, t2_data in data.items():
                         for p2 in t2_data.get("papers", []):
                             if p2.get("id") == target:
                                 found = True

@@ -1,6 +1,5 @@
 """Tests for AI classification layer."""
 
-import json
 from unittest.mock import MagicMock, patch
 
 from classify import classify_all, classify_paper
@@ -60,14 +59,16 @@ class TestClassifyPaper:
     def test_structured_output_via_tool(self, sample_candidate):
         """Agent calls submit_classification tool → structured JSON."""
         mock_client = MagicMock()
-        mock_client.messages.create.side_effect = _mock_submit_classification({
-            "relevance_score": 5,
-            "contextual_analysis": "Very important paper",
-            "bottom_line": "Game changer",
-            "suggested_js": {"id": "test-2026"},
-            "suggested_filename": "Test_NEJM_2026.html",
-            "relations": [],
-        })
+        mock_client.messages.create.side_effect = _mock_submit_classification(
+            {
+                "relevance_score": 5,
+                "contextual_analysis": "Very important paper",
+                "bottom_line": "Game changer",
+                "suggested_js": {"id": "test-2026"},
+                "suggested_filename": "Test_NEJM_2026.html",
+                "relations": [],
+            }
+        )
 
         result = classify_paper(mock_client, sample_candidate)
         assert result["ai_score"] == 5
@@ -113,9 +114,11 @@ class TestClassifyPaper:
         ]
         # Simulate the filtering logic from classify_all
         from config import RELEVANCE_THRESHOLD
-        kept = [c for c in papers
-                if c.get("ai_parse_failed")
-                or c.get("ai_score") is None
-                or c["ai_score"] >= RELEVANCE_THRESHOLD]
+
+        kept = [
+            c
+            for c in papers
+            if c.get("ai_parse_failed") or c.get("ai_score") is None or c["ai_score"] >= RELEVANCE_THRESHOLD
+        ]
         assert len(kept) == 2  # score=5 + parse_failed, NOT score=2
         assert any(c["title"] == "C" for c in kept)  # parse failure kept
