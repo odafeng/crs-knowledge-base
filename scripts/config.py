@@ -11,8 +11,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 QUERIES_FILE = SCRIPTS_DIR / "queries.json"
 TRACKED_DOIS_FILE = DATA_DIR / "tracked-dois.json"
 TRACKED_ABSTRACTS_FILE = DATA_DIR / "tracked-abstracts.json"
-INDEX_HTML = PROJECT_ROOT / "index.html"
-TEMPLATE_DIR = SCRIPTS_DIR / "templates"
+PAPERS_JSON = DATA_DIR / "papers.json"
 
 # PubMed E-utilities
 PUBMED_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
@@ -44,6 +43,19 @@ RELEVANCE_THRESHOLD = 4
 def load_queries():
     with open(QUERIES_FILE) as f:
         return json.load(f)
+
+
+def is_conference_season() -> tuple[bool, str | None]:
+    """Check if today falls within a major conference window."""
+    from datetime import date
+
+    queries = load_queries()
+    seasons = queries.get("conference_seasons", {})
+    today_md = date.today().strftime("%m-%d")
+    for season in seasons.values():
+        if season["start"] <= today_md <= season["end"]:
+            return True, season["name"]
+    return False, None
 
 
 def load_tracked_dois():

@@ -192,8 +192,8 @@ def build_system_prompt(topic):
 
 {context}
 
-## 你目前追蹤的文獻（JavaScript 物件格式）
-```javascript
+## 你目前追蹤的文獻（JSON 格式）
+```json
 {existing_js}
 ```
 

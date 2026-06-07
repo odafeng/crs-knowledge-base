@@ -7,7 +7,6 @@ import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
-from datetime import date
 
 from config import (
     NCBI_API_KEY,
@@ -16,6 +15,9 @@ from config import (
     PUBMED_SEARCH_URL,
     load_queries,
     load_tracked_dois,
+)
+from config import (
+    is_conference_season as _is_conference_season,
 )
 
 
@@ -111,19 +113,6 @@ def _parse_article(article_elem):
         "abstract": abstract,
         "source": "pubmed",
     }
-
-
-def _is_conference_season():
-    """Check if we're in a major conference window."""
-    from config import load_queries
-
-    queries = load_queries()
-    seasons = queries.get("conference_seasons", {})
-    today_md = date.today().strftime("%m-%d")
-    for season in seasons.values():
-        if season["start"] <= today_md <= season["end"]:
-            return True, season["name"]
-    return False, None
 
 
 # Conference abstract supplement queries — these catch meeting abstracts

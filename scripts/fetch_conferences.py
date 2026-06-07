@@ -1,13 +1,9 @@
-"""Layer 1c: Fetch new abstracts from ASCO/ESMO via headless Playwright.
+"""Layer 1c: Fetch new abstracts from ASCO/ESMO/ASCRS/ESCP via headless Playwright.
 
-ASCO uses a Flutter SPA and ESMO uses bot protection, so plain HTTP
-requests don't work. Playwright renders the pages in headless Chromium.
-
-Falls back gracefully if Playwright is not installed (e.g., local dev
-without it) — the pipeline continues with PubMed + RSS only.
+These conference sites use JS rendering or bot protection that blocks plain HTTP.
+A single generic scraper handles all four — differences are just URL pattern and source name.
 """
 
-import argparse
 import hashlib
 import json
 import re
@@ -32,8 +28,45 @@ def _playwright_available():
         return False
 
 
-def _scrape_asco(search_terms):
-    """Scrape ASCO abstract search results via Playwright."""
+# Conference scraping configurations
+CONFERENCE_CONFIGS = [
+    {
+        "key": "asco",
+        "name": "ASCO",
+        "search_url": "https://meetings.asco.org/abstracts-presentations/search?q={query}",
+        "selectors": '[class*="abstract"], [class*="search-result"], a[href*="/abstracts-presentations/"]',
+        "id_pattern": r"/(\d+)",
+        "id_prefix": "asco-2026",
+    },
+    {
+        "key": "esmo",
+        "name": "ESMO",
+        "search_url": "https://oncologypro.esmo.org/meeting-resources?q={query}&type=abstract",
+        "selectors": 'a[href*="abstract"], [class*="search-result"], [class*="abstract-card"]',
+        "id_pattern": r"/abstract/(\d+)",
+        "id_prefix": "esmo",
+    },
+    {
+        "key": "ascrs",
+        "name": "ASCRS",
+        "search_url": "https://www.fascrs.org/search?q={query}",
+        "selectors": 'a[href*="abstract"], [class*="search-result"], [class*="views-row"]',
+        "id_pattern": None,
+        "id_prefix": "ascrs",
+    },
+    {
+        "key": "escp",
+        "name": "ESCP",
+        "search_url": "https://www.escp.eu.com/search?q={query}",
+        "selectors": 'a[href*="abstract"], [class*="search-result"], [class*="views-row"]',
+        "id_pattern": None,
+        "id_prefix": "escp",
+    },
+]
+
+
+def _scrape_conference(config: dict, search_terms: list[str]) -> list[dict]:
+    """Generic conference scraper using Playwright."""
     from playwright.sync_api import sync_playwright
 
     candidates = []
@@ -43,17 +76,13 @@ def _scrape_asco(search_terms):
         page = browser.new_page()
 
         for term in search_terms:
-            print(f"  [ASCO] Searching: {term}")
+            print(f"  [{config['name']}] Searching: {term}")
             try:
-                url = f"https://meetings.asco.org/abstracts-presentations/search?q={term}"
+                url = config["search_url"].format(query=term)
                 page.goto(url, wait_until="networkidle", timeout=30000)
-                page.wait_for_timeout(3000)  # Let Flutter render
+                page.wait_for_timeout(3000)
 
-                # Try to find abstract entries
-                # ASCO Flutter app renders abstract cards — extract text content
-                entries = page.locator(
-                    '[class*="abstract"], [class*="search-result"], a[href*="/abstracts-presentations/"]'
-                )
+                entries = page.locator(config["selectors"])
                 count = entries.count()
 
                 for i in range(min(count, 10)):
@@ -65,218 +94,39 @@ def _scrape_asco(search_terms):
                         if not text or len(text) < 20:
                             continue
 
-                        # Extract abstract ID from URL
-                        aid_match = re.search(r"/(\d+)", href)
-                        aid = aid_match.group(1) if aid_match else f"asco-{i}"
-
-                        # Parse title (usually first line) and authors
                         lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
                         title = lines[0] if lines else text[:200]
-                        authors = lines[1] if len(lines) > 1 else ""
+
+                        if config["id_pattern"]:
+                            aid_match = re.search(config["id_pattern"], href)
+                            aid = (
+                                f"{config['id_prefix']}-{aid_match.group(1)}"
+                                if aid_match
+                                else _stable_id(config["id_prefix"], title)
+                            )
+                        else:
+                            aid = _stable_id(config["id_prefix"], title)
 
                         candidates.append(
                             {
-                                "abstract_id": f"asco-2026-{aid}",
+                                "abstract_id": aid,
                                 "title": title[:300],
-                                "authors": authors[:200],
-                                "journal": "ASCO 2026",
-                                "year": "2026",
+                                "authors": lines[1][:200] if len(lines) > 1 else "",
+                                "journal": config["name"],
+                                "year": "",
                                 "abstract": " ".join(lines[2:])[:500] if len(lines) > 2 else "",
                                 "doi": "",
                                 "pmid": "",
                                 "topic": "",
-                                "source": "asco",
-                                "link": f"https://meetings.asco.org{href}" if href.startswith("/") else href,
+                                "source": config["key"],
+                                "link": href if href.startswith("http") else "",
                             }
                         )
                     except Exception:
                         continue
 
             except Exception as e:
-                print(f"    [WARN] ASCO search failed for '{term}': {e}", file=sys.stderr)
-
-            time.sleep(2)
-
-        browser.close()
-
-    return candidates
-
-
-def _scrape_esmo(search_terms):
-    """Scrape ESMO abstract search results via Playwright."""
-    from playwright.sync_api import sync_playwright
-
-    candidates = []
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-
-        for term in search_terms:
-            print(f"  [ESMO] Searching: {term}")
-            try:
-                url = f"https://oncologypro.esmo.org/meeting-resources?q={term}&type=abstract"
-                page.goto(url, wait_until="networkidle", timeout=30000)
-                page.wait_for_timeout(3000)
-
-                entries = page.locator('a[href*="abstract"], [class*="search-result"], [class*="abstract-card"]')
-                count = entries.count()
-
-                for i in range(min(count, 10)):
-                    try:
-                        el = entries.nth(i)
-                        text = el.inner_text()
-                        href = el.get_attribute("href") or ""
-
-                        if not text or len(text) < 20:
-                            continue
-
-                        aid_match = re.search(r"/abstract/(\d+)", href)
-                        aid = aid_match.group(1) if aid_match else f"esmo-{i}"
-
-                        lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
-                        title = lines[0] if lines else text[:200]
-
-                        candidates.append(
-                            {
-                                "abstract_id": f"esmo-{aid}",
-                                "title": title[:300],
-                                "authors": "",
-                                "journal": "ESMO",
-                                "year": "",
-                                "abstract": "",
-                                "doi": "",
-                                "pmid": "",
-                                "topic": "",
-                                "source": "esmo",
-                                "link": f"https://oncologypro.esmo.org{href}" if href.startswith("/") else href,
-                            }
-                        )
-                    except Exception:
-                        continue
-
-            except Exception as e:
-                print(f"    [WARN] ESMO search failed for '{term}': {e}", file=sys.stderr)
-
-            time.sleep(2)
-
-        browser.close()
-
-    return candidates
-
-
-def _scrape_ascrs(search_terms):
-    """Scrape ASCRS abstract search results via Playwright."""
-    from playwright.sync_api import sync_playwright
-
-    candidates = []
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-
-        for term in search_terms:
-            print(f"  [ASCRS] Searching: {term}")
-            try:
-                url = f"https://www.fascrs.org/search?q={term}"
-                page.goto(url, wait_until="networkidle", timeout=30000)
-                page.wait_for_timeout(3000)
-
-                entries = page.locator('a[href*="abstract"], [class*="search-result"], [class*="views-row"]')
-                count = entries.count()
-
-                for i in range(min(count, 10)):
-                    try:
-                        el = entries.nth(i)
-                        text = el.inner_text()
-                        href = el.get_attribute("href") or ""
-
-                        if not text or len(text) < 20:
-                            continue
-
-                        lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
-                        title = lines[0] if lines else text[:200]
-
-                        candidates.append(
-                            {
-                                "abstract_id": _stable_id("ascrs", title),
-                                "title": title[:300],
-                                "authors": "",
-                                "journal": "ASCRS",
-                                "year": "",
-                                "abstract": "",
-                                "doi": "",
-                                "pmid": "",
-                                "topic": "",
-                                "source": "ascrs",
-                                "link": f"https://www.fascrs.org{href}" if href.startswith("/") else href,
-                            }
-                        )
-                    except Exception:
-                        continue
-
-            except Exception as e:
-                print(f"    [WARN] ASCRS search failed for '{term}': {e}", file=sys.stderr)
-
-            time.sleep(2)
-
-        browser.close()
-
-    return candidates
-
-
-def _scrape_escp(search_terms):
-    """Scrape ESCP abstract search results via Playwright."""
-    from playwright.sync_api import sync_playwright
-
-    candidates = []
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-
-        for term in search_terms:
-            print(f"  [ESCP] Searching: {term}")
-            try:
-                url = f"https://www.escp.eu.com/search?q={term}"
-                page.goto(url, wait_until="networkidle", timeout=30000)
-                page.wait_for_timeout(3000)
-
-                entries = page.locator('a[href*="abstract"], [class*="search-result"], [class*="views-row"]')
-                count = entries.count()
-
-                for i in range(min(count, 10)):
-                    try:
-                        el = entries.nth(i)
-                        text = el.inner_text()
-                        href = el.get_attribute("href") or ""
-
-                        if not text or len(text) < 20:
-                            continue
-
-                        lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
-                        title = lines[0] if lines else text[:200]
-
-                        candidates.append(
-                            {
-                                "abstract_id": _stable_id("escp", title),
-                                "title": title[:300],
-                                "authors": "",
-                                "journal": "ESCP",
-                                "year": "",
-                                "abstract": "",
-                                "doi": "",
-                                "pmid": "",
-                                "topic": "",
-                                "source": "escp",
-                                "link": f"https://www.escp.eu.com{href}" if href.startswith("/") else href,
-                            }
-                        )
-                    except Exception:
-                        continue
-
-            except Exception as e:
-                print(f"    [WARN] ESCP search failed for '{term}': {e}", file=sys.stderr)
+                print(f"    [WARN] {config['name']} search failed for '{term}': {e}", file=sys.stderr)
 
             time.sleep(2)
 
@@ -288,8 +138,7 @@ def _scrape_escp(search_terms):
 def fetch_conferences(topic=None, dry_run=False):
     """Fetch new conference abstracts. Returns list of candidate dicts."""
     if not _playwright_available():
-        print("[Conferences] Playwright not installed. Skipping conference scraping.", file=sys.stderr)
-        print("  Install: pip install playwright && playwright install chromium", file=sys.stderr)
+        print("[Conferences] Playwright not installed. Skipping.", file=sys.stderr)
         return []
 
     queries = load_queries()
@@ -304,41 +153,41 @@ def fetch_conferences(topic=None, dry_run=False):
 
     all_candidates = []
 
-    # ASCRS/ESCP cover all colorectal surgery — use terms from ALL topics
+    # ASCRS/ESCP: search all topics (colorectal surgery covers everything)
     all_terms = set()
     for cfg in topics_config.values():
         all_terms.update(cfg.get("conference_terms", []))
 
-    print(f"[Conferences] ASCRS/ESCP: searching {len(all_terms)} terms across all topics")
-    ascrs_results = _scrape_ascrs(list(all_terms)[:8])  # Limit to avoid over-scraping
-    escp_results = _scrape_escp(list(all_terms)[:8])
+    surgical_configs = [c for c in CONFERENCE_CONFIGS if c["key"] in ("ascrs", "escp")]
+    oncology_configs = [c for c in CONFERENCE_CONFIGS if c["key"] in ("asco", "esmo")]
 
+    print(f"[Conferences] ASCRS/ESCP: searching {len(all_terms)} terms across all topics")
+    ascrs_escp_results = []
+    for conf in surgical_configs:
+        ascrs_escp_results.extend(_scrape_conference(conf, list(all_terms)[:8]))
+
+    # ASCO/ESMO: per-topic search
     for t, cfg in topics_config.items():
         terms = cfg.get("conference_terms", [])
         if not terms:
             continue
 
-        # ASCO/ESMO: per-topic search (oncology-focused)
         print(f"[Conferences] Topic: {t} (ASCO/ESMO)")
-        asco = _scrape_asco(terms)
-        esmo = _scrape_esmo(terms)
+        for conf in oncology_configs:
+            results = _scrape_conference(conf, terms)
+            for c in results:
+                if c["abstract_id"] in tracked_ids:
+                    continue
+                if c["doi"] and c["doi"] in tracked_doi_set:
+                    continue
+                c["topic"] = t
+                all_candidates.append(c)
 
-        for c in asco + esmo:
-            if c["abstract_id"] in tracked_ids:
-                continue
-            if c["doi"] and c["doi"] in tracked_doi_set:
-                continue
-            c["topic"] = t
-            all_candidates.append(c)
-
-    # ASCRS/ESCP results: assign topic by keyword matching
-    for c in ascrs_results + escp_results:
+    # ASCRS/ESCP: assign topic by keyword matching
+    for c in ascrs_escp_results:
         if c["abstract_id"] in tracked_ids:
             continue
-        if c["doi"] and c["doi"] in tracked_doi_set:
-            continue
         title_lower = c.get("title", "").lower()
-        # Match to best topic by keywords
         assigned = False
         for t, cfg in topics_config.items():
             keywords = cfg.get("keywords", [])
@@ -348,19 +197,20 @@ def fetch_conferences(topic=None, dry_run=False):
                 assigned = True
                 break
         if not assigned:
-            # Default surgical abstracts to robotic-surgery
             c["topic"] = "robotic-surgery"
             all_candidates.append(c)
 
     if dry_run:
         print(f"\n[DRY RUN] Conference candidates: {len(all_candidates)}")
-        for c in all_candidates:
+        for c in all_candidates[:10]:
             print(f"  [{c['topic']}] {c['source'].upper()}: {c['title'][:80]}")
 
     return all_candidates
 
 
 def main():
+    import argparse
+
     parser = argparse.ArgumentParser(description="Fetch conference abstracts via Playwright")
     parser.add_argument("--topic", help="Single topic (default: all)")
     parser.add_argument("--dry-run", action="store_true")

@@ -19,7 +19,7 @@ def _format_paper_message(paper):
     year = paper.get("year", "")
     doi = paper.get("doi", "")
     bottom_line = paper.get("ai_bottom_line", "")
-    action = "Auto-PR" if score and score >= 5 else "GitHub Issue"
+    action = "GitHub Issue"
 
     lines = []
     if score and score >= 5:

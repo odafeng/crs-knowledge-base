@@ -10,7 +10,7 @@ class TestFormatPaperMessage:
         msg = _format_paper_message(sample_classified_paper)
         assert "Practice-Changing" in msg
         assert "Score 5/5" in msg
-        assert "Auto-PR" in msg
+        assert "GitHub Issue" in msg
 
     def test_score_4_shows_high_impact(self, sample_candidate):
         sample_candidate["ai_score"] = 4

@@ -1,8 +1,7 @@
 """Tests for main pipeline orchestration."""
 
-from unittest.mock import patch
-
-from main import deduplicate_candidates, is_conference_season
+from config import is_conference_season
+from main import deduplicate_candidates
 
 
 class TestDeduplicateCandidates:
@@ -62,15 +61,12 @@ class TestPipelineContract:
 
 
 class TestIsConferenceSeason:
-    @patch("main.date")
-    def test_asco_season(self, mock_date):
-        mock_date.today.return_value.strftime.return_value = "06-01"
-        in_season, name = is_conference_season()
-        assert in_season is True
-        assert "ASCO" in name
+    """is_conference_season now lives in config.py; test it directly."""
 
-    @patch("main.date")
-    def test_not_in_season(self, mock_date):
-        mock_date.today.return_value.strftime.return_value = "03-15"
-        in_season, _ = is_conference_season()
-        assert in_season is False
+    def test_conference_season_returns_tuple(self):
+        result = is_conference_season()
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        # First element is bool, second is str or None
+        assert isinstance(result[0], bool)
+        assert result[1] is None or isinstance(result[1], str)

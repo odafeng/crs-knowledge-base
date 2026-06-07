@@ -1,11 +1,11 @@
 """Main entry point: orchestrate Layer 1 → 2 → 3 pipeline."""
 
 import argparse
-from datetime import date, datetime
+from datetime import date, datetime  # date used in tracking update
 
 from classify import classify_all
 from config import (
-    load_queries,
+    is_conference_season,
     load_tracked_abstracts,
     load_tracked_dois,
     save_tracked_abstracts,
@@ -17,19 +17,6 @@ from fetch_news import fetch_news
 from fetch_pubmed import fetch_pubmed
 from fetch_rss import fetch_rss
 from notify_line import notify_papers
-
-
-def is_conference_season():
-    """Check if today falls within a major conference window."""
-    queries = load_queries()
-    seasons = queries.get("conference_seasons", {})
-    today = date.today()
-    today_md = today.strftime("%m-%d")
-
-    for _key, season in seasons.items():
-        if season["start"] <= today_md <= season["end"]:
-            return True, season["name"]
-    return False, None
 
 
 def deduplicate_candidates(candidates):
