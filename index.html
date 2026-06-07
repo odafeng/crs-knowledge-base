@@ -317,6 +317,14 @@
     </div>
     <div class="sc-arrow">&#x203A;</div>
   </div>
+  <div class="sub-card" onclick="navigate('v-generic','通用 / 跨分子型','mCRC')">
+    <div class="sc-icon">&#x1F4DA;</div>
+    <div class="sc-body">
+      <div class="sc-title">通用 / 跨分子型策略</div>
+      <div class="sc-desc">抗血管生成 + ICI &middot; MSS 後線 &middot; salvage 探索</div>
+    </div>
+    <div class="sc-arrow">&#x203A;</div>
+  </div>
 </div>
 
 <!-- RAS-wt Anti-EGFR Page -->
@@ -472,6 +480,19 @@
   <div class="ev-section">
     <h3>&#x1F4D6; 結構化試驗卡片</h3>
     <div id="her2-cards"></div>
+  </div>
+</div>
+
+<!-- Generic / cross-molecular CRS Page -->
+<div class="view" id="v-generic">
+  <p style="color:var(--text-sec);margin-bottom:16px">不限特定分子型的 mCRC 治療策略，涵蓋抗血管生成 + 免疫檢查點抑制劑（ICI）等跨族群後線探索。</p>
+  <div class="ev-section">
+    <h3>&#x1F4C5; 證據時間軸</h3>
+    <div class="timeline-scroll"><div class="timeline" id="tl-generic"></div></div>
+  </div>
+  <div class="ev-section">
+    <h3>&#x1F4D6; 結構化試驗卡片</h3>
+    <div id="generic-cards"></div>
   </div>
 </div>
 
@@ -897,6 +918,7 @@ const VIEW_META = {
   'v-krasg12c': { title: 'KRAS G12C', sub: 'G12C 抑制劑' },
   'v-msih': { title: 'MSI-H / dMMR', sub: '免疫治療' },
   'v-her2': { title: 'HER2', sub: 'HER2 標靶治療' },
+  'v-generic': { title: '通用 / 跨分子型', sub: 'mCRC 跨族群策略' },
   'v-conferences': { title: '醫學會議專區', sub: 'Conference Highlights' },
   'v-robotic': { title: '機器人手術', sub: 'Robotic Surgery' },
   'v-robotic-tme': { title: 'Robotic TME', sub: '全直腸繫膜切除' },
@@ -925,6 +947,7 @@ function _activateView(viewId, title, subtitle) {
   if (viewId === 'v-krasg12c') renderTopic(G12C_PAPERS, 'tl-g12c', 'g12c-cards');
   if (viewId === 'v-msih') renderTopic(MSIH_PAPERS, 'tl-msih', 'msih-cards');
   if (viewId === 'v-her2') renderTopic(HER2_PAPERS, 'tl-her2', 'her2-cards');
+  if (viewId === 'v-generic') renderTopic(GENERIC_PAPERS, 'tl-generic', 'generic-cards');
   if (viewId === 'v-conferences') renderConferences();
   if (viewId === 'v-robotic-tme') renderTME();
   if (viewId === 'v-robotic-anast') renderAnast();
@@ -961,6 +984,7 @@ let RASWT_PAPERS = [];
 let G12C_PAPERS = [];
 let MSIH_PAPERS = [];
 let HER2_PAPERS = [];
+let GENERIC_PAPERS = [];
 let METRICS = {};
 let TME_METRICS = {};
 let TL_TME = [];
@@ -977,6 +1001,7 @@ fetch('./data/papers.json')
     G12C_PAPERS = data['mCRC-KRAS-G12C'].papers || [];
     MSIH_PAPERS = data['mCRC-MSI-H'].papers || [];
     HER2_PAPERS = data['mCRC-HER2'].papers || [];
+    GENERIC_PAPERS = data['generic-CRS'].papers || [];
     METRICS = data['mCRC-BRAF-V600E'].metrics || {};
     TME_METRICS = data['robotic-surgery'].metrics || {};
     TL_TME = data['robotic-surgery'].tl_tme || [];
