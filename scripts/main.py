@@ -16,6 +16,7 @@ from config import (
 from fetch_pubmed import fetch_pubmed
 from fetch_rss import fetch_rss
 from fetch_conferences import fetch_conferences
+from fetch_news import fetch_news
 from classify import classify_all
 from create_issues import create_issues
 from create_pr import create_prs
@@ -51,8 +52,12 @@ def deduplicate_candidates(candidates):
     return list(seen.values())
 
 
-def run_pipeline(topic=None, skip_conferences=False, dry_run=False, daily_mode=False):
-    """Run the full paper-watch pipeline."""
+def run_pipeline(topic=None, skip_conferences=False, dry_run=False, daily_mode=False, bootstrap=False):
+    """Run the full paper-watch pipeline.
+
+    bootstrap: if True, use a 730-day PubMed window to seed a new topic
+               with its foundational literature.
+    """
     # In daily mode (conference cron), check if we're in conference season
     if daily_mode:
         in_season, conf_name = is_conference_season()
@@ -61,15 +66,22 @@ def run_pipeline(topic=None, skip_conferences=False, dry_run=False, daily_mode=F
             return
         print(f"[Pipeline] Conference season active: {conf_name}")
 
+    reldate = 730 if bootstrap else None  # None = use default (14 days)
+
     print(f"[Pipeline] Starting paper-watch — {datetime.now().isoformat()}")
     print(f"  Topic filter: {topic or 'all'}")
     print(f"  Dry run: {dry_run}")
+    if bootstrap:
+        print(f"  Bootstrap mode: 730-day PubMed window")
     print()
 
     # Layer 1: Fetch from all sources
     candidates = []
 
-    pubmed_results = fetch_pubmed(topic=topic, dry_run=False)
+    pubmed_kwargs = {"topic": topic, "dry_run": False}
+    if reldate:
+        pubmed_kwargs["reldate"] = reldate
+    pubmed_results = fetch_pubmed(**pubmed_kwargs)
     candidates.extend(pubmed_results)
     print()
 
@@ -80,6 +92,14 @@ def run_pipeline(topic=None, skip_conferences=False, dry_run=False, daily_mode=F
     if not skip_conferences:
         conf_results = fetch_conferences(topic=topic, dry_run=False)
         candidates.extend(conf_results)
+        print()
+
+    # During conference season: also search medical news sites
+    in_season, _ = is_conference_season()
+    if in_season and not skip_conferences:
+        print("[Pipeline] Conference season — searching news sites...")
+        news_results = fetch_news(topic=topic, dry_run=False)
+        candidates.extend(news_results)
         print()
 
     # Deduplicate across sources
@@ -132,16 +152,18 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python main.py --dry-run                  # Full pipeline, print only
-  python main.py --topic mCRC-BRAF-V600E    # Single topic
-  python main.py --daily                    # Conference-season aware daily scan
-  python main.py --skip-conferences         # PubMed + RSS only
+  python main.py --dry-run                              # Full pipeline, print only
+  python main.py --topic mCRC-BRAF-V600E                # Single topic
+  python main.py --daily                                # Conference-season aware daily scan
+  python main.py --skip-conferences                     # PubMed + RSS only
+  python main.py --bootstrap --topic mCRC-agnostic      # Seed new topic with 2-year history
         """,
     )
     parser.add_argument("--topic", help="Single topic to process (default: all)")
     parser.add_argument("--skip-conferences", action="store_true", help="Skip conference abstract scraping")
     parser.add_argument("--dry-run", action="store_true", help="Don't create issues or update tracking")
     parser.add_argument("--daily", action="store_true", help="Daily mode: only run during conference season")
+    parser.add_argument("--bootstrap", action="store_true", help="Seed a new topic with 2-year PubMed history")
     args = parser.parse_args()
 
     run_pipeline(
@@ -149,6 +171,7 @@ Examples:
         skip_conferences=args.skip_conferences,
         dry_run=args.dry_run,
         daily_mode=args.daily,
+        bootstrap=args.bootstrap,
     )
 
 

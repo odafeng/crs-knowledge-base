@@ -17,6 +17,11 @@ on:
         required: false
         type: boolean
         default: false
+      bootstrap:
+        description: 'Bootstrap mode: seed topic with 2-year history'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   scan:
@@ -77,6 +82,9 @@ jobs:
           fi
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             ARGS="$ARGS --dry-run"
+          fi
+          if [ "${{ inputs.bootstrap }}" = "true" ]; then
+            ARGS="$ARGS --bootstrap"
           fi
           python main.py $ARGS
 
