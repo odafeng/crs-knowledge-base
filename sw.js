@@ -1,7 +1,8 @@
-const CACHE_NAME = 'crs-kb-v13';
+const CACHE_NAME = 'crs-kb-v14';
 const ASSETS = [
   './',
   './index.html',
+  './data/papers.json',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',

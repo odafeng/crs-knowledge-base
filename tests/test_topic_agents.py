@@ -1,6 +1,6 @@
 """Tests for topic agent prompt generation."""
 
-from topic_agents import build_paper_prompt, build_system_prompt, _extract_papers_from_html
+from topic_agents import build_paper_prompt, build_system_prompt, _PAPERS_JS
 
 
 class TestBuildSystemPrompt:
@@ -44,12 +44,13 @@ class TestBuildPaperPrompt:
         assert "encorafenib" in prompt
 
 
-class TestExtractPapersFromHtml:
-    def test_extracts_all_topic_arrays(self):
-        papers = _extract_papers_from_html()
-        expected_topics = {"mCRC-BRAF-V600E", "mCRC-RAS-wt", "mCRC-KRAS-G12C", "mCRC-MSI-H", "mCRC-HER2"}
-        assert set(papers.keys()) == expected_topics
+class TestPapersJson:
+    def test_loads_all_topics(self):
+        assert "mCRC-BRAF-V600E" in _PAPERS_JS
+        assert "mCRC-RAS-wt" in _PAPERS_JS
+        assert "mCRC-KRAS-G12C" in _PAPERS_JS
+        assert "mCRC-MSI-H" in _PAPERS_JS
+        assert "mCRC-HER2" in _PAPERS_JS
 
     def test_braf_contains_beacon(self):
-        papers = _extract_papers_from_html()
-        assert "beacon-2019" in papers["mCRC-BRAF-V600E"]
+        assert "beacon-2019" in _PAPERS_JS["mCRC-BRAF-V600E"]

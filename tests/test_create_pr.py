@@ -31,76 +31,74 @@ class TestPlaceholderHtml:
 
 
 class TestInsertJsObject:
-    @patch("create_pr.INDEX_HTML")
-    def test_inserts_into_braf_array(self, mock_index):
-        mock_index.read_text.return_value = """
-const BRAF_PAPERS = [
-  { id: 'beacon-2019', year: 2019 },
-];
-"""
-        js_obj = {"id": "test-2026", "year": 2026}
-        insert_js_object("mCRC-BRAF-V600E", js_obj)
+    def test_inserts_into_json(self, tmp_path):
+        papers_file = tmp_path / "papers.json"
+        papers_file.write_text(json.dumps({
+            "mCRC-BRAF-V600E": {"papers": [{"id": "beacon-2019"}], "metrics": None},
+        }))
 
-        written = mock_index.write_text.call_args[0][0]
-        assert '"test-2026"' in written
-        assert "beacon-2019" in written
+        with patch("create_pr.PAPERS_JSON", papers_file):
+            result = insert_js_object("mCRC-BRAF-V600E", {"id": "test-2026", "year": 2026})
 
-    @patch("create_pr.INDEX_HTML")
-    def test_returns_false_for_unknown_topic(self, mock_index):
-        result = insert_js_object("unknown-topic", {"id": "test"})
-        assert result is False
+        assert result is True
+        data = json.loads(papers_file.read_text())
+        ids = [p["id"] for p in data["mCRC-BRAF-V600E"]["papers"]]
+        assert "beacon-2019" in ids
+        assert "test-2026" in ids
 
-    @patch("create_pr.INDEX_HTML")
-    def test_returns_false_for_robotic(self, mock_index):
-        result = insert_js_object("robotic-surgery", {"id": "test"})
+    def test_returns_false_for_unknown_topic(self, tmp_path):
+        papers_file = tmp_path / "papers.json"
+        papers_file.write_text(json.dumps({"mCRC-BRAF-V600E": {"papers": []}}))
+
+        with patch("create_pr.PAPERS_JSON", papers_file):
+            result = insert_js_object("unknown-topic", {"id": "test"})
         assert result is False
 
 
 class TestApplyChartUpdates:
-    @patch("create_pr.INDEX_HTML")
-    def test_add_bar(self, mock_index):
-        mock_index.read_text.return_value = """
-const METRICS = {
-  mOS: {
-    label: 'mOS', max: 35,
-    bars: [
-      { label:'EC', val:9.3, hr:'0.61', color:'#3182ce' }
-    ]
-  }
-};"""
-        updates = {
-            "mOS": {
-                "action": "add",
-                "bar": {"label": "NewArm", "val": 25.0, "hr": "0.55", "color": "#38a169"},
+    def test_add_bar(self, tmp_path):
+        papers_file = tmp_path / "papers.json"
+        papers_file.write_text(json.dumps({
+            "mCRC-BRAF-V600E": {
+                "papers": [],
+                "metrics": {"mOS": {"label": "mOS", "max": 35, "bars": [
+                    {"label": "EC", "val": 9.3, "hr": "0.61", "color": "#3182ce"}
+                ]}}
             }
-        }
-        result = apply_chart_updates("mCRC-BRAF-V600E", updates)
+        }))
+
+        with patch("create_pr.PAPERS_JSON", papers_file):
+            result = apply_chart_updates("mCRC-BRAF-V600E", {
+                "mOS": {"action": "add", "bar": {"label": "NewArm", "val": 25.0}}
+            })
+
         assert result is True
-        written = mock_index.write_text.call_args[0][0]
-        assert "NewArm" in written
+        data = json.loads(papers_file.read_text())
+        bars = data["mCRC-BRAF-V600E"]["metrics"]["mOS"]["bars"]
+        assert len(bars) == 2
+        assert bars[1]["label"] == "NewArm"
 
-    @patch("create_pr.INDEX_HTML")
-    def test_update_max(self, mock_index):
-        mock_index.read_text.return_value = """
-const METRICS = {
-  mOS: {
-    label: 'mOS', max: 35,
-    bars: [
-      { label:'EC', val:9.3, hr:'0.61', color:'#3182ce' }
-    ]
-  }
-};"""
-        updates = {
-            "mOS": {
-                "action": "add",
-                "bar": {"label": "New", "val": 40.0, "hr": "0.5", "color": "#38a169"},
-                "new_max": 45,
+    def test_update_max(self, tmp_path):
+        papers_file = tmp_path / "papers.json"
+        papers_file.write_text(json.dumps({
+            "mCRC-BRAF-V600E": {
+                "papers": [],
+                "metrics": {"mOS": {"label": "mOS", "max": 35, "bars": []}}
             }
-        }
-        apply_chart_updates("mCRC-BRAF-V600E", updates)
-        written = mock_index.write_text.call_args[0][0]
-        assert "45" in written
+        }))
 
-    def test_returns_false_for_no_metrics(self):
-        result = apply_chart_updates("mCRC-HER2", {"mOS": {"action": "add", "bar": {}}})
+        with patch("create_pr.PAPERS_JSON", papers_file):
+            apply_chart_updates("mCRC-BRAF-V600E", {
+                "mOS": {"action": "add", "bar": {"label": "X", "val": 40}, "new_max": 45}
+            })
+
+        data = json.loads(papers_file.read_text())
+        assert data["mCRC-BRAF-V600E"]["metrics"]["mOS"]["max"] == 45
+
+    def test_returns_false_for_no_metrics(self, tmp_path):
+        papers_file = tmp_path / "papers.json"
+        papers_file.write_text(json.dumps({"mCRC-HER2": {"papers": [], "metrics": None}}))
+
+        with patch("create_pr.PAPERS_JSON", papers_file):
+            result = apply_chart_updates("mCRC-HER2", {"mOS": {"action": "add", "bar": {}}})
         assert result is False

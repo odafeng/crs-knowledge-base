@@ -953,105 +953,41 @@ function _handleHash() {
 window.addEventListener('DOMContentLoaded', _handleHash);
 window.addEventListener('hashchange', _handleHash);
 
-// === STRUCTURED PAPER MODEL ===
-// Each paper: { id, year, journal, studyType, n, regimen, endpoint, result, bottomLine, doi, file, relations[] }
-// relations: { targetId, type: 'builds_on'|'supersedes'|'subgroup_of'|'same_regimen' }
+// === DATA LOADING ===
+// All paper data lives in data/papers.json (single source of truth).
+// Loaded via fetch; render functions are called after data is ready.
+let BRAF_PAPERS = [];
+let RASWT_PAPERS = [];
+let G12C_PAPERS = [];
+let MSIH_PAPERS = [];
+let HER2_PAPERS = [];
+let METRICS = {};
+let TME_METRICS = {};
+let TL_TME = [];
+let TME_CARDS = [];
+let TL_ANAST = [];
+let ANAST_CARDS = [];
+let CONF_HIGHLIGHTS = [];
 
-const BRAF_PAPERS = [
-  {
-    id: 'beacon-2019', year: 2019, journal: 'NEJM', studyType: 'Phase 3 RCT',
-    n: 665, regimen: 'EC ± binimetinib vs cetux+chemo',
-    endpoint: 'OS (co-primary)', result: 'mOS 9.0 vs 5.4 mo, HR 0.52',
-    bottomLine: '首次證實 BRAF+EGFR 雙阻斷在 2L+ BRAF V600E mCRC 的 OS 獲益',
-    doi: '10.1056/NEJMoa1908075', file: 'docs/mCRC-BRAF-V600E/Kopetz_NEJM_2019_BEACON.html',
-    relations: []
-  },
-  {
-    id: 'beacon-2021', year: 2021, journal: 'JCO', studyType: 'Phase 3 RCT (updated)',
-    n: 665, regimen: 'EC doublet vs triplet vs control',
-    endpoint: 'OS (updated)', result: 'EC mOS 9.3 mo, HR 0.61; triplet = doublet',
-    bottomLine: '確認 doublet 即夠——加 binimetinib 無額外獲益。FDA/EMA 核准 EC doublet',
-    doi: '10.1200/JCO.20.02088', file: 'docs/mCRC-BRAF-V600E/Tabernero_JCO_2021_BEACON.html',
-    relations: [{ targetId: 'beacon-2019', type: 'supersedes' }]
-  },
-  {
-    id: 'bw-natmed-2025', year: 2025, journal: 'Nat Med', studyType: 'Phase 3 RCT',
-    n: 479, regimen: 'EC+mFOLFOX6 vs SOC (1L)',
-    endpoint: 'ORR by BICR (co-primary)', result: 'ORR 60.9% vs 40.0%, OR 2.44',
-    bottomLine: 'BREAKWATER 首報：一線 EC+化療 ORR 達 61%，FDA 加速核准',
-    doi: '10.1038/s41591-024-03443-3', file: 'docs/mCRC-BRAF-V600E/Kopetz_NatMed_2025_BREAKWATER.html',
-    relations: [{ targetId: 'beacon-2021', type: 'builds_on' }]
-  },
-  {
-    id: 'bw-nejm-2025', year: 2025, journal: 'NEJM', studyType: 'Phase 3 RCT (updated)',
-    n: 479, regimen: 'EC+mFOLFOX6 vs SOC (1L)',
-    endpoint: 'PFS by BICR + OS', result: 'mPFS 12.8 vs 7.1 mo; mOS 30.3 vs 15.1 mo, HR 0.49',
-    bottomLine: 'mOS 30.3 個月——BRAF V600E mCRC 首次追上 BRAF wt 的存活。死亡風險減半',
-    doi: '10.1056/NEJMoa2501912', file: 'docs/mCRC-BRAF-V600E/Elez_NEJM_2025_BREAKWATER.html',
-    relations: [{ targetId: 'bw-natmed-2025', type: 'supersedes' }]
-  },
-  {
-    id: 'bw-ctdna-2025', year: 2025, journal: 'ESMO', studyType: 'Biomarker (exploratory)',
-    n: 494, regimen: 'EC+mFOLFOX6 vs EC vs SOC',
-    endpoint: 'ctDNA dynamics', result: 'C2D15 D/ND: 67.1% vs 45.2% vs 37.5%; resistance 6.6% vs 37.9%',
-    bottomLine: '化療骨幹壓制抗藥性克隆——EC+chemo 優於 EC alone 的分子機制',
-    doi: null, file: 'docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.html',
-    relations: [{ targetId: 'bw-nejm-2025', type: 'subgroup_of' }]
-  },
-  {
-    id: 'bw-subseq-2025', year: 2025, journal: 'ESMO', studyType: 'Post-hoc analysis',
-    n: 637, regimen: '1L EC+mFOLFOX6 → subsequent tx',
-    endpoint: 'PFS2', result: 'PFS2: 20.7 vs 12.9 mo (sequential EC)',
-    bottomLine: '一線即用 EC+化療 > 序貫式先化療再 EC。「最佳治療優先」獲證實',
-    doi: null, file: 'docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.html',
-    relations: [{ targetId: 'bw-nejm-2025', type: 'subgroup_of' }]
-  },
-  {
-    id: 'bw-c3-2026', year: 2026, journal: 'ASCO GI', studyType: 'Phase 3 (Cohort 3)',
-    n: 147, regimen: 'EC+FOLFIRI vs FOLFIRI±bev (1L)',
-    endpoint: 'ORR by BICR', result: 'ORR 64.4% vs 39.2%, OR 2.76; 肝 mets ORR 79.1%',
-    bottomLine: 'FOLFIRI 也行——提供第二個化療骨幹選擇，特別適合 oxaliplatin 禁忌',
-    doi: null, file: 'docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html',
-    relations: [{ targetId: 'bw-nejm-2025', type: 'same_regimen' }]
-  },
-];
-
-// Chart data stays the same structure for bar chart
-const METRICS = {
-  mOS: {
-    label: 'mOS（月）', max: 35,
-    bars: [
-      { label:'對照組\n2L+', val:5.9, hr:'Ref', color:'#cbd5e0' },
-      { label:'EC\n2L+', val:9.3, hr:'0.61', color:'#3182ce' },
-      { label:'對照組\n1L', val:15.1, hr:'Ref', color:'#a0aec0' },
-      { label:'EC\n1L', val:19.5, hr:'—', color:'#9ae6b4' },
-      { label:'EC+\nmFOLFOX6', val:30.3, hr:'0.49', color:'#38a169' },
-      { label:'EC+\nFOLFIRI', val:null, hr:'0.49*', color:'#38a169', ongoing:true },
-    ]
-  },
-  ORR: {
-    label: 'ORR（%）', max: 80,
-    bars: [
-      { label:'對照組\n2L+', val:1.8, hr:'Ref', color:'#cbd5e0' },
-      { label:'EC\n2L+', val:19.5, hr:'—', color:'#3182ce' },
-      { label:'對照組\n1L', val:37.4, hr:'Ref', color:'#a0aec0' },
-      { label:'EC\n1L', val:45.6, hr:'—', color:'#9ae6b4' },
-      { label:'EC+\nmFOLFOX6', val:65.7, hr:'2.44†', color:'#38a169' },
-      { label:'EC+\nFOLFIRI', val:64.4, hr:'2.76†', color:'#38a169' },
-    ]
-  },
-  mPFS: {
-    label: 'mPFS（月）', max: 15,
-    bars: [
-      { label:'對照組\n2L+', val:1.5, hr:'Ref', color:'#cbd5e0' },
-      { label:'EC\n2L+', val:4.3, hr:'0.44', color:'#3182ce' },
-      { label:'對照組\n1L', val:7.1, hr:'Ref', color:'#a0aec0' },
-      { label:'EC\n1L', val:6.8, hr:'—', color:'#9ae6b4' },
-      { label:'EC+\nmFOLFOX6', val:12.8, hr:'0.53', color:'#38a169' },
-      { label:'EC+\nFOLFIRI', val:null, hr:'—', color:'#38a169', ongoing:true },
-    ]
-  }
-};
+fetch('./data/papers.json')
+  .then(r => r.json())
+  .then(data => {
+    BRAF_PAPERS = data['mCRC-BRAF-V600E'].papers || [];
+    RASWT_PAPERS = data['mCRC-RAS-wt'].papers || [];
+    G12C_PAPERS = data['mCRC-KRAS-G12C'].papers || [];
+    MSIH_PAPERS = data['mCRC-MSI-H'].papers || [];
+    HER2_PAPERS = data['mCRC-HER2'].papers || [];
+    METRICS = data['mCRC-BRAF-V600E'].metrics || {};
+    TME_METRICS = data['robotic-surgery'].metrics || {};
+    TL_TME = data['robotic-surgery'].tl_tme || [];
+    TME_CARDS = data['robotic-surgery'].tme_cards || [];
+    TL_ANAST = data['robotic-surgery'].tl_anast || [];
+    ANAST_CARDS = data['robotic-surgery'].anast_cards || [];
+    CONF_HIGHLIGHTS = data['conference-highlights'].highlights || [];
+    // Re-render current view if it needs data
+    _handleHash();
+  })
+  .catch(err => console.warn('Failed to load papers.json:', err));
 
 // === RENDER FUNCTIONS ===
 let currentMetric = 'mOS';
@@ -1153,324 +1089,26 @@ function renderTopic(papers, tlId, cardsId) {
 }
 
 // === RAS-WT ANTI-EGFR PAPERS ===
-const RASWT_PAPERS = [
-  { id:'fire3', year:2014, journal:'Lancet Oncol', studyType:'Phase 3 RCT',
-    n:592, regimen:'FOLFIRI + cetuximab vs FOLFIRI + bevacizumab (1L)',
-    endpoint:'ORR (primary)', result:'ORR 62% vs 58% (NS); OS 28.7 vs 25.0 mo, HR 0.77',
-    bottomLine:'ORR/PFS 無差異但 OS 顯著優於 bev——anti-EGFR 可能有 OS 獲益但機制不明',
-    doi:'10.1016/S1470-2045(14)70330-4', file:null,
-    relations:[] },
-  { id:'fire3-final', year:2020, journal:'Br J Cancer', studyType:'Phase 3 RCT (final)',
-    n:400, regimen:'FOLFIRI + cetuximab vs bev (ext RAS wt)',
-    endpoint:'OS (extended RAS wt)', result:'OS 33.1 vs 25.6 mo, HR 0.70, p=0.006',
-    bottomLine:'Extended RAS wt 分析：OS 差距擴大到 7.5 個月——精準選病患放大 anti-EGFR 效益',
-    doi:'10.1038/s41416-020-01140-9', file:null,
-    relations:[{targetId:'fire3', type:'supersedes'}] },
-  { id:'calgb', year:2017, journal:'JAMA', studyType:'Phase 3 RCT',
-    n:1137, regimen:'Cetuximab vs bevacizumab + chemo (1L)',
-    endpoint:'OS (primary)', result:'OS 30.0 vs 29.0 mo, HR 0.88 (NS)',
-    bottomLine:'整體族群無差異——但左右側亞組分析揭示 sidedness 是關鍵（左側 cetux OS 39.3 mo）',
-    doi:'10.1001/jama.2017.7105', file:null,
-    relations:[] },
-  { id:'peak', year:2014, journal:'JCO', studyType:'Phase 2 RCT',
-    n:285, regimen:'Panitumumab vs bevacizumab + mFOLFOX6 (1L)',
-    endpoint:'PFS (primary)', result:'PFS HR 0.87 (NS); OS 34.2 vs 24.3 mo, HR 0.62',
-    bottomLine:'PFS 無差異但 OS 大幅有利 panitumumab——與 FIRE-3 pattern 一致',
-    doi:'10.1200/JCO.2013.53.2473', file:null,
-    relations:[{targetId:'fire3', type:'same_regimen'}] },
-  { id:'paradigm', year:2023, journal:'JAMA', studyType:'Phase 3 RCT',
-    n:802, regimen:'Panitumumab vs bevacizumab + mFOLFOX6 (1L, left-sided)',
-    endpoint:'OS left-sided (primary)', result:'Left: OS 37.9 vs 34.3 mo, HR 0.82, p=0.03; R0 resection 18.3% vs 11.6%',
-    bottomLine:'PARADIGM 定論：左側 RAS-wt mCRC 一線用 anti-EGFR + chemo 為標準。唯一達 OS 主要終點的 Phase 3',
-    doi:'10.1001/jama.2023.4428', file:null,
-    relations:[{targetId:'fire3', type:'builds_on'},{targetId:'calgb', type:'builds_on'}] },
-  { id:'sidedness-pooled', year:2017, journal:'Ann Oncol', studyType:'Pooled analysis',
-    n:2159, regimen:'Anti-EGFR vs control (6 RCTs pooled)',
-    endpoint:'OS/PFS by sidedness', result:'Left: OS HR 0.75, PFS HR 0.78; Right: OS HR 1.12 (no benefit)',
-    bottomLine:'左右側性是 anti-EGFR 最重要的預測因子——右側完全無效益。P for interaction <0.001',
-    doi:'10.1093/annonc/mdx175', file:null,
-    relations:[{targetId:'fire3', type:'subgroup_of'},{targetId:'calgb', type:'subgroup_of'}] },
-  { id:'valentino', year:2019, journal:'JCO', studyType:'Phase 2 RCT',
-    n:229, regimen:'Panitumumab + 5-FU/LV vs panitumumab alone (maintenance)',
-    endpoint:'PFS (maintenance)', result:'PFS 13.0 vs 10.2 mo, HR 1.55 (Pmab alone inferior)',
-    bottomLine:'Panitumumab 單藥維持劣於 Pmab + 5-FU/LV——不可單獨用 anti-EGFR 維持',
-    doi:'10.1200/JCO.19.01254', file:null,
-    relations:[] },
-  { id:'panama', year:2022, journal:'JCO', studyType:'Phase 2 RCT',
-    n:248, regimen:'FU/FA + panitumumab vs FU/FA alone (maintenance)',
-    endpoint:'PFS (primary)', result:'PFS 8.8 vs 5.7 mo, HR 0.72; TFS 17.1 vs 15.7 mo (NS)',
-    bottomLine:'加 panitumumab 延長 maintenance PFS 但 re-induction PFS 更短——TFS 打平。OS 數值有利',
-    doi:'10.1200/JCO.21.01332', file:null,
-    relations:[{targetId:'valentino', type:'builds_on'}] },
-  { id:'chronos', year:2022, journal:'Nat Med', studyType:'Phase 2',
-    n:27, regimen:'ctDNA-guided panitumumab rechallenge',
-    endpoint:'ORR (primary)', result:'ORR 30%, DCR 63%; 31% screened out by ctDNA mutations',
-    bottomLine:'液態切片篩選後 anti-EGFR rechallenge ORR 30%——proof of concept，優於標準後線',
-    doi:'10.1038/s41591-022-01886-0', file:null,
-    relations:[] },
-];
+
 
 // === KRAS G12C PAPERS ===
-const G12C_PAPERS = [
-  { id:'cb101', year:2024, journal:'Nat Med', studyType:'Phase 1b',
-    n:48, regimen:'Sotorasib + panitumumab',
-    endpoint:'ORR', result:'ORR 30%, mPFS 5.7 mo, mOS 15.2 mo',
-    bottomLine:'CodeBreaK 101 劑量探索確認 sotorasib+panitumumab 組合活性',
-    doi:'10.1038/s41591-023-02717-6', file:null,
-    relations:[] },
-  { id:'cb300', year:2023, journal:'NEJM', studyType:'Phase 3 RCT',
-    n:160, regimen:'Sotorasib 960mg + panitumumab vs TAS-102/regorafenib',
-    endpoint:'PFS (primary)', result:'mPFS 5.6 vs 2.2 mo, HR 0.49, p=0.006; ORR 26.4% vs 0%',
-    bottomLine:'首個 KRAS G12C Phase 3 RCT——sotorasib+panitumumab 顯著優於標準後線治療',
-    doi:'10.1056/NEJMoa2308795', file:null,
-    relations:[{targetId:'cb101', type:'builds_on'}] },
-  { id:'cb300-os', year:2025, journal:'JCO', studyType:'Phase 3 RCT (updated)',
-    n:160, regimen:'Sotorasib 960mg + panitumumab vs control',
-    endpoint:'OS (updated)', result:'Updated ORR 30.2%; OS HR 0.70 (NS)',
-    bottomLine:'OS 趨勢有利但未達顯著——可能受後線交叉影響',
-    doi:'10.1200/JCO-24-02026', file:null,
-    relations:[{targetId:'cb300', type:'supersedes'}] },
-  { id:'krystal1', year:2022, journal:'NEJM', studyType:'Phase 1-2',
-    n:76, regimen:'Adagrasib ± cetuximab',
-    endpoint:'ORR', result:'Mono ORR 19%; Combo ORR 46%, mPFS 6.9 mo',
-    bottomLine:'Adagrasib+cetuximab ORR 達 46%——確認 G12C 抑制劑+anti-EGFR 的協同效應',
-    doi:'10.1056/NEJMoa2212419', file:null,
-    relations:[] },
-  { id:'krystal1-exp', year:2024, journal:'Cancer Discov', studyType:'Phase 1-2 (expanded)',
-    n:94, regimen:'Adagrasib + cetuximab',
-    endpoint:'ORR, OS', result:'ORR 34%, mPFS 6.9 mo, mOS 15.9 mo',
-    bottomLine:'擴展世代確認療效穩定，獲 FDA 加速核准（2024）',
-    doi:'10.1158/2159-8290.CD-24-0217', file:null,
-    relations:[{targetId:'krystal1', type:'supersedes'}] },
-  { id:'divarasib-mono', year:2023, journal:'NEJM', studyType:'Phase 1',
-    n:137, regimen:'Divarasib monotherapy (all tumors)',
-    endpoint:'ORR', result:'CRC subset: ORR 29.1%, mPFS 5.6 mo',
-    bottomLine:'Divarasib 單藥在 CRC 活性有限，但在 NSCLC 表現優異',
-    doi:'10.1056/NEJMoa2303810', file:null,
-    relations:[] },
-  { id:'divarasib-combo', year:2023, journal:'Nat Med', studyType:'Phase 1b',
-    n:48, regimen:'Divarasib + cetuximab (CRC)',
-    endpoint:'ORR', result:'ORR 62.5%, mPFS 8.1 mo',
-    bottomLine:'Divarasib+cetuximab ORR 高達 62.5%——三個 G12C 抑制劑中早期數據最佳，待 RCT 確認',
-    doi:'10.1038/s41591-023-02696-8', file:null,
-    relations:[{targetId:'divarasib-mono', type:'builds_on'}] },
-];
+
 
 // === MSI-H / dMMR PAPERS ===
-const MSIH_PAPERS = [
-  { id:'kn177', year:2020, journal:'NEJM', studyType:'Phase 3 RCT',
-    n:307, regimen:'Pembrolizumab vs chemotherapy (1L)',
-    endpoint:'PFS (primary)', result:'mPFS 16.5 vs 8.2 mo, HR 0.60; ORR 43.8% vs 33.1%',
-    bottomLine:'Pembrolizumab 成為 MSI-H mCRC 一線標準——PFS 翻倍，Grade 3+ AE 僅 22% vs 66%',
-    doi:'10.1056/NEJMoa2017699', file:null,
-    relations:[] },
-  { id:'kn177-os', year:2022, journal:'Lancet Oncol', studyType:'Phase 3 RCT (final OS)',
-    n:307, regimen:'Pembrolizumab vs chemotherapy (1L)',
-    endpoint:'OS (final)', result:'mOS NR vs 36.7 mo, HR 0.74; 60% crossover',
-    bottomLine:'OS 趨勢有利但因 60% crossover 未達預設顯著性（HR 0.74, p=0.036 vs alpha 0.025）',
-    doi:'10.1016/S1470-2045(22)00197-8', file:null,
-    relations:[{targetId:'kn177', type:'supersedes'}] },
-  { id:'cm142-mono', year:2017, journal:'Lancet Oncol', studyType:'Phase 2',
-    n:74, regimen:'Nivolumab monotherapy (2L+)',
-    endpoint:'ORR', result:'ORR 31.1%, DCR 69%, 12-mo OS 73%',
-    bottomLine:'Nivolumab 單藥在 dMMR mCRC 有活性——開啟免疫治療在 CRC 的大門',
-    doi:'10.1016/S1470-2045(17)30422-9', file:null,
-    relations:[] },
-  { id:'cm142-combo', year:2018, journal:'JCO', studyType:'Phase 2',
-    n:119, regimen:'Nivolumab + ipilimumab (2L+)',
-    endpoint:'ORR', result:'ORR 55%, DCR 80%, 12-mo OS 85%',
-    bottomLine:'雙免疫 ORR 55%——較單藥大幅提升，Grade 3-4 AE 32%',
-    doi:'10.1200/JCO.2017.76.9901', file:null,
-    relations:[{targetId:'cm142-mono', type:'builds_on'}] },
-  { id:'cm142-1l', year:2021, journal:'JCO', studyType:'Phase 2',
-    n:45, regimen:'Nivolumab + low-dose ipilimumab (1L)',
-    endpoint:'ORR', result:'ORR 69%, CR 13%, 24-mo PFS 74%, 24-mo OS 79%',
-    bottomLine:'一線雙免疫 ORR 69%——最高反應率，但為 Phase 2 單臂',
-    doi:'10.1200/JCO.21.01015', file:null,
-    relations:[{targetId:'cm142-combo', type:'builds_on'}] },
-  { id:'niche', year:2020, journal:'Nat Med', studyType:'Phase 2 (exploratory)',
-    n:40, regimen:'Neoadjuvant nivo + ipi (colon)',
-    endpoint:'Pathological response', result:'dMMR: 100% path response, 60% pCR; pMMR: 27%',
-    bottomLine:'Neoadjuvant 免疫治療在 dMMR 結腸癌近乎 100% 有效——里程碑概念驗證',
-    doi:'10.1038/s41591-020-0805-8', file:null,
-    relations:[] },
-  { id:'niche2', year:2024, journal:'NEJM', studyType:'Phase 2',
-    n:115, regimen:'Neoadjuvant nivo + ipi → surgery (dMMR colon)',
-    endpoint:'pCR', result:'pCR 68%, path response 98%, 0 recurrences (f/u 26 mo)',
-    bottomLine:'NICHE-2 確認：neoadjuvant 雙免疫後 98% 病理反應、零復發。可能改變 dMMR 結腸癌的手術策略',
-    doi:'10.1056/NEJMoa2400634', file:null,
-    relations:[{targetId:'niche', type:'supersedes'}] },
-  { id:'dostarlimab', year:2022, journal:'NEJM', studyType:'Phase 2',
-    n:12, regimen:'Dostarlimab monotherapy (dMMR rectal)',
-    endpoint:'Clinical complete response', result:'cCR 100% (12/12), 免除手術和放療',
-    bottomLine:'12/12 dMMR 直腸癌達臨床完全緩解——「watch and wait without any treatment」的極致',
-    doi:'10.1056/NEJMoa2201445', file:null,
-    relations:[] },
-];
+
 
 // === HER2+ PAPERS ===
-const HER2_PAPERS = [
-  { id:'mypathway', year:2019, journal:'Lancet Oncol', studyType:'Phase 2a (basket)',
-    n:57, regimen:'Pertuzumab + trastuzumab',
-    endpoint:'ORR', result:'ORR 32% (1 CR, 17 PR)',
-    bottomLine:'Basket 試驗首次顯示 dual-HER2 blockade 在 HER2+ mCRC 有活性',
-    doi:'10.1016/S1470-2045(18)30904-5', file:null,
-    relations:[] },
-  { id:'triumph', year:2021, journal:'Nat Med', studyType:'Phase 2',
-    n:30, regimen:'Pertuzumab + trastuzumab (ctDNA-guided)',
-    endpoint:'ORR', result:'ORR 30% (tissue+), 28% (ctDNA+)',
-    bottomLine:'ctDNA 可作為 HER2 擴增的篩選工具——日本核准 pertuzumab+trastuzumab',
-    doi:'10.1038/s41591-021-01553-w', file:null,
-    relations:[{targetId:'mypathway', type:'builds_on'}] },
-  { id:'destiny-crc01', year:2021, journal:'Lancet Oncol', studyType:'Phase 2',
-    n:78, regimen:'Trastuzumab deruxtecan (T-DXd)',
-    endpoint:'ORR', result:'ORR 45.3% (HER2+ cohort); 0% in HER2-low',
-    bottomLine:'T-DXd 在 HER2+ mCRC 高度有效（ORR 45%），但僅限 IHC3+/ISH+。注意 ILD 風險',
-    doi:'10.1016/S1470-2045(21)00086-3', file:null,
-    relations:[] },
-  { id:'mountaineer', year:2023, journal:'Lancet Oncol', studyType:'Phase 2',
-    n:84, regimen:'Tucatinib + trastuzumab (RAS wt)',
-    endpoint:'ORR by BICR', result:'ORR 38.1% (3 CR, 29 PR)',
-    bottomLine:'首個 FDA 核准的 HER2 標靶方案用於 mCRC——口服 TKI 方便、耐受性佳',
-    doi:'10.1016/S1470-2045(23)00150-X', file:null,
-    relations:[{targetId:'mypathway', type:'builds_on'}] },
-  { id:'destiny-crc02', year:2024, journal:'Lancet Oncol', studyType:'Phase 2 RCT',
-    n:122, regimen:'T-DXd 5.4 vs 6.4 mg/kg',
-    endpoint:'ORR', result:'ORR 37.8% (5.4) vs 27.5% (6.4); RAS-mut 也有效',
-    bottomLine:'5.4 mg/kg 為最佳劑量。突破：RAS mutant + HER2+ 也有效（不同於 anti-HER2 mAb）',
-    doi:'10.1016/S1470-2045(24)00380-2', file:null,
-    relations:[{targetId:'destiny-crc01', type:'supersedes'}] },
-];
+
 
 // === TME DATA ===
-const TL_TME = [
-  { yr:'2017', venue:'JAMA', cls:'beacon', finding:'ROLARR<br>轉換率 NS<br>N=471', file:'https://doi.org/10.1001/jama.2017.7219' },
-  { yr:'2023', venue:'Ann Surg', cls:'beacon', finding:'COLRAR<br>TME 完整性 NS<br>N=295', file:'https://doi.org/10.1097/SLA.0000000000005788' },
-  { yr:'2024', venue:'EJSO', cls:'breakwater', finding:'Network MA<br>R-TME &gt; L-TME<br>病理結果', file:'https://doi.org/10.1016/j.ejso.2024.109481' },
-  { yr:'2025', venue:'JAMA', cls:'breakwater', finding:'REAL 試驗<br>局部復發 <strong>1.6%</strong><br>vs 4.0%', file:'https://doi.org/10.1001/jama.2025.8123' },
-  { yr:'2025', venue:'J Robot Surg', cls:'breakwater', finding:'RCT MA (7 trials)<br>併發症 OR <strong>0.70</strong>', file:'https://doi.org/10.1007/s11701-025-02628-3' },
-  { yr:'2025', venue:'J Robot Surg', cls:'breakwater', finding:'nCRT 後 MA<br>TME 完整 OR <strong>1.97</strong>', file:'https://doi.org/10.1007/s11701-025-02755-x' },
-  { yr:'2025', venue:'BJS Open', cls:'beacon', finding:'TaTME MA<br>65 studies<br>N=13972', file:'https://doi.org/10.1093/bjsopen/zraf111' },
-  { yr:'2026', venue:'BJS Open', cls:'beacon', finding:'瑞典登記研究<br>CRM NS · AL <strong>10.9%</strong><br>N=5874', file:'docs/robotic-surgery/Mertens_BJSOpen_2026_SwedishRegistry.html' },
-];
 
-const TME_METRICS = {
-  locoregional: {
-    label: '3 年局部復發率（%）', max: 8,
-    bars: [
-      { label:'Robotic\nREAL', val:1.6, hr:'0.45*', color:'var(--green)', trial:'REAL' },
-      { label:'Lap\nREAL', val:4.0, hr:'Ref', color:'#a0aec0', trial:'REAL' },
-      { label:'Robotic\nROLARR', val:null, hr:'—', color:'var(--green)', trial:'ROLARR', ongoing:true },
-      { label:'Lap\nROLARR', val:null, hr:'—', color:'#a0aec0', trial:'ROLARR', ongoing:true },
-    ]
-  },
-  dfs: {
-    label: '3 年 DFS（%）', max: 100,
-    bars: [
-      { label:'Robotic\nREAL', val:87.2, hr:'0.74*', color:'var(--green)', trial:'REAL' },
-      { label:'Lap\nREAL', val:83.4, hr:'Ref', color:'#a0aec0', trial:'REAL' },
-      { label:'Robotic\nCOLRAR', val:null, hr:'N/R', color:'var(--green)', trial:'COLRAR', ongoing:true },
-      { label:'Lap\nCOLRAR', val:null, hr:'N/R', color:'#a0aec0', trial:'COLRAR', ongoing:true },
-    ]
-  },
-  conversion: {
-    label: '轉換率（%）', max: 18,
-    bars: [
-      { label:'Robotic\nROLARR', val:8.1, hr:'OR 0.61', color:'var(--green)', trial:'ROLARR' },
-      { label:'Lap\nROLARR', val:12.2, hr:'Ref', color:'#a0aec0', trial:'ROLARR' },
-      { label:'Robotic\nMA 2025', val:2.7, hr:'OR 0.27', color:'var(--accent)', trial:'MA' },
-      { label:'Lap\nMA 2025', val:9.5, hr:'Ref', color:'#cbd5e0', trial:'MA' },
-      { label:'Robotic\nSwedish', val:9.1, hr:'OR 0.51', color:'var(--green)', trial:'Swedish' },
-      { label:'Lap\nSwedish', val:16.1, hr:'Ref', color:'#a0aec0', trial:'Swedish' },
-    ]
-  },
-  crm: {
-    label: 'CRM 陽性率（%）', max: 10,
-    bars: [
-      { label:'Robotic\nROLARR', val:5.1, hr:'OR 0.78', color:'var(--green)', trial:'ROLARR' },
-      { label:'Lap\nROLARR', val:6.3, hr:'Ref', color:'#a0aec0', trial:'ROLARR' },
-      { label:'Robotic\nCOLRAR', val:0, hr:'0%*', color:'var(--accent)', trial:'COLRAR' },
-      { label:'Lap\nCOLRAR', val:6.1, hr:'Ref', color:'#cbd5e0', trial:'COLRAR' },
-      { label:'Robotic\nSwedish', val:6.5, hr:'OR 0.99', color:'var(--green)', trial:'Swedish' },
-      { label:'Lap\nSwedish', val:5.9, hr:'Ref', color:'#a0aec0', trial:'Swedish' },
-    ]
-  }
-};
 
-const TME_CARDS = [
-  { title:'REAL 試驗（JAMA 2025）— 里程碑 RCT', tag:'REAL', body:`
-    <p><strong>首次 RCT 證實 robotic TME 的腫瘤學優勢</strong></p>
-    <p>多中心、優越性 RCT，中國 11 中心，N=1171（中低位直腸腺癌 cT1-3 N0-1）</p>
-    <table>
-      <tr><th></th><th>Robotic (n=586)</th><th>Lap (n=585)</th><th>HR / p</th></tr>
-      <tr><td>3 年局部復發</td><td><strong>1.6%</strong></td><td>4.0%</td><td>HR 0.45, p=0.03</td></tr>
-      <tr><td>3 年 DFS</td><td><strong>87.2%</strong></td><td>83.4%</td><td>HR 0.74, p=0.04</td></tr>
-      <tr><td>3 年 OS</td><td>94.7%</td><td>93.0%</td><td>NS</td></tr>
-    </table>
-    <p>Robotic 組在術後 3、6、12 個月的泌尿功能、性功能和排便功能均顯著較佳。</p>
-    <div class="note">REAL 是第一個證實 robotic 在腫瘤學結果上優於 laparoscopic 的大型 RCT，將 robotic rectal surgery 的證據等級從「非劣性」推向「優越性」。</div>
-    <p><a href="https://doi.org/10.1001/jama.2025.8123" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1001/jama.2025.8123</a></p>` },
-  { title:'ROLARR 試驗（JAMA 2017）— 經典 RCT', tag:'ROLARR', body:`
-    <p>多中心 RCT，10 國 29 中心，N=471</p>
-    <table>
-      <tr><th></th><th>Robotic (n=237)</th><th>Lap (n=234)</th><th>p</th></tr>
-      <tr><td>轉換率（主要終點）</td><td>8.1%</td><td>12.2%</td><td>0.16 (NS)</td></tr>
-      <tr><td>CRM+</td><td>5.1%</td><td>6.3%</td><td>0.56</td></tr>
-    </table>
-    <p>所有預設次要終點（併發症、病理、QoL、泌尿/性功能）均無顯著差異。</p>
-    <div class="note">ROLARR 的結論是 robotic 未顯著降低轉換率。但批評者指出：許多參與醫師 robotic 經驗不足（learning curve 問題），且主要終點選擇（轉換率）可能不是最佳指標。</div>
-    <p><a href="https://doi.org/10.1001/jama.2017.7219" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1001/jama.2017.7219</a></p>` },
-  { title:'COLRAR 試驗（Ann Surg 2023）', tag:'COLRAR', body:`
-    <p>韓國多中心 RCT，N=295（因收案困難提前終止）</p>
-    <table>
-      <tr><th></th><th>Robotic (n=151)</th><th>Lap (n=144)</th></tr>
-      <tr><td>TME 完整性（主要終點）</td><td>80.7%</td><td>77.1% (NS)</td></tr>
-      <tr><td>CRM+ 亞分析</td><td><strong>0%</strong></td><td>6.1% (p=0.031)</td></tr>
-      <tr><td>鴉片類使用時間</td><td colspan="2">Robotic 較短 (p=0.028)</td></tr>
-    </table>
-    <div class="note">TME 完整性未達顯著差異，但 CRM 陽性率在亞分析中 robotic 顯著較低（0% vs 6.1%）。提前終止限制了統計效力。</div>
-    <p><a href="https://doi.org/10.1097/SLA.0000000000005788" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1097/SLA.0000000000005788</a></p>` },
-  { title:'RCT Meta-analysis 2025（7 trials, N=1731）', tag:'MA 2025', body:`
-    <p>納入 7 個 RCT 的統合分析</p>
-    <table>
-      <tr><th>結果指標</th><th>Robotic 優勢</th><th>效果量</th></tr>
-      <tr><td>腸功能恢復時間</td><td>&#x2713;</td><td>-0.62 天</td></tr>
-      <tr><td>重大併發症</td><td>&#x2713;</td><td>OR 0.70</td></tr>
-      <tr><td>轉換率</td><td>&#x2713;</td><td>OR 0.27</td></tr>
-      <tr><td>CRM 陽性</td><td>&#x2713;</td><td>OR 0.62</td></tr>
-      <tr><td>手術時間</td><td>&#x2717;</td><td>+22.7 min</td></tr>
-      <tr><td>TME 完整性</td><td>—</td><td>NS</td></tr>
-    </table>
-    <p><a href="https://doi.org/10.1007/s11701-025-02628-3" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1007/s11701-025-02628-3</a></p>` },
-  { title:'Bayesian Network MA 2024（27 RCTs, N=8696）', tag:'NMA 2024', body:`
-    <p>比較四種手術方式：Robotic / TaTME / Laparoscopic / Open</p>
-    <table>
-      <tr><th>排名（SUCRA）</th><th>TME 完整性</th><th>CRM 陰性</th><th>淋巴結數</th></tr>
-      <tr><td>第 1</td><td>TaTME</td><td>TaTME</td><td><strong>Robotic</strong></td></tr>
-      <tr><td>第 2</td><td><strong>Robotic</strong></td><td><strong>Robotic</strong></td><td>Open</td></tr>
-    </table>
-    <p>Robotic 和 TaTME 的病理結果均優於 laparoscopic TME。</p>
-    <p><a href="https://doi.org/10.1016/j.ejso.2024.109481" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1016/j.ejso.2024.109481</a></p>` },
-  { title:'瑞典全國登記研究（BJS Open 2026, N=5874）', tag:'Swedish Registry', body:`
-    <p><strong>Mertens et al.</strong> — 瑞典結直腸癌登記資料庫大型回顧性世代研究（2014&ndash;2021），真實世界 robotic vs laparoscopic 直腸癌手術短期結果</p>
-    <table>
-      <tr><th></th><th>Robotic</th><th>Lap</th><th>效果量</th></tr>
-      <tr><td>CRM 陽性率（主要終點）</td><td>6.5%</td><td>5.9%</td><td>OR 0.99（NS）</td></tr>
-      <tr><td>轉換開腹率</td><td><strong>9.1%</strong></td><td>16.1%</td><td>OR 0.51</td></tr>
-      <tr><td>TME 完整性</td><td colspan="2">Robotic 較差</td><td>OR 0.66</td></tr>
-      <tr><td>吻合口滲漏率</td><td>10.9%</td><td>7.4%</td><td>顯著較高</td></tr>
-    </table>
-    <div class="note">真實世界大型登記研究顯示機器人直腸手術無 CRM 優勢，吻合口滲漏率更高，TME 品質反較差，僅轉換率有利。此結果 contradicts 2024 Network MA 的病理優勢結論，並與 REAL (2025) 形成張力；學習曲線與技術標準化為關鍵議題。</div>
-    <p><a href="docs/robotic-surgery/Mertens_BJSOpen_2026_SwedishRegistry.html" target="_blank" rel="noopener noreferrer">&#x1F4D6; 詳細頁面</a> &middot; <a href="https://doi.org/10.1093/bjsopen/zrag050" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1093/bjsopen/zrag050</a></p>` },
-];
+
+
+
 
 // === CONFERENCE HIGHLIGHTS ===
-const CONF_HIGHLIGHTS = [
-  { date: '2026-01', conf: 'ASCO GI', title: 'BREAKWATER Cohort 3: EC+FOLFIRI 1L ORR 64.4%', link: 'docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html' },
-  { date: '2025-10', conf: 'ESMO', title: 'BREAKWATER ctDNA dynamics — chemo suppresses resistance clones', link: 'docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_ctDNA.html' },
-  { date: '2025-10', conf: 'ESMO', title: 'BREAKWATER subsequent Tx — 1L EC+chemo > sequential', link: 'docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.html' },
-  { date: '2025-06', conf: 'ASCO', title: 'STELLAR-303: zanzalintinib+atezo vs regorafenib in MSS mCRC (Phase 3)', link: 'https://doi.org/10.1016/S0140-6736(25)02025-2' },
-];
+
 
 function renderConferences() {
   const el = document.getElementById('conf-timeline');
@@ -1559,87 +1197,9 @@ function renderTmeChart() {
 }
 
 // === ANASTOMOSIS DATA ===
-const TL_ANAST = [
-  { yr:'2021', venue:'SLET', cls:'beacon', finding:'IVEA RCT<br>ICA SSI <strong>3.7%</strong><br>vs ECA 16.7%', file:'https://doi.org/10.1097/SLE.0000000000000937' },
-  { yr:'2022', venue:'Ann Surg', cls:'beacon', finding:'Robotic ICA RCT<br>QoR-15 NS<br>N=89', file:'https://doi.org/10.1097/SLA.0000000000005254' },
-  { yr:'2023', venue:'IJCD', cls:'beacon', finding:'ICA MA (7 RCTs)<br>腸阻塞 RR <strong>0.62</strong>', file:'https://doi.org/10.1007/s00384-023-04445-2' },
-  { yr:'2024', venue:'Colorectal Dis', cls:'breakwater', finding:'RiSSA + NOSE<br>Video vignette', file:'https://doi.org/10.1111/codi.17211' },
-  { yr:'2024', venue:'IJCD', cls:'breakwater', finding:'TTSS 初始系列<br>AL <strong>9.1%</strong><br>N=22', file:'https://doi.org/10.1007/s00384-024-04646-3' },
-  { yr:'2024', venue:'Tech Coloproctol', cls:'breakwater', finding:'RPC-RiSSA<br>St Mark\'s<br>AL <strong>0%</strong>', file:'https://doi.org/10.1007/s10151-024-03021-2' },
-  { yr:'2025', venue:'J Robot Surg', cls:'breakwater', finding:'RiSSA vs DSA<br>AL <strong>0%</strong> vs 9.5%<br>N=49', file:'https://doi.org/10.1007/s11701-025-02609-6' },
-  { yr:'2025', venue:'Ann Coloproctol', cls:'breakwater', finding:'RiSSA<br>Technical note', file:'https://doi.org/10.3393/ac.2025.00486.0069' },
-  { yr:'2026', venue:'IJCD', cls:'breakwater', finding:'RiSSA Learning<br>RA-CUSUM<br><strong>17 例</strong>', file:'https://doi.org/10.1007/s00384-025-05078-3' },
-  { yr:'2026', venue:'DCR', cls:'breakwater', finding:'Safe Anast Project<br>SST+reinf <strong>6.3%</strong>', file:'https://doi.org/10.1097/DCR.0000000000004107' },
-];
 
-const ANAST_CARDS = [
-  { title:'RiSSA vs DSA Pilot Study（J Robot Surg 2025）', tag:'RiSSA', body:`
-    <p><strong>Wu/Huang, 高雄榮總</strong> — Robotic intracorporeal single-stapled vs extracorporeal double-stapled anastomosis</p>
-    <p>N=49（RiSSA 31, DSA 18），左側大腸直腸癌，IPTW 校正</p>
-    <table>
-      <tr><th></th><th>RiSSA (n=31)</th><th>DSA (n=18)</th></tr>
-      <tr><td>吻合滲漏</td><td><strong>0%</strong></td><td>9.5%</td></tr>
-      <tr><td>手術時間</td><td colspan="2">RiSSA 較短</td></tr>
-      <tr><td>腸功能恢復</td><td colspan="2">RiSSA 較快</td></tr>
-      <tr><td>住院天數</td><td colspan="2">RiSSA 較短</td></tr>
-      <tr><td>造口率</td><td colspan="2">RiSSA 較低</td></tr>
-    </table>
-    <p><a href="https://doi.org/10.1007/s11701-025-02609-6" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1007/s11701-025-02609-6</a></p>` },
-  { title:'RiSSA Learning Curve — RA-CUSUM（IJCD 2026）', tag:'RiSSA', body:`
-    <p><strong>Huang/Wu, 高雄榮總</strong> — 36 例連續 RiSSA 的學習曲線分析</p>
-    <p>使用影片標準化 8 個時間點，RA-CUSUM 分析</p>
-    <table>
-      <tr><th>指標</th><th>轉折點</th></tr>
-      <tr><td>Pure RiSSA interval</td><td><strong>第 17 例</strong></td></tr>
-      <tr><td>Purse-string suture time</td><td><strong>第 11 例</strong></td></tr>
-    </table>
-    <p>技術效率在轉折點後顯著改善。提供可重現的技術評估指標。</p>
-    <p><a href="https://doi.org/10.1007/s00384-025-05078-3" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1007/s00384-025-05078-3</a></p>` },
-  { title:'RiSSA Technical Note（Ann Coloproctol 2025）', tag:'RiSSA', body:`
-    <p><strong>Wu/Huang, 高雄榮總 + St Mark\'s</strong></p>
-    <p>詳細描述 robotic 左側大腸直腸切除術中 RiSSA 的標準化技術步驟。</p>
-    <p><a href="https://doi.org/10.3393/ac.2025.00486.0069" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.3393/ac.2025.00486.0069</a></p>` },
-  { title:'RiSSA + NOSE Video Vignette（Colorectal Dis 2024）', tag:'RiSSA', body:`
-    <p><strong>Huang/Wu, 高雄榮總</strong></p>
-    <p>影片展示 RiSSA 結合 Natural Orifice Specimen Extraction（NOSE）應用於 robotic TME 的完整手術流程。</p>
-    <p><a href="https://doi.org/10.1111/codi.17211" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1111/codi.17211</a></p>` },
-  { title:'RPC-RiSSA at St Mark\'s（Tech Coloproctol 2024）', tag:'RiSSA / FAP', body:`
-    <p><strong>Alves Martins/Faiz, St Mark\'s Hospital</strong></p>
-    <p>FAP 病患接受 RPC-RiSSA（自 2019 年導入）：吻合滲漏 <strong>0%</strong>，對比傳統 RPC 的 9%（p=0.3）。</p>
-    <p>253 例 FAP 恢復性手術，15 年經驗，展示技術演進。</p>
-    <p><a href="https://doi.org/10.1007/s10151-024-03021-2" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1007/s10151-024-03021-2</a></p>` },
-  { title:'ICA vs ECA Meta-analysis（IJCD 2023, 7 RCTs）', tag:'ICA vs ECA', body:`
-    <p>7 個 RCT 的統合分析（N=750），比較腹腔內吻合 vs 體外吻合</p>
-    <table>
-      <tr><th>指標</th><th>ICA 優勢？</th><th>效果量</th></tr>
-      <tr><td>術後腸阻塞</td><td>&#x2713;</td><td>RR 0.62, p=0.04</td></tr>
-      <tr><td>切口長度</td><td>&#x2713;</td><td>-1.38 cm, p&lt;0.00001</td></tr>
-      <tr><td>手術時間</td><td>&#x2717;</td><td>+10.7 min, p=0.008</td></tr>
-      <tr><td>滲漏率</td><td>—</td><td>NS</td></tr>
-      <tr><td>住院天數</td><td>—</td><td>NS</td></tr>
-    </table>
-    <p><a href="https://doi.org/10.1007/s00384-023-04445-2" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1007/s00384-023-04445-2</a></p>` },
-  { title:'Robotic ICA vs ECA RCT（Ann Surg 2022）', tag:'ICA vs ECA', body:`
-    <p><strong>Dohrn et al.</strong> — 多中心三盲 RCT，N=89，robotic right colectomy</p>
-    <p>在優化的 ERAS 環境下，ICA vs ECA 在 QoR-15（主要終點）上無顯著差異。ICA 吻合時間較長（17 vs 13 min, p=0.003）。其餘手術和病理指標均無差異。</p>
-    <p><a href="https://doi.org/10.1097/SLA.0000000000005254" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1097/SLA.0000000000005254</a></p>` },
-  { title:'Safe Anastomosis Project（DCR 2026）', tag:'SST', body:`
-    <p><strong>Kim et al., Kyungpook National University</strong></p>
-    <p>前瞻性世代研究，N=99，評估「延後造口」策略</p>
-    <table>
-      <tr><th>技術組別</th><th>保護性造口率</th><th>滲漏率</th></tr>
-      <tr><td>SST + reinforcement</td><td><strong>18.8%</strong></td><td><strong>6.3%</strong></td></tr>
-      <tr><td>SST alone</td><td>—</td><td>—</td></tr>
-      <tr><td>DST + reinforcement</td><td>—</td><td>—</td></tr>
-    </table>
-    <p>SST + reinforcement + robotic 組合展現最佳結果。78.1% 使用機器人手術。</p>
-    <p><a href="https://doi.org/10.1097/DCR.0000000000004107" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1097/DCR.0000000000004107</a></p>` },
-  { title:'TTSS — 經肛門橫斷 + SSA（IJCD 2024）', tag:'SST', body:`
-    <p><strong>Vivas López et al.</strong> — 初始 22 例系列</p>
-    <p>中低位直腸癌，腹腔鏡 TME + transanal transection + single-stapled anastomosis</p>
-    <p>滲漏率 9.1%，住院中位數 5 天，全部達完整 TME + 切緣陰性。</p>
-    <p><a href="https://doi.org/10.1007/s00384-024-04646-3" target="_blank" rel="noopener noreferrer">&#x1F4C4; DOI: 10.1007/s00384-024-04646-3</a></p>` },
-];
+
+
 
 function renderAnast() {
   // Timeline

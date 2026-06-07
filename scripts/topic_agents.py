@@ -5,60 +5,39 @@ treatment landscape) so it can explain WHY a new finding matters in context.
 """
 
 import json
-import re
 from pathlib import Path
 
-from config import INDEX_HTML
+from config import PROJECT_ROOT
+
+PAPERS_JSON = PROJECT_ROOT / "data" / "papers.json"
 
 # ---------------------------------------------------------------------------
-# Extract existing papers from index.html at import time
+# Load existing papers from data/papers.json (single source of truth)
 # ---------------------------------------------------------------------------
 
-def _extract_papers_from_html():
-    """Parse all *_PAPERS arrays from index.html into a dict keyed by topic."""
-    html = INDEX_HTML.read_text(encoding="utf-8")
+def _load_papers_json():
+    """Load papers data from JSON. Returns dict keyed by topic."""
+    if not PAPERS_JSON.exists():
+        return {}, {}
 
-    topic_map = {
-        "BRAF_PAPERS": "mCRC-BRAF-V600E",
-        "RASWT_PAPERS": "mCRC-RAS-wt",
-        "G12C_PAPERS": "mCRC-KRAS-G12C",
-        "MSIH_PAPERS": "mCRC-MSI-H",
-        "HER2_PAPERS": "mCRC-HER2",
-    }
+    with open(PAPERS_JSON) as f:
+        data = json.load(f)
 
+    # Papers as formatted strings for system prompt injection
     papers_by_topic = {}
-    for var_name, topic in topic_map.items():
-        pattern = rf"const {var_name}\s*=\s*\[(.*?)\];"
-        match = re.search(pattern, html, re.DOTALL)
-        if match:
-            papers_by_topic[topic] = match.group(1).strip()
-
-    return papers_by_topic
-
-
-_PAPERS_JS = _extract_papers_from_html()
-
-
-def _extract_metrics_from_html():
-    """Parse METRICS and TME_METRICS from index.html."""
-    html = INDEX_HTML.read_text(encoding="utf-8")
-
-    metrics_map = {
-        "METRICS": "mCRC-BRAF-V600E",
-        "TME_METRICS": "robotic-surgery",
-    }
-
     metrics_by_topic = {}
-    for var_name, topic in metrics_map.items():
-        pattern = rf"const {var_name}\s*=\s*(\{{.*?\}});"
-        match = re.search(pattern, html, re.DOTALL)
-        if match:
-            metrics_by_topic[topic] = match.group(1).strip()
+    for topic, topic_data in data.items():
+        papers = topic_data.get("papers", [])
+        if papers:
+            papers_by_topic[topic] = json.dumps(papers, indent=2, ensure_ascii=False)
+        metrics = topic_data.get("metrics")
+        if metrics:
+            metrics_by_topic[topic] = json.dumps(metrics, indent=2, ensure_ascii=False)
 
-    return metrics_by_topic
+    return papers_by_topic, metrics_by_topic
 
 
-_METRICS_JS = _extract_metrics_from_html()
+_PAPERS_JS, _METRICS_JS = _load_papers_json()
 
 # ---------------------------------------------------------------------------
 # Topic-specific system prompts

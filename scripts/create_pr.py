@@ -148,120 +148,83 @@ h1 {{ font-size: 1.3rem; color: #1a365d; border-bottom: 2px solid #3182ce; paddi
 </html>"""
 
 
-def insert_js_object(topic, js_obj):
-    """Insert a new paper JS object into the appropriate array in index.html.
+PAPERS_JSON = PROJECT_ROOT / "data" / "papers.json"
 
+
+def insert_js_object(topic, js_obj):
+    """Insert a new paper into data/papers.json.
+
+    Reads JSON, appends to the topic's papers array, writes back.
+    No regex. No index.html modification.
     Returns True if successful.
     """
-    t = topic_from_str(topic)
-    var_name = TOPIC_JS_VAR.get(t) if t else None
-    if not var_name:
-        print(f"  [WARN] No JS array mapping for topic: {topic}", file=sys.stderr)
-        return False
-    html = INDEX_HTML.read_text(encoding="utf-8")
-
-    # Format the JS object
-    js_str = json.dumps(js_obj, indent=2, ensure_ascii=False)
-    # Convert JSON to JS style (unquote keys, single quotes for values)
-    # Keep it as valid JSON-in-JS for simplicity — it's valid either way
-    js_entry = "  " + js_str.replace("\n", "\n  ")
-
-    # Find the closing ]; of the array and insert before it
-    pattern = rf"(const {var_name}\s*=\s*\[.*?)(^\];)"
-    match = re.search(pattern, html, re.DOTALL | re.MULTILINE)
-    if not match:
-        print(f"  [ERROR] Could not find {var_name} array in index.html", file=sys.stderr)
+    if not PAPERS_JSON.exists():
+        print(f"  [ERROR] data/papers.json not found", file=sys.stderr)
         return False
 
-    # Insert new entry before the closing ];
-    insertion_point = match.start(2)
-    new_html = html[:insertion_point] + js_entry + ",\n" + html[insertion_point:]
-    INDEX_HTML.write_text(new_html, encoding="utf-8")
+    with open(PAPERS_JSON) as f:
+        data = json.load(f)
+
+    if topic not in data:
+        print(f"  [WARN] Unknown topic in papers.json: {topic}", file=sys.stderr)
+        return False
+
+    data[topic]["papers"].append(js_obj)
+
+    with open(PAPERS_JSON, "w") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
     return True
 
 
 def apply_chart_updates(topic, chart_updates):
-    """Apply chart bar additions/updates to the METRICS object in index.html.
+    """Apply chart bar additions/updates to data/papers.json metrics.
 
-    chart_updates is a dict like:
-    {
-      "mOS": {"action": "add", "bar": {...}, "new_max": 35},
-      "ORR": {"action": "update", "match_label": "EC+\\nFOLFIRI", "updates": {"val": 64.4}}
-    }
+    No regex. Reads JSON, modifies dict, writes back.
     """
     t = topic_from_str(topic)
     metrics_var = TOPIC_METRICS_VAR.get(t) if t else None
     if not metrics_var or not chart_updates:
         return False
 
-    html = INDEX_HTML.read_text(encoding="utf-8")
+    with open(PAPERS_JSON) as f:
+        data = json.load(f)
+
+    metrics = data.get(topic, {}).get("metrics")
+    if not metrics:
+        return False
+
     modified = False
-
     for metric_key, update in chart_updates.items():
-        action = update.get("action")
+        if metric_key not in metrics:
+            continue
 
+        action = update.get("action")
         if action == "add":
             bar = update.get("bar", {})
-            bar_str = json.dumps(bar, ensure_ascii=False)
-
-            # Find the bars array for this metric within the METRICS var
-            # Pattern: metric_key: { ... bars: [ ... ] }
-            # We need to find the closing ] of the bars array for this metric
-            metric_pattern = rf'({metric_key}\s*:\s*\{{[^}}]*bars\s*:\s*\[)(.*?)(\s*\])'
-            match = re.search(metric_pattern, html, re.DOTALL)
-            if match:
-                # Insert new bar before the closing ]
-                html = html[:match.end(2)] + ",\n      " + bar_str + html[match.end(2):]
-                modified = True
-                print(f"  [Chart] Added bar to {metric_key}: {bar.get('label', '?')}")
+            metrics[metric_key]["bars"].append(bar)
+            modified = True
+            print(f"  [Chart] Added bar to {metric_key}: {bar.get('label', '?')}")
 
         elif action == "update":
             match_label = update.get("match_label", "")
             updates = update.get("updates", {})
-            if match_label and updates:
-                # Find the bar with this label and update its values
-                # Use a simple approach: find the bar object containing this label
-                escaped_label = re.escape(match_label)
-                bar_pattern = rf"(\{{\s*label\s*:\s*'{escaped_label}'[^}}]*)\}}"
-                match = re.search(bar_pattern, html)
-                if match:
-                    bar_text = match.group(1)
-                    new_bar_text = bar_text
-                    for key, value in updates.items():
-                        if isinstance(value, bool):
-                            val_str = "true" if value else "false"
-                        elif value is None:
-                            val_str = "null"
-                        elif isinstance(value, (int, float)):
-                            val_str = str(value)
-                        else:
-                            val_str = f"'{value}'"
-
-                        # Replace or append the key
-                        key_pattern = rf"{key}\s*:\s*[^,}}]+"
-                        if re.search(key_pattern, new_bar_text):
-                            new_bar_text = re.sub(key_pattern, f"{key}:{val_str}", new_bar_text)
-                        else:
-                            new_bar_text += f", {key}:{val_str}"
-
-                    html = html.replace(bar_text, new_bar_text)
+            for bar in metrics[metric_key]["bars"]:
+                if bar.get("label") == match_label:
+                    bar.update(updates)
                     modified = True
                     print(f"  [Chart] Updated bar '{match_label}' in {metric_key}")
+                    break
 
-        # Update max if specified
         new_max = update.get("new_max")
-        if new_max:
-            max_pattern = rf"({metric_key}\s*:\s*\{{[^}}]*max\s*:\s*)(\d+)"
-            match = re.search(max_pattern, html)
-            if match:
-                current_max = int(match.group(2))
-                if new_max > current_max:
-                    html = html[:match.start(2)] + str(new_max) + html[match.end(2):]
-                    modified = True
-                    print(f"  [Chart] Updated {metric_key} max: {current_max} → {new_max}")
+        if new_max and new_max > metrics[metric_key].get("max", 0):
+            metrics[metric_key]["max"] = new_max
+            modified = True
+            print(f"  [Chart] Updated {metric_key} max → {new_max}")
 
     if modified:
-        INDEX_HTML.write_text(html, encoding="utf-8")
+        with open(PAPERS_JSON, "w") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
 
     return modified
 
