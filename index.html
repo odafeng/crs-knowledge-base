@@ -317,6 +317,14 @@
     </div>
     <div class="sc-arrow">&#x203A;</div>
   </div>
+  <div class="sub-card" onclick="navigate('v-generic','mCRC 後線治療','mCRC &rsaquo; Agnostic')">
+    <div class="sc-icon">&#x1F4CB;</div>
+    <div class="sc-body">
+      <div class="sc-title">後線治療（Agnostic / 3L+）</div>
+      <div class="sc-desc">TAS-102/SUNLIGHT &middot; fruquintinib &middot; regorafenib &middot; NMA</div>
+    </div>
+    <div class="sc-arrow">&#x203A;</div>
+  </div>
 </div>
 
 <!-- RAS-wt Anti-EGFR Page -->
@@ -472,6 +480,30 @@
   <div class="ev-section">
     <h3>&#x1F4D6; 結構化試驗卡片</h3>
     <div id="her2-cards"></div>
+  </div>
+</div>
+
+<!-- mCRC Agnostic / Later-line (generic-CRS) Page -->
+<div class="view" id="v-generic">
+  <div class="ev-section">
+    <h3>&#x1F48A; 後線治療概覽（3L+ mCRC）</h3>
+    <div class="ev-card">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>&#x1F7E2; Biomarker-agnostic 後線方案</h4><span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">
+        <p>難治型 mCRC 三線以上（3L+）治療選項，不以特定 biomarker 為主軸。主要方案包含 FTD-TPI（TAS-102）&plusmn; bevacizumab（SUNLIGHT）、fruquintinib（FRESCO）及 regorafenib。</p>
+        <div class="note">最新 NMA（Hoyek, Dig Liver Dis 2025）確立 FTD-TPI + bevacizumab 於整體族群療效最佳；曾接受 anti-VEGF 治療者，fruquintinib 或 regorafenib 80 mg 漸增劑量為可比較替代選項。</div>
+      </div>
+    </div>
+  </div>
+  <div class="ev-section">
+    <h3>&#x1F4C5; 證據時間軸</h3>
+    <div class="timeline-scroll"><div class="timeline" id="tl-generic"></div></div>
+  </div>
+  <div class="ev-section">
+    <h3>&#x1F4D6; 結構化試驗卡片</h3>
+    <div id="generic-cards"></div>
   </div>
 </div>
 
@@ -897,6 +929,7 @@ const VIEW_META = {
   'v-krasg12c': { title: 'KRAS G12C', sub: 'G12C 抑制劑' },
   'v-msih': { title: 'MSI-H / dMMR', sub: '免疫治療' },
   'v-her2': { title: 'HER2', sub: 'HER2 標靶治療' },
+  'v-generic': { title: 'mCRC 後線治療', sub: 'Agnostic / 3L+ 治療' },
   'v-conferences': { title: '醫學會議專區', sub: 'Conference Highlights' },
   'v-robotic': { title: '機器人手術', sub: 'Robotic Surgery' },
   'v-robotic-tme': { title: 'Robotic TME', sub: '全直腸繫膜切除' },
@@ -925,6 +958,7 @@ function _activateView(viewId, title, subtitle) {
   if (viewId === 'v-krasg12c') renderTopic(G12C_PAPERS, 'tl-g12c', 'g12c-cards');
   if (viewId === 'v-msih') renderTopic(MSIH_PAPERS, 'tl-msih', 'msih-cards');
   if (viewId === 'v-her2') renderTopic(HER2_PAPERS, 'tl-her2', 'her2-cards');
+  if (viewId === 'v-generic') renderTopic(GENERIC_PAPERS, 'tl-generic', 'generic-cards');
   if (viewId === 'v-conferences') renderConferences();
   if (viewId === 'v-robotic-tme') renderTME();
   if (viewId === 'v-robotic-anast') renderAnast();
@@ -961,6 +995,7 @@ let RASWT_PAPERS = [];
 let G12C_PAPERS = [];
 let MSIH_PAPERS = [];
 let HER2_PAPERS = [];
+let GENERIC_PAPERS = [];
 let METRICS = {};
 let TME_METRICS = {};
 let TL_TME = [];
@@ -977,6 +1012,7 @@ fetch('./data/papers.json')
     G12C_PAPERS = data['mCRC-KRAS-G12C'].papers || [];
     MSIH_PAPERS = data['mCRC-MSI-H'].papers || [];
     HER2_PAPERS = data['mCRC-HER2'].papers || [];
+    GENERIC_PAPERS = data['generic-CRS'].papers || [];
     METRICS = data['mCRC-BRAF-V600E'].metrics || {};
     TME_METRICS = data['robotic-surgery'].metrics || {};
     TL_TME = data['robotic-surgery'].tl_tme || [];
