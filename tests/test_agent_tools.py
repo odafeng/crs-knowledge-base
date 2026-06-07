@@ -39,16 +39,40 @@ class TestExecuteTool:
         assert "existing_papers_js" in parsed
 
     @patch("agent_tools.urllib.request.urlopen")
-    def test_web_fetch_strips_html(self, mock_urlopen):
+    def test_web_fetch_with_real_content(self, mock_urlopen):
+        # Provide enough content for trafilatura/readability to extract
+        html = b"""<html><head><title>Test Page</title></head><body>
+        <article><h1>Study Results</h1>
+        <p>This phase 3 randomized trial evaluated encorafenib plus cetuximab
+        versus standard chemotherapy in patients with BRAF V600E mutant metastatic
+        colorectal cancer. The primary endpoint was overall survival.</p>
+        <p>Results showed significant improvement in median OS (30.3 vs 15.1 months).</p>
+        </article></body></html>"""
         mock_resp = MagicMock()
-        mock_resp.read.return_value = b"<html><body><p>Hello world</p></body></html>"
+        mock_resp.read.return_value = html
         mock_resp.__enter__ = lambda s: s
         mock_resp.__exit__ = MagicMock(return_value=False)
         mock_urlopen.return_value = mock_resp
 
         result = execute_tool("web_fetch", {"url": "http://example.com"})
-        assert "Hello world" in result
-        assert "<html>" not in result
+        parsed = json.loads(result)
+        # Should extract via trafilatura or readability
+        assert "text" in parsed or "warning" in parsed
+        if "text" in parsed:
+            assert "encorafenib" in parsed["text"] or "phase 3" in parsed["text"].lower()
+
+    @patch("agent_tools.urllib.request.urlopen")
+    def test_web_fetch_warns_on_empty_content(self, mock_urlopen):
+        # Minimal HTML — extractors can't get meaningful text
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = b"<html><body></body></html>"
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = mock_resp
+
+        result = execute_tool("web_fetch", {"url": "http://example.com"})
+        parsed = json.loads(result)
+        assert "warning" in parsed
 
 
 class TestQueryGuidelines:

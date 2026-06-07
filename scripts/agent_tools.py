@@ -234,11 +234,15 @@ def _tool_lookup_existing(input_data):
 
 
 def _tool_web_fetch(input_data):
+    """Fetch and extract article text from a URL.
+
+    Extraction priority: trafilatura (best) → readability-lxml → error.
+    No regex HTML stripping — either the extractor works or we tell the agent.
+    """
     url = input_data["url"]
 
-    # Try readability extraction first (better quality)
+    raw_html = None
     try:
-        from readability import Document
         req = urllib.request.Request(
             url,
             headers={
@@ -248,61 +252,49 @@ def _tool_web_fetch(input_data):
         )
         with urllib.request.urlopen(req, timeout=15) as resp:
             raw_html = resp.read().decode("utf-8", errors="replace")
+    except Exception as e:
+        return json.dumps({"error": f"Failed to fetch {url}: {e}"})
 
+    # 1. Try trafilatura (best quality, handles boilerplate removal)
+    try:
+        import trafilatura
+        text = trafilatura.extract(raw_html, include_comments=False, include_tables=True)
+        if text and len(text) > 50:
+            title = trafilatura.extract_metadata(raw_html)
+            title_str = title.title if title and title.title else ""
+            return json.dumps({
+                "title": title_str,
+                "text": text[:4000],
+                "extractor": "trafilatura",
+            }, ensure_ascii=False)
+    except ImportError:
+        pass
+
+    # 2. Fallback: readability-lxml
+    try:
+        from readability import Document
         doc = Document(raw_html)
         title = doc.title()
         content = doc.summary()
-
-        # Strip remaining HTML tags from readability output
         text = re.sub(r"<[^>]+>", " ", content)
         text = re.sub(r"\s+", " ", text).strip()
-
-        if len(text) < 50:
+        if len(text) > 50:
             return json.dumps({
-                "warning": "Page content is very short — may be JS-rendered. Try fetch_paper_details with PMID instead.",
                 "title": title,
-                "text": text[:500],
-            })
-
-        return json.dumps({
-            "title": title,
-            "text": text[:4000],
-        }, ensure_ascii=False)
-
+                "text": text[:4000],
+                "extractor": "readability",
+            }, ensure_ascii=False)
     except ImportError:
-        pass  # readability not installed, fall back to regex
-    except Exception:
         pass
 
-    # Fallback: regex-based extraction
-    try:
-        req = urllib.request.Request(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-                "Accept": "text/html,application/xhtml+xml,text/plain",
-            },
-        )
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            content = resp.read().decode("utf-8", errors="replace")
-
-        text = re.sub(r"<script[^>]*>.*?</script>", "", content, flags=re.DOTALL)
-        text = re.sub(r"<style[^>]*>.*?</style>", "", text, flags=re.DOTALL)
-        text = re.sub(r"<nav[^>]*>.*?</nav>", "", text, flags=re.DOTALL)
-        text = re.sub(r"<header[^>]*>.*?</header>", "", text, flags=re.DOTALL)
-        text = re.sub(r"<footer[^>]*>.*?</footer>", "", text, flags=re.DOTALL)
-        text = re.sub(r"<[^>]+>", " ", text)
-        text = re.sub(r"\s+", " ", text).strip()
-
-        if len(text) < 50:
-            return json.dumps({
-                "warning": "Page content is very short — likely JS-rendered. Use fetch_paper_details with PMID instead.",
-                "text": text[:500],
-            })
-
-        return text[:4000]
-    except Exception as e:
-        return json.dumps({"error": f"Failed to fetch {url}: {e}"})
+    # 3. Both extractors failed or returned empty — tell the agent honestly
+    return json.dumps({
+        "warning": "Could not extract meaningful content from this URL. "
+                   "The page is likely JS-rendered (SPA) or behind authentication. "
+                   "Use fetch_paper_details with PMID instead, or search_pubmed for the paper title.",
+        "url": url,
+        "raw_length": len(raw_html) if raw_html else 0,
+    })
 
 
 GUIDELINES_CACHE_DIR = Path(__file__).resolve().parent.parent / "data" / "guidelines"

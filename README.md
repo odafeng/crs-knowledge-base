@@ -178,7 +178,9 @@ PubMed  RSS    Playwright
 3. Basic settings 找到 User ID（`U` 開頭）
 4. 加入 GitHub Secrets
 
-### OpenEvidence Guideline Cache
+### OpenEvidence Guideline Cache (Unofficial)
+
+> **Caveat**: This integration uses unofficial cookie-based Playwright scraping of openevidence.com. It is NOT an official API, MCP integration, or endorsed method. It may break if OpenEvidence changes their site structure or terms of service. For personal/private use only.
 
 ```bash
 # 一次性設定
@@ -186,8 +188,6 @@ pip install playwright && playwright install chromium
 python scripts/refresh_guidelines.py --export-cookies
 cat ~/.openevidence-mcp/auth/cookies.json | gh secret set OE_COOKIES_JSON
 ```
-
-注意：OpenEvidence 整合使用 Playwright headless scraping（cookie-based auth），非官方 API。
 
 ---
 
