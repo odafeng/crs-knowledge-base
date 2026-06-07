@@ -1,25 +1,25 @@
-"""Refresh guideline cache by querying OpenEvidence via relay daemon.
+"""Refresh guideline cache by querying OpenEvidence via headless Playwright.
 
-This script is meant to be run locally (or via Claude Code scheduled trigger)
-when the OpenEvidence relay is available. It queries guidelines for all 6 topics
-and saves responses to data/guidelines/.
+Fully automated — runs in GitHub Actions without a real browser.
+Uses stored cookies (OE_COOKIES_JSON secret) to maintain session.
 
 Usage:
-  python scripts/refresh_guidelines.py              # refresh all topics
-  python scripts/refresh_guidelines.py --topic mCRC-BRAF-V600E  # single topic
+  python scripts/refresh_guidelines.py                              # all topics
+  python scripts/refresh_guidelines.py --topic mCRC-BRAF-V600E      # single topic
+  python scripts/refresh_guidelines.py --export-cookies              # login + export cookies
 """
 
 import argparse
 import json
+import os
 import sys
 import time
-import urllib.parse
-import urllib.request
 from datetime import date
 from pathlib import Path
 
 GUIDELINES_DIR = Path(__file__).resolve().parent.parent / "data" / "guidelines"
-OE_RELAY_URL = "http://127.0.0.1:8787"
+OE_BASE_URL = "https://www.openevidence.com"
+OE_COOKIES_JSON = os.environ.get("OE_COOKIES_JSON", "")
 
 TOPIC_QUESTIONS = {
     "mCRC-BRAF-V600E": "What are the current ASCO and NCCN guideline recommendations for treatment of BRAF V600E mutant metastatic colorectal cancer? Include first-line and second-line recommendations, and note any recent updates from BREAKWATER trial data.",
@@ -31,70 +31,156 @@ TOPIC_QUESTIONS = {
 }
 
 
-def _relay_available():
-    try:
-        req = urllib.request.Request(f"{OE_RELAY_URL}/health", method="GET")
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            data = json.loads(resp.read())
-            return data.get("ok", False) and data.get("connected", False)
-    except Exception:
-        return False
+def _load_cookies():
+    """Load cookies from env var or local file."""
+    if OE_COOKIES_JSON:
+        try:
+            return json.loads(OE_COOKIES_JSON)
+        except json.JSONDecodeError:
+            pass
+
+    cookie_file = Path.home() / ".openevidence-mcp" / "auth" / "cookies.json"
+    if cookie_file.exists():
+        try:
+            with open(cookie_file) as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    return None
 
 
-def _query_oe(question):
-    """Submit question to OE relay and poll for answer."""
-    payload = json.dumps({
-        "question": question,
-        "article_type": "Ask OpenEvidence Light with citations",
-    }).encode("utf-8")
+def _query_oe_playwright(question, cookies):
+    """Query OpenEvidence using headless Playwright with session cookies."""
+    from playwright.sync_api import sync_playwright
 
-    req = urllib.request.Request(
-        f"{OE_RELAY_URL}/api/ask",
-        data=payload,
-        headers={"Content-Type": "application/json"},
-    )
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        result = json.loads(resp.read())
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
 
-    article_id = result.get("article_id") or result.get("id")
-    if not article_id:
-        answer = result.get("extracted_answer_raw") or result.get("content")
-        if answer:
-            return {"answer": answer, "citations": []}
-        raise ValueError(f"No article_id: {result}")
+        # Load cookies into browser context
+        if cookies:
+            playwright_cookies = []
+            for c in cookies:
+                cookie = {
+                    "name": c.get("name", ""),
+                    "value": c.get("value", ""),
+                    "domain": c.get("domain", ".openevidence.com"),
+                    "path": c.get("path", "/"),
+                }
+                if cookie["name"] and cookie["value"]:
+                    playwright_cookies.append(cookie)
+            if playwright_cookies:
+                context.add_cookies(playwright_cookies)
 
-    # Poll
-    for _ in range(90):
-        time.sleep(2)
-        poll_req = urllib.request.Request(f"{OE_RELAY_URL}/api/article/{article_id}")
-        with urllib.request.urlopen(poll_req, timeout=15) as resp:
-            article = json.loads(resp.read())
+        page = context.new_page()
 
-        status = article.get("status", "")
-        if status in ("success", "completed", "done"):
-            return {
-                "answer": article.get("extracted_answer_raw") or article.get("content") or "",
-                "citations": article.get("citations") or [],
-            }
-        if status in ("failed", "error"):
-            raise ValueError(f"OE query failed: {article.get('error')}")
+        # Navigate to OE and submit question
+        page.goto(f"{OE_BASE_URL}/search", wait_until="networkidle", timeout=30000)
 
-    raise TimeoutError("OE query timed out")
+        # Type question into search box
+        search_input = page.locator('textarea, input[type="text"], [role="textbox"]').first
+        search_input.fill(question)
+        search_input.press("Enter")
+
+        # Wait for answer to generate (OE takes time)
+        page.wait_for_timeout(5000)
+
+        # Wait for the answer content to appear
+        try:
+            page.wait_for_selector('[class*="answer"], [class*="response"], [class*="article-content"], main article', timeout=120000)
+            page.wait_for_timeout(3000)  # Let it finish rendering
+        except Exception:
+            pass
+
+        # Extract answer text
+        answer = ""
+        for selector in ['[class*="answer"]', '[class*="response"]', 'main article', '[class*="article-content"]', '.prose']:
+            elements = page.locator(selector)
+            if elements.count() > 0:
+                answer = elements.first.inner_text()
+                if len(answer) > 100:
+                    break
+
+        if not answer:
+            # Fallback: grab all main content
+            answer = page.locator("main").inner_text() if page.locator("main").count() > 0 else ""
+
+        # Extract citations if visible
+        citations = []
+        cite_elements = page.locator('[class*="citation"], [class*="reference"], [class*="source"]')
+        for i in range(min(cite_elements.count(), 10)):
+            text = cite_elements.nth(i).inner_text()
+            if text.strip():
+                citations.append(text.strip())
+
+        browser.close()
+
+        return {
+            "answer": answer[:5000],
+            "citations": citations[:10],
+        }
+
+
+def export_cookies():
+    """Interactive login to OpenEvidence, then export cookies."""
+    from playwright.sync_api import sync_playwright
+
+    print("[OE] Opening browser for login...")
+    print("  Please log in to OpenEvidence, then press Enter here when done.")
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)  # Visible browser for login
+        context = browser.new_context()
+        page = context.new_page()
+        page.goto(OE_BASE_URL, wait_until="networkidle")
+
+        input("\n  Press Enter after logging in to OpenEvidence...\n")
+
+        cookies = context.cookies()
+        browser.close()
+
+    # Save cookies
+    cookie_dir = Path.home() / ".openevidence-mcp" / "auth"
+    cookie_dir.mkdir(parents=True, exist_ok=True)
+    cookie_file = cookie_dir / "cookies.json"
+    with open(cookie_file, "w") as f:
+        json.dump(cookies, f, indent=2)
+
+    print(f"[OE] Saved {len(cookies)} cookies to {cookie_file}")
+    print(f"\n  For GitHub Actions, run:")
+    print(f"  cat {cookie_file} | gh secret set OE_COOKIES_JSON")
+
+    return cookies
 
 
 def refresh(topics=None):
-    if not _relay_available():
-        print("[ERROR] OpenEvidence relay not running (127.0.0.1:8787).", file=sys.stderr)
-        print("  Start it: cd openevidence-mcp && make all", file=sys.stderr)
+    """Refresh guideline cache for specified topics."""
+    cookies = _load_cookies()
+    if not cookies:
+        print("[WARN] No OE cookies found. Run with --export-cookies first, or set OE_COOKIES_JSON.", file=sys.stderr)
+        print("  Skipping guideline refresh.", file=sys.stderr)
+        return False
+
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("[ERROR] playwright not installed. Run: pip install playwright && playwright install chromium", file=sys.stderr)
         return False
 
     GUIDELINES_DIR.mkdir(parents=True, exist_ok=True)
     targets = {t: q for t, q in TOPIC_QUESTIONS.items() if not topics or t in topics}
+    success_count = 0
 
     for topic, question in targets.items():
         print(f"[OE] Querying: {topic}...")
         try:
-            result = _query_oe(question)
+            result = _query_oe_playwright(question, cookies)
+
+            if not result["answer"] or len(result["answer"]) < 50:
+                print(f"  [WARN] Answer too short, might need re-login", file=sys.stderr)
+                continue
+
             cache = {
                 "topic": topic,
                 "question": question,
@@ -106,17 +192,24 @@ def refresh(topics=None):
             with open(cache_file, "w") as f:
                 json.dump(cache, f, indent=2, ensure_ascii=False)
             print(f"  Saved: {cache_file.name} ({len(result['answer'])} chars)")
+            success_count += 1
         except Exception as e:
             print(f"  [ERROR] {topic}: {e}", file=sys.stderr)
 
-        time.sleep(1)
+        time.sleep(3)  # Be polite to OE
 
-    return True
+    print(f"\n[OE] Refreshed {success_count}/{len(targets)} topics.")
+    return success_count > 0
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Refresh OpenEvidence guideline cache")
     parser.add_argument("--topic", help="Single topic to refresh")
+    parser.add_argument("--export-cookies", action="store_true", help="Interactive login to export cookies")
     args = parser.parse_args()
-    topics = [args.topic] if args.topic else None
-    refresh(topics)
+
+    if args.export_cookies:
+        export_cookies()
+    else:
+        topics = [args.topic] if args.topic else None
+        refresh(topics)
