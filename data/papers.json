@@ -776,7 +776,23 @@
     "metrics": null
   },
   "generic-CRS": {
-    "papers": [],
+    "papers": [
+      {
+        "id": "stellar303-editorial",
+        "year": 2026,
+        "journal": "Med",
+        "studyType": "Post-hoc analysis",
+        "n": 901,
+        "regimen": "Zanzalintinib + Atezolizumab vs Regorafenib (3L+ MSS mCRC) [Editorial of STELLAR-303 Lancet 2025]",
+        "endpoint": "OS (primary, ITT)",
+        "result": "mOS 10.9 vs 9.4 mo, HR 0.80 (95% CI 0.69–0.93), p=0.0045; Grade 3+ TRAE 60% vs 37%",
+        "bottomLine": "STELLAR-303 首度證實免疫+TKI在MSS mCRC後線優於regorafenib（OS HR 0.80），打破免疫治療禁區，但毒性更高且絕對獲益有限。",
+        "doi": "10.1016/j.medj.2025.100957",
+        "primaryDoi": "10.1016/S0140-6736(25)02025-2",
+        "file": "docs/generic-CRS/Bando_Med_2026_STELLAR303.html",
+        "relations": []
+      }
+    ],
     "metrics": null
   },
   "conference-highlights": {
