@@ -30,7 +30,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["config", "topics", "net", "agent_tools", "topic_agents", "classify", "fetch_pubmed", "fetch_rss", "fetch_conferences", "fetch_news", "create_pr", "create_issues", "notify_line"]
+known-first-party = ["config", "topics", "net", "agent_tools", "topic_agents", "classify", "fetch_pubmed", "fetch_rss", "create_issues", "notify_line"]
 
 [tool.pyright]
 pythonVersion = "3.12"
