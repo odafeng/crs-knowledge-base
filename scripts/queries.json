@@ -52,11 +52,11 @@
     {"name": "BJS", "url": "https://academic.oup.com/bjs/rss"}
   ],
   "conference_seasons": {
-    "ASCO_GI": {"start": "01-10", "end": "02-05", "name": "ASCO GI"},
-    "ASCRS": {"start": "04-25", "end": "05-10", "name": "ASCRS Annual Meeting"},
-    "ASCO": {"start": "05-25", "end": "06-15", "name": "ASCO Annual Meeting"},
-    "ESCP": {"start": "06-20", "end": "07-05", "name": "ESCP Annual Meeting"},
-    "WCGC": {"start": "07-01", "end": "07-15", "name": "ESMO World GI"},
-    "ESMO": {"start": "09-10", "end": "10-31", "name": "ESMO Congress"}
+    "ASCO_GI":  {"start": "01-05", "end": "02-15", "name": "ASCO GI", "url": "https://conferences.asco.org/gi/attend"},
+    "ASCRS":    {"start": "04-15", "end": "05-20", "name": "ASCRS Annual Meeting", "url": "https://www.fascrs.org/ascrs-annual-scientific-meeting"},
+    "ASCO":     {"start": "05-20", "end": "06-25", "name": "ASCO Annual Meeting", "url": "https://conferences.asco.org/am/attend"},
+    "ESCP":     {"start": "06-15", "end": "07-10", "name": "ESCP Annual Meeting", "url": "https://www.escp.eu.com/meetings/annual-meeting"},
+    "WCGC":     {"start": "06-25", "end": "07-25", "name": "ESMO World GI", "url": "https://www.esmo.org/meeting-calendar"},
+    "ESMO":     {"start": "09-05", "end": "11-05", "name": "ESMO Congress", "url": "https://www.esmo.org/meeting-calendar"}
   }
 }
