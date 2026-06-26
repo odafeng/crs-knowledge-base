@@ -18,7 +18,7 @@
 **CRS Knowledge Base** 是一套面向**大腸直腸外科臨床醫師**的口袋型知識庫，搭載 **7 個 AI Agent 驅動的自動文獻追蹤系統**。
 
 - 讓主治醫師在 **30 秒內**查到關鍵試驗數據
-- **8 個 Topic-Specific AI Agent** 自動追蹤 PubMed + 主要期刊 RSS
+- **8 個 Topic-Specific AI Agent** 自動追蹤 PubMed + 主要期刊文獻（經 PubMed 查詢）
 - 每個 agent 具備 **tool use + chain-of-thought** 能力，自主搜尋 PubMed、查閱 guideline、交叉比對既有文獻
 - 高分文獻自動建立 GitHub Issue + LINE 推播通知
 
@@ -92,8 +92,8 @@
         │
   ┌─────┼─────────────┐
   ▼     ▼             ▼
-PubMed    RSS
-(+suppl)
+PubMed    Journal feeds
+(+suppl)  (via PubMed)
         │
   deduplicate
         │
@@ -146,7 +146,7 @@ PubMed    RSS
 | 項目 | 選用 |
 |---|---|
 | AI | Claude Sonnet 4.6 + extended thinking + tool use |
-| 文獻來源 | PubMed E-utilities + RSS feeds + meeting abstract supplements |
+| 文獻來源 | PubMed E-utilities（含 topic 查詢、期刊查詢、meeting abstract supplements）|
 | Guideline | PubMed guideline article search |
 | 通知 | LINE Messaging API |
 | 網路 | exponential backoff retry (3x) |

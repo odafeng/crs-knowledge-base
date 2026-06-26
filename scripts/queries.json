@@ -168,35 +168,35 @@
   "rss_feeds": [
     {
       "name": "NEJM",
-      "url": "https://www.nejm.org/action/showFeed?jc=nejm&type=etoc&feed=rss"
+      "pubmed_journal": "N Engl J Med"
     },
     {
       "name": "JCO",
-      "url": "https://ascopubs.org/action/showFeed?type=etoc&feed=rss&jc=jco"
+      "pubmed_journal": "J Clin Oncol"
     },
     {
       "name": "Lancet Oncol",
-      "url": "https://www.thelancet.com/journals/lanonc/rss"
+      "pubmed_journal": "Lancet Oncol"
     },
     {
       "name": "Nature Medicine",
-      "url": "https://www.nature.com/nm.rss"
+      "pubmed_journal": "Nat Med"
     },
     {
       "name": "Annals of Oncology",
-      "url": "https://www.annalsofoncology.org/rss/recent"
+      "pubmed_journal": "Ann Oncol"
     },
     {
       "name": "JAMA Oncology",
-      "url": "https://jamanetwork.com/rss/site_12/67.xml"
+      "pubmed_journal": "JAMA Oncol"
     },
     {
       "name": "Annals of Surgery",
-      "url": "https://journals.lww.com/annalsofsurgery/_layouts/15/OAKS.Journals/feed.aspx?FeedType=MostRecentIssue"
+      "pubmed_journal": "Ann Surg"
     },
     {
       "name": "BJS",
-      "url": "https://academic.oup.com/bjs/rss"
+      "pubmed_journal": "Br J Surg"
     }
   ],
   "conference_seasons": {

@@ -53,7 +53,13 @@ def is_conference_season() -> tuple[bool, str | None]:
     seasons = queries.get("conference_seasons", {})
     today_md = date.today().strftime("%m-%d")
     for season in seasons.values():
-        if season["start"] <= today_md <= season["end"]:
+        start, end = season["start"], season["end"]
+        if start <= end:
+            in_season = start <= today_md <= end
+        else:
+            # Season wraps across year-end (e.g. "12-15" .. "01-10")
+            in_season = today_md >= start or today_md <= end
+        if in_season:
             return True, season["name"]
     return False, None
 

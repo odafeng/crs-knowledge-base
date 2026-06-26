@@ -1,6 +1,7 @@
 """Main entry point: orchestrate Layer 1 → 2 → 3 pipeline."""
 
 import argparse
+import sys
 from datetime import date, datetime
 
 from classify import classify_all
@@ -13,7 +14,7 @@ from config import (
 )
 from create_issues import create_issues
 from fetch_pubmed import fetch_pubmed
-from fetch_rss import fetch_rss
+from fetch_rss import AllFeedsFailedError, fetch_rss
 from notify_line import notify_papers
 
 
@@ -46,7 +47,7 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
         in_season, conf_name = is_conference_season()
         if not in_season:
             print("[Pipeline] Not in conference season. Skipping daily scan.")
-            return
+            return False
         print(f"[Pipeline] Conference season active: {conf_name}")
 
     reldate = 730 if bootstrap else None
@@ -68,8 +69,15 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
     candidates.extend(pubmed_results)
     print()
 
-    rss_results = fetch_rss(topic=topic, dry_run=False)
-    candidates.extend(rss_results)
+    # Journal feeds (via PubMed). A total outage is reported at the end so the
+    # workflow turns red, but we still process the PubMed papers we already have.
+    journal_outage = False
+    try:
+        rss_results = fetch_rss(topic=topic, dry_run=False)
+        candidates.extend(rss_results)
+    except AllFeedsFailedError as e:
+        print(f"[Pipeline] ERROR: {e}", file=sys.stderr)
+        journal_outage = True
     print()
 
     # Deduplicate
@@ -78,7 +86,7 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
 
     if not candidates:
         print("[Pipeline] No new papers found. Done.")
-        return
+        return journal_outage
 
     # Layer 2: AI classification with topic-specific sub-agents
     print()
@@ -87,7 +95,7 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
 
     if not classified:
         print("[Pipeline] No high-relevance papers. Done.")
-        return
+        return journal_outage
 
     # Layer 3: All ≥4 papers get GitHub Issues for human review
     print(f"\n[Pipeline] {len(classified)} papers → GitHub Issues")
@@ -114,6 +122,7 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
         print("\n[Pipeline] Updated tracking files.")
 
     print(f"\n[Pipeline] Done — {datetime.now().isoformat()}")
+    return journal_outage
 
 
 def main():
@@ -134,12 +143,17 @@ Examples:
     parser.add_argument("--bootstrap", action="store_true", help="Seed a new topic with 2-year PubMed history")
     args = parser.parse_args()
 
-    run_pipeline(
+    journal_outage = run_pipeline(
         topic=args.topic,
         dry_run=args.dry_run,
         daily_mode=args.daily,
         bootstrap=args.bootstrap,
     )
+
+    # Fail loudly if every journal feed errored — never silently green again.
+    if journal_outage:
+        print("[Pipeline] Exiting non-zero: all journal feeds failed.", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
