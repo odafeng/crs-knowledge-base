@@ -225,14 +225,14 @@
       "url": "https://www.escp.eu.com/meetings/annual-meeting"
     },
     "WCGC": {
-      "start": "06-25",
-      "end": "07-25",
+      "start": "06-17",
+      "end": "10-12",
       "name": "ESMO World GI",
       "url": "https://www.esmo.org/meeting-calendar"
     },
     "ESMO": {
-      "start": "09-05",
-      "end": "11-05",
+      "start": "06-17",
+      "end": "10-12",
       "name": "ESMO Congress",
       "url": "https://www.esmo.org/meeting-calendar"
     }
