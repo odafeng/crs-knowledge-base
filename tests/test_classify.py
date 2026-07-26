@@ -78,6 +78,7 @@ class TestClassifyAll:
             results = classify_all([sample_candidate.copy(), second_candidate.copy()])
 
         assert mock_classify_paper.call_count == 1
+        assert mock_classify_paper.call_args.args[1]["title"] == sample_candidate["title"]
         assert len(results) == 2
         for result in results:
             assert result["ai_score"] is None

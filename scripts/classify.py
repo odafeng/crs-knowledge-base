@@ -79,7 +79,7 @@ ALL_TOOLS = [*AGENT_TOOLS, SUBMIT_CLASSIFICATION_TOOL]
 def _mark_for_manual_review(paper: dict, reason: str) -> dict:
     """Mark a paper for manual review when AI classification is unavailable."""
     paper["ai_score"] = None
-    paper["ai_analysis"] = f"(AI classification unavailable — {reason}; needs manual review)"
+    paper["ai_analysis"] = f"(AI classification unavailable - {reason}; needs manual review)"
     paper["ai_bottom_line"] = ""
     paper["ai_suggested_js"] = None
     paper["ai_suggested_filename"] = ""
@@ -281,7 +281,7 @@ def classify_all(candidates: list[dict], dry_run: bool = False) -> list[dict]:
         except APIError as exc:
             api_failure_reason = _summarize_api_error(exc)
             print(
-                f"[Classify] {api_failure_reason}. Remaining papers will be sent to review.",
+                f"[Classify] {api_failure_reason}. Current and remaining papers will be sent to review.",
                 file=sys.stderr,
             )
             paper = _mark_for_manual_review(paper, api_failure_reason)
