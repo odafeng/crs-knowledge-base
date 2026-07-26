@@ -248,7 +248,7 @@ def classify_all(candidates: list[dict], dry_run: bool = False) -> list[dict]:
     # Earlier papers' scores become visible to later papers in the batch context.
     candidates_sorted = sorted(candidates, key=lambda c: c.get("topic", ""))
 
-    api_failure_reason = ""
+    api_failure_reason = None
 
     for i, paper in enumerate(candidates_sorted):
         title_short = paper.get("title", "")[:60]
@@ -261,7 +261,7 @@ def classify_all(candidates: list[dict], dry_run: bool = False) -> list[dict]:
             classified.append(paper)
             continue
 
-        if api_failure_reason:
+        if api_failure_reason is not None:
             paper = _mark_for_manual_review(paper, api_failure_reason)
             print(f"  [WARN] {api_failure_reason} — sending to review")
             classified.append(paper)

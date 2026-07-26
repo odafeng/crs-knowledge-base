@@ -70,7 +70,7 @@ class TestClassifyAll:
             patch("classify.Anthropic", return_value=MagicMock()),
             patch("classify.classify_paper", side_effect=error) as mock_classify_paper,
         ):
-            results = classify_all([sample_candidate.copy(), second_candidate])
+            results = classify_all([sample_candidate.copy(), second_candidate.copy()])
 
         assert mock_classify_paper.call_count == 1
         assert len(results) == 2
