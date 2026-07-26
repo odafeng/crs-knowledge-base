@@ -78,7 +78,10 @@ ALL_TOOLS = [*AGENT_TOOLS, SUBMIT_CLASSIFICATION_TOOL]
 
 
 def _mark_for_manual_review(paper: dict, reason: str) -> dict:
-    """Mark a paper for manual review when AI classification is unavailable."""
+    """Mark a paper for manual review when AI classification is unavailable.
+
+    Mutates and returns ``paper`` for consistency with the rest of the pipeline.
+    """
     paper["ai_score"] = None
     paper["ai_analysis"] = f"(AI classification unavailable - {reason}; needs manual review)"
     paper["ai_bottom_line"] = ""

@@ -58,7 +58,8 @@ class TestClassifyAll:
 
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
     def test_api_error_marks_papers_for_manual_review(self, sample_candidate):
-        second_candidate = sample_candidate | {
+        second_candidate = {
+            **sample_candidate,
             "doi": "10.1056/NEJMoa8888888",
             "pmid": "87654321",
             "title": "Second candidate",
@@ -80,6 +81,7 @@ class TestClassifyAll:
 
         assert mock_classify_paper.call_count == 1
         assert mock_classify_paper.call_args.args[1]["title"] == sample_candidate["title"]
+        assert all(call.args[1]["title"] != second_candidate["title"] for call in mock_classify_paper.call_args_list)
         assert len(results) == 2
         for result in results:
             assert result["ai_score"] is None
