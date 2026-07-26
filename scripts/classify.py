@@ -15,6 +15,7 @@ from config import ANTHROPIC_API_KEY, CLASSIFY_MODEL, RELEVANCE_THRESHOLD
 from topic_agents import build_paper_prompt, build_system_prompt
 
 MAX_AGENT_TURNS = 8  # Max tool-use rounds per paper
+QUOTA_ERROR_KEYWORDS = ("usage limit", "rate limit", "quota")
 
 # The submit_classification tool forces the agent to output structured JSON.
 # This eliminates the fragile "parse JSON from free text" problem.
@@ -102,7 +103,7 @@ def _summarize_api_error(exc: APIError) -> str:
             message = error.get("message")
             if isinstance(message, str):
                 message = message.lower()
-                if "usage limit" in message or "rate limit" in message or "quota" in message:
+                if any(keyword in message for keyword in QUOTA_ERROR_KEYWORDS):
                     return "Anthropic API quota or rate limit reached"
 
     if status_code is not None:

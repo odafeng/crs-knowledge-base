@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import httpx
 from anthropic import BadRequestError
 
-from classify import classify_all, classify_paper
+from classify import _summarize_api_error, classify_all, classify_paper
 
 
 def _mock_submit_classification(result_dict, *, with_research_tool=False):
@@ -70,6 +70,7 @@ class TestClassifyAll:
             response=response,
             body={"error": {"message": "You have reached your specified API usage limits."}},
         )
+        assert _summarize_api_error(error) == "Anthropic API quota or rate limit reached"
 
         with (
             patch("classify.Anthropic", return_value=MagicMock()),
