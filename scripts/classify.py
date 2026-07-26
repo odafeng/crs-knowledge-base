@@ -91,11 +91,20 @@ def _mark_for_manual_review(paper: dict, reason: str) -> dict:
 
 def _summarize_api_error(exc: APIError) -> str:
     """Return a short, issue-friendly reason for an Anthropic API failure."""
-    message = str(exc).lower()
-    if "usage limit" in message or "rate limit" in message or "quota" in message:
+    status_code = getattr(getattr(exc, "response", None), "status_code", None)
+    if status_code == 429:
         return "Anthropic API quota or rate limit reached"
 
-    status_code = getattr(getattr(exc, "response", None), "status_code", None)
+    body = getattr(exc, "body", None)
+    if isinstance(body, dict):
+        error = body.get("error")
+        if isinstance(error, dict):
+            message = error.get("message")
+            if isinstance(message, str):
+                message = message.lower()
+                if "usage limit" in message or "rate limit" in message or "quota" in message:
+                    return "Anthropic API quota or rate limit reached"
+
     if status_code is not None:
         return f"Anthropic API request failed (HTTP {status_code})"
 
