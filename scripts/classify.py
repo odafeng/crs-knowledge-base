@@ -8,7 +8,7 @@ No more fragile regex-based JSON extraction from free-form text.
 import json
 import sys
 
-from anthropic import Anthropic
+from anthropic import APIError, Anthropic
 
 from agent_tools import AGENT_TOOLS, execute_tool
 from config import ANTHROPIC_API_KEY, CLASSIFY_MODEL, RELEVANCE_THRESHOLD
@@ -74,6 +74,32 @@ SUBMIT_CLASSIFICATION_TOOL = {
 }
 
 ALL_TOOLS = [*AGENT_TOOLS, SUBMIT_CLASSIFICATION_TOOL]
+
+
+def _mark_for_manual_review(paper: dict, reason: str) -> dict:
+    """Mark a paper for manual review when AI classification is unavailable."""
+    paper["ai_score"] = None
+    paper["ai_analysis"] = f"(AI classification unavailable — {reason}; needs manual review)"
+    paper["ai_bottom_line"] = ""
+    paper["ai_suggested_js"] = None
+    paper["ai_suggested_filename"] = ""
+    paper["ai_relations"] = []
+    paper["ai_chart_updates"] = None
+    paper["ai_parse_failed"] = True
+    return paper
+
+
+def _summarize_api_error(exc: APIError) -> str:
+    """Return a short, issue-friendly reason for an Anthropic API failure."""
+    message = str(exc).lower()
+    if "usage limit" in message or "rate limit" in message or "quota" in message:
+        return "Anthropic API quota or rate limit reached"
+
+    status_code = getattr(getattr(exc, "response", None), "status_code", None)
+    if status_code is not None:
+        return f"Anthropic API request failed (HTTP {status_code})"
+
+    return "Anthropic API request failed"
 
 
 def _build_batch_context(paper: dict, all_candidates: list[dict]) -> str:
@@ -194,15 +220,7 @@ def classify_paper(client: Anthropic, paper: dict, all_candidates: list[dict] | 
     # If we get here, the agent never called submit_classification properly.
     # Mark as parse failure — NOT as score 0. This goes to a review queue.
     print("    [WARN] Classification parse failed — marking for manual review", file=sys.stderr)
-    paper["ai_score"] = None
-    paper["ai_analysis"] = "(Agent did not produce structured classification — needs manual review)"
-    paper["ai_bottom_line"] = ""
-    paper["ai_suggested_js"] = None
-    paper["ai_suggested_filename"] = ""
-    paper["ai_relations"] = []
-    paper["ai_chart_updates"] = None
-    paper["ai_parse_failed"] = True
-    return paper
+    return _mark_for_manual_review(paper, "Agent did not produce structured classification")
 
 
 def classify_all(candidates: list[dict], dry_run: bool = False) -> list[dict]:
@@ -230,6 +248,8 @@ def classify_all(candidates: list[dict], dry_run: bool = False) -> list[dict]:
     # Earlier papers' scores become visible to later papers in the batch context.
     candidates_sorted = sorted(candidates, key=lambda c: c.get("topic", ""))
 
+    api_failure_reason = ""
+
     for i, paper in enumerate(candidates_sorted):
         title_short = paper.get("title", "")[:60]
         print(f"[Agent] ({i + 1}/{len(candidates_sorted)}) [{paper.get('topic', '')}] {title_short}...")
@@ -241,7 +261,21 @@ def classify_all(candidates: list[dict], dry_run: bool = False) -> list[dict]:
             classified.append(paper)
             continue
 
-        paper = classify_paper(client, paper, all_candidates=candidates_sorted)
+        if api_failure_reason:
+            paper = _mark_for_manual_review(paper, api_failure_reason)
+            print(f"  [WARN] {api_failure_reason} — sending to review")
+            classified.append(paper)
+            continue
+
+        try:
+            paper = classify_paper(client, paper, all_candidates=candidates_sorted)
+        except APIError as exc:
+            api_failure_reason = _summarize_api_error(exc)
+            print(
+                f"[Classify] {api_failure_reason}. Remaining papers will be sent to review.",
+                file=sys.stderr,
+            )
+            paper = _mark_for_manual_review(paper, api_failure_reason)
         classified.append(paper)
 
         if paper.get("ai_parse_failed"):

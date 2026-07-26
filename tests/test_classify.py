@@ -2,6 +2,9 @@
 
 from unittest.mock import MagicMock, patch
 
+import httpx
+from anthropic import APIError
+
 from classify import classify_all, classify_paper
 
 
@@ -52,6 +55,30 @@ class TestClassifyAll:
         results = classify_all([sample_candidate], dry_run=True)
         assert len(results) == 1
         assert results[0]["ai_analysis"] == "(dry run)"
+
+    @patch("classify.ANTHROPIC_API_KEY", "test-key")
+    def test_api_error_routes_remaining_papers_to_manual_review(self, sample_candidate):
+        second_candidate = sample_candidate | {
+            "doi": "10.1056/NEJMoa8888888",
+            "pmid": "87654321",
+            "title": "Second candidate",
+        }
+        request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+        error = APIError("You have reached your specified API usage limits.", request, body=None)
+
+        with (
+            patch("classify.Anthropic", return_value=MagicMock()),
+            patch("classify.classify_paper", side_effect=error) as mock_classify_paper,
+        ):
+            results = classify_all([sample_candidate.copy(), second_candidate])
+
+        assert mock_classify_paper.call_count == 1
+        assert len(results) == 2
+        for result in results:
+            assert result["ai_score"] is None
+            assert result["ai_parse_failed"] is True
+            assert "quota or rate limit" in result["ai_analysis"]
+            assert "manual review" in result["ai_analysis"]
 
 
 class TestClassifyPaper:
