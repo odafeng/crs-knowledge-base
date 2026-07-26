@@ -78,10 +78,9 @@ class TestClassifyAll:
             patch("classify.classify_paper", side_effect=error) as mock_classify_paper,
         ):
             results = classify_all([sample_candidate.copy(), second_candidate.copy()])
-
         assert mock_classify_paper.call_count == 1
         assert mock_classify_paper.call_args.args[1]["title"] == sample_candidate["title"]
-        assert all(call.args[1]["title"] != second_candidate["title"] for call in mock_classify_paper.call_args_list)
+        assert mock_classify_paper.call_args.args[1]["title"] == sample_candidate["title"]
         assert len(results) == 2
         for result in results:
             assert result["ai_score"] is None
