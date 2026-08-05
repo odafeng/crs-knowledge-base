@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crs-kb-v17';
+const CACHE_NAME = 'crs-kb-v18';
 const ASSETS = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const ASSETS = [
   './docs/mCRC-BRAF-V600E/Kopetz_ESMO_2025_BREAKWATER_SubsequentTx.html',
   './docs/mCRC-BRAF-V600E/Kopetz_ASCOGI_2026_BREAKWATER_Cohort3.html',
   './docs/robotic-surgery/Mertens_BJSOpen_2026_SwedishRegistry.html',
+  './docs/mCRC-MSI-H/Xiao_JCO_2026_DualIO_Neoadjuvant_LARC.html',
   './docs/generic-CRS/Hecht_Lancet_2025_STELLAR303.html',
   './docs/generic-CRS/Hoyek_DLD_2025_NMA3L.html',
   './docs/generic-CRS/Liu_NatCommun_2025_RegoSinti.html'

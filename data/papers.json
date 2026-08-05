@@ -517,6 +517,29 @@
         "doi": "10.1056/NEJMoa2201445",
         "file": null,
         "relations": []
+      },
+      {
+        "id": "dualio-larc-2026",
+        "year": 2026,
+        "journal": "JCO",
+        "studyType": "Commentary",
+        "n": null,
+        "regimen": "Neoadjuvant interval 雙免疫（anti-PD-1 + anti-CTLA-4）in LARC",
+        "endpoint": "觀點評論（無新數據）",
+        "result": "主張放化療後空窗期為免疫治療切入窗；dMMR 已有 NICHE-2 / dostarlimab 佐證，pMMR/MSS 仍待 RCT",
+        "bottomLine": "評論性投書：空窗期雙免疫在 LARC 生物學上合理且可望擴大 watch-and-wait 族群，但 pMMR/MSS 療效未證實、雙免疫毒性偏高，現階段應限於臨床試驗",
+        "doi": "10.1200/JCO-26-00496",
+        "file": "docs/mCRC-MSI-H/Xiao_JCO_2026_DualIO_Neoadjuvant_LARC.html",
+        "relations": [
+          {
+            "targetId": "niche2",
+            "type": "builds_on"
+          },
+          {
+            "targetId": "dostarlimab",
+            "type": "builds_on"
+          }
+        ]
       }
     ],
     "metrics": null

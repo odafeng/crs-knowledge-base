@@ -59,7 +59,7 @@
 |---|---|---|---|
 | 1 | **mCRC — BRAF V600E** | BEACON、BREAKWATER 全系列、ctDNA dynamics | 7 |
 | 2 | **mCRC — KRAS G12C** | CodeBreaK、KRYSTAL、divarasib+cetuximab | 7 |
-| 3 | **mCRC — MSI-H / dMMR** | KEYNOTE-177、NICHE、dostarlimab non-op | 8 |
+| 3 | **mCRC — MSI-H / dMMR** | KEYNOTE-177、NICHE、dostarlimab non-op | 9 |
 | 4 | **mCRC — HER2** | DESTINY-CRC、MOUNTAINEER、T-DXd | 5 |
 | 5 | **mCRC — RAS-wt Anti-EGFR** | PARADIGM、sidedness、rechallenge | 9 |
 | 6 | **mCRC — Agnostic** | fruquintinib/FRESCO、regorafenib、TAS-102+bev/SUNLIGHT | new |
