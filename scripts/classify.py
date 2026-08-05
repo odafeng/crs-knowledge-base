@@ -75,6 +75,56 @@ SUBMIT_CLASSIFICATION_TOOL = {
 
 ALL_TOOLS = [*AGENT_TOOLS, SUBMIT_CLASSIFICATION_TOOL]
 
+# Sent when the agent finished (or ran out of turns) without calling
+# submit_classification. The retry forces the tool via tool_choice.
+FORCE_SUBMIT_REMINDER = (
+    "你尚未提交結構化分類結果。請立刻呼叫 submit_classification 工具提交最終判斷，"
+    "不要再使用其他研究工具，也不要輸出純文字。"
+)
+
+
+def _apply_result(paper: dict, result: dict) -> dict:
+    """Write a submit_classification payload onto the paper dict."""
+    paper["ai_score"] = result.get("relevance_score", 0)
+    paper["ai_analysis"] = result.get("contextual_analysis", "")
+    paper["ai_bottom_line"] = result.get("bottom_line", "")
+    paper["ai_suggested_js"] = result.get("suggested_js")
+    paper["ai_suggested_filename"] = result.get("suggested_filename", "")
+    paper["ai_relations"] = result.get("relations", [])
+    paper["ai_chart_updates"] = result.get("chart_updates")
+    paper["ai_parse_failed"] = False
+    return paper
+
+
+def _force_submit(client: Anthropic, system_prompt: str, user_prompt: str) -> dict | None:
+    """Last-resort call that forces the agent to emit submit_classification.
+
+    Extended thinking is disabled here because the Anthropic API does not allow
+    forcing a specific tool while thinking is enabled.
+    """
+    print("    [Retry] Forcing submit_classification tool call")
+    try:
+        response = client.messages.create(
+            model=CLASSIFY_MODEL,
+            max_tokens=4000,
+            system=system_prompt,
+            tools=[SUBMIT_CLASSIFICATION_TOOL],
+            tool_choice={"type": "tool", "name": "submit_classification"},
+            messages=[
+                {"role": "user", "content": user_prompt},
+                {"role": "assistant", "content": "（我還沒有提交分類結果）"},
+                {"role": "user", "content": FORCE_SUBMIT_REMINDER},
+            ],
+        )
+    except Exception as exc:  # network/API errors must not abort the batch
+        print(f"    [WARN] Forced classification retry failed: {exc}", file=sys.stderr)
+        return None
+
+    for block in response.content:
+        if block.type == "tool_use" and block.name == "submit_classification":
+            return block.input
+    return None
+
 
 def _build_batch_context(paper: dict, all_candidates: list[dict]) -> str:
     """Build a summary of other papers in the same batch for cross-paper context."""
@@ -149,16 +199,7 @@ def classify_paper(client: Anthropic, paper: dict, all_candidates: list[dict] | 
         # Check for submit_classification tool call — this is the final answer
         for block in response.content:
             if block.type == "tool_use" and block.name == "submit_classification":
-                result = block.input  # Already structured JSON from tool schema
-                paper["ai_score"] = result.get("relevance_score", 0)
-                paper["ai_analysis"] = result.get("contextual_analysis", "")
-                paper["ai_bottom_line"] = result.get("bottom_line", "")
-                paper["ai_suggested_js"] = result.get("suggested_js")
-                paper["ai_suggested_filename"] = result.get("suggested_filename", "")
-                paper["ai_relations"] = result.get("relations", [])
-                paper["ai_chart_updates"] = result.get("chart_updates")
-                paper["ai_parse_failed"] = False
-                return paper
+                return _apply_result(paper, block.input)
 
         # If agent wants to use research tools (not submit_classification)
         if response.stop_reason == "tool_use":
@@ -190,6 +231,12 @@ def classify_paper(client: Anthropic, paper: dict, all_candidates: list[dict] | 
         if response.stop_reason == "end_turn":
             print("    [WARN] Agent ended without calling submit_classification", file=sys.stderr)
             break
+
+    # The agent never called submit_classification on its own. Retry once with
+    # tool_choice forcing the tool before giving up on structured output.
+    forced = _force_submit(client, system_prompt, user_prompt)
+    if forced is not None:
+        return _apply_result(paper, forced)
 
     # If we get here, the agent never called submit_classification properly.
     # Mark as parse failure — NOT as score 0. This goes to a review queue.

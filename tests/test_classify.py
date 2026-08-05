@@ -105,6 +105,51 @@ class TestClassifyPaper:
         assert result["ai_parse_failed"] is True
         assert result["ai_score"] is None  # NOT 0
 
+    @patch("classify.ANTHROPIC_API_KEY", "test-key")
+    def test_forced_retry_recovers_structured_output(self, sample_candidate):
+        """If agent ends without submit_classification, a forced retry recovers it."""
+        mock_client = MagicMock()
+
+        end_turn = MagicMock()
+        end_turn.stop_reason = "end_turn"
+        text_block = MagicMock()
+        text_block.type = "text"
+        text_block.text = "This paper seems moderately relevant."
+        end_turn.content = [text_block]
+
+        forced = MagicMock()
+        forced.stop_reason = "tool_use"
+        submit_block = MagicMock()
+        submit_block.type = "tool_use"
+        submit_block.name = "submit_classification"
+        submit_block.input = {"relevance_score": 3, "contextual_analysis": "Forced result"}
+        forced.content = [submit_block]
+
+        mock_client.messages.create.side_effect = [end_turn, forced]
+
+        result = classify_paper(mock_client, sample_candidate)
+        assert result["ai_parse_failed"] is False
+        assert result["ai_score"] == 3
+        assert result["ai_analysis"] == "Forced result"
+        assert mock_client.messages.create.call_count == 2
+        forced_kwargs = mock_client.messages.create.call_args.kwargs
+        assert forced_kwargs["tool_choice"] == {"type": "tool", "name": "submit_classification"}
+
+    @patch("classify.ANTHROPIC_API_KEY", "test-key")
+    def test_forced_retry_api_error_falls_back_to_review(self, sample_candidate):
+        """A failing forced retry must not raise — the paper goes to manual review."""
+        mock_client = MagicMock()
+
+        end_turn = MagicMock()
+        end_turn.stop_reason = "end_turn"
+        end_turn.content = []
+
+        mock_client.messages.create.side_effect = [end_turn, RuntimeError("api down")]
+
+        result = classify_paper(mock_client, sample_candidate)
+        assert result["ai_parse_failed"] is True
+        assert result["ai_score"] is None
+
     def test_parse_failures_included_in_results(self):
         """Parse failures should be included in classify_all results (not dropped)."""
         papers = [
