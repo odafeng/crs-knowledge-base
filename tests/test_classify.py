@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from classify import classify_all, classify_paper
+from classify import MAX_AGENT_TURNS, classify_all, classify_paper
 
 
 def _mock_submit_classification(result_dict, *, with_research_tool=False):
@@ -104,6 +104,56 @@ class TestClassifyPaper:
         result = classify_paper(mock_client, sample_candidate)
         assert result["ai_parse_failed"] is True
         assert result["ai_score"] is None  # NOT 0
+
+    @patch("classify.ANTHROPIC_API_KEY", "test-key")
+    def test_forced_submit_recovers_from_turn_exhaustion(self, sample_candidate):
+        """Agent researching until the turn budget runs out is forced to submit."""
+        research = MagicMock()
+        research.stop_reason = "tool_use"
+        tool_block = MagicMock()
+        tool_block.type = "tool_use"
+        tool_block.name = "lookup_existing_papers"
+        tool_block.input = {"topic": "mCRC-BRAF-V600E"}
+        tool_block.id = "tool_1"
+        research.content = [tool_block]
+
+        forced = MagicMock()
+        forced.stop_reason = "tool_use"
+        submit_block = MagicMock()
+        submit_block.type = "tool_use"
+        submit_block.name = "submit_classification"
+        submit_block.input = {"relevance_score": 3, "contextual_analysis": "Forced result"}
+        submit_block.id = "submit_forced"
+        forced.content = [submit_block]
+
+        mock_client = MagicMock()
+        mock_client.messages.create.side_effect = [*[research] * MAX_AGENT_TURNS, forced]
+
+        with patch("agent_tools.load_tracked_dois", return_value={}):
+            result = classify_paper(mock_client, sample_candidate)
+
+        assert result["ai_parse_failed"] is False
+        assert result["ai_score"] == 3
+        assert result["ai_analysis"] == "Forced result"
+        final_kwargs = mock_client.messages.create.call_args.kwargs
+        assert final_kwargs["tool_choice"] == {"type": "tool", "name": "submit_classification"}
+
+    @patch("classify.ANTHROPIC_API_KEY", "test-key")
+    def test_forced_submit_failure_falls_back_to_parse_failed(self, sample_candidate):
+        """If even the forced submission fails, the paper still goes to review."""
+        response = MagicMock()
+        response.stop_reason = "end_turn"
+        text_block = MagicMock()
+        text_block.type = "text"
+        text_block.text = "Still thinking..."
+        response.content = [text_block]
+
+        mock_client = MagicMock()
+        mock_client.messages.create.side_effect = [*[response] * MAX_AGENT_TURNS, RuntimeError("API down")]
+
+        result = classify_paper(mock_client, sample_candidate)
+        assert result["ai_parse_failed"] is True
+        assert result["ai_score"] is None
 
     def test_parse_failures_included_in_results(self):
         """Parse failures should be included in classify_all results (not dropped)."""

@@ -16,6 +16,13 @@ from topic_agents import build_paper_prompt, build_system_prompt
 
 MAX_AGENT_TURNS = 8  # Max tool-use rounds per paper
 
+# Nudge sent when the agent runs out of turns (or stops) without submitting.
+FORCE_SUBMIT_PROMPT = (
+    "你已經用完可使用的研究回合。請立即根據目前已掌握的資訊呼叫 submit_classification 工具"
+    "提交最終分類。若資訊仍不完整（例如摘要缺失），請據此保守評分，"
+    "並在 contextual_analysis 中說明資訊限制。"
+)
+
 # The submit_classification tool forces the agent to output structured JSON.
 # This eliminates the fragile "parse JSON from free text" problem.
 SUBMIT_CLASSIFICATION_TOOL = {
@@ -113,6 +120,39 @@ def _build_batch_context(paper: dict, all_candidates: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def _extract_submission(response) -> dict | None:
+    """Return the submit_classification input if present in the response."""
+    for block in response.content:
+        if block.type == "tool_use" and block.name == "submit_classification":
+            return block.input
+    return None
+
+
+def _apply_submission(paper: dict, result: dict) -> dict:
+    """Write a submit_classification result onto the paper dict."""
+    paper["ai_score"] = result.get("relevance_score", 0)
+    paper["ai_analysis"] = result.get("contextual_analysis", "")
+    paper["ai_bottom_line"] = result.get("bottom_line", "")
+    paper["ai_suggested_js"] = result.get("suggested_js")
+    paper["ai_suggested_filename"] = result.get("suggested_filename", "")
+    paper["ai_relations"] = result.get("relations", [])
+    paper["ai_chart_updates"] = result.get("chart_updates")
+    paper["ai_parse_failed"] = False
+    return paper
+
+
+def _append_user_text(messages: list[dict], text: str) -> None:
+    """Append a user text message, merging if the last message is already a user turn."""
+    if messages and messages[-1]["role"] == "user":
+        content = messages[-1]["content"]
+        if isinstance(content, str):
+            messages[-1]["content"] = f"{content}\n\n{text}"
+        else:
+            messages[-1]["content"] = [*content, {"type": "text", "text": text}]
+    else:
+        messages.append({"role": "user", "content": text})
+
+
 def classify_paper(client: Anthropic, paper: dict, all_candidates: list[dict] | None = None) -> dict:
     """Classify a single paper using its topic-specific agent with tool use.
 
@@ -147,18 +187,9 @@ def classify_paper(client: Anthropic, paper: dict, all_candidates: list[dict] | 
                 print(f"    [CoT] {thought[:300]}")
 
         # Check for submit_classification tool call — this is the final answer
-        for block in response.content:
-            if block.type == "tool_use" and block.name == "submit_classification":
-                result = block.input  # Already structured JSON from tool schema
-                paper["ai_score"] = result.get("relevance_score", 0)
-                paper["ai_analysis"] = result.get("contextual_analysis", "")
-                paper["ai_bottom_line"] = result.get("bottom_line", "")
-                paper["ai_suggested_js"] = result.get("suggested_js")
-                paper["ai_suggested_filename"] = result.get("suggested_filename", "")
-                paper["ai_relations"] = result.get("relations", [])
-                paper["ai_chart_updates"] = result.get("chart_updates")
-                paper["ai_parse_failed"] = False
-                return paper
+        submission = _extract_submission(response)
+        if submission is not None:
+            return _apply_submission(paper, submission)
 
         # If agent wants to use research tools (not submit_classification)
         if response.stop_reason == "tool_use":
@@ -184,12 +215,39 @@ def classify_paper(client: Anthropic, paper: dict, all_candidates: list[dict] | 
 
             if tool_results:
                 messages.append({"role": "user", "content": tool_results})
+            else:
+                # Assistant turn had no executable tool calls — drop it to keep
+                # the conversation valid (no dangling tool_use without result).
+                messages.pop()
+                _append_user_text(messages, FORCE_SUBMIT_PROMPT)
             continue
 
-        # end_turn without submit_classification — agent forgot to call the tool
+        # end_turn without submit_classification — agent forgot to call the tool.
+        # Nudge it once more instead of giving up immediately.
         if response.stop_reason == "end_turn":
             print("    [WARN] Agent ended without calling submit_classification", file=sys.stderr)
-            break
+            messages.append({"role": "assistant", "content": response.content})
+            _append_user_text(messages, FORCE_SUBMIT_PROMPT)
+            continue
+
+    # Turn budget exhausted. Make one last call that *forces* the agent to use
+    # submit_classification, so a slow researcher isn't reported as a parse failure.
+    try:
+        _append_user_text(messages, FORCE_SUBMIT_PROMPT)
+        final_response = client.messages.create(
+            model=CLASSIFY_MODEL,
+            max_tokens=4000,
+            system=system_prompt,
+            tools=ALL_TOOLS,
+            tool_choice={"type": "tool", "name": "submit_classification"},
+            messages=messages,
+        )
+        submission = _extract_submission(final_response)
+        if submission is not None:
+            print("    [INFO] Recovered classification via forced submit_classification")
+            return _apply_submission(paper, submission)
+    except Exception as exc:  # network/API errors must not crash the whole run
+        print(f"    [WARN] Forced submit_classification failed: {exc}", file=sys.stderr)
 
     # If we get here, the agent never called submit_classification properly.
     # Mark as parse failure — NOT as score 0. This goes to a review queue.
