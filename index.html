@@ -1015,7 +1015,7 @@ let currentMetric = 'mOS';
 // Relation type labels
 const REL_LABELS = { builds_on: '延伸自', supersedes: '更新自', subgroup_of: '次分析', same_regimen: '同方案', contradicts: '矛盾' };
 const REL_COLORS = { builds_on: '#38a169', supersedes: '#3182ce', subgroup_of: '#718096', same_regimen: '#d69e2e', contradicts: '#e53e3e' };
-const STUDY_BADGES = { 'Phase 3 RCT': '#276749', 'Phase 3 RCT (updated)': '#2c5282', 'Phase 3 (Cohort 3)': '#2c5282', 'Phase 2 RCT': '#6b46c1', 'Biomarker (exploratory)': '#975a16', 'Post-hoc analysis': '#718096', 'Meta-analysis': '#b83280' };
+const STUDY_BADGES = { 'Phase 3 RCT': '#276749', 'Phase 3 RCT (updated)': '#2c5282', 'Phase 3 (Cohort 3)': '#2c5282', 'Phase 2 RCT': '#6b46c1', 'Biomarker (exploratory)': '#975a16', 'Post-hoc analysis': '#718096', 'Meta-analysis': '#b83280', 'Commentary': '#4a5568' };
 
 function renderEvidence() {
   renderPaperTimeline(BRAF_PAPERS, 'timeline');
@@ -1090,7 +1090,7 @@ function renderPaperCards(papers, elId) {
       <div class="ev-card-body">
         <table>
           <tr><td style="width:30%;font-weight:600;color:var(--primary)">方案</td><td>${p.regimen}</td></tr>
-          <tr><td style="font-weight:600;color:var(--primary)">N</td><td>${p.n}</td></tr>
+          <tr><td style="font-weight:600;color:var(--primary)">N</td><td>${p.n ?? '\u2014'}</td></tr>
           <tr><td style="font-weight:600;color:var(--primary)">主要終點</td><td>${p.endpoint}</td></tr>
           <tr><td style="font-weight:600;color:var(--primary)">結果</td><td><strong>${p.result}</strong></td></tr>
         </table>
