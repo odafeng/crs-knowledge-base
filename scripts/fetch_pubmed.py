@@ -5,7 +5,6 @@ import json
 import sys
 import time
 import urllib.parse
-import urllib.request
 import xml.etree.ElementTree as ET
 
 from config import (
@@ -19,6 +18,10 @@ from config import (
 from config import (
     is_conference_season as _is_conference_season,
 )
+from net import fetch_with_retry
+
+# NCBI E-utilities intermittently answers 400 to valid requests under load.
+_NCBI_RETRY_STATUSES = (400, 429)
 
 
 def esearch(query, reldate=PUBMED_RELDATE):
@@ -35,8 +38,7 @@ def esearch(query, reldate=PUBMED_RELDATE):
     if NCBI_API_KEY:
         params["api_key"] = NCBI_API_KEY
     url = f"{PUBMED_SEARCH_URL}?{urllib.parse.urlencode(params)}"
-    with urllib.request.urlopen(url, timeout=30) as resp:
-        data = json.loads(resp.read())
+    data = json.loads(fetch_with_retry(url, timeout=30, retry_statuses=_NCBI_RETRY_STATUSES))
     return data.get("esearchresult", {}).get("idlist", [])
 
 
@@ -52,8 +54,7 @@ def efetch(pmids):
     if NCBI_API_KEY:
         params["api_key"] = NCBI_API_KEY
     url = f"{PUBMED_FETCH_URL}?{urllib.parse.urlencode(params)}"
-    with urllib.request.urlopen(url, timeout=30) as resp:
-        xml_data = resp.read()
+    xml_data = fetch_with_retry(url, timeout=30, retry_statuses=_NCBI_RETRY_STATUSES)
     root = ET.fromstring(xml_data)
     articles = []
     for article in root.findall(".//PubmedArticle"):

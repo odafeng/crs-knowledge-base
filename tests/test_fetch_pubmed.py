@@ -1,9 +1,13 @@
 """Tests for PubMed fetcher."""
 
+import io
+import urllib.error
 import xml.etree.ElementTree as ET
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-from fetch_pubmed import _parse_article, fetch_pubmed
+import pytest
+
+from fetch_pubmed import _parse_article, efetch, fetch_pubmed
 
 
 class TestParseArticle:
@@ -105,3 +109,33 @@ class TestFetchPubmed:
         }
         results = fetch_pubmed(topic="mCRC-BRAF-V600E")
         assert results == []
+
+
+def _http_error(code):
+    return urllib.error.HTTPError("https://eutils.example", code, "err", {}, io.BytesIO())
+
+
+def _ok_response(body):
+    resp = MagicMock()
+    resp.__enter__.return_value.read.return_value = body
+    return resp
+
+
+class TestEfetchRetry:
+    """NCBI E-utilities intermittently answers 400 to valid requests."""
+
+    @patch("net.time.sleep")
+    @patch("net.urllib.request.urlopen")
+    def test_retries_transient_400(self, mock_urlopen, _sleep, sample_pubmed_xml):
+        mock_urlopen.side_effect = [_http_error(400), _ok_response(sample_pubmed_xml)]
+        articles = efetch(["12345678"])
+        assert [a["pmid"] for a in articles] == ["12345678"]
+        assert mock_urlopen.call_count == 2
+
+    @patch("net.time.sleep")
+    @patch("net.urllib.request.urlopen")
+    def test_gives_up_after_max_retries(self, mock_urlopen, _sleep):
+        mock_urlopen.side_effect = _http_error(400)
+        with pytest.raises(urllib.error.HTTPError):
+            efetch(["12345678"])
+        assert mock_urlopen.call_count == 3

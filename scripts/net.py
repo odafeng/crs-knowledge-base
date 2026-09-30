@@ -15,11 +15,12 @@ def fetch_with_retry(
     timeout: int = 15,
     max_retries: int = 3,
     backoff_base: float = 1.0,
+    retry_statuses: tuple[int, ...] = (429,),
 ) -> bytes:
     """Fetch a URL with exponential backoff retry.
 
-    Retries on 429, 5xx, timeout, and connection errors.
-    Raises on 4xx (except 429) and after exhausting retries.
+    Retries on 5xx, any status in ``retry_statuses``, timeout, and connection errors.
+    Raises on other 4xx and after exhausting retries.
     """
     last_error: Exception | None = None
 
@@ -29,10 +30,10 @@ def fetch_with_retry(
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return resp.read()
         except urllib.error.HTTPError as e:
-            if e.code == 429 or e.code >= 500:
+            if e.code in retry_statuses or e.code >= 500:
                 last_error = e
             else:
-                raise  # 4xx (except 429) — don't retry
+                raise  # other 4xx — don't retry
         except (urllib.error.URLError, TimeoutError, OSError) as e:
             last_error = e
 
