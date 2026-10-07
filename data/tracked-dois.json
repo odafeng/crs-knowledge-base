@@ -174,5 +174,9 @@
   "10.1016/S1470-2045(26)00175-0": {
     "topic": "mCRC-KRAS-G12C",
     "added": "2026-08-29"
+  },
+  "10.1093/bjs/znag106": {
+    "topic": "robotic-surgery",
+    "added": "2026-10-07"
   }
 }
