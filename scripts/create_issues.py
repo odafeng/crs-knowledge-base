@@ -8,6 +8,7 @@ import sys
 from commentary import CommentaryProposal
 from config import GITHUB_TOKEN
 from issue_data import checkbox, embed
+from provenance import check_evidence, evidence_table_markdown
 from topics import LABEL_COLORS, TOPIC_LABELS, topic_from_str
 
 
@@ -51,6 +52,26 @@ def _topic_to_label(topic_str: str) -> str:
     return TOPIC_LABELS.get(topic, "") if topic else ""
 
 
+# Fields the accepted-issue workflow needs to publish the paper without the pipeline.
+ISSUE_PAYLOAD_FIELDS = (
+    "topic",
+    "doi",
+    "pmid",
+    "title",
+    "authors",
+    "journal",
+    "year",
+    "abstract",
+    "abstract_status",
+    "ai_score",
+    "ai_analysis",
+    "ai_bottom_line",
+    "ai_suggested_js",
+    "ai_suggested_filename",
+    "ai_evidence",
+)
+
+
 def format_issue_body(paper: dict) -> str:
     """Format a paper into a GitHub Issue body (markdown)."""
     score = paper.get("ai_score", "?")
@@ -60,8 +81,24 @@ def format_issue_body(paper: dict) -> str:
 
     lines = []
 
+    status = paper.get("abstract_status", "full")
+    if status != "full":
+        lines += [
+            "> [!WARNING]",
+            f"> **摘要{'被截斷' if status == 'truncated' else '缺失'}**：結果數據未經摘要驗證，請以原文核對每個數字。",
+            "",
+        ]
+
     if parse_failed:
         lines.append("> **Warning**: AI classification failed to produce structured output. Manual review required.")
+        lines.append("")
+
+    if paper.get("gate_reasons"):
+        lines.append("> [!IMPORTANT]")
+        lines.append("> **未自動發布**，原因：")
+        lines += [f"> - {r}" for r in paper["gate_reasons"]]
+        lines.append(">")
+        lines.append("> 核對無誤後加上 `accepted` label，bot 會直接發布這筆（標示為已人工確認）。")
         lines.append("")
 
     lines.append(f"**Topic**: `{paper.get('topic', '')}`")
@@ -91,6 +128,11 @@ def format_issue_body(paper: dict) -> str:
         lines.append(json.dumps(paper["ai_suggested_js"], indent=2, ensure_ascii=False))
         lines.append("```")
 
+    if paper.get("ai_suggested_js") or paper.get("ai_evidence"):
+        lines.append("")
+        lines.append("## 數字出處")
+        lines.append(evidence_table_markdown(check_evidence(paper.get("ai_evidence") or [], paper.get("abstract", ""))))
+
     if paper.get("ai_suggested_filename"):
         lines.append("")
         lines.append("## Suggested Filename")
@@ -108,9 +150,12 @@ def format_issue_body(paper: dict) -> str:
         lines.append("")
         lines.append("<details><summary>Original Abstract</summary>")
         lines.append("")
-        lines.append(paper["abstract"][:2000])
+        lines.append(paper["abstract"])
         lines.append("")
         lines.append("</details>")
+
+    if not parse_failed and paper.get("ai_suggested_js"):
+        lines += ["", embed("paper", {k: paper.get(k) for k in ISSUE_PAYLOAD_FIELDS})]
 
     return "\n".join(lines)
 

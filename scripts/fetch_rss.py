@@ -121,7 +121,7 @@ def fetch_rss(topic=None, dry_run=False, reldate=PUBMED_RELDATE):
                 "authors": art.get("authors", ""),
                 "journal": name,
                 "year": art.get("year", "") or str(datetime.now().year),
-                "abstract": (art.get("abstract", "") or "")[:500],
+                "abstract": art.get("abstract", "") or "",
                 "publication_types": art.get("publication_types", []),
                 "comment_on_pmids": art.get("comment_on_pmids", []),
                 "topic": t,

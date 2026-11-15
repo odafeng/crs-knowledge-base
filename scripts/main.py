@@ -22,6 +22,7 @@ from create_issues import create_commentary_review_issue, create_issues
 from fetch_pubmed import fetch_pubmed, resolve_dois
 from fetch_rss import AllFeedsFailedError, fetch_rss
 from notify_line import notify_papers
+from provenance import abstract_status
 
 
 def deduplicate_candidates(candidates):
@@ -142,6 +143,8 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
         return journal_outage
 
     today_str = date.today().isoformat()
+    for c in candidates:
+        c["abstract_status"] = abstract_status(c.get("abstract", ""))
     research, commentary = split_commentary(candidates)
     print(f"[Pipeline] {len(research)} research, {len(commentary)} commentary")
 

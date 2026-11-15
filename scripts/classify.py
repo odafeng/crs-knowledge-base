@@ -30,6 +30,24 @@ RESCUE_PROMPT = (
     "資訊不完整時保守評分，並在 contextual_analysis 中說明資訊限制。"
 )
 
+EVIDENCE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "claim": {"type": "string", "description": "含該數字的片段，例如 'mOS 30.3 vs 15.1 mo'"},
+        "source": {"type": "string", "enum": ["abstract", "web_fetch", "inference"]},
+        "quote": {
+            "anyOf": [{"type": "string"}, {"type": "null"}],
+            "description": "abstract / web_fetch：原文逐字片段（直接複製，不可改寫或翻譯）。inference：null",
+        },
+        "url": {
+            "anyOf": [{"type": "string"}, {"type": "null"}],
+            "description": "web_fetch：讀到該數字的網址。其他：null",
+        },
+    },
+    "required": ["claim", "source", "quote", "url"],
+    "additionalProperties": False,
+}
+
 RELATION_SCHEMA = {
     "type": "object",
     "properties": {
@@ -85,8 +103,13 @@ SUBMIT_CLASSIFICATION_TOOL = {
                 "type": "object",
                 "description": "Optional chart bar additions/updates.",
             },
+            "evidence": {
+                "type": "array",
+                "description": "suggested_js 的 n、result、bottomLine 中每一個數字的出處。score < 4 時可為空陣列。",
+                "items": EVIDENCE_SCHEMA,
+            },
         },
-        "required": ["relevance_score", "contextual_analysis"],
+        "required": ["relevance_score", "contextual_analysis", "evidence"],
     },
 }
 
@@ -96,7 +119,14 @@ ALL_TOOLS = [*AGENT_TOOLS, SUBMIT_CLASSIFICATION_TOOL]
 # additionalProperties: false on every object, so the free-form suggested_js and
 # chart_updates fields of submit_classification are left out; the reviewer writes
 # those by hand for the rare paper classified this way.
-_RESCUE_FIELDS = ("relevance_score", "contextual_analysis", "bottom_line", "suggested_filename", "relations")
+_RESCUE_FIELDS = (
+    "relevance_score",
+    "contextual_analysis",
+    "bottom_line",
+    "suggested_filename",
+    "relations",
+    "evidence",
+)
 RESCUE_OUTPUT_SCHEMA = {
     "type": "object",
     "properties": {k: SUBMIT_CLASSIFICATION_TOOL["input_schema"]["properties"][k] for k in _RESCUE_FIELDS},
@@ -137,6 +167,7 @@ def _mark_for_review(paper: dict, note: str) -> dict:
     paper["ai_suggested_filename"] = ""
     paper["ai_relations"] = []
     paper["ai_chart_updates"] = None
+    paper["ai_evidence"] = []
     paper["ai_parse_failed"] = True
     return paper
 
@@ -195,6 +226,7 @@ def _apply_submission(paper: dict, result: dict) -> dict:
     paper["ai_suggested_filename"] = result.get("suggested_filename", "")
     paper["ai_relations"] = result.get("relations", [])
     paper["ai_chart_updates"] = result.get("chart_updates")
+    paper["ai_evidence"] = result.get("evidence", [])
     paper["ai_parse_failed"] = False
     return paper
 
