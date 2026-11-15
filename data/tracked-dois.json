@@ -198,5 +198,80 @@
   "10.6004/jnccn.2026.0051": {
     "topic": "mCRC-BRAF-V600E",
     "added": "2026-11-13"
+  },
+  "10.1097/MD.0000000000051468": {
+    "topic": "mCRC-BRAF-V600E",
+    "added": "2026-11-15",
+    "score": 2
+  },
+  "10.3760/cma.j.cn112137-20260402-00898": {
+    "topic": "mCRC-BRAF-V600E",
+    "added": "2026-11-15",
+    "score": 2
+  },
+  "10.1007/s00423-026-04198-w": {
+    "topic": "mCRC-MSI-H",
+    "added": "2026-11-15",
+    "score": 2
+  },
+  "10.3389/fimmu.2026.1967647": {
+    "topic": "mCRC-MSI-H",
+    "added": "2026-11-15",
+    "score": 2
+  },
+  "10.5114/pjp/235686": {
+    "topic": "mCRC-MSI-H",
+    "added": "2026-11-15",
+    "score": 2
+  },
+  "10.1007/s12029-026-01623-7": {
+    "topic": "mCRC-MSI-H",
+    "added": "2026-11-15",
+    "score": 2
+  },
+  "10.3389/fimmu.2026.1962600": {
+    "topic": "mCRC-MSI-H",
+    "added": "2026-11-15",
+    "score": 2
+  },
+  "10.3390/cells15211979": {
+    "topic": "mCRC-HER2",
+    "added": "2026-11-15",
+    "score": 1
+  },
+  "10.3390/ijms27219633": {
+    "topic": "mCRC-RAS-wt",
+    "added": "2026-11-15",
+    "score": 2
+  },
+  "10.1186/s12957-026-04536-8": {
+    "topic": "generic-CRS",
+    "added": "2026-11-15",
+    "score": 3
+  },
+  "10.3791/71783": {
+    "topic": "robotic-surgery",
+    "added": "2026-11-15",
+    "score": 2
+  },
+  "10.1200/JCO-25-02761": {
+    "topic": "mCRC-BRAF-V600E",
+    "added": "2026-11-15",
+    "score": 1
+  },
+  "10.1038/s41591-026-04771-2": {
+    "topic": "mCRC-BRAF-V600E",
+    "added": "2026-11-15",
+    "score": 1
+  },
+  "10.1097/SLA.0000000000007261": {
+    "topic": "mCRC-BRAF-V600E",
+    "added": "2026-11-15",
+    "score": 2
+  },
+  "10.1097/SLA.0000000000007247": {
+    "topic": "mCRC-BRAF-V600E",
+    "added": "2026-11-15",
+    "score": 1
   }
 }
