@@ -12,8 +12,10 @@ from config import (
     PUBMED_FETCH_URL,
     PUBMED_RELDATE,
     PUBMED_SEARCH_URL,
+    is_tracked,
     load_queries,
     load_tracked_dois,
+    tracked_ids,
 )
 from config import (
     is_conference_season as _is_conference_season,
@@ -147,8 +149,7 @@ CONFERENCE_SUPPLEMENT_QUERIES = [
 def fetch_pubmed(topic=None, reldate=PUBMED_RELDATE, dry_run=False):
     """Fetch new papers from PubMed. Returns list of candidate dicts."""
     queries = load_queries()
-    tracked = load_tracked_dois()
-    tracked_doi_set = set(tracked.keys())
+    tracked_dois, tracked_pmids = tracked_ids(load_tracked_dois())
 
     topics = [topic] if topic else [t for t in queries if t not in ("rss_feeds", "conference_seasons")]
     candidates = []
@@ -170,7 +171,7 @@ def fetch_pubmed(topic=None, reldate=PUBMED_RELDATE, dry_run=False):
 
         articles = efetch(pmids)
         for art in articles:
-            if art["doi"] and art["doi"] in tracked_doi_set:
+            if is_tracked(art, tracked_dois, tracked_pmids):
                 continue
             if art["pmid"] in seen_pmids:
                 continue
@@ -197,7 +198,7 @@ def fetch_pubmed(topic=None, reldate=PUBMED_RELDATE, dry_run=False):
             for art in articles:
                 if art["pmid"] in seen_pmids:
                     continue
-                if art["doi"] and art["doi"] in tracked_doi_set:
+                if is_tracked(art, tracked_dois, tracked_pmids):
                     continue
                 seen_pmids.add(art["pmid"])
 

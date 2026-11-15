@@ -106,7 +106,7 @@ SUBMIT_CLASSIFICATION_TOOL = {
             },
             "evidence": {
                 "type": "array",
-                "description": "suggested_js 的 n、result、bottomLine 中每一個數字的出處。score < 4 時可為空陣列。",
+                "description": "suggested_js 的 n、regimen、endpoint、result、bottomLine 中每一個數字的出處。score < 4 時可為空陣列。",
                 "items": EVIDENCE_SCHEMA,
             },
         },
@@ -136,21 +136,32 @@ RESCUE_OUTPUT_SCHEMA = {
 }
 
 
+def _system_blocks(system_prompt: str) -> list[dict]:
+    """The topic's system prompt as one cached block.
+
+    Tools render before system, so this breakpoint covers tools + system. Every paper
+    of a topic after the first reads that prefix from the cache. Without it the only
+    breakpoint is the automatic one after the paper itself, so each paper wrote an
+    entry no other paper could read (first live run: 198K tokens written, 10K read).
+    """
+    return [{"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}}]
+
+
 def _create_message(client: Anthropic, system_prompt: str, messages: list[dict], **overrides):
-    """Send one agent turn. The tools array stays identical on every call so that
-    earlier thinking blocks remain valid; overrides only touch per-call fields."""
+    """Send one agent turn. The tools array and system prompt stay identical on every
+    call so that earlier thinking blocks remain valid; overrides only touch per-call fields."""
     params = {
         "model": CLASSIFY_MODEL,
         "max_tokens": MAX_OUTPUT_TOKENS,
         "thinking": {"type": "adaptive", "display": "summarized"},
         "output_config": {"effort": CLASSIFY_EFFORT},
-        "system": system_prompt,
+        "system": _system_blocks(system_prompt),
         "tools": ALL_TOOLS,
         "messages": messages,
         "betas": [FALLBACK_BETA],
         "fallbacks": "default",
-        # Each turn resends system + tools + history; cache the prefix so later turns
-        # (and later papers in the same topic) read it at the cache-read rate.
+        # Automatic breakpoint at the end of the conversation: later turns of the same
+        # paper's tool loop read everything sent so far.
         "cache_control": {"type": "ephemeral"},
     }
     params.update(overrides)

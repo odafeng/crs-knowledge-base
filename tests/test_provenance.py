@@ -9,11 +9,14 @@ from create_issues import format_issue_body
 from fetch_rss import fetch_rss
 from issue_data import extract
 from provenance import (
+    CHECKED_FIELDS,
     abstract_status,
     check_evidence,
     evaluate_commentary_gate,
     evaluate_paper_gate,
     numbers_in,
+    phases_in,
+    study_design_reasons,
     unsourced_numbers,
 )
 from topic_agents import build_paper_prompt
@@ -199,6 +202,17 @@ class TestCommentaryGate:
         result = evaluate_commentary_gate(_Proposal(summary="OS HR 0.80"), "no numbers here.")
         assert not result.passed
 
+    def test_phase_not_in_abstract_is_held(self):
+        result = evaluate_commentary_gate(
+            _Proposal(summary="Discusses the phase 3 trial."), "Discusses the phase 2 trial."
+        )
+        assert not result.passed
+        assert any("Phase 3" in r for r in result.reasons)
+
+    def test_phase_stated_in_abstract_passes(self):
+        result = evaluate_commentary_gate(_Proposal(summary="評論這個 Phase III 試驗"), "Comment on a phase 3 trial.")
+        assert result.passed, result.reasons
+
 
 class TestSchema:
     def test_evidence_required_in_tool_and_rescue(self):
@@ -259,3 +273,93 @@ def test_journal_feed_keeps_full_abstract(mock_queries, mock_tracked, mock_esear
     abstract = "BRAF colorectal " + "x" * 2000 + "."
     mock_efetch.return_value = [{"pmid": "1", "doi": "10.1/a", "title": "BRAF colorectal", "abstract": abstract}]
     assert fetch_rss()[0]["abstract"] == abstract
+
+
+class TestStudyDesign:
+    """The studyType badge must not claim more than the title and abstract state."""
+
+    def test_phase_labels_are_not_numbers(self):
+        assert numbers_in("Phase 3 RCT, phase Ib/II, phase 1-2, phases 2 and 3") == set()
+        assert numbers_in("a phase in which 12 patients responded") == {"12"}
+
+    def test_phases_in(self):
+        assert phases_in("a randomised, open-label, phase 3 trial") == {"3"}
+        assert phases_in("this phase Ib/II study") == {"1", "2"}
+        assert phases_in("Phase III") == {"3"}
+        assert phases_in("the next phase is 3 months long") == set()
+
+    def test_guideline_labelled_phase_3_rct_is_held(self):
+        # Issue #34: the NCCN Insights summary came back as "Phase 3 RCT".
+        paper = _paper(title="NCCN Guidelines Insights: Colon Cancer, Version 3.2026")
+        paper["ai_suggested_js"]["studyType"] = "Phase 3 RCT"
+        reasons = evaluate_paper_gate(paper, AUTO_TOPICS).reasons
+        assert any("Phase 3" in r and "沒有寫明" in r for r in reasons)
+        assert any("RCT" in r and "隨機" in r for r in reasons)
+
+    def test_stated_design_passes(self):
+        paper = _paper(
+            abstract=NICHE2_ABSTRACT.replace(
+                "METHODS: Patients", "METHODS: In this single-arm, phase 2 trial, patients"
+            )
+        )
+        paper["ai_suggested_js"]["studyType"] = "Phase 2 (updated)"
+        result = evaluate_paper_gate(paper, AUTO_TOPICS)
+        assert result.passed, result.reasons
+
+    def test_phase_may_be_stated_in_the_title(self):
+        paper = _paper(title="Drug X versus chemotherapy: a randomised phase 3 trial")
+        paper["ai_suggested_js"]["studyType"] = "Phase 3 RCT"
+        assert evaluate_paper_gate(paper, AUTO_TOPICS).passed
+
+    def test_phase_named_in_the_entry_text_must_be_in_the_source(self):
+        # The abstract says phase 2; a bottom line that says "Phase 3" must not publish unreviewed.
+        paper = _paper(
+            abstract=NICHE2_ABSTRACT.replace(
+                "METHODS: Patients", "METHODS: In this single-arm, phase 2 trial, patients"
+            )
+        )
+        paper["ai_suggested_js"]["studyType"] = "Phase 2 (updated)"
+        paper["ai_suggested_js"]["bottomLine"] = "Phase 3 證實 neoadjuvant 雙免疫的長期療效"
+        reasons = evaluate_paper_gate(paper, AUTO_TOPICS).reasons
+        assert any("Phase 3" in r and "沒有寫明" in r for r in reasons), reasons
+
+    def test_cohort_number_is_not_a_phase(self):
+        assert study_design_reasons("Phase 3 (Cohort 2)", "phase 3 BREAKWATER cohort") == []
+
+    def test_untyped_designs_are_not_checked(self):
+        assert study_design_reasons("Meta-analysis", "a pooled look") == []
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            "A non-randomized phase 2 trial enrolled 40 patients.",
+            "A nonrandomised, single-arm phase 2 study.",
+            "An unrandomized phase 2 cohort.",
+            "Patients were not randomly assigned in this phase 2 study.",
+            "This phase 2 study was conducted without randomisation.",
+            "There was no randomization in this phase 2 study.",
+        ],
+    )
+    def test_denied_randomisation_does_not_support_an_rct_badge(self, source):
+        reasons = study_design_reasons("Phase 2 RCT", source)
+        assert len(reasons) == 1 and "RCT" in reasons[0], reasons
+
+    def test_randomised_trial_with_a_non_randomised_cohort_still_counts(self):
+        source = (
+            "Patients were randomly assigned in this phase 2 trial; a non-randomised cohort was analysed separately."
+        )
+        assert study_design_reasons("Phase 2 RCT", source) == []
+
+    def test_non_inferiority_is_not_a_denial(self):
+        assert study_design_reasons("Phase 3 RCT", "A randomised, non-inferiority, phase 3 trial.") == []
+
+
+def test_prompt_and_tool_ask_for_every_field_the_gate_checks():
+    """The gate checks five fields; the model must be told to source all five."""
+    from topic_agents import build_system_prompt
+
+    prompt = build_system_prompt("mCRC-MSI-H")
+    tool_text = SUBMIT_CLASSIFICATION_TOOL["input_schema"]["properties"]["evidence"]["description"]
+    for field in CHECKED_FIELDS:
+        assert field in tool_text, field
+    assert "n、regimen、endpoint、result、bottomLine" in prompt

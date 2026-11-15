@@ -32,6 +32,12 @@ class ModelUsage:
     cache_write_tokens: int = 0
     cache_read_tokens: int = 0
 
+    @property
+    def cache_hit_rate(self) -> float:
+        """Share of all input tokens that were read from the cache."""
+        total = self.input_tokens + self.cache_write_tokens + self.cache_read_tokens
+        return self.cache_read_tokens / total if total else 0.0
+
     def cost(self, model: str) -> float | None:
         if model not in PRICES:
             return None
@@ -71,8 +77,8 @@ class UsageLog:
             cost = u.cost(model)
             lines.append(
                 f"[Usage] {model}: {u.requests} requests, input {u.input_tokens:,} "
-                f"(cache write {u.cache_write_tokens:,}, cache read {u.cache_read_tokens:,}), "
-                f"output {u.output_tokens:,}, est. ${cost:.2f}"
+                f"(cache write {u.cache_write_tokens:,}, cache read {u.cache_read_tokens:,}, "
+                f"hit rate {u.cache_hit_rate:.0%}), output {u.output_tokens:,}, est. ${cost:.2f}"
                 if cost is not None
                 else f"[Usage] {model}: {u.requests} requests (no price on file)"
             )

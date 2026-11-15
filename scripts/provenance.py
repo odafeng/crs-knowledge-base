@@ -56,10 +56,54 @@ _NUMBER = re.compile(
 )
 
 
+_PHASE_TOKEN = r"(?:[1-4]|iv|i{1,3})[ab]?"
+# "phase 3", "Phase III", "phase 1b/2", "phase I-II". The trailing \b keeps "phase in" out.
+_PHASE = re.compile(rf"\bphases?[\s-]*({_PHASE_TOKEN}(?:\s*(?:/|-|–|and|or|to)\s*{_PHASE_TOKEN})*)\b", re.IGNORECASE)
+_ROMAN = {"i": "1", "ii": "2", "iii": "3", "iv": "4"}
+_RANDOMISED = re.compile(r"\brandomi[sz]|\brandomly\b", re.IGNORECASE)
+# "non-randomized", "not randomly assigned", "without randomisation": the source denies it.
+_NOT_RANDOMISED = re.compile(
+    r"\b(?:non[-\u2010\u2011\u2013\s]?|un|not\s+|no\s+|without\s+|lack\s+of\s+)(?:randomi[sz]\w*|randomly)\b",
+    re.IGNORECASE,
+)
+
+
 def numbers_in(text: str) -> set[str]:
-    """Canonical numbers in ``text``; ignores CI levels ("95% CI") and labels like G3 or 2L."""
-    cleaned = _CI.sub("CI", text or "")
+    """Canonical numbers in ``text``; ignores CI levels ("95% CI"), labels like G3 or 2L,
+    and trial phases ("Phase 3"), which study_design_reasons() checks instead."""
+    cleaned = _PHASE.sub(" ", _CI.sub("CI", text or ""))
     return {_canonical(m.replace("·", ".")) for m in _NUMBER.findall(cleaned)}
+
+
+def phases_in(text: str) -> set[str]:
+    """Trial phases a text mentions, as digits: "phase Ib/II" -> {"1", "2"}."""
+    found = set()
+    for mention in _PHASE.findall(text or ""):
+        for token in re.findall(r"[1-4]|iv|i{1,3}", mention, re.IGNORECASE):
+            found.add(_ROMAN.get(token.lower(), token))
+    return found
+
+
+def states_randomisation(text: str) -> bool:
+    """True when the text says patients were randomised; a denial ("non-randomized") does not count."""
+    return bool(_RANDOMISED.search(_NOT_RANDOMISED.sub(" ", text or "")))
+
+
+def study_design_reasons(study_type: str, source_text: str) -> list[str]:
+    """Reasons the entry's studyType claims more than the title and abstract state.
+
+    The badge is what a reader sees first, so a phase or "RCT" label must be written in
+    the source; issue #34 was a guideline summary labelled "Phase 3 RCT".
+    """
+    design = (study_type or "").split("(")[0]
+    reasons = []
+    if "phase" in design.lower():
+        missing = sorted(set(re.findall(r"[1-4]", design)) - phases_in(source_text))
+        if missing:
+            reasons.append(f"studyType「{study_type}」的 Phase {'、'.join(missing)} 在標題與摘要中沒有寫明")
+    if "RCT" in design and not states_randomisation(source_text):
+        reasons.append(f"studyType「{study_type}」標為 RCT，但標題與摘要沒有提到隨機分派")
+    return reasons
 
 
 def _norm_text(text: str) -> str:
@@ -147,7 +191,14 @@ def evaluate_paper_gate(paper: dict, auto_topics: set[str]) -> GateResult:
         if c.status != "verified":
             reasons.append(f"出處未通過（{_STATUS_LABELS[c.status]}）：{c.claim}")
 
+    source_text = f"{paper.get('title', '')} {paper.get('abstract', '')}"
+    reasons += study_design_reasons(entry.get("studyType", ""), source_text)
+
     text = entry_text(published_fields(paper))
+    # numbers_in() skips phase labels, so a phase the entry text names is compared on its own.
+    unstated = sorted(phases_in(text) - phases_in(source_text))
+    if unstated:
+        reasons.append(f"KB 條目提到的 Phase {'、'.join(unstated)} 在標題與摘要中沒有寫明")
     missing = numbers_not_in_abstract(text, paper.get("abstract", ""))
     if missing:
         reasons.append(f"KB 條目中這些數字在摘要裡找不到：{', '.join(missing)}")
@@ -167,6 +218,10 @@ def evaluate_commentary_gate(proposal, abstract: str) -> GateResult:
     missing = numbers_not_in_abstract(proposal.summary, abstract)
     if missing:
         reasons.append(f"摘要句中這些數字在原文找不到：{', '.join(missing)}")
+    # numbers_in() skips phase labels, so a phase the summary names is compared on its own.
+    unstated = sorted(phases_in(proposal.summary) - phases_in(abstract))
+    if unstated:
+        reasons.append(f"摘要句提到的 Phase {'、'.join(unstated)} 在原文找不到")
     return GateResult(not reasons, reasons)
 
 

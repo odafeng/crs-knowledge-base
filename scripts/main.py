@@ -17,6 +17,7 @@ from config import (
     load_tracked_dois,
     save_tracked_abstracts,
     save_tracked_dois,
+    tracking_key,
 )
 from create_issues import create_commentary_review_issue, create_issues
 from fetch_pubmed import fetch_pubmed, resolve_dois
@@ -115,8 +116,13 @@ def update_tracking(research: list[dict], triaged: list[tuple[dict, CommentaryPr
 
     def record(c: dict, extra: dict) -> None:
         entry = {"topic": c.get("topic", ""), "added": today, **extra}
-        if c.get("doi"):
-            tracked_dois[c["doi"]] = entry
+        if c.get("pmid"):
+            entry["pmid"] = c["pmid"]
+        # Keyed by DOI, or by PMID for the papers PubMed lists without one; those were
+        # never recorded before and were re-classified on every run.
+        key = tracking_key(c)
+        if key:
+            tracked_dois[key] = entry
         if c.get("abstract_id"):
             tracked_abstracts[c["abstract_id"]] = entry
 

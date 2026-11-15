@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from classify import classify_paper
+from topic_agents import build_system_prompt
 from usage import UsageLog
 
 
@@ -65,5 +66,20 @@ def test_classifier_requests_prompt_caching_and_records_usage(sample_candidate):
     log = UsageLog()
     with patch("classify.USAGE", log):
         classify_paper(client, sample_candidate)
-    assert client.beta.messages.create.call_args.kwargs["cache_control"] == {"type": "ephemeral"}
+    kwargs = client.beta.messages.create.call_args.kwargs
+    # Shared prefix (tools + topic system prompt) has its own breakpoint, so the next
+    # paper of the topic reads it; the automatic one covers the growing tool loop.
+    (system,) = kwargs["system"]
+    assert system["cache_control"] == {"type": "ephemeral"}
+    assert system["text"] == build_system_prompt(sample_candidate["topic"])
+    assert sample_candidate["title"] not in system["text"]  # nothing per-paper before the breakpoint
+    assert kwargs["cache_control"] == {"type": "ephemeral"}
     assert log.by_model["claude-fable-5-2"].requests == 1
+
+
+def test_cache_hit_rate_is_reported():
+    log = UsageLog()
+    log.record(_response(input=100, write=900, read=0), "claude-fable-5-2")
+    log.record(_response(input=100, write=100, read=800), "claude-fable-5-2")
+    assert log.by_model["claude-fable-5-2"].cache_hit_rate == 0.4
+    assert "hit rate 40%" in log.summary_lines()[0]

@@ -44,6 +44,20 @@ class TestExecuteTool:
         assert parsed["tracked_count"] == 1
         assert "existing_papers_js" in parsed
 
+    @patch("agent_tools.load_tracked_dois")
+    def test_lookup_existing_lists_only_papers_that_reached_review(self, mock_tracked):
+        """Rejected papers and commentary are tracked (to skip them) but are not KB papers."""
+        mock_tracked.return_value = {
+            "10.1/kept": {"topic": "mCRC-BRAF-V600E", "added": "2026-11-15", "score": 5},
+            "10.1/legacy": {"topic": "mCRC-BRAF-V600E", "added": "2026-06-07"},
+            "10.1/review": {"topic": "mCRC-BRAF-V600E", "added": "2026-11-15", "score": None},
+            "10.1/rejected": {"topic": "mCRC-BRAF-V600E", "added": "2026-11-15", "score": 2},
+            "pmid:42000001": {"topic": "mCRC-BRAF-V600E", "added": "2026-11-15", "score": 1, "pmid": "42000001"},
+            "10.1/letter": {"topic": "mCRC-BRAF-V600E", "added": "2026-11-15", "kind": "commentary", "target": None},
+        }
+        parsed = json.loads(execute_tool("lookup_existing_papers", {"topic": "mCRC-BRAF-V600E"}))
+        assert set(parsed["tracked_dois"]) == {"10.1/kept", "10.1/legacy", "10.1/review"}
+
     @patch("agent_tools.urllib.request.urlopen")
     def test_web_fetch_with_real_content(self, mock_urlopen):
         # Provide enough content for trafilatura/readability to extract

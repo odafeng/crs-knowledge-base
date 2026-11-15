@@ -123,3 +123,49 @@ class TestFetchRss:
         # First feed errors, second succeeds (empty) — should NOT raise.
         mock_esearch.side_effect = [OSError("boom"), []]
         assert fetch_rss() == []
+
+
+class TestJournalRouting:
+    """Journal-feed papers are judged by the topic their own terms point to."""
+
+    @pytest.fixture
+    def topics(self):
+        from config import load_queries
+
+        queries = load_queries()  # the production configuration, in its real order
+        return {k: v for k, v in queries.items() if k not in ("rss_feeds", "conference_seasons")}
+
+    @pytest.mark.parametrize(
+        ("title", "expected"),
+        [
+            # Used to go to BRAF: "colorectal" matched the first topic listed.
+            ("Pembrolizumab in MSI-H colorectal cancer: 5-year follow-up", "mCRC-MSI-H"),
+            ("Sotorasib plus panitumumab in KRAS G12C colorectal cancer", "mCRC-KRAS-G12C"),
+            ("Encorafenib in BRAF V600E colorectal cancer", "mCRC-BRAF-V600E"),
+            ("Robotic TME versus laparoscopic surgery for rectal cancer", "robotic-surgery"),
+            # No specific term: the catch-all topic, not whichever topic is listed first.
+            ("Adjuvant chemotherapy duration in stage III colorectal cancer", "generic-CRS"),
+            # "treatment" contains "tme"; it must not read as the robotic term TME.
+            ("Total neoadjuvant treatment for rectal cancer", "generic-CRS"),
+        ],
+    )
+    def test_assignment(self, topics, title, expected):
+        assert _assign_topic({"title": title, "abstract": ""}, topics) == expected
+
+    def test_more_specific_matches_win(self, topics):
+        art = {"title": "Encorafenib for BRAF V600E colorectal cancer that is also dMMR", "abstract": ""}
+        assert _assign_topic(art, topics) == "mCRC-BRAF-V600E"  # 2 BRAF terms vs 1 MSI-H term
+
+    @patch("fetch_rss.efetch")
+    @patch("fetch_rss.esearch", return_value=["1", "2"])
+    @patch("fetch_rss.load_tracked_dois", return_value={})
+    @patch("fetch_rss.load_queries")
+    def test_topic_filter_keeps_only_that_topic(self, mock_queries, _tracked, _esearch, mock_efetch, topics):
+        mock_queries.return_value = {**topics, "rss_feeds": [{"name": "JCO", "pubmed_journal": "J Clin Oncol"}]}
+        mock_efetch.return_value = [
+            {"pmid": "1", "doi": "10.1/her2", "title": "Tucatinib in HER2 colorectal cancer", "abstract": ""},
+            {"pmid": "2", "doi": "10.1/braf", "title": "Encorafenib in BRAF colorectal cancer", "abstract": ""},
+        ]
+        results = fetch_rss(topic="mCRC-HER2")
+        assert {r["doi"] for r in results} == {"10.1/her2"}
+        assert all(r["topic"] == "mCRC-HER2" for r in results)

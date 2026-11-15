@@ -295,6 +295,7 @@ class TestPipelineRouting:
         assert tracked[editorial["doi"]] == {
             "topic": "generic-CRS",
             "added": tracked[editorial["doi"]]["added"],
+            "pmid": editorial["pmid"],
             "kind": "commentary",
             "target": None,
         }

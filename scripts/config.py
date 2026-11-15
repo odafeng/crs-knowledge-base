@@ -92,6 +92,35 @@ def save_tracked_dois(data):
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
+# A processed paper is keyed by DOI; one PubMed lists without a DOI is keyed "pmid:<PMID>".
+PMID_KEY_PREFIX = "pmid:"
+
+
+def tracking_key(paper: dict) -> str | None:
+    """Key under which a processed paper is recorded, or None if it has no identifier."""
+    if paper.get("doi"):
+        return paper["doi"]
+    if paper.get("pmid"):
+        return f"{PMID_KEY_PREFIX}{paper['pmid']}"
+    return None
+
+
+def tracked_ids(tracked: dict) -> tuple[set[str], set[str]]:
+    """(DOIs, PMIDs) of every paper already processed.
+
+    Entries carry the PMID when known, so a paper first seen without a DOI is still
+    recognised after PubMed adds one.
+    """
+    dois = {k for k in tracked if not k.startswith(PMID_KEY_PREFIX)}
+    pmids = {k[len(PMID_KEY_PREFIX) :] for k in tracked if k.startswith(PMID_KEY_PREFIX)}
+    pmids |= {str(v["pmid"]) for v in tracked.values() if isinstance(v, dict) and v.get("pmid")}
+    return dois, pmids
+
+
+def is_tracked(paper: dict, dois: set[str], pmids: set[str]) -> bool:
+    return bool((paper.get("doi") and paper["doi"] in dois) or (paper.get("pmid") and paper["pmid"] in pmids))
+
+
 def load_tracked_abstracts():
     if TRACKED_ABSTRACTS_FILE.exists():
         with open(TRACKED_ABSTRACTS_FILE) as f:
