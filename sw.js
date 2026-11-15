@@ -1,4 +1,4 @@
-const CACHE_NAME = 'seminar-hegemon-v18';
+const CACHE_NAME = 'seminar-hegemon-v19';
 const ASSETS = [
   './',
   './index.html',
