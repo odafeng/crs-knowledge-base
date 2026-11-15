@@ -191,6 +191,8 @@ def render_doc_page(paper: dict, entry: dict) -> str:
 <p>{e(paper.get("abstract") or "")}</p>
 </details>
 
+<p style="font-size:0.75rem;color:#718096;border-top:1px solid #e2e8f0;margin-top:24px;padding-top:8px">本頁僅供醫療專業人員教育與臨床參考，不構成醫療建議；臨床決策請以原始文獻與現行指引為準。</p>
+
 </body>
 </html>
 """

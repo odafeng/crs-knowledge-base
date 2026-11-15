@@ -240,6 +240,10 @@
 .rev-auto { background: #fffbeb; color: #b7791f; border: 1px solid #f6e05e; }
 .rev-accepted { background: #ebf8ff; color: #2b6cb0; }
 .rev-note { font-size: 0.78rem; color: var(--text-sec); margin-bottom: 8px; }
+.disclaimer-footer { margin: 24px 16px 32px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-sec); line-height: 1.6; }
+.disclaimer-notice { margin: 12px 16px 0; padding: 10px 12px; background: #fffbeb; border: 1px solid #f6e05e; border-radius: 8px; font-size: 0.82rem; color: #744210; }
+.disclaimer-notice p { margin: 0 0 8px; }
+.disclaimer-notice button { font-size: 0.82rem; padding: 4px 12px; border: 1px solid #d69e2e; border-radius: 6px; background: #fff; color: #744210; }
 </style>
 </head>
 <body>
@@ -256,6 +260,11 @@
   </div>
 </div>
 
+<div class="disclaimer-notice" id="disclaimer-notice" hidden>
+  <p>本網站僅供醫療專業人員教育與臨床參考，不構成醫療建議。部分內容由 AI 輔助整理，標示「AI 未審」者未經人工審核，可能有誤；臨床決策請以原始文獻與現行指引為準。</p>
+  <button onclick="ackDisclaimer()">我了解</button>
+</div>
+
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topic-grid">
@@ -267,17 +276,7 @@
     <div class="topic-card" onclick="navigate('v-robotic','機器人手術','Robotic Colorectal Surgery')">
       <div class="tc-icon">&#x1F916;</div>
       <div class="tc-title">機器人手術</div>
-      <div class="tc-desc">TME &middot; CME &middot; 臨床試驗</div>
-    </div>
-    <div class="topic-card disabled">
-      <div class="tc-icon">&#x1FA7A;</div>
-      <div class="tc-title">肛門手術</div>
-      <div class="tc-desc">內容建置中</div>
-    </div>
-    <div class="topic-card disabled">
-      <div class="tc-icon">&#x1F4CB;</div>
-      <div class="tc-title">其他</div>
-      <div class="tc-desc">內容建置中</div>
+      <div class="tc-desc">TME &middot; 吻合 &middot; 臨床試驗</div>
     </div>
   </div>
 </div>
@@ -527,13 +526,6 @@
     </div>
     <div class="sc-arrow">&#x203A;</div>
   </div>
-  <div class="sub-card disabled">
-    <div class="sc-icon">&#x1F52A;</div>
-    <div class="sc-body">
-      <div class="sc-title">CME（完全結腸繫膜切除）</div>
-      <div class="sc-desc">內容建置中</div>
-    </div>
-  </div>
   <div class="sub-card" onclick="navigate('v-robotic-anast','Anastomosis','機器人手術 &rsaquo; 吻合')">
     <div class="sc-icon">&#x1F517;</div>
     <div class="sc-body">
@@ -541,13 +533,6 @@
       <div class="sc-desc">Intracorporeal vs Extracorporeal &middot; Single-stapled vs Double-stapled</div>
     </div>
     <div class="sc-arrow">&#x203A;</div>
-  </div>
-  <div class="sub-card disabled">
-    <div class="sc-icon">&#x1F4CB;</div>
-    <div class="sc-body">
-      <div class="sc-title">Others</div>
-      <div class="sc-desc">其他機器人手術主題（內容建置中）</div>
-    </div>
   </div>
 </div>
 
@@ -918,7 +903,19 @@
 
 </div>
 
+<footer class="disclaimer-footer">本網站僅供醫療專業人員教育與臨床參考，不構成醫療建議。部分內容由 AI 輔助整理，標示「AI 未審」者未經人工審核，可能有誤；臨床決策請以原始文獻與現行指引為準。</footer>
+
 <script>
+// First-visit disclaimer; storage may be unavailable (private mode), in which case it shows every visit.
+function ackDisclaimer() {
+  document.getElementById('disclaimer-notice').hidden = true;
+  try { localStorage.setItem('sh-disclaimer-ack', '1'); } catch (e) {}
+}
+(function () {
+  let acked = false;
+  try { acked = localStorage.getItem('sh-disclaimer-ack') === '1'; } catch (e) {}
+  if (!acked) document.getElementById('disclaimer-notice').hidden = false;
+})();
 // === NAVIGATION ===
 const history_stack = [];
 
