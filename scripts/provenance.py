@@ -61,6 +61,11 @@ _PHASE_TOKEN = r"(?:[1-4]|iv|i{1,3})[ab]?"
 _PHASE = re.compile(rf"\bphases?[\s-]*({_PHASE_TOKEN}(?:\s*(?:/|-|–|and|or|to)\s*{_PHASE_TOKEN})*)\b", re.IGNORECASE)
 _ROMAN = {"i": "1", "ii": "2", "iii": "3", "iv": "4"}
 _RANDOMISED = re.compile(r"\brandomi[sz]|\brandomly\b", re.IGNORECASE)
+# "non-randomized", "not randomly assigned", "without randomisation": the source denies it.
+_NOT_RANDOMISED = re.compile(
+    r"\b(?:non[-\u2010\u2011\u2013\s]?|un|not\s+|no\s+|without\s+|lack\s+of\s+)(?:randomi[sz]\w*|randomly)\b",
+    re.IGNORECASE,
+)
 
 
 def numbers_in(text: str) -> set[str]:
@@ -79,6 +84,11 @@ def phases_in(text: str) -> set[str]:
     return found
 
 
+def states_randomisation(text: str) -> bool:
+    """True when the text says patients were randomised; a denial ("non-randomized") does not count."""
+    return bool(_RANDOMISED.search(_NOT_RANDOMISED.sub(" ", text or "")))
+
+
 def study_design_reasons(study_type: str, source_text: str) -> list[str]:
     """Reasons the entry's studyType claims more than the title and abstract state.
 
@@ -91,7 +101,7 @@ def study_design_reasons(study_type: str, source_text: str) -> list[str]:
         missing = sorted(set(re.findall(r"[1-4]", design)) - phases_in(source_text))
         if missing:
             reasons.append(f"studyType「{study_type}」的 Phase {'、'.join(missing)} 在標題與摘要中沒有寫明")
-    if "RCT" in design and not _RANDOMISED.search(source_text or ""):
+    if "RCT" in design and not states_randomisation(source_text):
         reasons.append(f"studyType「{study_type}」標為 RCT，但標題與摘要沒有提到隨機分派")
     return reasons
 

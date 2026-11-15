@@ -306,6 +306,30 @@ class TestStudyDesign:
     def test_untyped_designs_are_not_checked(self):
         assert study_design_reasons("Meta-analysis", "a pooled look") == []
 
+    @pytest.mark.parametrize(
+        "source",
+        [
+            "A non-randomized phase 2 trial enrolled 40 patients.",
+            "A nonrandomised, single-arm phase 2 study.",
+            "An unrandomized phase 2 cohort.",
+            "Patients were not randomly assigned in this phase 2 study.",
+            "This phase 2 study was conducted without randomisation.",
+            "There was no randomization in this phase 2 study.",
+        ],
+    )
+    def test_denied_randomisation_does_not_support_an_rct_badge(self, source):
+        reasons = study_design_reasons("Phase 2 RCT", source)
+        assert len(reasons) == 1 and "RCT" in reasons[0], reasons
+
+    def test_randomised_trial_with_a_non_randomised_cohort_still_counts(self):
+        source = (
+            "Patients were randomly assigned in this phase 2 trial; a non-randomised cohort was analysed separately."
+        )
+        assert study_design_reasons("Phase 2 RCT", source) == []
+
+    def test_non_inferiority_is_not_a_denial(self):
+        assert study_design_reasons("Phase 3 RCT", "A randomised, non-inferiority, phase 3 trial.") == []
+
 
 def test_prompt_and_tool_ask_for_every_field_the_gate_checks():
     """The gate checks five fields; the model must be told to source all five."""
