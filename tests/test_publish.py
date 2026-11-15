@@ -311,3 +311,14 @@ class TestReviewFindings:
         ):
             update_tracking([], [(commentary, None)], TODAY)
         assert "10.9999/refused" not in save.call_args.args[0]
+
+    def test_accepted_paper_keeps_secondary_source(self, kb):
+        """Codex review of #49: an accepted paper must not be labelled as abstract-verified."""
+        paper = _paper()
+        paper["ai_evidence"].append(
+            {"claim": "ORR 40%", "source": "web_fetch", "quote": "40%", "url": "https://example.org"}
+        )
+        assert publish_paper(paper, "accepted", TODAY, kb)["source"] == "secondary"
+
+    def test_auto_published_paper_is_abstract_sourced(self, kb):
+        assert publish_paper(_paper(), "auto", TODAY, kb)["source"] == "abstract"

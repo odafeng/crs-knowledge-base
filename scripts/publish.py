@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Literal
 
 from commentary import apply_commentary
-from provenance import check_evidence, evidence_table_markdown, published_fields
+from provenance import check_evidence, evaluate_paper_gate, evidence_table_markdown, published_fields
 from validate import validate_data
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -103,9 +103,9 @@ def build_entry(paper: dict, data: dict, review: ReviewStatus, today: str) -> di
         "doi": paper.get("doi") or js.get("doi") or None,
         "file": f"docs/{paper['topic']}/{filename}",
         "relations": relations,
-        # The gate only passes numbers found in the abstract; "accepted" entries were checked
-        # by a person against the same issue, which shows the abstract.
-        "source": "abstract",
+        # "abstract" only when every number passes the provenance gate. Accepted papers were
+        # usually held because some numbers came from elsewhere, so they keep the warning.
+        "source": "abstract" if evaluate_paper_gate(paper, AUTO_PUBLISH_TOPICS).passed else "secondary",
         "reviewedAt": today,
         "review": {"status": review, "publishedAt": today},
     }
