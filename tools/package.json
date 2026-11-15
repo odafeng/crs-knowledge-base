@@ -3,7 +3,7 @@
   "private": true,
   "description": "Browser checks for the generated site. Not shipped to readers.",
   "scripts": {
-    "test": "node --test e2e.test.js",
+    "test": "node --test page-errors.test.js e2e.test.js",
     "verify": "node verify.js",
     "measure": "node measure.js",
     "lighthouse": "node lighthouse.mjs ../site"

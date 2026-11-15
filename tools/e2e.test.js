@@ -5,6 +5,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const { isCancelledViewTransition } = require('./page-errors');
 
 const SITE = path.resolve(process.env.SITE_DIR || path.join(__dirname, '..', 'site'));
 const BASE = '/crs-knowledge-base/';
@@ -31,12 +32,12 @@ test('new site: navigation, news, search, preferences, and offline reading', asy
     const context = await browser.newContext({ viewport: { width: 360, height: 812 } });
     const page = await context.newPage();
     const errors = [];
-    // Chromium reports a page-to-page fade it cancelled (the test navigates again before it ends) as a page error
-    // with no script stack. Readers see nothing, and no page script can catch it, so it is not counted.
-    const cancelledFade = /^Transition was aborted because of invalid state/;
-    page.on('pageerror', error => { if (!cancelledFade.test(error.message)) errors.push(error.message); });
+    page.on('pageerror', error => { if (!isCancelledViewTransition(error)) errors.push(error.message); });
     await page.goto(origin + BASE);
     await page.evaluate(() => navigator.serviceWorker.ready);
+    const build = await page.request.get(origin + BASE + 'build-info.json');
+    assert.equal(build.status(), 200);
+    assert.equal((await build.json()).commit, process.env.GITHUB_SHA || null);
     assert.match(await page.locator('main').innerText(), /頭條/);
     assert.equal(await page.locator('h1').count(), 1);
     assert.equal(await page.locator('header [data-push-toggle]').isVisible(), false);
