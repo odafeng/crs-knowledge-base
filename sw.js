@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crs-kb-v17';
+const CACHE_NAME = 'crs-kb-v18';
 const ASSETS = [
   './',
   './index.html',
@@ -16,7 +16,15 @@ const ASSETS = [
   './docs/robotic-surgery/Mertens_BJSOpen_2026_SwedishRegistry.html',
   './docs/generic-CRS/Hecht_Lancet_2025_STELLAR303.html',
   './docs/generic-CRS/Hoyek_DLD_2025_NMA3L.html',
-  './docs/generic-CRS/Liu_NatCommun_2025_RegoSinti.html'
+  './docs/generic-CRS/Liu_NatCommun_2025_RegoSinti.html',
+  './docs/mCRC-BRAF-V600E/Benson_JNCCN_2026_NCCN_ColonCancer_v3.html',
+  './docs/mCRC-KRAS-G12C/Song_LancetOncol_2026_IfebemtinibGarsorasib.html',
+  './docs/mCRC-MSI-H/Chalabi_Lancet_2026_NICHE2_OS.html',
+  './docs/mCRC-MSI-H/Cercek_AnnOncol_2026_AZUR1.html',
+  './docs/mCRC-MSI-H/Ghelardi_NatMed_2026_UNICORN.html',
+  './docs/mCRC-MSI-H/Li_FrontImmunol_2026_PD1_WatchAndWait.html',
+  './docs/robotic-surgery/Song_BrJSurg_2026_COLRAR_LongTerm.html',
+  './docs/robotic-surgery/Genders_BJS_2026_RestorativeMA.html'
 ];
 
 self.addEventListener('install', e => {

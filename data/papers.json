@@ -128,6 +128,25 @@
             "type": "same_regimen"
           }
         ]
+      },
+      {
+        "id": "nccn-colon-2026",
+        "year": 2026,
+        "journal": "JNCCN",
+        "studyType": "Guideline",
+        "n": null,
+        "regimen": "NCCN Colon Cancer v3.2026（Guidelines Insights）",
+        "endpoint": "指引更新",
+        "result": "BRAF V600E 晚期治療推薦更新, 晚期治療章節依 biomarker 重組; 新增 fluoropyrimidine 前 DPYD 檢測; 依近期試驗更新非轉移性輔助治療",
+        "bottomLine": "NCCN 結腸癌 v3.2026 依 biomarker 重組晚期治療章節，並特別更新 BRAF V600E 推薦，承接 BREAKWATER 證據；另新增化療前 DPYD 檢測建議。Insights 摘要未列推薦等級，細節需對照指引全文",
+        "doi": "10.6004/jnccn.2026.0051",
+        "file": "docs/mCRC-BRAF-V600E/Benson_JNCCN_2026_NCCN_ColonCancer_v3.html",
+        "relations": [
+          {
+            "targetId": "bw-nejm-2025",
+            "type": "builds_on"
+          }
+        ]
       }
     ],
     "metrics": {
@@ -380,6 +399,20 @@
             "type": "builds_on"
           }
         ]
+      },
+      {
+        "id": "ifebemtinib-garsorasib",
+        "year": 2026,
+        "journal": "Lancet Oncol",
+        "studyType": "Phase 1-2",
+        "n": 51,
+        "regimen": "Ifebemtinib (FAK inhibitor) + garsorasib vs garsorasib (2L+)",
+        "endpoint": "ORR (investigator, primary)",
+        "result": "隨機組 ORR 38.9% vs 16.7%（p=0.068 NS）, mPFS 7.7 vs 4.0 mo（HR 0.48, 95% CI 0.22-1.04）; 單臂組 ORR 46.7%, mPFS 6.9 mo, mOS 14.3 mo; 無 G4 TRAE",
+        "bottomLine": "FAK 抑制劑 + garsorasib：anti-EGFR 以外的 G12C 組合策略，隨機組 ORR 數值翻倍但未達統計顯著（隨機僅 36 人、全為中國病人）。不改變臨床，G12C 抑制劑 + anti-EGFR 仍為標準",
+        "doi": "10.1016/S1470-2045(26)00175-0",
+        "file": "docs/mCRC-KRAS-G12C/Song_LancetOncol_2026_IfebemtinibGarsorasib.html",
+        "relations": []
       }
     ],
     "metrics": null
@@ -517,6 +550,82 @@
         "doi": "10.1056/NEJMoa2201445",
         "file": null,
         "relations": []
+      },
+      {
+        "id": "niche2-os",
+        "year": 2026,
+        "journal": "Lancet",
+        "studyType": "Phase 2 (updated)",
+        "n": 111,
+        "regimen": "Neoadjuvant nivo + ipi → surgery (stage II-III dMMR colon)",
+        "endpoint": "3-yr DFS (primary efficacy) + 5-yr OS (exploratory)",
+        "result": "3-yr DFS 100%, 5-yr OS 100%; per-protocol 111 例無復發; 術後中位追蹤 58.7 mo",
+        "bottomLine": "NICHE-2 長期報告：中位追蹤近 5 年，per-protocol 111 例零復發、3 年 DFS 與 5 年 OS 皆 100%。neoadjuvant nivo+ipi 已具備挑戰 dMMR 局部進展結腸癌「手術優先」標準的證據（仍為單臂 Phase 2）",
+        "doi": "10.1016/S0140-6736(26)01602-8",
+        "file": "docs/mCRC-MSI-H/Chalabi_Lancet_2026_NICHE2_OS.html",
+        "relations": [
+          {
+            "targetId": "niche2",
+            "type": "supersedes"
+          }
+        ]
+      },
+      {
+        "id": "azur1",
+        "year": 2026,
+        "journal": "Ann Oncol",
+        "studyType": "Phase 2",
+        "n": 154,
+        "regimen": "Dostarlimab monotherapy (stage II-III dMMR/MSI-H rectal, non-operative intent)",
+        "endpoint": "cCR12 (sustained cCR ≥12 mo)",
+        "result": "cCR12 或 pCR 76% (110/144), 達 cCR 者 98% 維持 ≥12 mo; 達 cCR/pCR 者 0 復發; FDA 2026/10 加速核准",
+        "bottomLine": "AZUR-1（全球 Phase 2，n=154）：dostarlimab 單藥使 76% 可評估病人達 cCR12 或 pCR，達 cCR/pCR 者無復發，FDA 2026/10 加速核准。dMMR 直腸癌免手術、免放化療策略從 12 例 pilot 推進到註冊等級證據",
+        "doi": "10.1016/j.annonc.2026.10.1280",
+        "file": "docs/mCRC-MSI-H/Cercek_AnnOncol_2026_AZUR1.html",
+        "relations": [
+          {
+            "targetId": "dostarlimab",
+            "type": "builds_on"
+          }
+        ]
+      },
+      {
+        "id": "unicorn",
+        "year": 2026,
+        "journal": "Nat Med",
+        "studyType": "Phase 2",
+        "n": 56,
+        "regimen": "Neoadjuvant botensilimab ± balstilimab (resectable pMMR & dMMR colon)",
+        "endpoint": "Major pathological response (≤10% residual viable tumor, central)",
+        "result": "pMMR BOT+BAL pMR 36%（pCR 29%）, pMMR BOT 0%, dMMR BOT+BAL 100%（pCR 93%）, dMMR BOT 36%; 每組 n=14",
+        "bottomLine": "UNICORN：Fc 增強型 anti-CTLA-4（botensilimab）+ anti-PD-1 在 pMMR 結腸癌達 36% 主要病理反應，單用 botensilimab 在 pMMR 則無反應。每組僅 14 人、95% CI 很寬，屬探索性訊號，需 Phase 3 驗證",
+        "doi": "10.1038/s41591-026-04710-1",
+        "file": "docs/mCRC-MSI-H/Ghelardi_NatMed_2026_UNICORN.html",
+        "relations": [
+          {
+            "targetId": "niche2",
+            "type": "builds_on"
+          }
+        ]
+      },
+      {
+        "id": "li2026-ww-mono",
+        "year": 2026,
+        "journal": "Front Immunol",
+        "studyType": "Retrospective cohort",
+        "n": 49,
+        "regimen": "Neoadjuvant anti-PD-1 monotherapy → watch-and-wait (stage II-III dMMR CRC)",
+        "endpoint": "DFS, OS",
+        "result": "3-yr DFS 100%, 3-yr OS 100%; 中位追蹤 35 mo 無局部再生長或遠端轉移; 影像 cCR 僅 44%（PR 35%, SD 21%）但全員符合內視鏡 CR; G3-4 TRAE 0%",
+        "bottomLine": "中國 4 中心回溯 49 例：neoadjuvant PD-1 單藥後以內視鏡 CR 選擇 watch-and-wait，中位 35 個月零事件，提示影像會低估免疫治療反應。eCR 為 post hoc 定義且納入者全員符合，選擇偏差大，需前瞻驗證",
+        "doi": "10.3389/fimmu.2026.1899625",
+        "file": "docs/mCRC-MSI-H/Li_FrontImmunol_2026_PD1_WatchAndWait.html",
+        "relations": [
+          {
+            "targetId": "dostarlimab",
+            "type": "builds_on"
+          }
+        ]
       }
     ],
     "metrics": null
@@ -862,38 +971,36 @@
         ]
       },
       "dfs": {
-        "label": "3 年 DFS（%）",
+        "label": "DFS / RFS（%）",
         "max": 100,
         "bars": [
           {
-            "label": "Robotic\nREAL",
+            "label": "Robotic\nREAL 3y",
             "val": 87.2,
             "hr": "0.74*",
             "color": "var(--green)",
             "trial": "REAL"
           },
           {
-            "label": "Lap\nREAL",
+            "label": "Lap\nREAL 3y",
             "val": 83.4,
             "hr": "Ref",
             "color": "#a0aec0",
             "trial": "REAL"
           },
           {
-            "label": "Robotic\nCOLRAR",
-            "val": null,
-            "hr": "N/R",
+            "label": "Robotic\nCOLRAR 5y",
+            "val": 83.0,
+            "hr": "p=0.80",
             "color": "var(--green)",
-            "trial": "COLRAR",
-            "ongoing": true
+            "trial": "COLRAR"
           },
           {
-            "label": "Lap\nCOLRAR",
-            "val": null,
-            "hr": "N/R",
+            "label": "Lap\nCOLRAR 5y",
+            "val": 81.9,
+            "hr": "Ref",
             "color": "#a0aec0",
-            "trial": "COLRAR",
-            "ongoing": true
+            "trial": "COLRAR"
           }
         ]
       },
@@ -1050,6 +1157,20 @@
         "cls": "beacon",
         "finding": "瑞典登記研究<br>CRM NS · AL <strong>10.9%</strong><br>N=5874",
         "file": "docs/robotic-surgery/Mertens_BJSOpen_2026_SwedishRegistry.html"
+      },
+      {
+        "yr": "2026",
+        "venue": "BJS",
+        "cls": "breakwater",
+        "finding": "保肛 MA<br>20 studies N=7133<br>OR <strong>1.43</strong>",
+        "file": "docs/robotic-surgery/Genders_BJS_2026_RestorativeMA.html"
+      },
+      {
+        "yr": "2026",
+        "venue": "BJS",
+        "cls": "beacon",
+        "finding": "COLRAR 5 年<br>OS/RFS NS<br>N=295",
+        "file": "docs/robotic-surgery/Song_BrJSurg_2026_COLRAR_LongTerm.html"
       }
     ],
     "tme_cards": [
@@ -1069,6 +1190,11 @@
         "body": "\n    <p>韓國多中心 RCT，N=295（因收案困難提前終止）</p>\n    <table>\n      <tr><th></th><th>Robotic (n=151)</th><th>Lap (n=144)</th></tr>\n      <tr><td>TME 完整性（主要終點）</td><td>80.7%</td><td>77.1% (NS)</td></tr>\n      <tr><td>CRM+ 亞分析</td><td><strong>0%</strong></td><td>6.1% (p=0.031)</td></tr>\n      <tr><td>鴉片類使用時間</td><td colspan=\"2\">Robotic 較短 (p=0.028)</td></tr>\n    </table>\n    <div class=\"note\">TME 完整性未達顯著差異，但 CRM 陽性率在亞分析中 robotic 顯著較低（0% vs 6.1%）。提前終止限制了統計效力。</div>\n    <p><a href=\"https://doi.org/10.1097/SLA.0000000000005788\" target=\"_blank\" rel=\"noopener noreferrer\">&#x1F4C4; DOI: 10.1097/SLA.0000000000005788</a></p>"
       },
       {
+        "title": "COLRAR 5 年追蹤（BJS 2026）",
+        "tag": "COLRAR 5y",
+        "body": "\n    <p><strong>Song et al.</strong> — COLRAR RCT 預設次要終點的 5 年腫瘤學結果，韓國 3 中心，mITT N=295，中位追蹤 72.6 個月</p>\n    <table>\n      <tr><th></th><th>Robotic (n=151)</th><th>Lap (n=144)</th><th>p</th></tr>\n      <tr><td>5 年 OS</td><td>92.4%</td><td>92.6%</td><td>0.838</td></tr>\n      <tr><td>5 年 RFS</td><td>83.0%</td><td>81.9%</td><td>0.801</td></tr>\n      <tr><td>局部復發（粗率）</td><td>1.3%</td><td>4.9%</td><td>5 年 LRFS p=0.076</td></tr>\n      <tr><td>5 年 DRFS</td><td colspan=\"2\">無差異</td><td>0.655</td></tr>\n      <tr><td>nCRT 後 5 年 LRFS（post hoc, n=146）</td><td><strong>98.6%</strong></td><td>90.7%</td><td>0.039</td></tr>\n    </table>\n    <div class=\"note\">R-TME 與 L-TME 5 年腫瘤學結果相當。局部復發數值上有利 robotic 但未達顯著（COLRAR 提前終止，檢定力不足）。nCRT 後 robotic 局部控制較佳僅為 post hoc 分析，方向與 REAL 一致，需前瞻設計驗證。</div>\n    <p><a href=\"docs/robotic-surgery/Song_BrJSurg_2026_COLRAR_LongTerm.html\" target=\"_blank\" rel=\"noopener noreferrer\">&#x1F4D6; 詳細頁面</a> &middot; <a href=\"https://doi.org/10.1093/bjs/znag114\" target=\"_blank\" rel=\"noopener noreferrer\">&#x1F4C4; DOI: 10.1093/bjs/znag114</a></p>"
+      },
+      {
         "title": "RCT Meta-analysis 2025（7 trials, N=1731）",
         "tag": "MA 2025",
         "body": "\n    <p>納入 7 個 RCT 的統合分析</p>\n    <table>\n      <tr><th>結果指標</th><th>Robotic 優勢</th><th>效果量</th></tr>\n      <tr><td>腸功能恢復時間</td><td>&#x2713;</td><td>-0.62 天</td></tr>\n      <tr><td>重大併發症</td><td>&#x2713;</td><td>OR 0.70</td></tr>\n      <tr><td>轉換率</td><td>&#x2713;</td><td>OR 0.27</td></tr>\n      <tr><td>CRM 陽性</td><td>&#x2713;</td><td>OR 0.62</td></tr>\n      <tr><td>手術時間</td><td>&#x2717;</td><td>+22.7 min</td></tr>\n      <tr><td>TME 完整性</td><td>—</td><td>NS</td></tr>\n    </table>\n    <p><a href=\"https://doi.org/10.1007/s11701-025-02628-3\" target=\"_blank\" rel=\"noopener noreferrer\">&#x1F4C4; DOI: 10.1007/s11701-025-02628-3</a></p>"
@@ -1077,6 +1203,11 @@
         "title": "Bayesian Network MA 2024（27 RCTs, N=8696）",
         "tag": "NMA 2024",
         "body": "\n    <p>比較四種手術方式：Robotic / TaTME / Laparoscopic / Open</p>\n    <table>\n      <tr><th>排名（SUCRA）</th><th>TME 完整性</th><th>CRM 陰性</th><th>淋巴結數</th></tr>\n      <tr><td>第 1</td><td>TaTME</td><td>TaTME</td><td><strong>Robotic</strong></td></tr>\n      <tr><td>第 2</td><td><strong>Robotic</strong></td><td><strong>Robotic</strong></td><td>Open</td></tr>\n    </table>\n    <p>Robotic 和 TaTME 的病理結果均優於 laparoscopic TME。</p>\n    <p><a href=\"https://doi.org/10.1016/j.ejso.2024.109481\" target=\"_blank\" rel=\"noopener noreferrer\">&#x1F4C4; DOI: 10.1016/j.ejso.2024.109481</a></p>"
+      },
+      {
+        "title": "保肛手術 Meta-analysis（BJS 2026, 20 studies, N=7133）",
+        "tag": "MA 2026",
+        "body": "\n    <p><strong>Genders et al.</strong> — PRISMA 系統性回顧，PROSPERO 預先註冊，2010&ndash;2026 文獻，random-effects model</p>\n    <table>\n      <tr><th>結果指標</th><th>R-TME vs L-TME</th><th>效果量 (95% CI)</th></tr>\n      <tr><td>保肛（primary anastomosis）</td><td>&#x2713; Robotic 較高</td><td><strong>OR 1.43</strong> (1.04&ndash;1.98)</td></tr>\n      <tr><td>保肛（2020 年後研究）</td><td>&#x2713; Robotic 較高</td><td><strong>OR 2.86</strong> (1.80&ndash;4.53)</td></tr>\n      <tr><td>轉換率</td><td>&#x2713; Robotic 較低</td><td>OR 0.37 (0.28&ndash;0.49)</td></tr>\n      <tr><td>吻合口滲漏、併發症、再手術、再入院</td><td>&mdash;</td><td>NS</td></tr>\n    </table>\n    <div class=\"note\">首個以「保肛率」為主要終點的 R-TME vs L-TME 統合分析。近年研究效果更大，作者歸因於術者經驗累積。納入研究以觀察性為主，有適應症偏差；是否轉化為 QoL 改善仍未知。</div>\n    <p><a href=\"docs/robotic-surgery/Genders_BJS_2026_RestorativeMA.html\" target=\"_blank\" rel=\"noopener noreferrer\">&#x1F4D6; 詳細頁面</a> &middot; <a href=\"https://doi.org/10.1093/bjs/znag106\" target=\"_blank\" rel=\"noopener noreferrer\">&#x1F4C4; DOI: 10.1093/bjs/znag106</a></p>"
       },
       {
         "title": "瑞典全國登記研究（BJS Open 2026, N=5874）",

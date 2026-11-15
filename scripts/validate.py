@@ -32,6 +32,7 @@ KNOWN_STUDY_TYPES = {
     "Phase 3 (Cohort 3)",
     "Phase 2 RCT",
     "Phase 2",
+    "Phase 2 (updated)",
     "Phase 2 (exploratory)",
     "Phase 2a (basket)",
     "Phase 1-2",
@@ -42,6 +43,8 @@ KNOWN_STUDY_TYPES = {
     "Post-hoc analysis",
     "Meta-analysis",
     "Pooled analysis",
+    "Retrospective cohort",
+    "Guideline",
 }
 
 REQUIRED_FIELDS = ["id", "year", "journal", "studyType", "regimen", "endpoint", "result", "bottomLine"]

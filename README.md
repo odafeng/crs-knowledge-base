@@ -57,9 +57,9 @@
 
 | # | 主題 | Agent 領域知識 | 文獻數 |
 |---|---|---|---|
-| 1 | **mCRC — BRAF V600E** | BEACON、BREAKWATER 全系列、ctDNA dynamics | 7 |
-| 2 | **mCRC — KRAS G12C** | CodeBreaK、KRYSTAL、divarasib+cetuximab | 7 |
-| 3 | **mCRC — MSI-H / dMMR** | KEYNOTE-177、NICHE、dostarlimab non-op | 8 |
+| 1 | **mCRC — BRAF V600E** | BEACON、BREAKWATER 全系列、ctDNA dynamics、NCCN | 8 |
+| 2 | **mCRC — KRAS G12C** | CodeBreaK、KRYSTAL、divarasib+cetuximab、FAK 組合 | 8 |
+| 3 | **mCRC — MSI-H / dMMR** | KEYNOTE-177、NICHE、dostarlimab / AZUR-1 non-op | 12 |
 | 4 | **mCRC — HER2** | DESTINY-CRC、MOUNTAINEER、T-DXd | 5 |
 | 5 | **mCRC — RAS-wt Anti-EGFR** | PARADIGM、sidedness、rechallenge | 9 |
 | 6 | **mCRC — Agnostic** | fruquintinib/FRESCO、regorafenib、TAS-102+bev/SUNLIGHT | new |

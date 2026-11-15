@@ -210,7 +210,7 @@ def build_system_prompt(topic):
 3. **Structured Output**（只有 score >= 4 才產出）：
    - bottomLine：繁體中文，100 字以內，一句話摘要
    - JS 物件草稿（符合既有 schema：id, year, journal, studyType, n, regimen, endpoint, result, bottomLine, doi, file, relations）
-   - studyType 只能用：Phase 3 RCT, Phase 3 RCT (updated), Phase 2 RCT, Phase 2, Phase 1-2, Phase 1, Phase 1b, Biomarker (exploratory), Post-hoc analysis, Meta-analysis, Pooled analysis, Phase 3 (Cohort N), Phase 2 (exploratory)
+   - studyType 只能用：Phase 3 RCT, Phase 3 RCT (updated), Phase 2 RCT, Phase 2, Phase 1-2, Phase 1, Phase 1b, Biomarker (exploratory), Post-hoc analysis, Meta-analysis, Pooled analysis, Retrospective cohort, Guideline, Phase 3 (Cohort N), Phase 2 (updated), Phase 2 (exploratory)
    - relations 中的 targetId 必須是既有文獻中的 id
 
 4. **Chart Updates**（只有當新文獻有明確的療效數據可加入柱狀圖時才產出）：

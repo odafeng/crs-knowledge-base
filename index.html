@@ -429,11 +429,13 @@
       </div>
       <div class="ev-card-body">
         <table>
-          <tr><th>試驗</th><th>pCR</th><th>Path response</th><th>復發</th></tr>
-          <tr><td><strong>NICHE-2</strong>（結腸癌）</td><td>68%</td><td>98%</td><td>0%</td></tr>
-          <tr><td><strong>Dostarlimab</strong>（直腸癌）</td><td>cCR 100%</td><td>—</td><td>0%</td></tr>
+          <tr><th>試驗</th><th>pCR / cCR</th><th>Path response</th><th>復發</th></tr>
+          <tr><td><strong>NICHE-2</strong>（dMMR 結腸癌，nivo+ipi，n=111）</td><td>pCR 68%</td><td>98%</td><td>0%（中位 59 mo；3y DFS 100%）</td></tr>
+          <tr><td><strong>AZUR-1</strong>（dMMR 直腸癌，dostarlimab，n=154）</td><td>cCR12 或 pCR 76%</td><td>—</td><td>達 cCR/pCR 者 0%</td></tr>
+          <tr><td>Dostarlimab pilot（dMMR 直腸癌，n=12）</td><td>cCR 100%</td><td>—</td><td>0%</td></tr>
+          <tr><td>UNICORN（<em>pMMR</em> 結腸癌，BOT+BAL，n=14）</td><td>pCR 29%</td><td>pMR 36%</td><td>追蹤中</td></tr>
         </table>
-        <div class="note">NICHE-2（NEJM 2024）：neoadjuvant nivo+ipi 後 98% 病理反應、0 復發。Dostarlimab（NEJM 2022）：12/12 dMMR 直腸癌 cCR，免除手術和放療。</div>
+        <div class="note">NICHE-2（Lancet 2026）：neoadjuvant nivo+ipi 中位追蹤近 5 年，per-protocol 111 例零復發，3 年 DFS 與 5 年 OS 皆 100%。AZUR-1（Ann Oncol 2026）：dostarlimab 單藥免手術策略的註冊試驗，FDA 2026/10 加速核准用於 stage II-III dMMR/MSI-H 直腸癌。UNICORN（Nat Med 2026）是 pMMR 對 neoadjuvant ICI 有反應的探索性訊號，每組僅 14 人，尚非臨床常規。</div>
       </div>
     </div>
   </div>
@@ -1015,7 +1017,7 @@ let currentMetric = 'mOS';
 // Relation type labels
 const REL_LABELS = { builds_on: '延伸自', supersedes: '更新自', subgroup_of: '次分析', same_regimen: '同方案', contradicts: '矛盾' };
 const REL_COLORS = { builds_on: '#38a169', supersedes: '#3182ce', subgroup_of: '#718096', same_regimen: '#d69e2e', contradicts: '#e53e3e' };
-const STUDY_BADGES = { 'Phase 3 RCT': '#276749', 'Phase 3 RCT (updated)': '#2c5282', 'Phase 3 (Cohort 3)': '#2c5282', 'Phase 2 RCT': '#6b46c1', 'Biomarker (exploratory)': '#975a16', 'Post-hoc analysis': '#718096', 'Meta-analysis': '#b83280' };
+const STUDY_BADGES = { 'Phase 3 RCT': '#276749', 'Phase 3 RCT (updated)': '#2c5282', 'Phase 3 (Cohort 3)': '#2c5282', 'Phase 2 RCT': '#6b46c1', 'Biomarker (exploratory)': '#975a16', 'Post-hoc analysis': '#718096', 'Meta-analysis': '#b83280', 'Guideline': '#2b6cb0' };
 
 function renderEvidence() {
   renderPaperTimeline(BRAF_PAPERS, 'timeline');
@@ -1090,7 +1092,7 @@ function renderPaperCards(papers, elId) {
       <div class="ev-card-body">
         <table>
           <tr><td style="width:30%;font-weight:600;color:var(--primary)">方案</td><td>${p.regimen}</td></tr>
-          <tr><td style="font-weight:600;color:var(--primary)">N</td><td>${p.n}</td></tr>
+          <tr><td style="font-weight:600;color:var(--primary)">N</td><td>${p.n ?? '—'}</td></tr>
           <tr><td style="font-weight:600;color:var(--primary)">主要終點</td><td>${p.endpoint}</td></tr>
           <tr><td style="font-weight:600;color:var(--primary)">結果</td><td><strong>${p.result}</strong></td></tr>
         </table>
