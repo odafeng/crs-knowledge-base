@@ -29,3 +29,17 @@ def test_index_has_disclaimer_and_no_dead_entries():
     assert 'class="disclaimer-footer"' in html
     assert 'id="disclaimer-notice"' in html
     assert "內容建置中" not in html
+
+
+def test_every_paper_has_source_and_review_date():
+    import json
+
+    from validate import validate_data
+
+    data = json.loads((ROOT / "data" / "papers.json").read_text())
+    paper = data["mCRC-MSI-H"]["papers"][0]
+    paper["source"] = "vibes"
+    del paper["reviewedAt"]
+    errors = validate_data(data)
+    assert any("unknown source" in e for e in errors)
+    assert any("reviewedAt must be YYYY-MM-DD" in e for e in errors)

@@ -103,6 +103,10 @@ def build_entry(paper: dict, data: dict, review: ReviewStatus, today: str) -> di
         "doi": paper.get("doi") or js.get("doi") or None,
         "file": f"docs/{paper['topic']}/{filename}",
         "relations": relations,
+        # The gate only passes numbers found in the abstract; "accepted" entries were checked
+        # by a person against the same issue, which shows the abstract.
+        "source": "abstract",
+        "reviewedAt": today,
         "review": {"status": review, "publishedAt": today},
     }
 

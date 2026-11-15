@@ -244,6 +244,11 @@
 .disclaimer-notice { margin: 12px 16px 0; padding: 10px 12px; background: #fffbeb; border: 1px solid #f6e05e; border-radius: 8px; font-size: 0.82rem; color: #744210; }
 .disclaimer-notice p { margin: 0 0 8px; }
 .disclaimer-notice button { font-size: 0.82rem; padding: 4px 12px; border: 1px solid #d69e2e; border-radius: 6px; background: #fff; color: #744210; }
+.ev-headline { font-size: 0.78rem; font-weight: 400; color: var(--text-sec); margin-top: 2px; }
+.ev-card.superseded { opacity: 0.6; }
+.src-tag { font-size: 0.68rem; padding: 1px 6px; border-radius: 8px; background: #edf2f7; color: #4a5568; white-space: nowrap; }
+.reviewed-at { font-size: 0.72rem; color: var(--text-sec); margin-top: 6px; }
+.topic-updated { font-size: 0.75rem; color: var(--text-sec); margin: -4px 0 8px; }
 </style>
 </head>
 <body>
@@ -1026,6 +1031,13 @@ let currentMetric = 'mOS';
 // Relation type labels
 const REL_LABELS = { builds_on: '延伸自', supersedes: '更新自', subgroup_of: '次分析', same_regimen: '同方案', contradicts: '矛盾' };
 const REL_COLORS = { builds_on: '#38a169', supersedes: '#3182ce', subgroup_of: '#718096', same_regimen: '#d69e2e', contradicts: '#e53e3e' };
+const SOURCE_LABELS = { abstract: '摘要', secondary: '二手來源' };
+const SOURCE_TITLES = { abstract: '數字只核對過 PubMed 摘要', secondary: '部分數字來自新聞或會議報導，未核對原文' };
+// One-line headline for a collapsed card: the first clause of the result.
+const headline = p => {
+  const first = p.result.split(/[;；]/)[0];
+  return first.length > 70 ? first.slice(0, 68) + '…' : first;
+};
 const REVIEW_LABELS = { auto: 'AI 自動整理・未經人工審核', accepted: 'AI 整理・已人工確認' };
 const reviewTag = r => r ? `<span class="rev-tag rev-${r.status}">${REVIEW_LABELS[r.status] || r.status}</span>` : '';
 const COMMENTARY_LABELS = { Editorial: '社論', Letter: '讀者來信', Comment: '評論', News: '新聞', 'Newspaper Article': '新聞' };
@@ -1086,7 +1098,13 @@ function renderChart() {
 // Render structured paper cards
 function renderPaperCards(papers, elId) {
   const el = document.getElementById(elId);
-  el.innerHTML = papers.map(p => {
+  // Newest first; a report another entry supersedes is dimmed and points to its update.
+  const supersededBy = {};
+  papers.forEach(p => (p.relations || []).forEach(r => { if (r.type === 'supersedes') supersededBy[r.targetId] = p; }));
+  const sorted = [...papers].sort((a, b) => b.year - a.year);
+  const latest = papers.reduce((m, p) => (p.reviewedAt && p.reviewedAt > m ? p.reviewedAt : m), '');
+  const updated = latest ? `<div class="topic-updated">本頁最後審核：${latest}</div>` : '';
+  el.innerHTML = updated + sorted.map(p => {
     const badgeColor = STUDY_BADGES[p.studyType] || '#4a5568';
     const rels = p.relations.map(r => {
       const target = papers.find(t => t.id === r.targetId);
@@ -1101,10 +1119,13 @@ function renderPaperCards(papers, elId) {
         + (c.newData ? ' <span class="comm-tag comm-data">含新數據</span>' : '');
       return `<li><a href="${href}" target="_blank" rel="noopener noreferrer">${c.journal} ${c.year || ''}</a> <span class="comm-tag">${COMMENTARY_LABELS[c.type] || c.type}</span>${tags} ${reviewTag(c.review)}<div class="comm-sum">${c.summary}</div></li>`;
     }).join('');
-    return `<div class="ev-card">
+    const newer = supersededBy[p.id];
+    const sourceTag = SOURCE_LABELS[p.source] ? `<span class="src-tag" title="${SOURCE_TITLES[p.source]}">${SOURCE_LABELS[p.source]}</span>` : '';
+    return `<div class="ev-card${newer ? ' superseded' : ''}">
       <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
-        <h4>${p.year} ${p.journal} — ${p.regimen.split(' vs ')[0]}</h4>
+        <h4>${p.year} ${p.journal} — ${p.regimen.split(' vs ')[0]}<div class="ev-headline">${newer ? `已有更新報告：${newer.year} ${newer.journal}` : headline(p)}</div></h4>
         <span style="font-size:0.72rem;padding:2px 7px;border-radius:8px;background:${badgeColor}15;color:${badgeColor};white-space:nowrap">${p.studyType}</span>
+        ${sourceTag}
         ${p.review && p.review.status === 'auto' ? '<span class="rev-tag rev-auto" title="AI 自動整理・未經人工審核">AI 未審</span>' : ''}
         <span class="arrow">&#9662;</span>
       </div>
@@ -1120,6 +1141,7 @@ function renderPaperCards(papers, elId) {
         ${rels ? '<div style="margin-top:6px">'+rels+'</div>' : ''}
         ${comms ? `<div class="comm"><div class="comm-hdr">相關評論（${p.commentary.length}）</div><ul>${comms}</ul></div>` : ''}
         <div style="margin-top:8px;display:flex;gap:12px">${fileLink} ${doiLink}</div>
+        ${p.reviewedAt ? `<div class="reviewed-at">最後審核：${p.reviewedAt}${SOURCE_TITLES[p.source] ? '・' + SOURCE_TITLES[p.source] : ''}</div>` : ''}
       </div>
     </div>`;
   }).join('');
