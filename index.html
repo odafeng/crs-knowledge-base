@@ -249,6 +249,13 @@
 .src-tag { font-size: 0.68rem; padding: 1px 6px; border-radius: 8px; background: #edf2f7; color: #4a5568; white-space: nowrap; }
 .reviewed-at { font-size: 0.72rem; color: var(--text-sec); margin-top: 6px; }
 .topic-updated { font-size: 0.75rem; color: var(--text-sec); margin: -4px 0 8px; }
+.ev-card-body { overflow-x: auto; }
+.reg-table { margin-top: 10px; font-size: 0.78rem; }
+.reg-tag { display: inline-block; font-size: 0.68rem; padding: 1px 6px; margin: 1px 0; border-radius: 8px; white-space: nowrap; background: #edf2f7; color: #4a5568; }
+.reg-approved, .reg-covered { background: #f0fff4; color: #276749; }
+.reg-accelerated, .reg-conditional { background: #fffbeb; color: #b7791f; }
+.reg-none { background: #fff5f5; color: #c53030; }
+.reg-note { font-size: 0.72rem; color: var(--text-sec); margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -394,24 +401,7 @@
 
 <!-- KRAS G12C Page -->
 <div class="view" id="v-krasg12c">
-  <div class="ev-section">
-    <h3>&#x1F48A; 現行治療方案</h3>
-    <div class="ev-card">
-      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
-        <h4>&#x1F7E2; KRAS G12C 標靶治療（後線）</h4><span class="arrow">&#9662;</span>
-      </div>
-      <div class="ev-card-body">
-        <p><strong>盛行率：</strong>約 3-4% of all CRC（~17% of KRAS-mutant CRC）。預後較其他 KRAS 突變差。</p>
-        <table>
-          <tr><th>方案</th><th>ORR</th><th>mPFS</th><th>mOS</th><th>Phase</th></tr>
-          <tr><td><strong>Sotorasib + panitumumab</strong></td><td>26-30%</td><td>5.6 mo</td><td>HR 0.70</td><td>Phase 3</td></tr>
-          <tr><td><strong>Adagrasib + cetuximab</strong></td><td>34-46%</td><td>6.9 mo</td><td>15.9 mo</td><td>Phase 1/2</td></tr>
-          <tr><td><strong>Divarasib + cetuximab</strong></td><td>62.5%</td><td>8.1 mo</td><td>—</td><td>Phase 1b</td></tr>
-        </table>
-        <div class="note">所有 G12C 抑制劑搭配 anti-EGFR 效果遠優於單用。Divarasib 早期數據最亮眼但需 RCT 確認。</div>
-      </div>
-    </div>
-  </div>
+  <div class="ev-section" id="soc-krasg12c"></div>
   <div class="ev-section">
     <h3>&#x1F4C5; 證據時間軸</h3>
     <div class="timeline-scroll"><div class="timeline" id="tl-g12c"></div></div>
@@ -424,37 +414,7 @@
 
 <!-- MSI-H / dMMR Page -->
 <div class="view" id="v-msih">
-  <div class="ev-section">
-    <h3>&#x1F48A; 現行治療方案</h3>
-    <div class="ev-card">
-      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
-        <h4>&#x1F7E2; 一線免疫治療（轉移性）</h4><span class="arrow">&#9662;</span>
-      </div>
-      <div class="ev-card-body">
-        <table>
-          <tr><th>方案</th><th>ORR</th><th>mPFS</th><th>Phase</th></tr>
-          <tr><td><strong>Pembrolizumab</strong></td><td>43.8%</td><td>16.5 mo</td><td>Phase 3 (KEYNOTE-177)</td></tr>
-          <tr><td>Nivo + low-dose Ipi</td><td>69%</td><td>NR</td><td>Phase 2 (CM142 1L)</td></tr>
-        </table>
-        <div class="note">Pembrolizumab 為一線標準（KEYNOTE-177）。Nivo+ipi 1L ORR 更高但為 Phase 2。</div>
-      </div>
-    </div>
-    <div class="ev-card">
-      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
-        <h4>&#x1F535; 新輔助免疫治療（非轉移性）</h4><span class="arrow">&#9662;</span>
-      </div>
-      <div class="ev-card-body">
-        <table>
-          <tr><th>試驗</th><th>pCR / cCR</th><th>Path response</th><th>復發</th></tr>
-          <tr><td><strong>NICHE-2</strong>（dMMR 結腸癌，nivo+ipi，n=111）</td><td>pCR 68%</td><td>98%</td><td>0%（中位 59 mo；3y DFS 100%）</td></tr>
-          <tr><td><strong>AZUR-1</strong>（dMMR 直腸癌，dostarlimab，n=154）</td><td>cCR12 或 pCR 76%</td><td>—</td><td>達 cCR/pCR 者 0%</td></tr>
-          <tr><td>Dostarlimab pilot（dMMR 直腸癌，n=12）</td><td>cCR 100%</td><td>—</td><td>0%</td></tr>
-          <tr><td>UNICORN（<em>pMMR</em> 結腸癌，BOT+BAL，n=14）</td><td>pCR 29%</td><td>pMR 36%</td><td>追蹤中</td></tr>
-        </table>
-        <div class="note">NICHE-2（Lancet 2026）：neoadjuvant nivo+ipi 中位追蹤近 5 年，per-protocol 111 例零復發，3 年 DFS 與 5 年 OS 皆 100%。AZUR-1（Ann Oncol 2026）：dostarlimab 單藥免手術策略的註冊試驗，FDA 2026/10 加速核准用於 stage II-III dMMR/MSI-H 直腸癌。UNICORN（Nat Med 2026）是 pMMR 對 neoadjuvant ICI 有反應的探索性訊號，每組僅 14 人，尚非臨床常規。</div>
-      </div>
-    </div>
-  </div>
+  <div class="ev-section" id="soc-msih"></div>
   <div class="ev-section">
     <h3>&#x1F4C5; 證據時間軸</h3>
     <div class="timeline-scroll"><div class="timeline" id="tl-msih"></div></div>
@@ -467,25 +427,7 @@
 
 <!-- HER2+ Page -->
 <div class="view" id="v-her2">
-  <div class="ev-section">
-    <h3>&#x1F48A; 現行治療方案</h3>
-    <div class="ev-card">
-      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
-        <h4>&#x1F7E2; HER2+ mCRC 標靶治療（後線）</h4><span class="arrow">&#9662;</span>
-      </div>
-      <div class="ev-card-body">
-        <p><strong>盛行率：</strong>約 3-5% of mCRC。多為 RAS wild-type。</p>
-        <table>
-          <tr><th>方案</th><th>ORR</th><th>Trial</th><th>備註</th></tr>
-          <tr><td><strong>Tucatinib + trastuzumab</strong></td><td>38.1%</td><td>MOUNTAINEER</td><td>首個 FDA 核准 HER2 Rx in mCRC</td></tr>
-          <tr><td>T-DXd 5.4 mg/kg</td><td>37.8%</td><td>DESTINY-CRC02</td><td>含 RAS-mut 有效；注意 ILD</td></tr>
-          <tr><td>T-DXd（HER2+ cohort）</td><td>45.3%</td><td>DESTINY-CRC01</td><td>僅 IHC3+ / ISH+ 有效</td></tr>
-          <tr><td>Pertuzumab + trastuzumab</td><td>30-32%</td><td>MyPathway / TRIUMPH</td><td>TRIUMPH 用 ctDNA 選病患</td></tr>
-        </table>
-        <div class="note">Tucatinib + trastuzumab（MOUNTAINEER）為首選。T-DXd 對 RAS-mut 也有效但需注意 ILD。MOUNTAINEER-03（Phase 3, 1L）進行中。</div>
-      </div>
-    </div>
-  </div>
+  <div class="ev-section" id="soc-her2"></div>
   <div class="ev-section">
     <h3>&#x1F4C5; 證據時間軸</h3>
     <div class="timeline-scroll"><div class="timeline" id="tl-her2"></div></div>
@@ -687,49 +629,7 @@
 <!-- BRAF V600E Evidence Page -->
 <div class="view" id="v-braf">
 
-  <!-- Section 0: Best Practice (collapsible) -->
-  <div class="ev-section">
-    <h3>&#x1F48A; 現行治療方案最佳實踐</h3>
-
-    <div class="ev-card">
-      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
-        <h4>&#x1F7E2; 第一線治療（1L）方案選擇</h4>
-        <span class="arrow">&#9662;</span>
-      </div>
-      <div class="ev-card-body">
-        <p style="font-weight:600;color:var(--primary)">適用族群：RAS wt、BRAF V600E mt mCRC</p>
-        <table>
-          <tr><th>方案</th><th>ORR</th><th>mPFS</th><th>mOS</th><th>備註</th></tr>
-          <tr><td><strong>EC + mFOLFOX6</strong></td><td>65.7%</td><td>12.8</td><td>30.3</td><td>首選，FDA 加速核准</td></tr>
-          <tr><td>EC + FOLFIRI</td><td>64.4%</td><td>--</td><td>--</td><td>替代，適用 oxaliplatin 禁忌</td></tr>
-          <tr><td>EC 單獨</td><td>45.6%</td><td>6.8</td><td>19.5</td><td>無法耐受化療時使用</td></tr>
-        </table>
-      </div>
-    </div>
-
-    <div class="ev-card">
-      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
-        <h4>&#x1F535; 第二線以上治療（2L+）</h4>
-        <span class="arrow">&#9662;</span>
-      </div>
-      <div class="ev-card-body">
-        <p><strong>標準方案：Encorafenib + Cetuximab（EC 雙標靶）</strong></p>
-        <p>ORR 19.5% &middot; mPFS 4.3 mo &middot; mOS 9.3 mo &middot; OS HR 0.61</p>
-        <p>BEACON Phase 3 &middot; FDA/EMA/TFDA 核准<br>台灣健保：預計 2026/5/1 生效，最長給付 24 週</p>
-      </div>
-    </div>
-
-    <div class="ev-card">
-      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
-        <h4>&#x26A0;&#xFE0F; 關鍵原則與注意事項</h4>
-        <span class="arrow">&#9662;</span>
-      </div>
-      <div class="ev-card-body">
-        <div class="note"><strong>最佳治療優先：</strong>一線即使用 EC + 化療優於序貫式（一線化療 &rarr; 二線 EC）。PFS2 證實：20.7 vs 12.9 個月。</div>
-        <p><strong>MSI-H/dMMR 注意：</strong>若適用免疫治療，應優先考慮 ICI（BREAKWATER 排除此族群）。SEAMARK 試驗正在評估 EC + pembrolizumab 用於 BRAF V600E + MSI-H mCRC。</p>
-      </div>
-    </div>
-  </div>
+  <div class="ev-section" id="soc-braf"></div>
 
   <!-- Section 1: Timeline -->
   <div class="ev-section">
@@ -956,7 +856,10 @@ function _activateView(viewId, title, subtitle) {
   document.getElementById('hdr-sub').textContent = subtitle || meta.sub || '';
   document.getElementById('back-btn').style.display = history_stack.length ? 'block' : 'none';
   window.scrollTo(0, 0);
-  if (viewId === 'v-braf') renderEvidence();
+  if (viewId === 'v-braf') { renderSoc('mCRC-BRAF-V600E', 'soc-braf'); renderEvidence(); }
+  if (viewId === 'v-krasg12c') renderSoc('mCRC-KRAS-G12C', 'soc-krasg12c');
+  if (viewId === 'v-msih') renderSoc('mCRC-MSI-H', 'soc-msih');
+  if (viewId === 'v-her2') renderSoc('mCRC-HER2', 'soc-her2');
   if (viewId === 'v-raswt') renderTopic(RASWT_PAPERS, 'tl-raswt', 'raswt-cards');
   if (viewId === 'v-krasg12c') renderTopic(G12C_PAPERS, 'tl-g12c', 'g12c-cards');
   if (viewId === 'v-msih') renderTopic(MSIH_PAPERS, 'tl-msih', 'msih-cards');
@@ -1001,6 +904,7 @@ let GENERIC_PAPERS = [];
 let METRICS = {};
 let TME_METRICS = {};
 let TL_TME = [];
+let KB_DATA = {};
 let TME_CARDS = [];
 let TL_ANAST = [];
 let ANAST_CARDS = [];
@@ -1008,6 +912,7 @@ let ANAST_CARDS = [];
 fetch('./data/papers.json')
   .then(r => r.json())
   .then(data => {
+    KB_DATA = data;
     BRAF_PAPERS = data['mCRC-BRAF-V600E'].papers || [];
     RASWT_PAPERS = data['mCRC-RAS-wt'].papers || [];
     G12C_PAPERS = data['mCRC-KRAS-G12C'].papers || [];
@@ -1038,6 +943,36 @@ const headline = p => {
   const first = p.result.split(/[;；]/)[0];
   return first.length > 70 ? first.slice(0, 68) + '…' : first;
 };
+const REG_LABELS = {
+  fda: { approved: 'FDA 正式核准', accelerated: 'FDA 加速核准', none: 'FDA 未核准', unknown: 'FDA 未確認' },
+  tfda: { approved: 'TFDA 核准', none: 'TFDA 未核准', unknown: 'TFDA 未確認' },
+  nhi: { covered: '健保給付', conditional: '健保有條件給付', none: '健保不給付', unknown: '健保未確認' },
+};
+
+// "現行治療方案" cards come from papers.json (standard_of_care), open by default.
+function renderSoc(topic, elId) {
+  const soc = (KB_DATA[topic] || {}).standard_of_care;
+  const el = document.getElementById(elId);
+  if (!soc || !el) return;
+  const latest = soc.cards.reduce((m, c) => (c.reviewedAt > m ? c.reviewedAt : m), '');
+  const reg = r => {
+    const tag = (kind, v) => `<span class="reg-tag reg-${v}">${REG_LABELS[kind][v]}</span>`;
+    const notes = [r.fdaNote, r.nhiNote].filter(Boolean).join('；');
+    return `<tr><td>${r.regimen}</td><td>${tag('fda', r.fda)} ${tag('tfda', r.tfda)} ${tag('nhi', r.nhi)}${notes ? `<div class="reg-note">${notes}</div>` : ''}</td><td>${r.checkedAt}</td></tr>`;
+  };
+  el.innerHTML = `<h3>&#x1F48A; ${soc.title}</h3><div class="topic-updated">最後審核：${latest}</div>` + soc.cards.map(c => `
+    <div class="ev-card open">
+      <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
+        <h4>${c.icon} ${c.title}</h4><span class="arrow">&#9662;</span>
+      </div>
+      <div class="ev-card-body">
+        ${c.body_html}
+        ${c.regulatory ? `<table class="reg-table"><tr><th>方案</th><th>核准 / 給付</th><th>確認日</th></tr>${c.regulatory.map(reg).join('')}</table>` : ''}
+        <div class="reviewed-at">最後審核：${c.reviewedAt}</div>
+      </div>
+    </div>`).join('');
+}
+
 const REVIEW_LABELS = { auto: 'AI 自動整理・未經人工審核', accepted: 'AI 整理・已人工確認' };
 const reviewTag = r => r ? `<span class="rev-tag rev-${r.status}">${REVIEW_LABELS[r.status] || r.status}</span>` : '';
 const COMMENTARY_LABELS = { Editorial: '社論', Letter: '讀者來信', Comment: '評論', News: '新聞', 'Newspaper Article': '新聞' };

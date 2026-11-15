@@ -43,3 +43,22 @@ def test_every_paper_has_source_and_review_date():
     errors = validate_data(data)
     assert any("unknown source" in e for e in errors)
     assert any("reviewedAt must be YYYY-MM-DD" in e for e in errors)
+
+
+def test_treatment_sections_come_from_json():
+    import json
+
+    from validate import validate_data
+
+    html = (ROOT / "index.html").read_text()
+    assert "<h3>&#x1F48A; 現行治療方案" not in html  # rendered from papers.json, not hard-coded
+    data = json.loads((ROOT / "data" / "papers.json").read_text())
+    for topic in ("mCRC-BRAF-V600E", "mCRC-KRAS-G12C", "mCRC-MSI-H", "mCRC-HER2"):
+        assert data[topic]["standard_of_care"]["cards"], topic
+
+    card = data["mCRC-BRAF-V600E"]["standard_of_care"]["cards"][0]
+    card["refs"].append("no-such-paper")
+    card["regulatory"][0]["nhi"] = "maybe"
+    errors = validate_data(data)
+    assert any("cites unknown paper 'no-such-paper'" in e for e in errors)
+    assert any("unknown nhi" in e for e in errors)
