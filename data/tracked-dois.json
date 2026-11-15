@@ -253,5 +253,59 @@
     "topic": "robotic-surgery",
     "added": "2026-11-15",
     "score": 2
+  },
+  "pmid:42987850": {
+    "topic": "mCRC-BRAF-V600E",
+    "added": "2026-11-15",
+    "score": 2,
+    "pmid": "42987850"
+  },
+  "pmid:42987843": {
+    "topic": "mCRC-BRAF-V600E",
+    "added": "2026-11-15",
+    "score": 2,
+    "pmid": "42987843"
+  },
+  "pmid:42987858": {
+    "topic": "mCRC-MSI-H",
+    "added": "2026-11-15",
+    "score": 2,
+    "pmid": "42987858"
+  },
+  "pmid:42987842": {
+    "topic": "mCRC-MSI-H",
+    "added": "2026-11-15",
+    "score": 2,
+    "pmid": "42987842"
+  },
+  "pmid:42987845": {
+    "topic": "mCRC-HER2",
+    "added": "2026-11-15",
+    "score": 2,
+    "pmid": "42987845"
+  },
+  "10.1200/JCO-25-02761": {
+    "topic": "mCRC-MSI-H",
+    "added": "2026-11-15",
+    "score": 2,
+    "pmid": "42993920"
+  },
+  "10.1038/s41591-026-04771-2": {
+    "topic": "generic-CRS",
+    "added": "2026-11-15",
+    "score": 2,
+    "pmid": "42982997"
+  },
+  "10.1097/SLA.0000000000007261": {
+    "topic": "mCRC-BRAF-V600E",
+    "added": "2026-11-15",
+    "score": 2,
+    "pmid": "43021470"
+  },
+  "10.1097/SLA.0000000000007247": {
+    "topic": "generic-CRS",
+    "added": "2026-11-15",
+    "score": 3,
+    "pmid": "43004518"
   }
 }
