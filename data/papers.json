@@ -530,10 +530,11 @@
               "fdaNote": "2025/1/16",
               "tfda": "unknown",
               "nhi": "unknown",
-              "nhiNote": "查無健保給付公告",
+              "nhiNote": "查無大腸癌健保給付公告（2026/2 大腸癌給付擴增只涉及 cetuximab、panitumumab 一線與 encorafenib）",
               "checkedAt": "2026-11-15",
               "sources": [
-                "https://www.fda.gov/drugs/resources-information-approved-drugs/fda-approves-sotorasib-panitumumab-kras-g12c-mutated-colorectal-cancer"
+                "https://www.fda.gov/drugs/resources-information-approved-drugs/fda-approves-sotorasib-panitumumab-kras-g12c-mutated-colorectal-cancer",
+                "https://www.ctee.com.tw/news/20260207700548-430104"
               ]
             },
             {
@@ -807,10 +808,11 @@
               "fda": "approved",
               "tfda": "approved",
               "nhi": "covered",
-              "nhiNote": "2025/6 起擴增給付一線（衛福部新聞稿）；給付條件以健保署公告為準。TFDA 依健保給付推定（健保只給付核准適應症）",
+              "nhiNote": "已給付一線 MSI-H/dMMR；生效日各來源不一（2024/6 或 2025/6），給付條件以健保署公告為準。TFDA 依健保給付推定（健保只給付核准適應症）",
               "checkedAt": "2026-11-15",
               "sources": [
                 "https://www.mohw.gov.tw/cp-16-82268-1.html",
+                "https://www.healthnews.com.tw/article/65300",
                 "https://udn.com/news/story/7266/8937708"
               ]
             },
@@ -822,8 +824,10 @@
               "nhi": "unknown",
               "checkedAt": "2026-11-15",
               "sources": [
-                "https://ascopost.com/news/april-2025/fda-approves-nivolumab-with-ipilimumab-for-unresectable-or-metastatic-msi-hdmmr-colorectal-cancer"
-              ]
+                "https://ascopost.com/news/april-2025/fda-approves-nivolumab-with-ipilimumab-for-unresectable-or-metastatic-msi-hdmmr-colorectal-cancer",
+                "https://www.nhi.gov.tw/ch/cp-14451-2186a-3258-1.html"
+              ],
+              "nhiNote": "查到的健保免疫檢查點抑制劑規定未明列大腸癌的 nivolumab + ipilimumab 併用"
             }
           ]
         },
@@ -974,12 +978,14 @@
               "regimen": "Tucatinib + trastuzumab",
               "fda": "accelerated",
               "fdaNote": "2023/1；確認性試驗 MOUNTAINEER-03 進行中",
-              "tfda": "unknown",
-              "nhi": "unknown",
+              "tfda": "none",
+              "nhi": "none",
               "checkedAt": "2026-11-15",
               "sources": [
-                "https://www.onclive.com/view/fda-approves-tucatinib-plus-trastuzumab-for-ras-wild-type-her2-metastatic-colorectal-cancer"
-              ]
+                "https://www.onclive.com/view/fda-approves-tucatinib-plus-trastuzumab-for-ras-wild-type-her2-metastatic-colorectal-cancer",
+                "https://mycancerfree.com/tw-3/tucatinib-trastuzumab-t-2026-04-06/"
+              ],
+              "nhiNote": "台灣核准適應症僅 HER2 陽性乳癌，大腸癌未核准，健保不給付於大腸癌"
             },
             {
               "regimen": "Trastuzumab deruxtecan（HER2 IHC3+ 實體腫瘤）",
