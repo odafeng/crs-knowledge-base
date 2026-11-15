@@ -50,19 +50,49 @@ def _extract_doi(text):
     return m.group(1).rstrip(".,;") if m else ""
 
 
+# Words nearly every colorectal paper contains. They cannot tell topics apart: while they
+# counted, any paper mentioning "colorectal" went to whichever topic was listed first
+# (BRAF), whose agent then scored it as off-topic.
+GENERIC_TERMS = frozenset({"colorectal", "colon", "rectal"})
+# The designed catch-all for CRC papers that fit no specific topic (see its agent context).
+FALLBACK_TOPIC = "generic-CRS"
+
+
+def _term_hits(entry, terms) -> int:
+    """How many terms appear as whole words in the title or abstract.
+
+    Whole words, because substring matching found "TME" inside "treatment".
+    """
+    text = " ".join(entry.get(k, "") or "" for k in ("title", "abstract", "description"))
+    return sum(
+        1 for term in terms if re.search(rf"(?<![A-Za-z0-9]){re.escape(term)}(?![A-Za-z0-9])", text, re.IGNORECASE)
+    )
+
+
 def _matches_topic(entry, filter_terms):
     """Check if an entry matches any of the filter terms (title + abstract)."""
-    text = (entry.get("title", "") + " " + entry.get("abstract", "") + " " + entry.get("description", "")).lower()
-    return any(term.lower() in text for term in filter_terms)
+    return _term_hits(entry, filter_terms) > 0
+
+
+def _specific_terms(cfg) -> list[str]:
+    terms = cfg.get("rss_filter_terms", []) or cfg.get("keywords", [])
+    return [t for t in terms if t.lower() not in GENERIC_TERMS]
 
 
 def _assign_topic(article, topics_config):
-    """Return the first topic whose filter terms / keywords match, else ''."""
+    """Topic whose specific terms match best (first listed wins a tie).
+
+    A paper matching no topic's specific terms goes to the catch-all topic when it is
+    configured, else ''.
+    """
+    best, best_hits = "", 0
     for t, cfg in topics_config.items():
-        terms = cfg.get("rss_filter_terms", []) or cfg.get("keywords", [])
-        if _matches_topic(article, terms):
-            return t
-    return ""
+        hits = _term_hits(article, _specific_terms(cfg))
+        if hits > best_hits:
+            best, best_hits = t, hits
+    if best:
+        return best
+    return FALLBACK_TOPIC if FALLBACK_TOPIC in topics_config else ""
 
 
 def fetch_rss(topic=None, dry_run=False, reldate=PUBMED_RELDATE):
@@ -76,9 +106,6 @@ def fetch_rss(topic=None, dry_run=False, reldate=PUBMED_RELDATE):
     tracked_dois, tracked_pmids = tracked_ids(load_tracked_dois())
     feeds = queries.get("rss_feeds", [])
     topics_config = {k: v for k, v in queries.items() if k not in ("rss_feeds", "conference_seasons")}
-
-    if topic:
-        topics_config = {k: v for k, v in topics_config.items() if k == topic}
 
     candidates = []
     seen_ids = set()
@@ -109,9 +136,11 @@ def fetch_rss(topic=None, dry_run=False, reldate=PUBMED_RELDATE):
             if is_tracked(art, tracked_dois, tracked_pmids) or (uid and uid in seen_ids):
                 continue
 
-            t = topic if topic else _assign_topic(art, topics_config)
-            if not t:
-                continue  # no matching topic — skip, same as the old RSS behavior
+            # With a topic filter, keep only papers that belong to that topic; assigning
+            # the requested topic to every colorectal paper sent them to the wrong agent.
+            t = _assign_topic(art, topics_config)
+            if not t or (topic and t != topic):
+                continue
 
             candidate = {
                 "pmid": art.get("pmid", ""),
