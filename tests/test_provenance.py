@@ -9,11 +9,14 @@ from create_issues import format_issue_body
 from fetch_rss import fetch_rss
 from issue_data import extract
 from provenance import (
+    CHECKED_FIELDS,
     abstract_status,
     check_evidence,
     evaluate_commentary_gate,
     evaluate_paper_gate,
     numbers_in,
+    phases_in,
+    study_design_reasons,
     unsourced_numbers,
 )
 from topic_agents import build_paper_prompt
@@ -259,3 +262,57 @@ def test_journal_feed_keeps_full_abstract(mock_queries, mock_tracked, mock_esear
     abstract = "BRAF colorectal " + "x" * 2000 + "."
     mock_efetch.return_value = [{"pmid": "1", "doi": "10.1/a", "title": "BRAF colorectal", "abstract": abstract}]
     assert fetch_rss()[0]["abstract"] == abstract
+
+
+class TestStudyDesign:
+    """The studyType badge must not claim more than the title and abstract state."""
+
+    def test_phase_labels_are_not_numbers(self):
+        assert numbers_in("Phase 3 RCT, phase Ib/II, phase 1-2, phases 2 and 3") == set()
+        assert numbers_in("a phase in which 12 patients responded") == {"12"}
+
+    def test_phases_in(self):
+        assert phases_in("a randomised, open-label, phase 3 trial") == {"3"}
+        assert phases_in("this phase Ib/II study") == {"1", "2"}
+        assert phases_in("Phase III") == {"3"}
+        assert phases_in("the next phase is 3 months long") == set()
+
+    def test_guideline_labelled_phase_3_rct_is_held(self):
+        # Issue #34: the NCCN Insights summary came back as "Phase 3 RCT".
+        paper = _paper(title="NCCN Guidelines Insights: Colon Cancer, Version 3.2026")
+        paper["ai_suggested_js"]["studyType"] = "Phase 3 RCT"
+        reasons = evaluate_paper_gate(paper, AUTO_TOPICS).reasons
+        assert any("Phase 3" in r and "沒有寫明" in r for r in reasons)
+        assert any("RCT" in r and "隨機" in r for r in reasons)
+
+    def test_stated_design_passes(self):
+        paper = _paper(
+            abstract=NICHE2_ABSTRACT.replace(
+                "METHODS: Patients", "METHODS: In this single-arm, phase 2 trial, patients"
+            )
+        )
+        paper["ai_suggested_js"]["studyType"] = "Phase 2 (updated)"
+        result = evaluate_paper_gate(paper, AUTO_TOPICS)
+        assert result.passed, result.reasons
+
+    def test_phase_may_be_stated_in_the_title(self):
+        paper = _paper(title="Drug X versus chemotherapy: a randomised phase 3 trial")
+        paper["ai_suggested_js"]["studyType"] = "Phase 3 RCT"
+        assert evaluate_paper_gate(paper, AUTO_TOPICS).passed
+
+    def test_cohort_number_is_not_a_phase(self):
+        assert study_design_reasons("Phase 3 (Cohort 2)", "phase 3 BREAKWATER cohort") == []
+
+    def test_untyped_designs_are_not_checked(self):
+        assert study_design_reasons("Meta-analysis", "a pooled look") == []
+
+
+def test_prompt_and_tool_ask_for_every_field_the_gate_checks():
+    """The gate checks five fields; the model must be told to source all five."""
+    from topic_agents import build_system_prompt
+
+    prompt = build_system_prompt("mCRC-MSI-H")
+    tool_text = SUBMIT_CLASSIFICATION_TOOL["input_schema"]["properties"]["evidence"]["description"]
+    for field in CHECKED_FIELDS:
+        assert field in tool_text, field
+    assert "n、regimen、endpoint、result、bottomLine" in prompt

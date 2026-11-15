@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 TODAY = "2026-11-15"
 
 ABSTRACT = (
-    "BACKGROUND: Test background. METHODS: 56 patients were treated. "
+    "BACKGROUND: Test background. METHODS: In this phase 2 trial, 56 patients were treated. "
     "RESULTS: The major pathological response rate was 36% (95% CI 12.8-64.9). "
     "CONCLUSIONS: Promising <b>activity</b>."
 )

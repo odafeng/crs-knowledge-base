@@ -106,7 +106,7 @@ SUBMIT_CLASSIFICATION_TOOL = {
             },
             "evidence": {
                 "type": "array",
-                "description": "suggested_js 的 n、result、bottomLine 中每一個數字的出處。score < 4 時可為空陣列。",
+                "description": "suggested_js 的 n、regimen、endpoint、result、bottomLine 中每一個數字的出處。score < 4 時可為空陣列。",
                 "items": EVIDENCE_SCHEMA,
             },
         },
