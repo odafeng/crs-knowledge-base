@@ -11,15 +11,11 @@ import sys
 from anthropic import Anthropic
 
 from agent_tools import AGENT_TOOLS, execute_tool
-from config import ANTHROPIC_API_KEY, CLASSIFY_EFFORT, CLASSIFY_MODEL, RELEVANCE_THRESHOLD
+from config import ANTHROPIC_API_KEY, CLASSIFY_EFFORT, CLASSIFY_MODEL, FALLBACK_BETA, RELEVANCE_THRESHOLD
 from topic_agents import build_paper_prompt, build_system_prompt
 
 MAX_AGENT_TURNS = 8  # Max tool-use rounds per paper
 MAX_OUTPUT_TOKENS = 16000  # Thinking is always on and counts toward max_tokens
-
-# Server-side refusal fallback: if a safety classifier declines a request, the API
-# re-runs it within the same call on a model chosen by refusal category.
-FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
 # Nudge sent when the agent runs out of turns (or stops) without submitting.
 FORCE_SUBMIT_PROMPT = (

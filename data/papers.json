@@ -898,7 +898,21 @@
         "bottomLine": "首個在 MSS/pMMR mCRC 以免疫療法組合達 Phase 3 OS 獲益（vs regorafenib），突破 MSS 免疫治療壁壘，但毒性顯著較高。",
         "doi": "10.1016/S0140-6736(25)02025-2",
         "file": "docs/generic-CRS/Hecht_Lancet_2025_STELLAR303.html",
-        "relations": []
+        "relations": [],
+        "commentary": [
+          {
+            "doi": "10.1016/j.medj.2025.100957",
+            "pmid": "41519113",
+            "title": "STELLAR-303: Breaking the immunotherapy wall in MSS colorectal cancer.",
+            "journal": "Med",
+            "year": 2026,
+            "type": "Editorial",
+            "summary": "Bando 與 Yoshino 評論：STELLAR-303 是 MSS mCRC 首個達到 OS 獲益的免疫治療 Phase 3，可能重塑後線治療並帶動 biomarker 導向的 MSS 免疫治療研究",
+            "critique": false,
+            "newData": false,
+            "addedAt": "2026-11-15"
+          }
+        ]
       },
       {
         "id": "Hoyek_DLD_2025_NMA3L",

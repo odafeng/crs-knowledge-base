@@ -5,7 +5,9 @@ import json
 import subprocess
 import sys
 
+from commentary import CommentaryProposal
 from config import GITHUB_TOKEN
+from issue_data import checkbox, embed
 from topics import LABEL_COLORS, TOPIC_LABELS, topic_from_str
 
 
@@ -192,3 +194,50 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def format_commentary_issue_body(proposals: list[CommentaryProposal], added_at: str) -> str:
+    """Review issue listing commentary mapped to KB trials, one checkbox per proposal."""
+    lines = [
+        "以下評論類文章（社論、讀者來信、評論、新聞）經輕量分流，對應到 KB 既有試驗。"
+        "摘要與兩個標記由 AI 產生，尚未核對。",
+        "",
+        "**審核方式**：勾選要收錄的項目，再加上 `accepted` label，bot 會開 draft PR 寫入 `data/papers.json`。"
+        "未勾選的不會寫入。",
+        "",
+    ]
+    new_data = [(i, p) for i, p in enumerate(proposals) if p.new_data]
+    if new_data:
+        lines += ["> [!WARNING]", "> 以下評論**含新數據**，除了收錄評論，可能也要更新試驗卡片內容："]
+        lines += [f"> - c{i}：`{p.target_id}` ← {p.title}" for i, p in new_data]
+        lines.append("")
+
+    for i, p in enumerate(proposals):
+        link = f"https://doi.org/{p.doi}" if p.doi else f"https://pubmed.ncbi.nlm.nih.gov/{p.pmid}/"
+        method = "PubMed CommentOn" if p.match_method == "comment_on" else "AI 判斷"
+        lines.append(f"{checkbox(i)} `{p.target_id}` ← {p.journal} {p.year or ''} {p.type}：[{p.title}]({link})")
+        lines.append(f"  - AI 摘要：{p.summary}")
+        lines.append(
+            f"  - 實質批評：{'是' if p.critique else '否'} ｜ 新數據：{'是' if p.new_data else '否'} ｜ 對應方式：{method}"
+        )
+
+    payload = [{"index": i, "target_id": p.target_id, "entry": p.to_entry(added_at)} for i, p in enumerate(proposals)]
+    lines += ["", embed("commentary", payload)]
+    return "\n".join(lines)
+
+
+def create_commentary_review_issue(proposals: list[CommentaryProposal], added_at: str, dry_run: bool = False) -> None:
+    """One review issue per run for all commentary mapped to KB trials."""
+    if not proposals:
+        return
+    title = f"[Commentary] 待審：{len(proposals)} 篇評論對應到既有試驗（{added_at}）"
+    body = format_commentary_issue_body(proposals, added_at)
+    if dry_run:
+        print(f"\n{'=' * 60}\nISSUE: {title}\n{'=' * 60}\n{body[:500]}\n...")
+        return
+    _ensure_labels({"commentary"})
+    ok, url = _run_gh(["issue", "create", "--title", title, "--label", "commentary", "--body", body])
+    if ok:
+        print(f"  Created commentary review issue: {url}")
+    else:
+        print("  [ERROR] Failed to create commentary review issue", file=sys.stderr)

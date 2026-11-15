@@ -97,6 +97,15 @@ def _parse_article(article_elem):
     if len(authors) > 3:
         author_str += ", et al."
 
+    # Publication types (Editorial, Letter, Randomized Controlled Trial, ...) and the
+    # PMIDs this article comments on; used to route commentary away from full classification.
+    publication_types = [pt.text or "" for pt in art.findall(".//PublicationTypeList/PublicationType")]
+    comment_on_pmids = [
+        cc.findtext("PMID", "")
+        for cc in medline.findall(".//CommentsCorrectionsList/CommentsCorrections")
+        if cc.get("RefType") == "CommentOn" and cc.findtext("PMID", "")
+    ]
+
     # DOI
     doi = ""
     for id_elem in article_elem.findall(".//PubmedData/ArticleIdList/ArticleId"):
@@ -112,8 +121,15 @@ def _parse_article(article_elem):
         "journal": journal,
         "year": year,
         "abstract": abstract,
+        "publication_types": publication_types,
+        "comment_on_pmids": comment_on_pmids,
         "source": "pubmed",
     }
+
+
+def resolve_dois(pmids: list[str]) -> dict[str, str]:
+    """Map PMIDs to DOIs via efetch (PMIDs without a DOI are omitted)."""
+    return {a["pmid"]: a["doi"] for a in efetch(pmids) if a.get("doi")}
 
 
 # Conference abstract supplement queries — these catch meeting abstracts

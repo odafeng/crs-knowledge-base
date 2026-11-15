@@ -228,7 +228,15 @@
 
     .offline-banner { display:none; background:#fed7d7; color:#c53030; text-align:center; padding:5px; font-size:0.75rem; }
     body.offline .offline-banner { display:block; }
-  </style>
+  .comm { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border, #e2e8f0); font-size: 0.82rem; }
+.comm-hdr { font-weight: 600; color: var(--primary); margin-bottom: 4px; }
+.comm ul { margin: 0; padding-left: 18px; }
+.comm li { margin: 4px 0; }
+.comm-sum { color: var(--text-sec); }
+.comm-tag { font-size: 0.7rem; padding: 1px 6px; border-radius: 8px; background: #edf2f7; color: #4a5568; white-space: nowrap; }
+.comm-critique { background: #fff5f5; color: #c53030; }
+.comm-data { background: #fffbeb; color: #b7791f; }
+</style>
 </head>
 <body>
 
@@ -1017,6 +1025,7 @@ let currentMetric = 'mOS';
 // Relation type labels
 const REL_LABELS = { builds_on: '延伸自', supersedes: '更新自', subgroup_of: '次分析', same_regimen: '同方案', contradicts: '矛盾' };
 const REL_COLORS = { builds_on: '#38a169', supersedes: '#3182ce', subgroup_of: '#718096', same_regimen: '#d69e2e', contradicts: '#e53e3e' };
+const COMMENTARY_LABELS = { Editorial: '社論', Letter: '讀者來信', Comment: '評論', News: '新聞', 'Newspaper Article': '新聞' };
 const STUDY_BADGES = { 'Phase 3 RCT': '#276749', 'Phase 3 RCT (updated)': '#2c5282', 'Phase 3 (Cohort 3)': '#2c5282', 'Phase 2 RCT': '#6b46c1', 'Biomarker (exploratory)': '#975a16', 'Post-hoc analysis': '#718096', 'Meta-analysis': '#b83280', 'Guideline': '#2b6cb0' };
 
 function renderEvidence() {
@@ -1083,6 +1092,12 @@ function renderPaperCards(papers, elId) {
     }).filter(Boolean).join(' ');
     const doiLink = p.doi ? `<a href="https://doi.org/${p.doi}" target="_blank" rel="noopener noreferrer" style="font-size:0.8rem">DOI</a>` : '';
     const fileLink = p.file ? `<a href="${p.file}" target="_blank" rel="noopener noreferrer" style="font-size:0.8rem">&#x1F4C4; 全文/摘要</a>` : '';
+    const comms = (p.commentary || []).map(c => {
+      const href = c.doi ? `https://doi.org/${c.doi}` : `https://pubmed.ncbi.nlm.nih.gov/${c.pmid}/`;
+      const tags = (c.critique ? ' <span class="comm-tag comm-critique">含實質批評</span>' : '')
+        + (c.newData ? ' <span class="comm-tag comm-data">含新數據</span>' : '');
+      return `<li><a href="${href}" target="_blank" rel="noopener noreferrer">${c.journal} ${c.year || ''}</a> <span class="comm-tag">${COMMENTARY_LABELS[c.type] || c.type}</span>${tags}<div class="comm-sum">${c.summary}</div></li>`;
+    }).join('');
     return `<div class="ev-card">
       <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
         <h4>${p.year} ${p.journal} — ${p.regimen.split(' vs ')[0]}</h4>
@@ -1098,6 +1113,7 @@ function renderPaperCards(papers, elId) {
         </table>
         <div class="note">${p.bottomLine}</div>
         ${rels ? '<div style="margin-top:6px">'+rels+'</div>' : ''}
+        ${comms ? `<div class="comm"><div class="comm-hdr">相關評論（${p.commentary.length}）</div><ul>${comms}</ul></div>` : ''}
         <div style="margin-top:8px;display:flex;gap:12px">${fileLink} ${doiLink}</div>
       </div>
     </div>`;

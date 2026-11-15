@@ -25,6 +25,12 @@ CLASSIFY_MODEL = "claude-opus-5-5"
 # Thinking depth for the classification agent. Opus 5.5 defaults to "medium";
 # research-then-judge work that produces citable numbers runs at "high".
 CLASSIFY_EFFORT = "high"
+# Commentary triage (editorials, letters) is a single short call: map to a KB trial,
+# write one line, set two flags. Low effort is enough.
+TRIAGE_EFFORT = "low"
+# Server-side refusal fallback: if a safety classifier declines a request, the API
+# re-runs it within the same call on a model chosen by refusal category.
+FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
 # GitHub
 GITHUB_TOKEN = os.environ.get("GH_TOKEN", os.environ.get("GITHUB_TOKEN", ""))
