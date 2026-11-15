@@ -149,15 +149,20 @@ TRIAGE_SYSTEM_PROMPT = """你是大腸直腸癌知識庫的文獻助理。輸入
 4. has_new_data：是否包含原始報告沒有的新數據，例如更新追蹤、次分析數字、作者回覆中補充的結果。"""
 
 
-def _triage_prompt(paper: dict, kb: list[KBPaper], comment_on_target: str | None) -> str:
+def _triage_system(kb: list[KBPaper]) -> list[dict]:
+    """Instructions plus the KB trial list: identical for every commentary in a run, so it is
+    the cached prefix. Anything per-article goes in the user message, after the breakpoint."""
+    kb_lines = "\n".join(f"- {p.id} ｜ {p.year} {p.journal} ｜ {p.regimen}" for p in kb)
+    text = f"{TRIAGE_SYSTEM_PROMPT}\n\n## 知識庫已收錄試驗（id ｜ 年份 期刊 ｜ 方案）\n{kb_lines}"
+    return [{"type": "text", "text": text, "cache_control": {"type": "ephemeral"}}]
+
+
+def _triage_prompt(paper: dict, comment_on_target: str | None) -> str:
     lines = [
         f"## 評論文章（{commentary_type(paper)}）",
         f"標題：{paper.get('title', '')}",
         f"期刊：{paper.get('journal', '')} {paper.get('year', '')}",
         f"摘要：{paper.get('abstract') or '（無摘要）'}",
-        "",
-        "## 知識庫已收錄試驗（id ｜ 年份 期刊 ｜ 方案）",
-        *(f"- {p.id} ｜ {p.year} {p.journal} ｜ {p.regimen}" for p in kb),
     ]
     if comment_on_target:
         lines += ["", f"PubMed 標示這篇文章是在評論 {comment_on_target}，target_id 請填它。"]
@@ -179,8 +184,8 @@ def triage_commentary(
             "effort": TRIAGE_EFFORT,
             "format": {"type": "json_schema", "schema": _triage_schema([p.id for p in kb])},
         },
-        system=TRIAGE_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": _triage_prompt(paper, kb, comment_on_target)}],
+        system=_triage_system(kb),
+        messages=[{"role": "user", "content": _triage_prompt(paper, comment_on_target)}],
         betas=[FALLBACK_BETA],
         fallbacks="default",
     )
