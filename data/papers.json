@@ -336,10 +336,11 @@
               "fda": "approved",
               "tfda": "approved",
               "nhi": "covered",
-              "nhiNote": "2026/5/1 起；給付條件以健保署公告為準",
+              "nhiNote": "2026/5/1 起（共擬會議原訂最快 3/1）；給付條件以健保署公告為準",
               "checkedAt": "2026-11-15",
               "sources": [
-                "https://health.tvbs.com.tw/cancer/362702"
+                "https://health.tvbs.com.tw/cancer/362702",
+                "https://mohw.gov.tw/cp-16-85379-1.html"
               ]
             }
           ]
@@ -515,13 +516,40 @@
         {
           "title": "KRAS G12C 標靶治療（後線）",
           "icon": "&#x1F7E2;",
-          "body_html": "<p><strong>盛行率：</strong>約 3-4% of all CRC（~17% of KRAS-mutant CRC）。預後較其他 KRAS 突變差。</p>\n<table>\n  <tr><th>方案</th><th>ORR</th><th>mPFS</th><th>mOS</th><th>Phase</th></tr>\n  <tr><td><strong>Sotorasib + panitumumab</strong></td><td>26-30%</td><td>5.6 mo</td><td>HR 0.70</td><td>Phase 3</td></tr>\n  <tr><td><strong>Adagrasib + cetuximab</strong></td><td>34-46%</td><td>6.9 mo</td><td>15.9 mo</td><td>Phase 1/2</td></tr>\n  <tr><td><strong>Divarasib + cetuximab</strong></td><td>62.5%</td><td>8.1 mo</td><td>—</td><td>Phase 1b</td></tr>\n</table>\n<div class=\"note\">所有 G12C 抑制劑搭配 anti-EGFR 效果遠優於單用。Divarasib 早期數據最亮眼但需 RCT 確認。</div>",
+          "body_html": "<p><strong>盛行率：</strong>約 3-4% of all CRC（~17% of KRAS-mutant CRC）。預後較其他 KRAS 突變差。</p>\n<table>\n  <tr><th>方案</th><th>ORR</th><th>mPFS</th><th>mOS</th><th>Phase</th></tr>\n  <tr><td><strong>Sotorasib + panitumumab</strong></td><td>26-30%</td><td>5.6 mo</td><td>HR 0.70</td><td>Phase 3</td></tr>\n  <tr><td><s>Adagrasib + cetuximab</s></td><td>34-46%</td><td>6.9 mo</td><td>15.9 mo</td><td>Phase 1/2；Phase 3 未達標</td></tr>\n  <tr><td><strong>Divarasib + cetuximab</strong></td><td>62.5%</td><td>8.1 mo</td><td>—</td><td>Phase 1b</td></tr>\n</table>\n<div class=\"note\">所有 G12C 抑制劑搭配 anti-EGFR 效果遠優於單用。Divarasib 早期數據最亮眼但需 RCT 確認。</div>\n<div class=\"note\"><strong>Adagrasib + cetuximab 已撤銷：</strong>確認性 Phase 3 KRYSTAL-10（vs 化療）PFS 7.5 vs 8.1 mo、OS 21.6 vs 21.7 mo，均未達顯著（ESMO GI 2026）。FDA 於 2026/9/1 撤銷其大腸癌加速核准適應症。</div>",
           "refs": [
             "cb300-os",
             "krystal1-exp",
             "divarasib-combo"
           ],
-          "reviewedAt": "2026-06-07"
+          "reviewedAt": "2026-11-15",
+          "regulatory": [
+            {
+              "regimen": "Sotorasib + panitumumab",
+              "fda": "approved",
+              "fdaNote": "2025/1/16",
+              "tfda": "unknown",
+              "nhi": "unknown",
+              "nhiNote": "查無大腸癌健保給付公告（2026/2 大腸癌給付擴增只涉及 cetuximab、panitumumab 一線與 encorafenib）",
+              "checkedAt": "2026-11-15",
+              "sources": [
+                "https://www.fda.gov/drugs/resources-information-approved-drugs/fda-approves-sotorasib-panitumumab-kras-g12c-mutated-colorectal-cancer",
+                "https://www.ctee.com.tw/news/20260207700548-430104"
+              ]
+            },
+            {
+              "regimen": "Adagrasib + cetuximab",
+              "fda": "none",
+              "fdaNote": "2024/6 加速核准，2026/9/1 撤銷（KRYSTAL-10 未達標）",
+              "tfda": "unknown",
+              "nhi": "unknown",
+              "checkedAt": "2026-11-15",
+              "sources": [
+                "https://www.cancernetwork.com/view/fda-withdraws-adagrasib-cetuximab-approval-in-kras-g12c-mutated-crc",
+                "https://www.onclive.com/view/fda-withdraws-indication-for-adagrasib-plus-cetuximab-in-previously-treated-kras-g12c-mutated-mcrc"
+              ]
+            }
+          ]
         }
       ]
     }
@@ -773,7 +801,35 @@
             "kn177-os",
             "cm142-1l"
           ],
-          "reviewedAt": "2026-06-07"
+          "reviewedAt": "2026-06-07",
+          "regulatory": [
+            {
+              "regimen": "Pembrolizumab（一線 MSI-H/dMMR）",
+              "fda": "approved",
+              "tfda": "approved",
+              "nhi": "covered",
+              "nhiNote": "已給付一線 MSI-H/dMMR；生效日各來源不一（2024/6 或 2025/6），給付條件以健保署公告為準。TFDA 依健保給付推定（健保只給付核准適應症）",
+              "checkedAt": "2026-11-15",
+              "sources": [
+                "https://www.mohw.gov.tw/cp-16-82268-1.html",
+                "https://www.healthnews.com.tw/article/65300",
+                "https://udn.com/news/story/7266/8937708"
+              ]
+            },
+            {
+              "regimen": "Nivolumab + ipilimumab（一線 MSI-H/dMMR）",
+              "fda": "approved",
+              "fdaNote": "2025/4/8（CheckMate 8HW）",
+              "tfda": "unknown",
+              "nhi": "unknown",
+              "checkedAt": "2026-11-15",
+              "sources": [
+                "https://ascopost.com/news/april-2025/fda-approves-nivolumab-with-ipilimumab-for-unresectable-or-metastatic-msi-hdmmr-colorectal-cancer",
+                "https://www.nhi.gov.tw/ch/cp-14451-2186a-3258-1.html"
+              ],
+              "nhiNote": "查到的健保免疫檢查點抑制劑規定未明列大腸癌的 nivolumab + ipilimumab 併用"
+            }
+          ]
         },
         {
           "title": "新輔助免疫治療（非轉移性）",
@@ -916,7 +972,34 @@
             "mypathway",
             "triumph"
           ],
-          "reviewedAt": "2026-06-07"
+          "reviewedAt": "2026-06-07",
+          "regulatory": [
+            {
+              "regimen": "Tucatinib + trastuzumab",
+              "fda": "accelerated",
+              "fdaNote": "2023/1；確認性試驗 MOUNTAINEER-03 進行中",
+              "tfda": "none",
+              "nhi": "none",
+              "checkedAt": "2026-11-15",
+              "sources": [
+                "https://www.onclive.com/view/fda-approves-tucatinib-plus-trastuzumab-for-ras-wild-type-her2-metastatic-colorectal-cancer",
+                "https://mycancerfree.com/tw-3/tucatinib-trastuzumab-t-2026-04-06/"
+              ],
+              "nhiNote": "台灣核准適應症僅 HER2 陽性乳癌，大腸癌未核准，健保不給付於大腸癌"
+            },
+            {
+              "regimen": "Trastuzumab deruxtecan（HER2 IHC3+ 實體腫瘤）",
+              "fda": "accelerated",
+              "fdaNote": "2024/4 腫瘤不分種類適應症",
+              "tfda": "unknown",
+              "nhi": "unknown",
+              "nhiNote": "查到的健保給付規定（9.115）僅列乳癌",
+              "checkedAt": "2026-11-15",
+              "sources": [
+                "https://www.nhi.gov.tw/ch/cp-17842-695ed-3258-1.html"
+              ]
+            }
+          ]
         }
       ]
     }

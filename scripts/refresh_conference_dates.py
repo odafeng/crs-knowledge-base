@@ -45,6 +45,9 @@ MONTHS = {
 }
 
 BUFFER_DAYS = 14  # ±2 weeks around actual dates
+# A single meeting lasts a few days. Dates spread wider than this mean the page lists
+# several events (e.g. a society-wide calendar), so the window would be meaningless.
+MAX_EVENT_SPAN_DAYS = 10
 
 
 def _extract_dates_from_text(text: str, year: int | None = None) -> list[tuple[int, int]]:
@@ -60,7 +63,7 @@ def _extract_dates_from_text(text: str, year: int | None = None) -> list[tuple[i
     # Pattern: "Month DD-DD, YYYY" or "Month DD – DD, YYYY"
     pattern1 = r"(\w+)\s+(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*,?\s*(\d{4})?"
     for m in re.finditer(pattern1, text, re.IGNORECASE):
-        month_str, day1, day2, yr = m.groups()
+        month_str, day1, day2, _yr = m.groups()
         month_num = MONTHS.get(month_str.lower())
         if month_num:
             results.append((month_num, int(day1)))
@@ -69,7 +72,7 @@ def _extract_dates_from_text(text: str, year: int | None = None) -> list[tuple[i
     # Pattern: "Month DD - Month DD" (cross-month)
     pattern2 = r"(\w+)\s+(\d{1,2})\s*[-–—]\s*(\w+)\s+(\d{1,2})\s*,?\s*(\d{4})?"
     for m in re.finditer(pattern2, text, re.IGNORECASE):
-        m1, d1, m2, d2, yr = m.groups()
+        m1, d1, m2, d2, _yr = m.groups()
         mn1 = MONTHS.get(m1.lower())
         mn2 = MONTHS.get(m2.lower())
         if mn1 and mn2:
@@ -79,7 +82,7 @@ def _extract_dates_from_text(text: str, year: int | None = None) -> list[tuple[i
     # Pattern: "DD-DD Month YYYY" (European style)
     pattern3 = r"(\d{1,2})\s*[-–—]\s*(\d{1,2})\s+(\w+)\s*,?\s*(\d{4})?"
     for m in re.finditer(pattern3, text, re.IGNORECASE):
-        d1, d2, month_str, yr = m.groups()
+        d1, d2, month_str, _yr = m.groups()
         month_num = MONTHS.get(month_str.lower())
         if month_num:
             results.append((month_num, int(d1)))
@@ -103,6 +106,8 @@ def _dates_to_window(dates: list[tuple[int, int]], buffer_days: int = BUFFER_DAY
 
     if not dt_list:
         return None
+    if (max(dt_list) - min(dt_list)).days > MAX_EVENT_SPAN_DAYS:
+        return None  # several events on one page; keep the existing window
 
     earliest = min(dt_list) - timedelta(days=buffer_days)
     latest = max(dt_list) + timedelta(days=buffer_days)
@@ -171,7 +176,7 @@ def refresh_dates(dry_run: bool = False) -> bool:
 
         window = _dates_to_window(dates)
         if not window:
-            print("  Could not parse date window")
+            print("  Could not parse a single-event date window (no dates, or the page lists several events); keeping existing")
             continue
 
         new_start, new_end = window

@@ -53,8 +53,10 @@ jobs:
         run: |
           # Tuesday & Friday = regular full scan
           # Other days = daily (conference season only)
+          # Manual runs always do a full scan; otherwise a non-Tue/Fri manual run outside
+          # conference season would skip everything.
           DOW=$(date +%u)
-          if [ "$DOW" = "2" ] || [ "$DOW" = "5" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$DOW" = "2" ] || [ "$DOW" = "5" ]; then
             echo "daily=false" >> $GITHUB_OUTPUT
           else
             echo "daily=true" >> $GITHUB_OUTPUT
