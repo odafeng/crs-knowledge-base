@@ -19,7 +19,7 @@ import sys
 import time
 from datetime import datetime
 
-from config import PUBMED_RELDATE, load_queries, load_tracked_dois
+from config import PUBMED_RELDATE, is_tracked, load_queries, load_tracked_dois, tracked_ids
 from fetch_pubmed import efetch, esearch
 
 # Colorectal scope applied to every journal query so we only pull relevant papers.
@@ -73,8 +73,7 @@ def fetch_rss(topic=None, dry_run=False, reldate=PUBMED_RELDATE):
     succeeding). A journal that simply has no new papers is NOT a failure.
     """
     queries = load_queries()
-    tracked = load_tracked_dois()
-    tracked_doi_set = set(tracked.keys())
+    tracked_dois, tracked_pmids = tracked_ids(load_tracked_dois())
     feeds = queries.get("rss_feeds", [])
     topics_config = {k: v for k, v in queries.items() if k not in ("rss_feeds", "conference_seasons")}
 
@@ -107,7 +106,7 @@ def fetch_rss(topic=None, dry_run=False, reldate=PUBMED_RELDATE):
         for art in articles:
             doi = art.get("doi", "")
             uid = doi or art.get("pmid", "")
-            if uid and (uid in seen_ids or doi in tracked_doi_set):
+            if is_tracked(art, tracked_dois, tracked_pmids) or (uid and uid in seen_ids):
                 continue
 
             t = topic if topic else _assign_topic(art, topics_config)

@@ -14,7 +14,7 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
-from config import NCBI_API_KEY, PUBMED_FETCH_URL, PUBMED_SEARCH_URL, load_tracked_dois
+from config import NCBI_API_KEY, PUBMED_FETCH_URL, PUBMED_SEARCH_URL, RELEVANCE_THRESHOLD, load_tracked_dois
 from net import fetch_json, fetch_with_retry
 
 # ---------------------------------------------------------------------------
@@ -211,8 +211,15 @@ def _tool_lookup_existing(input_data):
     topic = input_data.get("topic", "")
     tracked = load_tracked_dois()
 
-    # Filter by topic
-    topic_papers = {doi: info for doi, info in tracked.items() if info.get("topic") == topic}
+    # This topic's papers that reached the KB or a review issue. Low-score papers and
+    # commentary are tracked too (so they are not re-processed) but are not "existing papers".
+    topic_papers = {
+        key: info
+        for key, info in tracked.items()
+        if info.get("topic") == topic
+        and info.get("kind") != "commentary"
+        and (info.get("score") is None or info["score"] >= RELEVANCE_THRESHOLD)
+    }
 
     # Also get the JS paper objects from topic_agents
     from topic_agents import _PAPERS_JS
