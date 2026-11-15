@@ -19,8 +19,8 @@ _LABEL = re.compile(r"(?:^|\s)([A-Z][A-Z ]*[A-Z]):")
 _REGISTRATION_END = re.compile(r"(NCT\d{8}|ChiCTR\w+|ISRCTN\d+|CRD\d+)\W*$")
 _SENTENCE_END = (".", "!", "?", ")", "]", "。", "）", "」", '"', "'")
 
-# Fields of a KB entry whose numbers must be traceable to the abstract.
-CHECKED_FIELDS = ("n", "result", "bottomLine")
+# Every text field of the published entry whose numbers must be traceable to the abstract.
+CHECKED_FIELDS = ("n", "regimen", "endpoint", "result", "bottomLine")
 
 
 def abstract_status(abstract: str) -> AbstractStatus:
@@ -96,6 +96,12 @@ def check_evidence(evidence: list[dict], abstract: str) -> list[EvidenceCheck]:
     return checks
 
 
+def published_fields(paper: dict) -> dict:
+    """The entry text exactly as publish.build_entry will write it, so the gate checks what goes live."""
+    js = paper.get("ai_suggested_js") or {}
+    return {**js, "bottomLine": js.get("bottomLine") or paper.get("ai_bottom_line", "")}
+
+
 def entry_text(entry: dict) -> str:
     """The checked fields of a KB entry, joined for number extraction."""
     return " ".join(str(entry.get(k) or "") for k in CHECKED_FIELDS)
@@ -141,7 +147,7 @@ def evaluate_paper_gate(paper: dict, auto_topics: set[str]) -> GateResult:
         if c.status != "verified":
             reasons.append(f"出處未通過（{_STATUS_LABELS[c.status]}）：{c.claim}")
 
-    text = entry_text(entry)
+    text = entry_text(published_fields(paper))
     missing = numbers_not_in_abstract(text, paper.get("abstract", ""))
     if missing:
         reasons.append(f"KB 條目中這些數字在摘要裡找不到：{', '.join(missing)}")

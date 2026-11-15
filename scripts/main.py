@@ -124,7 +124,11 @@ def update_tracking(research: list[dict], triaged: list[tuple[dict, CommentaryPr
         if c.get("ai_score") is not None or c.get("ai_parse_failed"):
             record(c, {"score": c.get("ai_score")})
     for c, proposal in triaged:
-        record(c, {"kind": "commentary", "target": proposal.target_id if proposal else None})
+        if proposal is None:
+            # The model declined; leave it untracked so the next run retries it.
+            print(f"  [Commentary] Not tracked (declined, will retry): {c.get('title', '')[:60]}")
+            continue
+        record(c, {"kind": "commentary", "target": proposal.target_id})
 
     save_tracked_dois(tracked_dois)
     save_tracked_abstracts(tracked_abstracts)
