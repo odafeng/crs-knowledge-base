@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
 from config import CLASSIFY_MODEL, FALLBACK_BETA, TRIAGE_EFFORT
+from usage import USAGE
 
 if TYPE_CHECKING:
     from anthropic import Anthropic
@@ -183,6 +184,7 @@ def triage_commentary(
         betas=[FALLBACK_BETA],
         fallbacks="default",
     )
+    USAGE.record(response, CLASSIFY_MODEL)
     if response.stop_reason == "refusal":
         print(f"    [WARN] Commentary triage declined: {paper.get('title', '')[:60]}", file=sys.stderr)
         return None

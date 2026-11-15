@@ -24,6 +24,7 @@ from fetch_rss import AllFeedsFailedError, fetch_rss
 from notify_line import notify_papers
 from provenance import abstract_status, evaluate_commentary_gate, evaluate_paper_gate
 from publish import AUTO_PUBLISH_TOPICS, PublishError, publish_commentary, publish_paper
+from usage import USAGE
 
 
 def deduplicate_candidates(candidates):
@@ -123,7 +124,11 @@ def update_tracking(research: list[dict], triaged: list[tuple[dict, CommentaryPr
         if c.get("ai_score") is not None or c.get("ai_parse_failed"):
             record(c, {"score": c.get("ai_score")})
     for c, proposal in triaged:
-        record(c, {"kind": "commentary", "target": proposal.target_id if proposal else None})
+        if proposal is None:
+            # The model declined; leave it untracked so the next run retries it.
+            print(f"  [Commentary] Not tracked (declined, will retry): {c.get('title', '')[:60]}")
+            continue
+        record(c, {"kind": "commentary", "target": proposal.target_id})
 
     save_tracked_dois(tracked_dois)
     save_tracked_abstracts(tracked_abstracts)
@@ -217,6 +222,8 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
 
     if not dry_run:
         update_tracking(research, triaged, today_str)
+
+    USAGE.report()
 
     print(f"\n[Pipeline] Done — {datetime.now().isoformat()}")
     return journal_outage

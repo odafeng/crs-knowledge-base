@@ -1,0 +1,31 @@
+name: Stale Content Review
+
+# Monthly list of KB content due for review (#48). Read-only on the KB;
+# writes one tracking issue.
+on:
+  schedule:
+    - cron: '23 2 1 * *'  # 1st of each month, 02:23 UTC
+  workflow_dispatch:
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Check for stale content
+        working-directory: scripts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python check_stale.py

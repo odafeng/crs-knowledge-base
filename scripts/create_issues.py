@@ -2,48 +2,14 @@
 
 import argparse
 import json
-import subprocess
 import sys
 
 from commentary import CommentaryProposal
-from config import GITHUB_TOKEN
+from gh_cli import ensure_labels as _ensure_labels
+from gh_cli import run_gh as _run_gh
 from issue_data import checkbox, embed
 from provenance import check_evidence, evidence_table_markdown
-from topics import LABEL_COLORS, TOPIC_LABELS, topic_from_str
-
-
-def _run_gh(args, input_text=None):
-    """Run a gh CLI command. Returns (success, stdout)."""
-    cmd = ["gh", *args]
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            input=input_text,
-            env={"GH_TOKEN": GITHUB_TOKEN, "PATH": "/usr/bin:/usr/local/bin:/opt/homebrew/bin"}
-            if GITHUB_TOKEN
-            else None,
-        )
-        if result.returncode != 0:
-            print(f"  [WARN] gh command failed: {result.stderr.strip()}", file=sys.stderr)
-            return False, result.stderr
-        return True, result.stdout.strip()
-    except FileNotFoundError:
-        print("  [ERROR] gh CLI not found. Install: https://cli.github.com", file=sys.stderr)
-        return False, ""
-    except subprocess.TimeoutExpired:
-        print("  [WARN] gh command timed out", file=sys.stderr)
-        return False, ""
-
-
-def _ensure_labels(labels: set[str]) -> None:
-    """Create labels if they don't exist (idempotent)."""
-    for label in labels:
-        color = LABEL_COLORS.get(label)
-        if color:
-            _run_gh(["label", "create", label, "--color", color, "--force"])
+from topics import TOPIC_LABELS, topic_from_str
 
 
 def _topic_to_label(topic_str: str) -> str:

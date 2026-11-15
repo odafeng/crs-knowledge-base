@@ -13,6 +13,7 @@ from anthropic import Anthropic
 from agent_tools import AGENT_TOOLS, execute_tool
 from config import ANTHROPIC_API_KEY, CLASSIFY_EFFORT, CLASSIFY_MODEL, FALLBACK_BETA, RELEVANCE_THRESHOLD
 from topic_agents import build_paper_prompt, build_system_prompt
+from usage import USAGE
 
 MAX_AGENT_TURNS = 8  # Max tool-use rounds per paper
 MAX_OUTPUT_TOKENS = 16000  # Thinking is always on and counts toward max_tokens
@@ -148,9 +149,14 @@ def _create_message(client: Anthropic, system_prompt: str, messages: list[dict],
         "messages": messages,
         "betas": [FALLBACK_BETA],
         "fallbacks": "default",
+        # Each turn resends system + tools + history; cache the prefix so later turns
+        # (and later papers in the same topic) read it at the cache-read rate.
+        "cache_control": {"type": "ephemeral"},
     }
     params.update(overrides)
-    return client.beta.messages.create(**params)
+    response = client.beta.messages.create(**params)
+    USAGE.record(response, CLASSIFY_MODEL)
+    return response
 
 
 def _refusal_note(response) -> str:

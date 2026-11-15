@@ -12,6 +12,9 @@ Checks:
 6. No duplicate DOIs
 7. Related commentary entries are complete, typed, and not duplicated
 8. Bot-published entries (``review`` field) carry a known status and date, and no raw HTML
+9. Every paper says how its numbers were checked (``source``) and when (``reviewedAt``)
+10. "現行治療方案" cards (``standard_of_care``) cite existing papers, carry a review date, and
+    regulatory rows use known statuses
 
 Usage:
   python scripts/validate.py        # run all checks
@@ -57,6 +60,37 @@ COMMENTARY_FIELDS = ["title", "journal", "type", "summary", "addedAt"]
 _DATE = re.compile(r"\d{4}-\d{2}-\d{2}$")
 # "auto": published by the gate without a human; "accepted": a reviewer approved it (ADR-0013)
 REVIEW_STATUSES = ("auto", "accepted")
+# How the numbers were checked: full text, PubMed abstract only, secondary coverage (news,
+# conference reports), or hand-curated before this field existed (level not recorded).
+SOURCES = ("fulltext", "abstract", "secondary", "curated")
+REGULATORY_STATUSES = {
+    "fda": {"approved", "accelerated", "none", "unknown"},
+    "tfda": {"approved", "none", "unknown"},
+    "nhi": {"covered", "conditional", "none", "unknown"},
+}
+
+
+def _validate_soc(topic: str, soc: dict, paper_ids: set[str]) -> list[str]:
+    errors = []
+    if not soc.get("title") or not soc.get("cards"):
+        errors.append(f"[{topic}] standard_of_care needs a title and cards")
+    for card in soc.get("cards", []):
+        label = f"[{topic}] standard_of_care card '{card.get('title', '?')}'"
+        for field in ("title", "icon", "body_html"):
+            if not card.get(field):
+                errors.append(f"{label} has empty field: {field}")
+        if not _DATE.match(str(card.get("reviewedAt", ""))):
+            errors.append(f"{label} reviewedAt must be YYYY-MM-DD")
+        for ref in card.get("refs", []):
+            if ref not in paper_ids:
+                errors.append(f"{label} cites unknown paper '{ref}'")
+        for row in card.get("regulatory", []):
+            for kind, allowed in REGULATORY_STATUSES.items():
+                if row.get(kind) not in allowed:
+                    errors.append(f"{label} regulatory '{row.get('regimen')}' has unknown {kind}: {row.get(kind)!r}")
+            if not _DATE.match(str(row.get("checkedAt", ""))):
+                errors.append(f"{label} regulatory '{row.get('regimen')}' checkedAt must be YYYY-MM-DD")
+    return errors
 
 
 def _validate_review(label: str, item: dict) -> list[str]:
@@ -147,6 +181,10 @@ def validate_data(data: dict, root: Path = PROJECT_ROOT, pending_files: frozense
                     errors.append(f"[{topic}] Paper '{pid}' has empty required field: {field}")
 
             errors += _validate_review(f"[{topic}] Paper '{pid}'", p)
+            if p.get("source") not in SOURCES:
+                errors.append(f"[{topic}] Paper '{pid}' has unknown source: {p.get('source')!r}")
+            if not _DATE.match(str(p.get("reviewedAt", ""))):
+                errors.append(f"[{topic}] Paper '{pid}' reviewedAt must be YYYY-MM-DD")
 
             # studyType
             st = p.get("studyType", "")
@@ -175,6 +213,10 @@ def validate_data(data: dict, root: Path = PROJECT_ROOT, pending_files: frozense
                             break
                     if not found:
                         errors.append(f"[{topic}] Paper '{pid}' has relation to unknown target '{target}'")
+
+    for topic, topic_data in data.items():
+        if "standard_of_care" in topic_data:
+            errors += _validate_soc(topic, topic_data["standard_of_care"], set(all_ids))
 
     # Commentary keys must be unique and must not be a paper in the KB
     seen: dict[str, str] = {doi: f"paper in {t}" for doi, t in all_dois.items()}

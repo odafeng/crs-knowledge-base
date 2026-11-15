@@ -13,7 +13,9 @@
         "bottomLine": "首次證實 BRAF+EGFR 雙阻斷在 2L+ BRAF V600E mCRC 的 OS 獲益",
         "doi": "10.1056/NEJMoa1908075",
         "file": "docs/mCRC-BRAF-V600E/Kopetz_NEJM_2019_BEACON.html",
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "beacon-2021",
@@ -32,7 +34,9 @@
             "targetId": "beacon-2019",
             "type": "supersedes"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "bw-natmed-2025",
@@ -51,7 +55,9 @@
             "targetId": "beacon-2021",
             "type": "builds_on"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "bw-nejm-2025",
@@ -70,7 +76,9 @@
             "targetId": "bw-natmed-2025",
             "type": "supersedes"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "bw-ctdna-2025",
@@ -89,7 +97,9 @@
             "targetId": "bw-nejm-2025",
             "type": "subgroup_of"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "bw-subseq-2025",
@@ -108,7 +118,9 @@
             "targetId": "bw-nejm-2025",
             "type": "subgroup_of"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "bw-c3-2026",
@@ -127,7 +139,9 @@
             "targetId": "bw-nejm-2025",
             "type": "same_regimen"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "nccn-colon-2026",
@@ -146,7 +160,9 @@
             "targetId": "bw-nejm-2025",
             "type": "builds_on"
           }
-        ]
+        ],
+        "source": "abstract",
+        "reviewedAt": "2026-11-15"
       }
     ],
     "metrics": {
@@ -278,6 +294,67 @@
           }
         ]
       }
+    },
+    "standard_of_care": {
+      "title": "現行治療方案最佳實踐",
+      "cards": [
+        {
+          "title": "第一線治療（1L）方案選擇",
+          "icon": "&#x1F7E2;",
+          "body_html": "<p style=\"font-weight:600;color:var(--primary)\">適用族群：RAS wt、BRAF V600E mt mCRC</p>\n<table>\n  <tr><th>方案</th><th>ORR</th><th>mPFS</th><th>mOS</th><th>備註</th></tr>\n  <tr><td><strong>EC + mFOLFOX6</strong></td><td>65.7%</td><td>12.8</td><td>30.3</td><td>首選，FDA 正式核准（2026/2）</td></tr>\n  <tr><td>EC + FOLFIRI</td><td>64.4%</td><td>--</td><td>--</td><td>替代，適用 oxaliplatin 禁忌</td></tr>\n  <tr><td>EC 單獨</td><td>45.6%</td><td>6.8</td><td>19.5</td><td>無法耐受化療時使用</td></tr>\n</table>",
+          "refs": [
+            "bw-nejm-2025",
+            "bw-c3-2026"
+          ],
+          "reviewedAt": "2026-11-15",
+          "regulatory": [
+            {
+              "regimen": "EC + 化療（mFOLFOX6 / FOLFIRI）",
+              "fda": "approved",
+              "fdaNote": "2026/2/24 由加速核准轉為正式核准",
+              "tfda": "unknown",
+              "nhi": "unknown",
+              "nhiNote": "健保 2026/5 起給付的是二線 EC，一線未確認",
+              "checkedAt": "2026-11-15",
+              "sources": [
+                "https://www.onclive.com/view/fda-grants-full-approval-to-encorafenib-plus-cetuximab-chemotherapy-for-braf-v600e-mcrc"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "第二線以上治療（2L+）",
+          "icon": "&#x1F535;",
+          "body_html": "<p><strong>標準方案：Encorafenib + Cetuximab（EC 雙標靶）</strong></p>\n<p>ORR 19.5% &middot; mPFS 4.3 mo &middot; mOS 9.3 mo &middot; OS HR 0.61</p>\n<p>BEACON Phase 3 &middot; FDA/EMA/TFDA 核准<br>台灣健保：2026/5/1 起給付（二線）；給付條件（原記載最長 24 週）以健保署公告為準</p>",
+          "refs": [
+            "beacon-2021"
+          ],
+          "reviewedAt": "2026-11-15",
+          "regulatory": [
+            {
+              "regimen": "Encorafenib + cetuximab（2L+）",
+              "fda": "approved",
+              "tfda": "approved",
+              "nhi": "covered",
+              "nhiNote": "2026/5/1 起；給付條件以健保署公告為準",
+              "checkedAt": "2026-11-15",
+              "sources": [
+                "https://health.tvbs.com.tw/cancer/362702"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "關鍵原則與注意事項",
+          "icon": "&#x26A0;&#xFE0F;",
+          "body_html": "<div class=\"note\"><strong>最佳治療優先：</strong>一線即使用 EC + 化療優於序貫式（一線化療 &rarr; 二線 EC）。PFS2 證實：20.7 vs 12.9 個月。</div>\n<p><strong>MSI-H/dMMR 注意：</strong>若適用免疫治療，應優先考慮 ICI（BREAKWATER 排除此族群）。SEAMARK 試驗正在評估 EC + pembrolizumab 用於 BRAF V600E + MSI-H mCRC。</p>",
+          "refs": [
+            "bw-nejm-2025",
+            "bw-subseq-2025"
+          ],
+          "reviewedAt": "2026-06-07"
+        }
+      ]
     }
   },
   "mCRC-KRAS-G12C": {
@@ -294,7 +371,9 @@
         "bottomLine": "CodeBreaK 101 劑量探索確認 sotorasib+panitumumab 組合活性",
         "doi": "10.1038/s41591-023-02717-6",
         "file": null,
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "cb300",
@@ -313,7 +392,9 @@
             "targetId": "cb101",
             "type": "builds_on"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "cb300-os",
@@ -332,7 +413,9 @@
             "targetId": "cb300",
             "type": "supersedes"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "krystal1",
@@ -346,7 +429,9 @@
         "bottomLine": "Adagrasib+cetuximab ORR 達 46%——確認 G12C 抑制劑+anti-EGFR 的協同效應",
         "doi": "10.1056/NEJMoa2212419",
         "file": null,
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "krystal1-exp",
@@ -365,7 +450,9 @@
             "targetId": "krystal1",
             "type": "supersedes"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "divarasib-mono",
@@ -379,7 +466,9 @@
         "bottomLine": "Divarasib 單藥在 CRC 活性有限，但在 NSCLC 表現優異",
         "doi": "10.1056/NEJMoa2303810",
         "file": null,
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "divarasib-combo",
@@ -398,7 +487,9 @@
             "targetId": "divarasib-mono",
             "type": "builds_on"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "ifebemtinib-garsorasib",
@@ -412,10 +503,28 @@
         "bottomLine": "FAK 抑制劑 + garsorasib：anti-EGFR 以外的 G12C 組合策略，隨機組 ORR 數值翻倍但未達統計顯著（隨機僅 36 人、全為中國病人）。不改變臨床，G12C 抑制劑 + anti-EGFR 仍為標準",
         "doi": "10.1016/S1470-2045(26)00175-0",
         "file": "docs/mCRC-KRAS-G12C/Song_LancetOncol_2026_IfebemtinibGarsorasib.html",
-        "relations": []
+        "relations": [],
+        "source": "secondary",
+        "reviewedAt": "2026-11-15"
       }
     ],
-    "metrics": null
+    "metrics": null,
+    "standard_of_care": {
+      "title": "現行治療方案",
+      "cards": [
+        {
+          "title": "KRAS G12C 標靶治療（後線）",
+          "icon": "&#x1F7E2;",
+          "body_html": "<p><strong>盛行率：</strong>約 3-4% of all CRC（~17% of KRAS-mutant CRC）。預後較其他 KRAS 突變差。</p>\n<table>\n  <tr><th>方案</th><th>ORR</th><th>mPFS</th><th>mOS</th><th>Phase</th></tr>\n  <tr><td><strong>Sotorasib + panitumumab</strong></td><td>26-30%</td><td>5.6 mo</td><td>HR 0.70</td><td>Phase 3</td></tr>\n  <tr><td><strong>Adagrasib + cetuximab</strong></td><td>34-46%</td><td>6.9 mo</td><td>15.9 mo</td><td>Phase 1/2</td></tr>\n  <tr><td><strong>Divarasib + cetuximab</strong></td><td>62.5%</td><td>8.1 mo</td><td>—</td><td>Phase 1b</td></tr>\n</table>\n<div class=\"note\">所有 G12C 抑制劑搭配 anti-EGFR 效果遠優於單用。Divarasib 早期數據最亮眼但需 RCT 確認。</div>",
+          "refs": [
+            "cb300-os",
+            "krystal1-exp",
+            "divarasib-combo"
+          ],
+          "reviewedAt": "2026-06-07"
+        }
+      ]
+    }
   },
   "mCRC-MSI-H": {
     "papers": [
@@ -431,7 +540,9 @@
         "bottomLine": "Pembrolizumab 成為 MSI-H mCRC 一線標準——PFS 翻倍，Grade 3+ AE 僅 22% vs 66%",
         "doi": "10.1056/NEJMoa2017699",
         "file": null,
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "kn177-os",
@@ -450,7 +561,9 @@
             "targetId": "kn177",
             "type": "supersedes"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "cm142-mono",
@@ -464,7 +577,9 @@
         "bottomLine": "Nivolumab 單藥在 dMMR mCRC 有活性——開啟免疫治療在 CRC 的大門",
         "doi": "10.1016/S1470-2045(17)30422-9",
         "file": null,
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "cm142-combo",
@@ -483,7 +598,9 @@
             "targetId": "cm142-mono",
             "type": "builds_on"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "cm142-1l",
@@ -502,7 +619,9 @@
             "targetId": "cm142-combo",
             "type": "builds_on"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "niche",
@@ -516,7 +635,9 @@
         "bottomLine": "Neoadjuvant 免疫治療在 dMMR 結腸癌近乎 100% 有效——里程碑概念驗證",
         "doi": "10.1038/s41591-020-0805-8",
         "file": null,
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "niche2",
@@ -535,7 +656,9 @@
             "targetId": "niche",
             "type": "supersedes"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "dostarlimab",
@@ -549,7 +672,9 @@
         "bottomLine": "12/12 dMMR 直腸癌達臨床完全緩解——「watch and wait without any treatment」的極致",
         "doi": "10.1056/NEJMoa2201445",
         "file": null,
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "niche2-os",
@@ -568,7 +693,9 @@
             "targetId": "niche2",
             "type": "supersedes"
           }
-        ]
+        ],
+        "source": "abstract",
+        "reviewedAt": "2026-11-15"
       },
       {
         "id": "azur1",
@@ -587,7 +714,9 @@
             "targetId": "dostarlimab",
             "type": "builds_on"
           }
-        ]
+        ],
+        "source": "secondary",
+        "reviewedAt": "2026-11-15"
       },
       {
         "id": "unicorn",
@@ -606,7 +735,9 @@
             "targetId": "niche2",
             "type": "builds_on"
           }
-        ]
+        ],
+        "source": "secondary",
+        "reviewedAt": "2026-11-15"
       },
       {
         "id": "li2026-ww-mono",
@@ -625,10 +756,52 @@
             "targetId": "dostarlimab",
             "type": "builds_on"
           }
-        ]
+        ],
+        "source": "abstract",
+        "reviewedAt": "2026-11-15"
       }
     ],
-    "metrics": null
+    "metrics": null,
+    "standard_of_care": {
+      "title": "現行治療方案",
+      "cards": [
+        {
+          "title": "一線免疫治療（轉移性）",
+          "icon": "&#x1F7E2;",
+          "body_html": "<table>\n  <tr><th>方案</th><th>ORR</th><th>mPFS</th><th>Phase</th></tr>\n  <tr><td><strong>Pembrolizumab</strong></td><td>43.8%</td><td>16.5 mo</td><td>Phase 3 (KEYNOTE-177)</td></tr>\n  <tr><td>Nivo + low-dose Ipi</td><td>69%</td><td>NR</td><td>Phase 2 (CM142 1L)</td></tr>\n</table>\n<div class=\"note\">Pembrolizumab 為一線標準（KEYNOTE-177）。Nivo+ipi 1L ORR 更高但為 Phase 2。</div>",
+          "refs": [
+            "kn177-os",
+            "cm142-1l"
+          ],
+          "reviewedAt": "2026-06-07"
+        },
+        {
+          "title": "新輔助免疫治療（非轉移性）",
+          "icon": "&#x1F535;",
+          "body_html": "<table>\n  <tr><th>試驗</th><th>pCR / cCR</th><th>Path response</th><th>復發</th></tr>\n  <tr><td><strong>NICHE-2</strong>（dMMR 結腸癌，nivo+ipi，n=111）</td><td>pCR 68%</td><td>98%</td><td>0%（中位 59 mo；3y DFS 100%）</td></tr>\n  <tr><td><strong>AZUR-1</strong>（dMMR 直腸癌，dostarlimab，n=154）</td><td>cCR12 或 pCR 76%</td><td>—</td><td>達 cCR/pCR 者 0%</td></tr>\n  <tr><td>Dostarlimab pilot（dMMR 直腸癌，n=12）</td><td>cCR 100%</td><td>—</td><td>0%</td></tr>\n  <tr><td>UNICORN（<em>pMMR</em> 結腸癌，BOT+BAL，n=14）</td><td>pCR 29%</td><td>pMR 36%</td><td>追蹤中</td></tr>\n</table>\n<div class=\"note\">NICHE-2（Lancet 2026）：neoadjuvant nivo+ipi 中位追蹤近 5 年，per-protocol 111 例零復發，3 年 DFS 與 5 年 OS 皆 100%。AZUR-1（Ann Oncol 2026）：dostarlimab 單藥免手術策略的註冊試驗，FDA 2026/10 加速核准用於 stage II-III dMMR/MSI-H 直腸癌。UNICORN（Nat Med 2026）是 pMMR 對 neoadjuvant ICI 有反應的探索性訊號，每組僅 14 人，尚非臨床常規。</div>",
+          "refs": [
+            "niche2-os",
+            "azur1",
+            "dostarlimab",
+            "unicorn"
+          ],
+          "reviewedAt": "2026-11-15",
+          "regulatory": [
+            {
+              "regimen": "Dostarlimab（stage II-III dMMR/MSI-H 直腸癌）",
+              "fda": "accelerated",
+              "fdaNote": "2026/10/19",
+              "tfda": "unknown",
+              "nhi": "unknown",
+              "checkedAt": "2026-11-15",
+              "sources": [
+                "https://www.onclive.com/view/dostarlimab-monotherapy-elicits-durable-ccrs-in-dmmr-msi-h-locally-advanced-rectal-cancer"
+              ]
+            }
+          ]
+        }
+      ]
+    }
   },
   "mCRC-HER2": {
     "papers": [
@@ -644,7 +817,9 @@
         "bottomLine": "Basket 試驗首次顯示 dual-HER2 blockade 在 HER2+ mCRC 有活性",
         "doi": "10.1016/S1470-2045(18)30904-5",
         "file": null,
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "triumph",
@@ -663,7 +838,9 @@
             "targetId": "mypathway",
             "type": "builds_on"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "destiny-crc01",
@@ -677,7 +854,9 @@
         "bottomLine": "T-DXd 在 HER2+ mCRC 高度有效（ORR 45%），但僅限 IHC3+/ISH+。注意 ILD 風險",
         "doi": "10.1016/S1470-2045(21)00086-3",
         "file": null,
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "mountaineer",
@@ -696,7 +875,9 @@
             "targetId": "mypathway",
             "type": "builds_on"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "destiny-crc02",
@@ -715,10 +896,30 @@
             "targetId": "destiny-crc01",
             "type": "supersedes"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       }
     ],
-    "metrics": null
+    "metrics": null,
+    "standard_of_care": {
+      "title": "現行治療方案",
+      "cards": [
+        {
+          "title": "HER2+ mCRC 標靶治療（後線）",
+          "icon": "&#x1F7E2;",
+          "body_html": "<p><strong>盛行率：</strong>約 3-5% of mCRC。多為 RAS wild-type。</p>\n<table>\n  <tr><th>方案</th><th>ORR</th><th>Trial</th><th>備註</th></tr>\n  <tr><td><strong>Tucatinib + trastuzumab</strong></td><td>38.1%</td><td>MOUNTAINEER</td><td>首個 FDA 核准 HER2 Rx in mCRC</td></tr>\n  <tr><td>T-DXd 5.4 mg/kg</td><td>37.8%</td><td>DESTINY-CRC02</td><td>含 RAS-mut 有效；注意 ILD</td></tr>\n  <tr><td>T-DXd（HER2+ cohort）</td><td>45.3%</td><td>DESTINY-CRC01</td><td>僅 IHC3+ / ISH+ 有效</td></tr>\n  <tr><td>Pertuzumab + trastuzumab</td><td>30-32%</td><td>MyPathway / TRIUMPH</td><td>TRIUMPH 用 ctDNA 選病患</td></tr>\n</table>\n<div class=\"note\">Tucatinib + trastuzumab（MOUNTAINEER）為首選。T-DXd 對 RAS-mut 也有效但需注意 ILD。MOUNTAINEER-03（Phase 3, 1L）進行中。</div>",
+          "refs": [
+            "mountaineer",
+            "destiny-crc02",
+            "destiny-crc01",
+            "mypathway",
+            "triumph"
+          ],
+          "reviewedAt": "2026-06-07"
+        }
+      ]
+    }
   },
   "mCRC-RAS-wt": {
     "papers": [
@@ -734,7 +935,9 @@
         "bottomLine": "ORR/PFS 無差異但 OS 顯著優於 bev——anti-EGFR 可能有 OS 獲益但機制不明",
         "doi": "10.1016/S1470-2045(14)70330-4",
         "file": null,
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "fire3-final",
@@ -753,7 +956,9 @@
             "targetId": "fire3",
             "type": "supersedes"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "calgb",
@@ -767,7 +972,9 @@
         "bottomLine": "整體族群無差異——但左右側亞組分析揭示 sidedness 是關鍵（左側 cetux OS 39.3 mo）",
         "doi": "10.1001/jama.2017.7105",
         "file": null,
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "peak",
@@ -786,7 +993,9 @@
             "targetId": "fire3",
             "type": "same_regimen"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "paradigm",
@@ -809,7 +1018,9 @@
             "targetId": "calgb",
             "type": "builds_on"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "sidedness-pooled",
@@ -832,7 +1043,9 @@
             "targetId": "calgb",
             "type": "subgroup_of"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "valentino",
@@ -846,7 +1059,9 @@
         "bottomLine": "Panitumumab 單藥維持劣於 Pmab + 5-FU/LV——不可單獨用 anti-EGFR 維持",
         "doi": "10.1200/JCO.19.01254",
         "file": null,
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "panama",
@@ -865,7 +1080,9 @@
             "targetId": "valentino",
             "type": "builds_on"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "chronos",
@@ -879,7 +1096,9 @@
         "bottomLine": "液態切片篩選後 anti-EGFR rechallenge ORR 30%——proof of concept，優於標準後線",
         "doi": "10.1038/s41591-022-01886-0",
         "file": null,
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       }
     ],
     "metrics": null
@@ -912,7 +1131,9 @@
             "newData": false,
             "addedAt": "2026-11-15"
           }
-        ]
+        ],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "Hoyek_DLD_2025_NMA3L",
@@ -926,7 +1147,9 @@
         "bottomLine": "3L mCRC NMA 確立 FTD-TPI+bev 整體最佳地位；anti-VEGF 前治療者可選 fruquintinib 或 Rego80+",
         "doi": "10.1016/j.dld.2025.09.024",
         "file": "docs/generic-CRS/Hoyek_DLD_2025_NMA3L.html",
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       },
       {
         "id": "Liu_NatCommun_2025_RegoSinti",
@@ -940,7 +1163,9 @@
         "bottomLine": "Regorafenib + sintilimab 用於 MSS mCRC 後線治療：mOS 14.1m、ORR 21.4%（RAS/RAF wt 亞組 mOS 達 23.3m），為該難治族群提供重要概念驗證。",
         "doi": "10.1038/s41467-025-56748-3",
         "file": "docs/generic-CRS/Liu_NatCommun_2025_RegoSinti.html",
-        "relations": []
+        "relations": [],
+        "source": "curated",
+        "reviewedAt": "2026-06-07"
       }
     ],
     "metrics": null

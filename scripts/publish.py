@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Literal
 
 from commentary import apply_commentary
-from provenance import check_evidence, evidence_table_markdown
+from provenance import check_evidence, evaluate_paper_gate, evidence_table_markdown, published_fields
 from validate import validate_data
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -99,10 +99,14 @@ def build_entry(paper: dict, data: dict, review: ReviewStatus, today: str) -> di
         "regimen": _esc(js.get("regimen", "")),
         "endpoint": _esc(js.get("endpoint", "")),
         "result": _esc(js.get("result", "")),
-        "bottomLine": _esc(js.get("bottomLine") or paper.get("ai_bottom_line", "")),
+        "bottomLine": _esc(published_fields(paper)["bottomLine"]),
         "doi": paper.get("doi") or js.get("doi") or None,
         "file": f"docs/{paper['topic']}/{filename}",
         "relations": relations,
+        # "abstract" only when every number passes the provenance gate. Accepted papers were
+        # usually held because some numbers came from elsewhere, so they keep the warning.
+        "source": "abstract" if evaluate_paper_gate(paper, AUTO_PUBLISH_TOPICS).passed else "secondary",
+        "reviewedAt": today,
         "review": {"status": review, "publishedAt": today},
     }
 
@@ -191,6 +195,8 @@ def render_doc_page(paper: dict, entry: dict) -> str:
 <p>{e(paper.get("abstract") or "")}</p>
 </details>
 
+<p style="font-size:0.75rem;color:#718096;border-top:1px solid #e2e8f0;margin-top:24px;padding-top:8px">本頁僅供醫療專業人員教育與臨床參考，不構成醫療建議；臨床決策請以原始文獻與現行指引為準。</p>
+
 </body>
 </html>
 """
@@ -262,6 +268,15 @@ def publish_commentary(
     return changed
 
 
+def _drop_references(data: dict, paper_id: str) -> None:
+    """Remove relations and treatment-card refs pointing at ``paper_id``, in every topic."""
+    for topic_data in data.values():
+        for p in topic_data.get("papers", []):
+            p["relations"] = [r for r in p.get("relations", []) if r.get("targetId") != paper_id]
+        for card in topic_data.get("standard_of_care", {}).get("cards", []):
+            card["refs"] = [ref for ref in card.get("refs", []) if ref != paper_id]
+
+
 def unpublish(target: str, kb: KB | None = None) -> str:
     """Remove a bot-published paper (by id) or commentary (by DOI or PMID). Returns what was removed.
 
@@ -276,8 +291,7 @@ def unpublish(target: str, kb: KB | None = None) -> str:
                 if "review" not in paper:
                     raise PublishError([f"`{target}` 是人工整理的條目，不能用 unpublish 撤下"])
                 papers.remove(paper)
-                for p in papers:
-                    p["relations"] = [r for r in p.get("relations", []) if r.get("targetId") != target]
+                _drop_references(data, target)
                 _check(data, kb, frozenset({paper["file"]}) if paper.get("file") else frozenset())
                 if paper.get("file"):
                     (kb.root / paper["file"]).unlink(missing_ok=True)

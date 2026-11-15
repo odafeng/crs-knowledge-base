@@ -39,7 +39,7 @@ def _paper(**js_overrides) -> dict:
         "journal": "Nat Med",
         "studyType": "Phase 2",
         "n": 56,
-        "regimen": "Drug A <script>alert(1)</script>",
+        "regimen": "Drug A <script>alert('x')</script>",
         "endpoint": "pMR",
         "result": "pMR 36%",
         "bottomLine": "pMR 36%",
@@ -91,7 +91,8 @@ class TestPublishPaper:
 
         sw = kb.sw_js.read_text()
         assert "'./docs/mCRC-MSI-H/Test_NatMed_2026.html'" in sw
-        assert sw != sw_before and "-v19'" in sw  # cache version bumped
+        version = int(sw_before.split("-v", 1)[1].split("'", 1)[0])
+        assert f"-v{version + 1}'" in sw  # cache version bumped
         assert validate_data(kb.load(), kb.root) == []
 
     def test_accepted_banner(self, kb):
@@ -262,3 +263,62 @@ def test_payload_is_valid_json_for_accept():
 
     assert extract(body, "paper")["ai_analysis"] == "tricky --> end of comment"
     json.dumps(extract(body, "paper"))
+
+
+class TestReviewFindings:
+    """Findings from the Codex review of #35."""
+
+    def test_fallback_bottom_line_is_gated(self):
+        from main import publish_or_hold
+
+        paper = _paper(bottomLine="")
+        paper["ai_bottom_line"] = "OS 999 months"
+        with patch("main.publish_paper") as publish:
+            published, held = publish_or_hold([paper], TODAY, dry_run=False)
+        publish.assert_not_called()
+        assert published == [] and held == [paper]
+        assert any("999" in r for r in paper["gate_reasons"])
+
+    def test_numbers_in_regimen_and_endpoint_are_gated(self):
+        from provenance import evaluate_paper_gate
+
+        paper = _paper(endpoint="pMR at 12 weeks")
+        result = evaluate_paper_gate(paper, {"mCRC-MSI-H"})
+        assert any("12" in r for r in result.reasons)
+
+    def test_unpublish_drops_cross_topic_relations_and_card_refs(self, kb):
+        publish_paper(_paper(), "auto", TODAY, kb)
+        data = kb.load()
+        data["generic-CRS"]["papers"][0]["relations"].append({"targetId": "test-auto-2026", "type": "builds_on"})
+        data["mCRC-MSI-H"]["standard_of_care"]["cards"][0]["refs"].append("test-auto-2026")
+        kb.save(data)
+
+        unpublish("test-auto-2026", kb)
+        after = kb.load()
+        assert all(r["targetId"] != "test-auto-2026" for r in after["generic-CRS"]["papers"][0]["relations"])
+        assert "test-auto-2026" not in after["mCRC-MSI-H"]["standard_of_care"]["cards"][0]["refs"]
+        assert validate_data(after, kb.root) == []
+
+    def test_declined_commentary_is_left_for_retry(self):
+        from main import update_tracking
+
+        commentary = {"doi": "10.9999/refused", "topic": "generic-CRS", "title": "x"}
+        with (
+            patch("main.load_tracked_dois", return_value={}),
+            patch("main.load_tracked_abstracts", return_value={}),
+            patch("main.save_tracked_dois") as save,
+            patch("main.save_tracked_abstracts"),
+        ):
+            update_tracking([], [(commentary, None)], TODAY)
+        assert "10.9999/refused" not in save.call_args.args[0]
+
+    def test_accepted_paper_keeps_secondary_source(self, kb):
+        """Codex review of #49: an accepted paper must not be labelled as abstract-verified."""
+        paper = _paper()
+        paper["ai_evidence"].append(
+            {"claim": "ORR 40%", "source": "web_fetch", "quote": "40%", "url": "https://example.org"}
+        )
+        assert publish_paper(paper, "accepted", TODAY, kb)["source"] == "secondary"
+
+    def test_auto_published_paper_is_abstract_sourced(self, kb):
+        assert publish_paper(_paper(), "auto", TODAY, kb)["source"] == "abstract"
