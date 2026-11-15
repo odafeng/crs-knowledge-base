@@ -191,9 +191,14 @@ def evaluate_paper_gate(paper: dict, auto_topics: set[str]) -> GateResult:
         if c.status != "verified":
             reasons.append(f"出處未通過（{_STATUS_LABELS[c.status]}）：{c.claim}")
 
-    reasons += study_design_reasons(entry.get("studyType", ""), f"{paper.get('title', '')} {paper.get('abstract', '')}")
+    source_text = f"{paper.get('title', '')} {paper.get('abstract', '')}"
+    reasons += study_design_reasons(entry.get("studyType", ""), source_text)
 
     text = entry_text(published_fields(paper))
+    # numbers_in() skips phase labels, so a phase the entry text names is compared on its own.
+    unstated = sorted(phases_in(text) - phases_in(source_text))
+    if unstated:
+        reasons.append(f"KB 條目提到的 Phase {'、'.join(unstated)} 在標題與摘要中沒有寫明")
     missing = numbers_not_in_abstract(text, paper.get("abstract", ""))
     if missing:
         reasons.append(f"KB 條目中這些數字在摘要裡找不到：{', '.join(missing)}")
@@ -213,6 +218,10 @@ def evaluate_commentary_gate(proposal, abstract: str) -> GateResult:
     missing = numbers_not_in_abstract(proposal.summary, abstract)
     if missing:
         reasons.append(f"摘要句中這些數字在原文找不到：{', '.join(missing)}")
+    # numbers_in() skips phase labels, so a phase the summary names is compared on its own.
+    unstated = sorted(phases_in(proposal.summary) - phases_in(abstract))
+    if unstated:
+        reasons.append(f"摘要句提到的 Phase {'、'.join(unstated)} 在原文找不到")
     return GateResult(not reasons, reasons)
 
 

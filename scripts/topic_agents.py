@@ -213,6 +213,7 @@ def build_system_prompt(topic):
    - studyType 只能用：Phase 3 RCT, Phase 3 RCT (updated), Phase 2 RCT, Phase 2, Phase 1-2, Phase 1, Phase 1b, Biomarker (exploratory), Post-hoc analysis, Meta-analysis, Pooled analysis, Retrospective cohort, Guideline, Phase 3 (Cohort N), Phase 2 (updated), Phase 2 (exploratory)
    - relations 中的 targetId 必須是既有文獻中的 id
    - studyType 的期別與 RCT 必須是標題或摘要明確寫出的：摘要沒寫 phase 就不要標 Phase，沒寫隨機分派就不要標 RCT
+   - result 與 bottomLine 也一樣：不要提到標題或摘要沒寫的期別（例如摘要是 Phase 2，就不要寫「待 Phase 3 驗證」）
    - evidence：suggested_js 的 n、regimen、endpoint、result、bottomLine 中出現的**每一個數字**都要有一筆出處（劑量、人數、百分比、時間、HR、p 值都算；試驗名稱裡的數字如 STELLAR-303、以及「Phase 3」這類期別不算）
      - claim：含該數字的片段，例如 "mOS 30.3 vs 15.1 mo"
      - source="abstract"：quote 填摘要原文中**逐字**包含該數字的片段（直接複製，不可改寫、翻譯或改單位）

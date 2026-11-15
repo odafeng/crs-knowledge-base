@@ -202,6 +202,17 @@ class TestCommentaryGate:
         result = evaluate_commentary_gate(_Proposal(summary="OS HR 0.80"), "no numbers here.")
         assert not result.passed
 
+    def test_phase_not_in_abstract_is_held(self):
+        result = evaluate_commentary_gate(
+            _Proposal(summary="Discusses the phase 3 trial."), "Discusses the phase 2 trial."
+        )
+        assert not result.passed
+        assert any("Phase 3" in r for r in result.reasons)
+
+    def test_phase_stated_in_abstract_passes(self):
+        result = evaluate_commentary_gate(_Proposal(summary="評論這個 Phase III 試驗"), "Comment on a phase 3 trial.")
+        assert result.passed, result.reasons
+
 
 class TestSchema:
     def test_evidence_required_in_tool_and_rescue(self):
@@ -299,6 +310,18 @@ class TestStudyDesign:
         paper = _paper(title="Drug X versus chemotherapy: a randomised phase 3 trial")
         paper["ai_suggested_js"]["studyType"] = "Phase 3 RCT"
         assert evaluate_paper_gate(paper, AUTO_TOPICS).passed
+
+    def test_phase_named_in_the_entry_text_must_be_in_the_source(self):
+        # The abstract says phase 2; a bottom line that says "Phase 3" must not publish unreviewed.
+        paper = _paper(
+            abstract=NICHE2_ABSTRACT.replace(
+                "METHODS: Patients", "METHODS: In this single-arm, phase 2 trial, patients"
+            )
+        )
+        paper["ai_suggested_js"]["studyType"] = "Phase 2 (updated)"
+        paper["ai_suggested_js"]["bottomLine"] = "Phase 3 證實 neoadjuvant 雙免疫的長期療效"
+        reasons = evaluate_paper_gate(paper, AUTO_TOPICS).reasons
+        assert any("Phase 3" in r and "沒有寫明" in r for r in reasons), reasons
 
     def test_cohort_number_is_not_a_phase(self):
         assert study_design_reasons("Phase 3 (Cohort 2)", "phase 3 BREAKWATER cohort") == []
