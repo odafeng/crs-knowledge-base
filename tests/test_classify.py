@@ -1,8 +1,10 @@
 """Tests for AI classification layer."""
 
+import json
 from unittest.mock import MagicMock, patch
 
-from classify import MAX_AGENT_TURNS, classify_all, classify_paper
+from classify import FALLBACK_BETA, MAX_AGENT_TURNS, RESCUE_OUTPUT_SCHEMA, classify_all, classify_paper
+from config import CLASSIFY_MODEL
 
 
 def _mock_submit_classification(result_dict, *, with_research_tool=False):
@@ -59,7 +61,7 @@ class TestClassifyPaper:
     def test_structured_output_via_tool(self, sample_candidate):
         """Agent calls submit_classification tool → structured JSON."""
         mock_client = MagicMock()
-        mock_client.messages.create.side_effect = _mock_submit_classification(
+        mock_client.beta.messages.create.side_effect = _mock_submit_classification(
             {
                 "relevance_score": 5,
                 "contextual_analysis": "Very important paper",
@@ -79,7 +81,7 @@ class TestClassifyPaper:
     def test_research_then_classify(self, sample_candidate):
         """Agent uses research tool first, then submit_classification."""
         mock_client = MagicMock()
-        mock_client.messages.create.side_effect = _mock_submit_classification(
+        mock_client.beta.messages.create.side_effect = _mock_submit_classification(
             {"relevance_score": 4, "contextual_analysis": "After research"},
             with_research_tool=True,
         )
@@ -87,7 +89,7 @@ class TestClassifyPaper:
         with patch("agent_tools.load_tracked_dois", return_value={}):
             result = classify_paper(mock_client, sample_candidate)
         assert result["ai_score"] == 4
-        assert mock_client.messages.create.call_count == 2
+        assert mock_client.beta.messages.create.call_count == 2
 
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
     def test_parse_failure_not_silent(self, sample_candidate):
@@ -99,15 +101,15 @@ class TestClassifyPaper:
         text_block.type = "text"
         text_block.text = "I think this paper is interesting but..."
         response.content = [text_block]
-        mock_client.messages.create.return_value = response
+        mock_client.beta.messages.create.return_value = response
 
         result = classify_paper(mock_client, sample_candidate)
         assert result["ai_parse_failed"] is True
         assert result["ai_score"] is None  # NOT 0
 
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
-    def test_forced_submit_recovers_from_turn_exhaustion(self, sample_candidate):
-        """Agent researching until the turn budget runs out is forced to submit."""
+    def test_rescue_recovers_from_turn_exhaustion(self, sample_candidate):
+        """Agent researching until the turn budget runs out is rescued via structured output."""
         research = MagicMock()
         research.stop_reason = "tool_use"
         tool_block = MagicMock()
@@ -118,16 +120,22 @@ class TestClassifyPaper:
         research.content = [tool_block]
 
         forced = MagicMock()
-        forced.stop_reason = "tool_use"
-        submit_block = MagicMock()
-        submit_block.type = "tool_use"
-        submit_block.name = "submit_classification"
-        submit_block.input = {"relevance_score": 3, "contextual_analysis": "Forced result"}
-        submit_block.id = "submit_forced"
-        forced.content = [submit_block]
+        forced.stop_reason = "end_turn"
+        thinking_block = MagicMock(type="thinking", thinking="")
+        json_block = MagicMock(type="text")
+        json_block.text = json.dumps(
+            {
+                "relevance_score": 3,
+                "contextual_analysis": "Forced result",
+                "bottom_line": "",
+                "suggested_filename": "",
+                "relations": [],
+            }
+        )
+        forced.content = [thinking_block, json_block]
 
         mock_client = MagicMock()
-        mock_client.messages.create.side_effect = [*[research] * MAX_AGENT_TURNS, forced]
+        mock_client.beta.messages.create.side_effect = [*[research] * MAX_AGENT_TURNS, forced]
 
         with patch("agent_tools.load_tracked_dois", return_value={}):
             result = classify_paper(mock_client, sample_candidate)
@@ -135,8 +143,49 @@ class TestClassifyPaper:
         assert result["ai_parse_failed"] is False
         assert result["ai_score"] == 3
         assert result["ai_analysis"] == "Forced result"
-        final_kwargs = mock_client.messages.create.call_args.kwargs
-        assert final_kwargs["tool_choice"] == {"type": "tool", "name": "submit_classification"}
+        final_kwargs = mock_client.beta.messages.create.call_args.kwargs
+        # Forced tool_choice ("tool"/"any") is rejected by the model; tools are disabled
+        # and the reply is constrained to the classification schema instead.
+        assert final_kwargs["tool_choice"] == {"type": "none"}
+        assert final_kwargs["output_config"]["format"] == {"type": "json_schema", "schema": RESCUE_OUTPUT_SCHEMA}
+        # Same tools array on every call, so earlier thinking blocks stay valid.
+        first_kwargs = mock_client.beta.messages.create.call_args_list[0].kwargs
+        assert final_kwargs["tools"] == first_kwargs["tools"]
+
+    @patch("classify.ANTHROPIC_API_KEY", "test-key")
+    def test_refusal_goes_to_review_without_retry(self, sample_candidate):
+        """A refusal (after server-side fallback) is routed to review, not resent."""
+        response = MagicMock()
+        response.stop_reason = "refusal"
+        response.stop_details.category = "bio"
+        response.content = []
+
+        mock_client = MagicMock()
+        mock_client.beta.messages.create.return_value = response
+
+        result = classify_paper(mock_client, sample_candidate)
+        assert result["ai_parse_failed"] is True
+        assert result["ai_score"] is None
+        assert "bio" in result["ai_analysis"]
+        assert mock_client.beta.messages.create.call_count == 1
+
+    @patch("classify.ANTHROPIC_API_KEY", "test-key")
+    def test_request_uses_current_api_surface(self, sample_candidate):
+        """No budget_tokens / forced tool_choice (both 400 on the current model)."""
+        mock_client = MagicMock()
+        mock_client.beta.messages.create.side_effect = _mock_submit_classification(
+            {"relevance_score": 2, "contextual_analysis": "Low"}
+        )
+
+        classify_paper(mock_client, sample_candidate)
+        kwargs = mock_client.beta.messages.create.call_args.kwargs
+        assert kwargs["model"] == CLASSIFY_MODEL
+        assert kwargs["thinking"]["type"] == "adaptive"
+        assert "budget_tokens" not in kwargs["thinking"]
+        assert "effort" in kwargs["output_config"]
+        assert kwargs.get("tool_choice", {"type": "auto"})["type"] in ("auto", "none")
+        assert FALLBACK_BETA in kwargs["betas"]
+        assert kwargs["fallbacks"] == "default"
 
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
     def test_forced_submit_failure_falls_back_to_parse_failed(self, sample_candidate):
@@ -149,7 +198,7 @@ class TestClassifyPaper:
         response.content = [text_block]
 
         mock_client = MagicMock()
-        mock_client.messages.create.side_effect = [*[response] * MAX_AGENT_TURNS, RuntimeError("API down")]
+        mock_client.beta.messages.create.side_effect = [*[response] * MAX_AGENT_TURNS, RuntimeError("API down")]
 
         result = classify_paper(mock_client, sample_candidate)
         assert result["ai_parse_failed"] is True
@@ -172,3 +221,18 @@ class TestClassifyPaper:
         ]
         assert len(kept) == 2  # score=5 + parse_failed, NOT score=2
         assert any(c["title"] == "C" for c in kept)  # parse failure kept
+
+
+def _assert_strict_objects(schema: dict, path: str = "$") -> None:
+    if schema.get("type") == "object":
+        assert schema.get("additionalProperties") is False, f"{path} needs additionalProperties: false"
+        for key, sub in schema.get("properties", {}).items():
+            _assert_strict_objects(sub, f"{path}.{key}")
+    if schema.get("type") == "array":
+        _assert_strict_objects(schema["items"], f"{path}[]")
+
+
+def test_rescue_schema_is_structured_output_compatible():
+    """Structured outputs require additionalProperties: false on every object."""
+    _assert_strict_objects(RESCUE_OUTPUT_SCHEMA)
+    assert set(RESCUE_OUTPUT_SCHEMA["required"]) == set(RESCUE_OUTPUT_SCHEMA["properties"])

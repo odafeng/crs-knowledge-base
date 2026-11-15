@@ -135,14 +135,14 @@ class TestClassifyWithAgenticLoop:
         submit_block.id = "submit_1"
         final_response.content = [submit_block]
 
-        mock_client.messages.create.side_effect = [tool_response, final_response]
+        mock_client.beta.messages.create.side_effect = [tool_response, final_response]
 
         with patch("agent_tools.load_tracked_dois", return_value={}):
             result = classify_paper(mock_client, sample_candidate)
 
         assert result["ai_score"] == 4
         assert result["ai_parse_failed"] is False
-        assert mock_client.messages.create.call_count == 2
+        assert mock_client.beta.messages.create.call_count == 2
 
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
     def test_agent_direct_submit(self, sample_candidate):
@@ -158,11 +158,11 @@ class TestClassifyWithAgenticLoop:
         submit_block.input = {"relevance_score": 2, "contextual_analysis": "Low relevance"}
         submit_block.id = "submit_1"
         response.content = [submit_block]
-        mock_client.messages.create.return_value = response
+        mock_client.beta.messages.create.return_value = response
 
         result = classify_paper(mock_client, sample_candidate)
         assert result["ai_score"] == 2
-        assert mock_client.messages.create.call_count == 1
+        assert mock_client.beta.messages.create.call_count == 1
 
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
     def test_no_submit_marks_parse_failure(self, sample_candidate):
@@ -173,7 +173,7 @@ class TestClassifyWithAgenticLoop:
         response = MagicMock()
         response.stop_reason = "end_turn"
         response.content = [MagicMock(type="text", text="Just some text")]
-        mock_client.messages.create.return_value = response
+        mock_client.beta.messages.create.return_value = response
 
         result = classify_paper(mock_client, sample_candidate)
         assert result["ai_parse_failed"] is True

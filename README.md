@@ -41,7 +41,7 @@
 
 - **7 個 Topic-Specific AI Agent** — 每個主題有專屬 Claude agent，內建完整治療演進脈絡
 - **Agentic Loop** — agent 可自主呼叫 6 個工具做多步推理（非單次 API call）
-- **Chain-of-Thought** — extended thinking，推理過程完整記錄在 CI logs
+- **Chain-of-Thought** — adaptive thinking（effort high），推理摘要完整記錄在 CI logs
 - **Cross-Paper Context** — 同批候選論文互相可見，支持相對判斷
 - **Structured Output** — 透過 `submit_classification` tool 強制 JSON 輸出，不依賴 regex 解析
 - **Conference Season Supplement** — 會議季自動搜尋 JCO/Ann Oncol/DCR meeting abstract supplements
@@ -145,7 +145,7 @@ PubMed    Journal feeds
 
 | 項目 | 選用 |
 |---|---|
-| AI | Claude Sonnet 4.6 + extended thinking + tool use |
+| AI | Claude Opus 5.5 + adaptive thinking + tool use + server-side refusal fallback |
 | 文獻來源 | PubMed E-utilities（含 topic 查詢、期刊查詢、meeting abstract supplements）|
 | Guideline | PubMed guideline article search |
 | 通知 | LINE Messaging API |

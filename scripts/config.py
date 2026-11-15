@@ -21,7 +21,10 @@ NCBI_API_KEY = os.environ.get("NCBI_API_KEY", "")
 
 # Claude API
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-CLASSIFY_MODEL = "claude-sonnet-4-6"
+CLASSIFY_MODEL = "claude-opus-5-5"
+# Thinking depth for the classification agent. Opus 5.5 defaults to "medium";
+# research-then-judge work that produces citable numbers runs at "high".
+CLASSIFY_EFFORT = "high"
 
 # GitHub
 GITHUB_TOKEN = os.environ.get("GH_TOKEN", os.environ.get("GITHUB_TOKEN", ""))
