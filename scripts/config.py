@@ -21,9 +21,11 @@ NCBI_API_KEY = os.environ.get("NCBI_API_KEY", "")
 
 # Claude API
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-CLASSIFY_MODEL = "claude-opus-5-5"
-# Thinking depth for the classification agent. Opus 5.5 defaults to "medium";
-# research-then-judge work that produces citable numbers runs at "high".
+# Most capable generally available model. Requires 30-day data retention on the
+# organization (a ZDR org gets a 400 on every request).
+CLASSIFY_MODEL = "claude-fable-5-2"
+# Thinking depth for the classification agent. Set explicitly: gains above "high"
+# are uneven on this model and turns get much slower.
 CLASSIFY_EFFORT = "high"
 # Commentary triage (editorials, letters) is a single short call: map to a KB trial,
 # write one line, set two flags. Low effort is enough.
