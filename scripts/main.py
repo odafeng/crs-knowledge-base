@@ -176,7 +176,7 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="CRS Knowledge Base Paper Watch Pipeline",
+        description="Seminar Hegemon Paper Watch Pipeline",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

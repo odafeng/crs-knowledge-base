@@ -55,7 +55,7 @@ def format_digest(papers):
     score_4 = [p for p in papers if p not in score_5]
 
     lines = [
-        "📚 CRS Knowledge Base — Paper Watch",
+        "📚 Seminar Hegemon — Paper Watch",
         f"Found {len(papers)} relevant paper(s)",
         f"🔥 Practice-changing: {len(score_5)} | 📄 High-impact: {len(score_4)}",
         "─" * 20,

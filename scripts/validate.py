@@ -1,4 +1,4 @@
-"""Validate data integrity of the CRS Knowledge Base.
+"""Validate data integrity of the Seminar Hegemon knowledge base.
 
 Reads from data/papers.json (single source of truth).
 No regex parsing of index.html — just json.load.
@@ -160,7 +160,7 @@ def validate_data(data: dict) -> list[str]:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Validate CRS Knowledge Base data integrity")
+    parser = argparse.ArgumentParser(description="Validate Seminar Hegemon data integrity")
     parser.add_argument("--ci", action="store_true", help="Exit 1 on any error")
     args = parser.parse_args()
 

@@ -64,7 +64,7 @@ AGENT_TOOLS = [
     {
         "name": "lookup_existing_papers",
         "description": (
-            "Look up what papers are already tracked in the CRS Knowledge Base. "
+            "Look up what papers are already tracked in the Seminar Hegemon knowledge base. "
             "Use this to check if a paper or its predecessor is already in the KB, "
             "and to understand the relations between existing papers."
         ),

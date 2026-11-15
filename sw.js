@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crs-kb-v18';
+const CACHE_NAME = 'seminar-hegemon-v18';
 const ASSETS = [
   './',
   './index.html',

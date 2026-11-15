@@ -1,4 +1,4 @@
-# CRS Knowledge Base
+# Seminar Hegemon
 
 > 大腸直腸外科臨床決策知識庫 — PWA + 7 個 AI Agent 自動文獻追蹤
 
@@ -15,7 +15,7 @@
 
 ## 簡介
 
-**CRS Knowledge Base** 是一套面向**大腸直腸外科臨床醫師**的口袋型知識庫，搭載 **7 個 AI Agent 驅動的自動文獻追蹤系統**。
+**Seminar Hegemon** 是一套面向**大腸直腸外科臨床醫師**的口袋型知識庫，搭載 **7 個 AI Agent 驅動的自動文獻追蹤系統**。
 
 - 讓主治醫師在 **30 秒內**查到關鍵試驗數據
 - **8 個 Topic-Specific AI Agent** 自動追蹤 PubMed + 主要期刊文獻（經 PubMed 查詢）
@@ -145,7 +145,7 @@ PubMed    Journal feeds
 
 | 項目 | 選用 |
 |---|---|
-| AI | Claude Opus 5.5 + adaptive thinking + tool use + server-side refusal fallback |
+| AI | Claude Fable 5.2 + adaptive thinking + tool use + server-side refusal fallback |
 | 文獻來源 | PubMed E-utilities（含 topic 查詢、期刊查詢、meeting abstract supplements）|
 | Guideline | PubMed guideline article search |
 | 通知 | LINE Messaging API |
