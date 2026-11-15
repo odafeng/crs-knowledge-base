@@ -1,4 +1,4 @@
-# CRS Knowledge Base
+# Seminar Hegemon
 
 > 大腸直腸外科臨床決策知識庫 — PWA + 7 個 AI Agent 自動文獻追蹤
 
@@ -15,12 +15,12 @@
 
 ## 簡介
 
-**CRS Knowledge Base** 是一套面向**大腸直腸外科臨床醫師**的口袋型知識庫，搭載 **7 個 AI Agent 驅動的自動文獻追蹤系統**。
+**Seminar Hegemon** 是一套面向**大腸直腸外科臨床醫師**的口袋型知識庫，搭載 **7 個 AI Agent 驅動的自動文獻追蹤系統**。
 
 - 讓主治醫師在 **30 秒內**查到關鍵試驗數據
 - **8 個 Topic-Specific AI Agent** 自動追蹤 PubMed + 主要期刊文獻（經 PubMed 查詢）
 - 每個 agent 具備 **tool use + chain-of-thought** 能力，自主搜尋 PubMed、查閱 guideline、交叉比對既有文獻
-- 高分文獻自動建立 GitHub Issue + LINE 推播通知
+- 高分文獻若所有數字都能在 PubMed 摘要逐字查證，自動發布並標示「未經人工審核」；其餘開 GitHub Issue 待審（ADR-0013），並 LINE 推播
 
 > **臨床免責聲明**：本網站僅供醫學教育與臨床參考用途，**不構成醫療建議**。
 
@@ -41,7 +41,7 @@
 
 - **7 個 Topic-Specific AI Agent** — 每個主題有專屬 Claude agent，內建完整治療演進脈絡
 - **Agentic Loop** — agent 可自主呼叫 6 個工具做多步推理（非單次 API call）
-- **Chain-of-Thought** — extended thinking，推理過程完整記錄在 CI logs
+- **Chain-of-Thought** — adaptive thinking（effort high），推理摘要完整記錄在 CI logs
 - **Cross-Paper Context** — 同批候選論文互相可見，支持相對判斷
 - **Structured Output** — 透過 `submit_classification` tool 強制 JSON 輸出，不依賴 regex 解析
 - **Conference Season Supplement** — 會議季自動搜尋 JCO/Ann Oncol/DCR meeting abstract supplements
@@ -57,9 +57,9 @@
 
 | # | 主題 | Agent 領域知識 | 文獻數 |
 |---|---|---|---|
-| 1 | **mCRC — BRAF V600E** | BEACON、BREAKWATER 全系列、ctDNA dynamics | 7 |
-| 2 | **mCRC — KRAS G12C** | CodeBreaK、KRYSTAL、divarasib+cetuximab | 7 |
-| 3 | **mCRC — MSI-H / dMMR** | KEYNOTE-177、NICHE、dostarlimab non-op | 8 |
+| 1 | **mCRC — BRAF V600E** | BEACON、BREAKWATER 全系列、ctDNA dynamics、NCCN | 8 |
+| 2 | **mCRC — KRAS G12C** | CodeBreaK、KRYSTAL、divarasib+cetuximab、FAK 組合 | 8 |
+| 3 | **mCRC — MSI-H / dMMR** | KEYNOTE-177、NICHE、dostarlimab / AZUR-1 non-op | 12 |
 | 4 | **mCRC — HER2** | DESTINY-CRC、MOUNTAINEER、T-DXd | 5 |
 | 5 | **mCRC — RAS-wt Anti-EGFR** | PARADIGM、sidedness、rechallenge | 9 |
 | 6 | **mCRC — Agnostic** | fruquintinib/FRESCO、regorafenib、TAS-102+bev/SUNLIGHT | new |
@@ -103,16 +103,19 @@ PubMed    Journal feeds
   ├─ Cross-paper batch context
   └─ [Submit] submit_classification
         │
-  score ≥ 4 ──→ GitHub Issue + LINE 推播
+  score ≥ 4 ──→ provenance gate（數字逐字比對摘要）
+                 ├─ 通過 → 自動發布（AI 未審）+ LINE
+                 └─ 未通過 → GitHub Issue（附原因）→ accepted label 一鍵發布
   parse fail ──→ [Review] Issue + parse-failed label
+  評論類文章 ──→ 輕量分流 → 掛到既有試驗的「相關評論」
 ```
 
 ### AI 評分標準
 
 | 分數 | 定義 | 動作 |
 |---|---|---|
-| **5** | Practice-changing | Issue + LINE |
-| **4** | High-impact | Issue + LINE |
+| **5** | Practice-changing | 過關卡自動發布，否則 Issue；LINE |
+| **4** | High-impact | 過關卡自動發布，否則 Issue；LINE |
 | **3** | Moderate | 忽略 |
 | **2** | Low | 忽略 |
 | **1** | Not relevant | 忽略 |
@@ -145,7 +148,7 @@ PubMed    Journal feeds
 
 | 項目 | 選用 |
 |---|---|
-| AI | Claude Sonnet 4.6 + extended thinking + tool use |
+| AI | Claude Fable 5.2 + adaptive thinking + tool use + server-side refusal fallback |
 | 文獻來源 | PubMed E-utilities（含 topic 查詢、期刊查詢、meeting abstract supplements）|
 | Guideline | PubMed guideline article search |
 | 通知 | LINE Messaging API |

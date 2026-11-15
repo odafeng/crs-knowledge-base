@@ -21,7 +21,18 @@ NCBI_API_KEY = os.environ.get("NCBI_API_KEY", "")
 
 # Claude API
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-CLASSIFY_MODEL = "claude-sonnet-4-6"
+# Most capable generally available model. Requires 30-day data retention on the
+# organization (a ZDR org gets a 400 on every request).
+CLASSIFY_MODEL = "claude-fable-5-2"
+# Thinking depth for the classification agent. Set explicitly: gains above "high"
+# are uneven on this model and turns get much slower.
+CLASSIFY_EFFORT = "high"
+# Commentary triage (editorials, letters) is a single short call: map to a KB trial,
+# write one line, set two flags. Low effort is enough.
+TRIAGE_EFFORT = "low"
+# Server-side refusal fallback: if a safety classifier declines a request, the API
+# re-runs it within the same call on a model chosen by refusal category.
+FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
 # GitHub
 GITHUB_TOKEN = os.environ.get("GH_TOKEN", os.environ.get("GITHUB_TOKEN", ""))

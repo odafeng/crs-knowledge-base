@@ -1,21 +1,29 @@
 """Main entry point: orchestrate Layer 1 → 2 → 3 pipeline."""
 
 import argparse
+import json
 import sys
 from datetime import date, datetime
 
+from anthropic import Anthropic
+
 from classify import classify_all
+from commentary import CommentaryProposal, kb_papers, split_commentary, triage_commentary
 from config import (
+    ANTHROPIC_API_KEY,
+    PAPERS_JSON,
     is_conference_season,
     load_tracked_abstracts,
     load_tracked_dois,
     save_tracked_abstracts,
     save_tracked_dois,
 )
-from create_issues import create_issues
-from fetch_pubmed import fetch_pubmed
+from create_issues import create_commentary_review_issue, create_issues
+from fetch_pubmed import fetch_pubmed, resolve_dois
 from fetch_rss import AllFeedsFailedError, fetch_rss
 from notify_line import notify_papers
+from provenance import abstract_status, evaluate_commentary_gate, evaluate_paper_gate
+from publish import AUTO_PUBLISH_TOPICS, PublishError, publish_commentary, publish_paper
 
 
 def deduplicate_candidates(candidates):
@@ -32,6 +40,94 @@ def deduplicate_candidates(candidates):
             seen[key] = c
 
     return list(seen.values())
+
+
+def triage_all_commentary(commentary: list[dict], dry_run: bool) -> list[tuple[dict, CommentaryProposal | None]]:
+    """Lightweight triage for editorials/letters/comments/news (no full agent)."""
+    if not commentary:
+        return []
+    if dry_run or not ANTHROPIC_API_KEY:
+        print(f"[Commentary] Skipping triage of {len(commentary)} commentary item(s) (dry run or no API key)")
+        return []
+    client = Anthropic(api_key=ANTHROPIC_API_KEY)
+    kb = kb_papers(json.loads(PAPERS_JSON.read_text()))
+    results = []
+    for c in commentary:
+        print(f"[Commentary] {c.get('title', '')[:70]}")
+        proposal = triage_commentary(client, c, kb, resolve_dois)
+        target = proposal.target_id if proposal else None
+        print(f"  → {target or 'no KB trial (tracked only)'}")
+        results.append((c, proposal))
+    return results
+
+
+def publish_or_hold(classified: list[dict], today: str, dry_run: bool) -> tuple[list[dict], list[dict]]:
+    """Publish papers that pass the provenance gate; hold the rest for review (ADR-0013)."""
+    published, held = [], []
+    for paper in classified:
+        reasons = evaluate_paper_gate(paper, AUTO_PUBLISH_TOPICS).reasons
+        if not reasons and not dry_run:
+            try:
+                entry = publish_paper(paper, "auto", today)
+                print(f"  [Publish] {entry['id']} → {entry['file']}")
+            except PublishError as e:
+                reasons = e.reasons
+        if reasons:
+            paper["gate_reasons"] = reasons
+            paper["publish_status"] = "held"
+            held.append(paper)
+        else:
+            paper["publish_status"] = "auto"
+            published.append(paper)
+    return published, held
+
+
+def publish_or_hold_commentary(
+    triaged: list[tuple[dict, CommentaryProposal | None]], today: str, dry_run: bool
+) -> list[CommentaryProposal]:
+    """Publish commentary PubMed itself links to a KB trial; return the rest for review."""
+    auto, held = [], []
+    for paper, proposal in triaged:
+        if not proposal or not proposal.target_id:
+            continue
+        gate = evaluate_commentary_gate(proposal, paper.get("abstract", ""))
+        (auto if gate.passed else held).append(proposal)
+    if auto and not dry_run:
+        try:
+            changed = publish_commentary([(p.target_id, p.to_entry(today)) for p in auto], "auto", today)
+            print(f"  [Publish] commentary on {', '.join(changed) or 'nothing new'}")
+        except PublishError as e:
+            print(f"  [WARN] Commentary publish failed, sending to review: {e}", file=sys.stderr)
+            held += auto
+    return held
+
+
+def update_tracking(research: list[dict], triaged: list[tuple[dict, CommentaryProposal | None]], today: str) -> None:
+    """Record every processed candidate so it is not fetched and classified again.
+
+    Low-score papers are recorded too (with their score); previously only score ≥4
+    and parse failures were, so the rest were re-classified on every run in the
+    search window. Unclassified papers (no API key) are not recorded.
+    """
+    tracked_dois = load_tracked_dois()
+    tracked_abstracts = load_tracked_abstracts()
+
+    def record(c: dict, extra: dict) -> None:
+        entry = {"topic": c.get("topic", ""), "added": today, **extra}
+        if c.get("doi"):
+            tracked_dois[c["doi"]] = entry
+        if c.get("abstract_id"):
+            tracked_abstracts[c["abstract_id"]] = entry
+
+    for c in research:
+        if c.get("ai_score") is not None or c.get("ai_parse_failed"):
+            record(c, {"score": c.get("ai_score")})
+    for c, proposal in triaged:
+        record(c, {"kind": "commentary", "target": proposal.target_id if proposal else None})
+
+    save_tracked_dois(tracked_dois)
+    save_tracked_abstracts(tracked_abstracts)
+    print("\n[Pipeline] Updated tracking files.")
 
 
 def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
@@ -88,38 +184,39 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
         print("[Pipeline] No new papers found. Done.")
         return journal_outage
 
+    today_str = date.today().isoformat()
+    for c in candidates:
+        c["abstract_status"] = abstract_status(c.get("abstract", ""))
+    research, commentary = split_commentary(candidates)
+    print(f"[Pipeline] {len(research)} research, {len(commentary)} commentary")
+
+    # Commentary: lightweight triage. Never a new-paper issue. Items PubMed links to
+    # a KB trial are published; other mapped items go to one review issue; unmapped
+    # ones are only tracked.
+    triaged = triage_all_commentary(commentary, dry_run)
+    held_commentary = publish_or_hold_commentary(triaged, today_str, dry_run)
+    create_commentary_review_issue(held_commentary, today_str, dry_run=dry_run)
+
     # Layer 2: AI classification with topic-specific sub-agents
     print()
-    classified = classify_all(candidates, dry_run=dry_run)
+    classified = classify_all(research, dry_run=dry_run)
     print(f"[Pipeline] Papers passing relevance threshold: {len(classified)}")
 
-    if not classified:
-        print("[Pipeline] No high-relevance papers. Done.")
-        return journal_outage
+    if classified:
+        # Layer 3: papers passing the provenance gate are published; the rest get
+        # a review issue with the reasons (ADR-0013)
+        published, held = publish_or_hold(classified, today_str, dry_run)
+        print(f"\n[Pipeline] {len(published)} published, {len(held)} held for review")
+        create_issues(held, dry_run=dry_run)
 
-    # Layer 3: All ≥4 papers get GitHub Issues for human review
-    print(f"\n[Pipeline] {len(classified)} papers → GitHub Issues")
-    create_issues(classified, dry_run=dry_run)
+        # LINE notification for all high-relevance papers
+        print()
+        notify_papers(classified, dry_run=dry_run)
+    else:
+        print("[Pipeline] No high-relevance papers.")
 
-    # LINE notification for all high-relevance papers
-    print()
-    notify_papers(classified, dry_run=dry_run)
-
-    # Update tracking files (unless dry run)
     if not dry_run:
-        tracked_dois = load_tracked_dois()
-        tracked_abstracts = load_tracked_abstracts()
-        today_str = date.today().isoformat()
-
-        for c in classified:
-            if c.get("doi"):
-                tracked_dois[c["doi"]] = {"topic": c.get("topic", ""), "added": today_str}
-            if c.get("abstract_id"):
-                tracked_abstracts[c["abstract_id"]] = {"topic": c.get("topic", ""), "added": today_str}
-
-        save_tracked_dois(tracked_dois)
-        save_tracked_abstracts(tracked_abstracts)
-        print("\n[Pipeline] Updated tracking files.")
+        update_tracking(research, triaged, today_str)
 
     print(f"\n[Pipeline] Done — {datetime.now().isoformat()}")
     return journal_outage
@@ -127,7 +224,7 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="CRS Knowledge Base Paper Watch Pipeline",
+        description="Seminar Hegemon Paper Watch Pipeline",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

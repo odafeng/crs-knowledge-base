@@ -5,7 +5,10 @@ import json
 import subprocess
 import sys
 
+from commentary import CommentaryProposal
 from config import GITHUB_TOKEN
+from issue_data import checkbox, embed
+from provenance import check_evidence, evidence_table_markdown
 from topics import LABEL_COLORS, TOPIC_LABELS, topic_from_str
 
 
@@ -49,6 +52,26 @@ def _topic_to_label(topic_str: str) -> str:
     return TOPIC_LABELS.get(topic, "") if topic else ""
 
 
+# Fields the accepted-issue workflow needs to publish the paper without the pipeline.
+ISSUE_PAYLOAD_FIELDS = (
+    "topic",
+    "doi",
+    "pmid",
+    "title",
+    "authors",
+    "journal",
+    "year",
+    "abstract",
+    "abstract_status",
+    "ai_score",
+    "ai_analysis",
+    "ai_bottom_line",
+    "ai_suggested_js",
+    "ai_suggested_filename",
+    "ai_evidence",
+)
+
+
 def format_issue_body(paper: dict) -> str:
     """Format a paper into a GitHub Issue body (markdown)."""
     score = paper.get("ai_score", "?")
@@ -58,8 +81,24 @@ def format_issue_body(paper: dict) -> str:
 
     lines = []
 
+    status = paper.get("abstract_status", "full")
+    if status != "full":
+        lines += [
+            "> [!WARNING]",
+            f"> **摘要{'被截斷' if status == 'truncated' else '缺失'}**：結果數據未經摘要驗證，請以原文核對每個數字。",
+            "",
+        ]
+
     if parse_failed:
         lines.append("> **Warning**: AI classification failed to produce structured output. Manual review required.")
+        lines.append("")
+
+    if paper.get("gate_reasons"):
+        lines.append("> [!IMPORTANT]")
+        lines.append("> **未自動發布**，原因：")
+        lines += [f"> - {r}" for r in paper["gate_reasons"]]
+        lines.append(">")
+        lines.append("> 核對無誤後加上 `accepted` label，bot 會直接發布這筆（標示為已人工確認）。")
         lines.append("")
 
     lines.append(f"**Topic**: `{paper.get('topic', '')}`")
@@ -89,6 +128,11 @@ def format_issue_body(paper: dict) -> str:
         lines.append(json.dumps(paper["ai_suggested_js"], indent=2, ensure_ascii=False))
         lines.append("```")
 
+    if paper.get("ai_suggested_js") or paper.get("ai_evidence"):
+        lines.append("")
+        lines.append("## 數字出處")
+        lines.append(evidence_table_markdown(check_evidence(paper.get("ai_evidence") or [], paper.get("abstract", ""))))
+
     if paper.get("ai_suggested_filename"):
         lines.append("")
         lines.append("## Suggested Filename")
@@ -106,9 +150,12 @@ def format_issue_body(paper: dict) -> str:
         lines.append("")
         lines.append("<details><summary>Original Abstract</summary>")
         lines.append("")
-        lines.append(paper["abstract"][:2000])
+        lines.append(paper["abstract"])
         lines.append("")
         lines.append("</details>")
+
+    if not parse_failed and paper.get("ai_suggested_js"):
+        lines += ["", embed("paper", {k: paper.get(k) for k in ISSUE_PAYLOAD_FIELDS})]
 
     return "\n".join(lines)
 
@@ -192,3 +239,50 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def format_commentary_issue_body(proposals: list[CommentaryProposal], added_at: str) -> str:
+    """Review issue listing commentary mapped to KB trials, one checkbox per proposal."""
+    lines = [
+        "以下評論類文章（社論、讀者來信、評論、新聞）經輕量分流，對應到 KB 既有試驗。"
+        "摘要與兩個標記由 AI 產生，尚未核對。",
+        "",
+        "**審核方式**：勾選要收錄的項目，再加上 `accepted` label，bot 會開 draft PR 寫入 `data/papers.json`。"
+        "未勾選的不會寫入。",
+        "",
+    ]
+    new_data = [(i, p) for i, p in enumerate(proposals) if p.new_data]
+    if new_data:
+        lines += ["> [!WARNING]", "> 以下評論**含新數據**，除了收錄評論，可能也要更新試驗卡片內容："]
+        lines += [f"> - c{i}：`{p.target_id}` ← {p.title}" for i, p in new_data]
+        lines.append("")
+
+    for i, p in enumerate(proposals):
+        link = f"https://doi.org/{p.doi}" if p.doi else f"https://pubmed.ncbi.nlm.nih.gov/{p.pmid}/"
+        method = "PubMed CommentOn" if p.match_method == "comment_on" else "AI 判斷"
+        lines.append(f"{checkbox(i)} `{p.target_id}` ← {p.journal} {p.year or ''} {p.type}：[{p.title}]({link})")
+        lines.append(f"  - AI 摘要：{p.summary}")
+        lines.append(
+            f"  - 實質批評：{'是' if p.critique else '否'} ｜ 新數據：{'是' if p.new_data else '否'} ｜ 對應方式：{method}"
+        )
+
+    payload = [{"index": i, "target_id": p.target_id, "entry": p.to_entry(added_at)} for i, p in enumerate(proposals)]
+    lines += ["", embed("commentary", payload)]
+    return "\n".join(lines)
+
+
+def create_commentary_review_issue(proposals: list[CommentaryProposal], added_at: str, dry_run: bool = False) -> None:
+    """One review issue per run for all commentary mapped to KB trials."""
+    if not proposals:
+        return
+    title = f"[Commentary] 待審：{len(proposals)} 篇評論對應到既有試驗（{added_at}）"
+    body = format_commentary_issue_body(proposals, added_at)
+    if dry_run:
+        print(f"\n{'=' * 60}\nISSUE: {title}\n{'=' * 60}\n{body[:500]}\n...")
+        return
+    _ensure_labels({"commentary"})
+    ok, url = _run_gh(["issue", "create", "--title", title, "--label", "commentary", "--body", body])
+    if ok:
+        print(f"  Created commentary review issue: {url}")
+    else:
+        print("  [ERROR] Failed to create commentary review issue", file=sys.stderr)

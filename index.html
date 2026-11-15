@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#1a365d">
-  <meta name="description" content="CRS (Colorectal Surgery) Knowledge Base - Progressive Web App">
+  <meta name="description" content="Seminar Hegemon - 大腸直腸外科臨床決策知識庫 (Progressive Web App)">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <title>CRS Knowledge Base</title>
+  <title>Seminar Hegemon</title>
   <style>
     :root {
       --primary: #1a365d;
@@ -228,7 +228,19 @@
 
     .offline-banner { display:none; background:#fed7d7; color:#c53030; text-align:center; padding:5px; font-size:0.75rem; }
     body.offline .offline-banner { display:block; }
-  </style>
+  .comm { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border, #e2e8f0); font-size: 0.82rem; }
+.comm-hdr { font-weight: 600; color: var(--primary); margin-bottom: 4px; }
+.comm ul { margin: 0; padding-left: 18px; }
+.comm li { margin: 4px 0; }
+.comm-sum { color: var(--text-sec); }
+.comm-tag { font-size: 0.7rem; padding: 1px 6px; border-radius: 8px; background: #edf2f7; color: #4a5568; white-space: nowrap; }
+.comm-critique { background: #fff5f5; color: #c53030; }
+.comm-data { background: #fffbeb; color: #b7791f; }
+.rev-tag { font-size: 0.7rem; padding: 1px 6px; border-radius: 8px; white-space: nowrap; }
+.rev-auto { background: #fffbeb; color: #b7791f; border: 1px solid #f6e05e; }
+.rev-accepted { background: #ebf8ff; color: #2b6cb0; }
+.rev-note { font-size: 0.78rem; color: var(--text-sec); margin-bottom: 8px; }
+</style>
 </head>
 <body>
 
@@ -238,7 +250,7 @@
   <div class="hdr-row">
     <button class="back" id="back-btn" onclick="goBack()">&#8249;</button>
     <div>
-      <h1 id="hdr-title">CRS Knowledge Base</h1>
+      <h1 id="hdr-title">Seminar Hegemon</h1>
       <p id="hdr-sub">大腸直腸外科</p>
     </div>
   </div>
@@ -429,11 +441,13 @@
       </div>
       <div class="ev-card-body">
         <table>
-          <tr><th>試驗</th><th>pCR</th><th>Path response</th><th>復發</th></tr>
-          <tr><td><strong>NICHE-2</strong>（結腸癌）</td><td>68%</td><td>98%</td><td>0%</td></tr>
-          <tr><td><strong>Dostarlimab</strong>（直腸癌）</td><td>cCR 100%</td><td>—</td><td>0%</td></tr>
+          <tr><th>試驗</th><th>pCR / cCR</th><th>Path response</th><th>復發</th></tr>
+          <tr><td><strong>NICHE-2</strong>（dMMR 結腸癌，nivo+ipi，n=111）</td><td>pCR 68%</td><td>98%</td><td>0%（中位 59 mo；3y DFS 100%）</td></tr>
+          <tr><td><strong>AZUR-1</strong>（dMMR 直腸癌，dostarlimab，n=154）</td><td>cCR12 或 pCR 76%</td><td>—</td><td>達 cCR/pCR 者 0%</td></tr>
+          <tr><td>Dostarlimab pilot（dMMR 直腸癌，n=12）</td><td>cCR 100%</td><td>—</td><td>0%</td></tr>
+          <tr><td>UNICORN（<em>pMMR</em> 結腸癌，BOT+BAL，n=14）</td><td>pCR 29%</td><td>pMR 36%</td><td>追蹤中</td></tr>
         </table>
-        <div class="note">NICHE-2（NEJM 2024）：neoadjuvant nivo+ipi 後 98% 病理反應、0 復發。Dostarlimab（NEJM 2022）：12/12 dMMR 直腸癌 cCR，免除手術和放療。</div>
+        <div class="note">NICHE-2（Lancet 2026）：neoadjuvant nivo+ipi 中位追蹤近 5 年，per-protocol 111 例零復發，3 年 DFS 與 5 年 OS 皆 100%。AZUR-1（Ann Oncol 2026）：dostarlimab 單藥免手術策略的註冊試驗，FDA 2026/10 加速核准用於 stage II-III dMMR/MSI-H 直腸癌。UNICORN（Nat Med 2026）是 pMMR 對 neoadjuvant ICI 有反應的探索性訊號，每組僅 14 人，尚非臨床常規。</div>
       </div>
     </div>
   </div>
@@ -910,7 +924,7 @@ const history_stack = [];
 
 // View metadata for deep links and header display
 const VIEW_META = {
-  'v-home': { title: 'CRS Knowledge Base', sub: '' },
+  'v-home': { title: 'Seminar Hegemon', sub: '' },
   'v-mcrc': { title: 'mCRC', sub: '轉移性大腸直腸癌' },
   'v-braf': { title: 'BRAF V600E', sub: 'mCRC 標靶治療' },
   'v-raswt': { title: 'RAS Wild-Type', sub: 'Anti-EGFR 治療' },
@@ -1015,7 +1029,10 @@ let currentMetric = 'mOS';
 // Relation type labels
 const REL_LABELS = { builds_on: '延伸自', supersedes: '更新自', subgroup_of: '次分析', same_regimen: '同方案', contradicts: '矛盾' };
 const REL_COLORS = { builds_on: '#38a169', supersedes: '#3182ce', subgroup_of: '#718096', same_regimen: '#d69e2e', contradicts: '#e53e3e' };
-const STUDY_BADGES = { 'Phase 3 RCT': '#276749', 'Phase 3 RCT (updated)': '#2c5282', 'Phase 3 (Cohort 3)': '#2c5282', 'Phase 2 RCT': '#6b46c1', 'Biomarker (exploratory)': '#975a16', 'Post-hoc analysis': '#718096', 'Meta-analysis': '#b83280' };
+const REVIEW_LABELS = { auto: 'AI 自動整理・未經人工審核', accepted: 'AI 整理・已人工確認' };
+const reviewTag = r => r ? `<span class="rev-tag rev-${r.status}">${REVIEW_LABELS[r.status] || r.status}</span>` : '';
+const COMMENTARY_LABELS = { Editorial: '社論', Letter: '讀者來信', Comment: '評論', News: '新聞', 'Newspaper Article': '新聞' };
+const STUDY_BADGES = { 'Phase 3 RCT': '#276749', 'Phase 3 RCT (updated)': '#2c5282', 'Phase 3 (Cohort 3)': '#2c5282', 'Phase 2 RCT': '#6b46c1', 'Biomarker (exploratory)': '#975a16', 'Post-hoc analysis': '#718096', 'Meta-analysis': '#b83280', 'Guideline': '#2b6cb0' };
 
 function renderEvidence() {
   renderPaperTimeline(BRAF_PAPERS, 'timeline');
@@ -1081,21 +1098,30 @@ function renderPaperCards(papers, elId) {
     }).filter(Boolean).join(' ');
     const doiLink = p.doi ? `<a href="https://doi.org/${p.doi}" target="_blank" rel="noopener noreferrer" style="font-size:0.8rem">DOI</a>` : '';
     const fileLink = p.file ? `<a href="${p.file}" target="_blank" rel="noopener noreferrer" style="font-size:0.8rem">&#x1F4C4; 全文/摘要</a>` : '';
+    const comms = (p.commentary || []).map(c => {
+      const href = c.doi ? `https://doi.org/${c.doi}` : `https://pubmed.ncbi.nlm.nih.gov/${c.pmid}/`;
+      const tags = (c.critique ? ' <span class="comm-tag comm-critique">含實質批評</span>' : '')
+        + (c.newData ? ' <span class="comm-tag comm-data">含新數據</span>' : '');
+      return `<li><a href="${href}" target="_blank" rel="noopener noreferrer">${c.journal} ${c.year || ''}</a> <span class="comm-tag">${COMMENTARY_LABELS[c.type] || c.type}</span>${tags} ${reviewTag(c.review)}<div class="comm-sum">${c.summary}</div></li>`;
+    }).join('');
     return `<div class="ev-card">
       <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
         <h4>${p.year} ${p.journal} — ${p.regimen.split(' vs ')[0]}</h4>
         <span style="font-size:0.72rem;padding:2px 7px;border-radius:8px;background:${badgeColor}15;color:${badgeColor};white-space:nowrap">${p.studyType}</span>
+        ${p.review && p.review.status === 'auto' ? '<span class="rev-tag rev-auto" title="AI 自動整理・未經人工審核">AI 未審</span>' : ''}
         <span class="arrow">&#9662;</span>
       </div>
       <div class="ev-card-body">
+        ${p.review ? `<div class="rev-note">${reviewTag(p.review)} 發布於 ${p.review.publishedAt}</div>` : ''}
         <table>
           <tr><td style="width:30%;font-weight:600;color:var(--primary)">方案</td><td>${p.regimen}</td></tr>
-          <tr><td style="font-weight:600;color:var(--primary)">N</td><td>${p.n}</td></tr>
+          <tr><td style="font-weight:600;color:var(--primary)">N</td><td>${p.n ?? '—'}</td></tr>
           <tr><td style="font-weight:600;color:var(--primary)">主要終點</td><td>${p.endpoint}</td></tr>
           <tr><td style="font-weight:600;color:var(--primary)">結果</td><td><strong>${p.result}</strong></td></tr>
         </table>
         <div class="note">${p.bottomLine}</div>
         ${rels ? '<div style="margin-top:6px">'+rels+'</div>' : ''}
+        ${comms ? `<div class="comm"><div class="comm-hdr">相關評論（${p.commentary.length}）</div><ul>${comms}</ul></div>` : ''}
         <div style="margin-top:8px;display:flex;gap:12px">${fileLink} ${doiLink}</div>
       </div>
     </div>`;

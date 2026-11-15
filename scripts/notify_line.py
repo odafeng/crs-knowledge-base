@@ -19,7 +19,7 @@ def _format_paper_message(paper):
     year = paper.get("year", "")
     doi = paper.get("doi", "")
     bottom_line = paper.get("ai_bottom_line", "")
-    action = "GitHub Issue"
+    action = "已自動發布到網站" if paper.get("publish_status") == "auto" else "待審，已開 GitHub Issue"
 
     lines = []
     if score and score >= 5:
@@ -41,7 +41,7 @@ def _format_paper_message(paper):
         lines.append(f"🔗 https://doi.org/{doi}")
 
     lines.append("")
-    lines.append(f"→ {action} created on GitHub")
+    lines.append(f"→ {action}")
 
     return "\n".join(lines)
 
@@ -55,7 +55,7 @@ def format_digest(papers):
     score_4 = [p for p in papers if p not in score_5]
 
     lines = [
-        "📚 CRS Knowledge Base — Paper Watch",
+        "📚 Seminar Hegemon — Paper Watch",
         f"Found {len(papers)} relevant paper(s)",
         f"🔥 Practice-changing: {len(score_5)} | 📄 High-impact: {len(score_4)}",
         "─" * 20,

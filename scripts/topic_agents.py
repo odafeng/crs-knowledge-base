@@ -210,8 +210,15 @@ def build_system_prompt(topic):
 3. **Structured Output**（只有 score >= 4 才產出）：
    - bottomLine：繁體中文，100 字以內，一句話摘要
    - JS 物件草稿（符合既有 schema：id, year, journal, studyType, n, regimen, endpoint, result, bottomLine, doi, file, relations）
-   - studyType 只能用：Phase 3 RCT, Phase 3 RCT (updated), Phase 2 RCT, Phase 2, Phase 1-2, Phase 1, Phase 1b, Biomarker (exploratory), Post-hoc analysis, Meta-analysis, Pooled analysis, Phase 3 (Cohort N), Phase 2 (exploratory)
+   - studyType 只能用：Phase 3 RCT, Phase 3 RCT (updated), Phase 2 RCT, Phase 2, Phase 1-2, Phase 1, Phase 1b, Biomarker (exploratory), Post-hoc analysis, Meta-analysis, Pooled analysis, Retrospective cohort, Guideline, Phase 3 (Cohort N), Phase 2 (updated), Phase 2 (exploratory)
    - relations 中的 targetId 必須是既有文獻中的 id
+   - evidence：suggested_js 的 n、result、bottomLine 中出現的**每一個數字**都要有一筆出處
+     - claim：含該數字的片段，例如 "mOS 30.3 vs 15.1 mo"
+     - source="abstract"：quote 填摘要原文中**逐字**包含該數字的片段（直接複製，不可改寫、翻譯或改單位）
+     - source="web_fetch"：url 填你用 web_fetch 讀到的網址，quote 填該頁原文片段
+     - source="inference"：你推算或推論的數字（例如由百分比推回人數、兩組相加），quote 與 url 填 null
+   - 摘要裡沒有的數字盡量不要寫進 result；確實需要時必須照上面標明來源，不可與摘要數字混在一起
+   - 系統會逐字比對 quote 是否真的出現在摘要中，並檢查 KB 條目的每個數字都在摘要裡。全部通過才會自動發布，否則轉人工審核
 
 4. **Chart Updates**（只有當新文獻有明確的療效數據可加入柱狀圖時才產出）：
    - 判斷新文獻是否有 mOS/ORR/mPFS 等數據值得加入比較圖
@@ -264,6 +271,12 @@ def build_paper_prompt(paper):
     parts.append(f"**DOI:** {paper.get('doi', 'N/A')}")
     parts.append(f"**PMID:** {paper.get('pmid', 'N/A')}")
     parts.append(f"**Source:** {paper.get('source', 'N/A')}")
+    status = paper.get("abstract_status", "full")
+    if status != "full":
+        parts.append(
+            f"\n⚠ **此摘要{'被截斷' if status == 'truncated' else '缺失'}**："
+            "結果數據可能不在摘要中。評分與分析請說明這個限制，所有數字都要標明實際來源。"
+        )
     if paper.get("abstract"):
         parts.append(f"\n**Abstract:**\n{paper['abstract']}")
     return "\n".join(parts)

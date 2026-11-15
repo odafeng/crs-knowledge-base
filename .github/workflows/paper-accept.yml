@@ -1,0 +1,59 @@
+name: Publish Accepted Issue
+
+# A reviewer adds the `accepted` label to a held paper or commentary issue;
+# this publishes it with review status "accepted" (ADR-0013).
+on:
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: kb-main-writes
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # Only the `accepted` label, and only on issues the pipeline itself opened.
+    if: github.event.label.name == 'accepted' && github.event.issue.user.type == 'Bot'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ISSUE: ${{ github.event.issue.number }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Apply issue to KB
+        id: apply
+        working-directory: scripts
+        run: |
+          gh issue view "$ISSUE" --json body -q .body > "$RUNNER_TEMP/body.md"
+          python accept_issue.py --body-file "$RUNNER_TEMP/body.md" --result-file "$RUNNER_TEMP/result.md"
+
+      - name: Commit, push, deploy
+        run: |
+          git config user.name "paper-watch[bot]"
+          git config user.email "bot@users.noreply.github.com"
+          git add data/papers.json docs sw.js
+          git commit -m "kb: $(cat "$RUNNER_TEMP/result.md") (accepted in #$ISSUE)"
+          git pull --rebase
+          git push
+          gh workflow run ci.yml --ref main
+          gh issue comment "$ISSUE" --body "已發布：$(cat "$RUNNER_TEMP/result.md")。網站部署完成後即可看到；要撤下請到 Actions 執行 Unpublish。"
+          gh issue close "$ISSUE" --reason completed
+
+      - name: Report failure on the issue
+        if: failure() && steps.apply.outcome == 'failure'
+        run: gh issue comment "$ISSUE" --body-file "$RUNNER_TEMP/result.md"

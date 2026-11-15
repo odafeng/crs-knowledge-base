@@ -11,10 +11,11 @@ import sys
 from anthropic import Anthropic
 
 from agent_tools import AGENT_TOOLS, execute_tool
-from config import ANTHROPIC_API_KEY, CLASSIFY_MODEL, RELEVANCE_THRESHOLD
+from config import ANTHROPIC_API_KEY, CLASSIFY_EFFORT, CLASSIFY_MODEL, FALLBACK_BETA, RELEVANCE_THRESHOLD
 from topic_agents import build_paper_prompt, build_system_prompt
 
 MAX_AGENT_TURNS = 8  # Max tool-use rounds per paper
+MAX_OUTPUT_TOKENS = 16000  # Thinking is always on and counts toward max_tokens
 
 # Nudge sent when the agent runs out of turns (or stops) without submitting.
 FORCE_SUBMIT_PROMPT = (
@@ -22,6 +23,43 @@ FORCE_SUBMIT_PROMPT = (
     "提交最終分類。若資訊仍不完整（例如摘要缺失），請據此保守評分，"
     "並在 contextual_analysis 中說明資訊限制。"
 )
+
+# Last-resort prompt for the structured-output call (tools disabled).
+RESCUE_PROMPT = (
+    "研究回合已全部用完，不能再呼叫任何工具。請直接依目前已掌握的資訊輸出最終分類 JSON。"
+    "資訊不完整時保守評分，並在 contextual_analysis 中說明資訊限制。"
+)
+
+EVIDENCE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "claim": {"type": "string", "description": "含該數字的片段，例如 'mOS 30.3 vs 15.1 mo'"},
+        "source": {"type": "string", "enum": ["abstract", "web_fetch", "inference"]},
+        "quote": {
+            "anyOf": [{"type": "string"}, {"type": "null"}],
+            "description": "abstract / web_fetch：原文逐字片段（直接複製，不可改寫或翻譯）。inference：null",
+        },
+        "url": {
+            "anyOf": [{"type": "string"}, {"type": "null"}],
+            "description": "web_fetch：讀到該數字的網址。其他：null",
+        },
+    },
+    "required": ["claim", "source", "quote", "url"],
+    "additionalProperties": False,
+}
+
+RELATION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "targetId": {"type": "string"},
+        "type": {
+            "type": "string",
+            "enum": ["builds_on", "supersedes", "subgroup_of", "same_regimen", "contradicts"],
+        },
+    },
+    "required": ["targetId", "type"],
+    "additionalProperties": False,
+}
 
 # The submit_classification tool forces the agent to output structured JSON.
 # This eliminates the fragile "parse JSON from free text" problem.
@@ -59,28 +97,79 @@ SUBMIT_CLASSIFICATION_TOOL = {
             "relations": {
                 "type": "array",
                 "description": "Relations to existing papers.",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "targetId": {"type": "string"},
-                        "type": {
-                            "type": "string",
-                            "enum": ["builds_on", "supersedes", "subgroup_of", "same_regimen", "contradicts"],
-                        },
-                    },
-                    "required": ["targetId", "type"],
-                },
+                "items": RELATION_SCHEMA,
             },
             "chart_updates": {
                 "type": "object",
                 "description": "Optional chart bar additions/updates.",
             },
+            "evidence": {
+                "type": "array",
+                "description": "suggested_js 的 n、result、bottomLine 中每一個數字的出處。score < 4 時可為空陣列。",
+                "items": EVIDENCE_SCHEMA,
+            },
         },
-        "required": ["relevance_score", "contextual_analysis"],
+        "required": ["relevance_score", "contextual_analysis", "evidence"],
     },
 }
 
 ALL_TOOLS = [*AGENT_TOOLS, SUBMIT_CLASSIFICATION_TOOL]
+
+# Output schema for the last-resort call. Structured outputs require
+# additionalProperties: false on every object, so the free-form suggested_js and
+# chart_updates fields of submit_classification are left out; the reviewer writes
+# those by hand for the rare paper classified this way.
+_RESCUE_FIELDS = (
+    "relevance_score",
+    "contextual_analysis",
+    "bottom_line",
+    "suggested_filename",
+    "relations",
+    "evidence",
+)
+RESCUE_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {k: SUBMIT_CLASSIFICATION_TOOL["input_schema"]["properties"][k] for k in _RESCUE_FIELDS},
+    "required": list(_RESCUE_FIELDS),
+    "additionalProperties": False,
+}
+
+
+def _create_message(client: Anthropic, system_prompt: str, messages: list[dict], **overrides):
+    """Send one agent turn. The tools array stays identical on every call so that
+    earlier thinking blocks remain valid; overrides only touch per-call fields."""
+    params = {
+        "model": CLASSIFY_MODEL,
+        "max_tokens": MAX_OUTPUT_TOKENS,
+        "thinking": {"type": "adaptive", "display": "summarized"},
+        "output_config": {"effort": CLASSIFY_EFFORT},
+        "system": system_prompt,
+        "tools": ALL_TOOLS,
+        "messages": messages,
+        "betas": [FALLBACK_BETA],
+        "fallbacks": "default",
+    }
+    params.update(overrides)
+    return client.beta.messages.create(**params)
+
+
+def _refusal_note(response) -> str:
+    category = getattr(response.stop_details, "category", None) if response.stop_details else None
+    return f"(Model declined to classify this paper, refusal category: {category} — needs manual review)"
+
+
+def _mark_for_review(paper: dict, note: str) -> dict:
+    """Route a paper to the manual review queue instead of dropping it or scoring it 0."""
+    paper["ai_score"] = None
+    paper["ai_analysis"] = note
+    paper["ai_bottom_line"] = ""
+    paper["ai_suggested_js"] = None
+    paper["ai_suggested_filename"] = ""
+    paper["ai_relations"] = []
+    paper["ai_chart_updates"] = None
+    paper["ai_evidence"] = []
+    paper["ai_parse_failed"] = True
+    return paper
 
 
 def _build_batch_context(paper: dict, all_candidates: list[dict]) -> str:
@@ -137,6 +226,7 @@ def _apply_submission(paper: dict, result: dict) -> dict:
     paper["ai_suggested_filename"] = result.get("suggested_filename", "")
     paper["ai_relations"] = result.get("relations", [])
     paper["ai_chart_updates"] = result.get("chart_updates")
+    paper["ai_evidence"] = result.get("evidence", [])
     paper["ai_parse_failed"] = False
     return paper
 
@@ -171,14 +261,12 @@ def classify_paper(client: Anthropic, paper: dict, all_candidates: list[dict] | 
     messages: list[dict] = [{"role": "user", "content": user_prompt}]
 
     for _turn in range(MAX_AGENT_TURNS):
-        response = client.messages.create(
-            model=CLASSIFY_MODEL,
-            max_tokens=8000,
-            thinking={"type": "enabled", "budget_tokens": 4000},
-            system=system_prompt,
-            tools=ALL_TOOLS,
-            messages=messages,
-        )
+        response = _create_message(client, system_prompt, messages)
+
+        # Even the fallback model declined: retrying the same request won't help.
+        if response.stop_reason == "refusal":
+            print(f"    [WARN] {_refusal_note(response)}", file=sys.stderr)
+            return _mark_for_review(paper, _refusal_note(response))
 
         # Log thinking blocks
         for block in response.content:
@@ -230,37 +318,38 @@ def classify_paper(client: Anthropic, paper: dict, all_candidates: list[dict] | 
             _append_user_text(messages, FORCE_SUBMIT_PROMPT)
             continue
 
-    # Turn budget exhausted. Make one last call that *forces* the agent to use
-    # submit_classification, so a slow researcher isn't reported as a parse failure.
+        # max_tokens or another unexpected stop: resending the same turn would repeat it.
+        print(f"    [WARN] Unexpected stop_reason={response.stop_reason}; going to rescue call", file=sys.stderr)
+        break
+
+    # Turn budget exhausted. The model no longer accepts a forced tool_choice, so the
+    # last call disables tools and constrains the reply to the classification JSON
+    # schema instead; a slow researcher still isn't reported as a parse failure.
     try:
-        _append_user_text(messages, FORCE_SUBMIT_PROMPT)
-        final_response = client.messages.create(
-            model=CLASSIFY_MODEL,
-            max_tokens=4000,
-            system=system_prompt,
-            tools=ALL_TOOLS,
-            tool_choice={"type": "tool", "name": "submit_classification"},
-            messages=messages,
+        _append_user_text(messages, RESCUE_PROMPT)
+        final_response = _create_message(
+            client,
+            system_prompt,
+            messages,
+            tool_choice={"type": "none"},
+            output_config={
+                "effort": CLASSIFY_EFFORT,
+                "format": {"type": "json_schema", "schema": RESCUE_OUTPUT_SCHEMA},
+            },
         )
-        submission = _extract_submission(final_response)
-        if submission is not None:
-            print("    [INFO] Recovered classification via forced submit_classification")
-            return _apply_submission(paper, submission)
-    except Exception as exc:  # network/API errors must not crash the whole run
-        print(f"    [WARN] Forced submit_classification failed: {exc}", file=sys.stderr)
+        if final_response.stop_reason == "refusal":
+            return _mark_for_review(paper, _refusal_note(final_response))
+        text = next((b.text for b in final_response.content if b.type == "text"), "")
+        submission = json.loads(text)
+        print("    [INFO] Recovered classification via structured output")
+        return _apply_submission(paper, submission)
+    except Exception as exc:  # network/API/JSON errors must not crash the whole run
+        print(f"    [WARN] Structured-output rescue failed: {exc}", file=sys.stderr)
 
     # If we get here, the agent never called submit_classification properly.
     # Mark as parse failure — NOT as score 0. This goes to a review queue.
     print("    [WARN] Classification parse failed — marking for manual review", file=sys.stderr)
-    paper["ai_score"] = None
-    paper["ai_analysis"] = "(Agent did not produce structured classification — needs manual review)"
-    paper["ai_bottom_line"] = ""
-    paper["ai_suggested_js"] = None
-    paper["ai_suggested_filename"] = ""
-    paper["ai_relations"] = []
-    paper["ai_chart_updates"] = None
-    paper["ai_parse_failed"] = True
-    return paper
+    return _mark_for_review(paper, "(Agent did not produce structured classification — needs manual review)")
 
 
 def classify_all(candidates: list[dict], dry_run: bool = False) -> list[dict]:

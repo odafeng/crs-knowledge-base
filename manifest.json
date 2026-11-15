@@ -1,7 +1,7 @@
 {
-  "name": "CRS Knowledge Base",
-  "short_name": "CRS KB",
-  "description": "Colorectal Surgery Knowledge Base",
+  "name": "Seminar Hegemon",
+  "short_name": "Seminar Hegemon",
+  "description": "Seminar Hegemon - Colorectal Surgery Knowledge Base",
   "id": "/crs-knowledge-base/",
   "start_url": "./index.html",
   "scope": ".",
