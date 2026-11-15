@@ -1,0 +1,169 @@
+/* Design tokens.
+   Concept: a journal figure. The lead story is set like Figure 1 of a trial report, on a field of
+   ribbon blue (the colorectal cancer awareness color); eosin rose, the pink of an H&E slide, marks what is new.
+   Everything else is ink on a cool paper. Components read semantic tokens only. */
+:root {
+  color-scheme: light;
+
+  /* Surfaces and ink: neutrals lean toward the brand blue */
+  --ground: #F3F5FB;
+  --surface: #FFFFFF;
+  --sunken: #E9EDF7;
+  --ink: #0B1433;
+  --ink-2: #414A68;
+  --ink-3: #5F6887;
+  --line: #D8DEEC;
+  --line-strong: #8089A8;
+
+  /* Brand: ribbon blue */
+  --brand: #1B3BC4;
+  --brand-hover: #142E9E;
+  --on-brand: #FFFFFF;
+  --tint: #E4EAFE;
+  --field: #0E2270;          /* the blue band behind the lead story */
+  --field-2: #142C8C;
+
+  /* Signal: eosin rose. Reserved for "new" and for AI disclosure. */
+  --rose: #C2185B;
+  --rose-fill: #E8356F;
+  --rose-wash: #FDE8EF;
+
+  /* Chart marks: the trial arm in blue, the comparator in gray. Both keep 3:1 against the panel they sit on. */
+  --mark: #3D63F0;
+  --mark-muted: #848DAB;
+  --mark-track: #DCE3FA;
+
+  /* Status: regulatory states only, always with an icon and a label */
+  --good: #0B6B43;  --good-bg: #E2F4EA;
+  --warn: #7A4F00;  --warn-bg: #FBF0D3;
+  --bad: #A1261F;   --bad-bg: #FBE7E4;
+
+  --focus: #1B3BC4;
+  --shadow-1: 0 1px 2px rgb(11 20 51 / 0.05), 0 1px 1px rgb(11 20 51 / 0.04);
+  --shadow-2: 0 2px 4px rgb(11 20 51 / 0.06), 0 12px 28px -14px rgb(11 20 51 / 0.28);
+
+  /* Type: Archivo carries Latin and figures; Chinese uses the reader's system font */
+  --font-sans: 'Archivo', 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', system-ui, sans-serif;
+  --text-xs: 0.8125rem;    /* 13px */
+  --text-sm: 0.9375rem;    /* 15px */
+  --text-base: 1.0625rem;  /* 17px */
+  --text-lg: 1.1875rem;    /* 19px */
+  --text-xl: 1.375rem;     /* 22px */
+  --text-2xl: 1.75rem;     /* 28px */
+  --text-display: clamp(1.875rem, 1.3rem + 2.6vw, 2.875rem);  /* 30px at 360, 46px from 1280 */
+  --text-figure: clamp(2.5rem, 1.9rem + 2.7vw, 3.75rem);      /* the large numerals */
+  --leading-tight: 1.25;
+  --leading-snug: 1.5;
+  --leading-body: 1.8;
+  --measure: 38em;         /* line length cap: 38 full-width characters at the element's own text size */
+
+  /* Spacing: 4px base */
+  --space-1: 0.25rem; --space-2: 0.5rem;  --space-3: 0.75rem; --space-4: 1rem;
+  --space-5: 1.25rem; --space-6: 1.5rem;  --space-8: 2rem;    --space-10: 2.5rem;
+  --space-12: 3rem;   --space-16: 4rem;   --space-20: 5rem;
+
+  /* Shape: radius by role, not one radius everywhere */
+  --radius-chip: 999px;
+  --radius-control: 10px;
+  --radius-card: 14px;
+  --radius-panel: 20px;
+
+  /* Layout */
+  --gutter: 1.25rem;       /* 20px at phone width */
+  --container: 72rem;      /* 1152px */
+  --header-h: 3.5rem;      /* 56px */
+  --tabbar-h: 3.75rem;     /* 60px, phones and tablets only */
+  --target: 2.75rem;       /* 44px touch target */
+
+  --fast: 140ms;
+  --base: 220ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --z-header: 100; --z-tabbar: 110; --z-popover: 200; --z-skip: 300;
+}
+
+@media (min-width: 768px) {
+  :root { --gutter: 2rem; --header-h: 4rem; }
+}
+
+/* Dark theme, in three states: the system setting applies until the reader picks a theme with the toggle,
+   which sets data-theme and wins in both directions. The two blocks below hold the same values. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --ground: #060B1C;
+    --surface: #0E1530;
+    --sunken: #0A1024;
+    --ink: #ECEFFA;
+    --ink-2: #B9C0DA;
+    --ink-3: #929AB9;
+    --line: #222B4E;
+    --line-strong: #5B668F;
+    --brand: #A4B6FF;
+    --brand-hover: #C0CDFF;
+    --on-brand: #0B1433;
+    --tint: #16215A;
+    --field: #101C5C;
+    --field-2: #17277A;
+    --rose: #FF8FB1;
+    --rose-fill: #F0497F;
+    --rose-wash: #3A1226;
+    --mark: #7F9BFF;
+    --mark-muted: #66719C;
+    --mark-track: #1C2757;
+    --good: #6FD7A0;  --good-bg: #0E2A1D;
+    --warn: #F2C25B;  --warn-bg: #2E230A;
+    --bad: #FF9A8F;   --bad-bg: #3A1512;
+    --focus: #A4B6FF;
+    --shadow-1: 0 0 0 1px rgb(164 182 255 / 0.08);
+    --shadow-2: 0 0 0 1px rgb(164 182 255 / 0.12), 0 16px 32px -16px rgb(0 0 0 / 0.7);
+  }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --ground: #060B1C;
+  --surface: #0E1530;
+  --sunken: #0A1024;
+  --ink: #ECEFFA;
+  --ink-2: #B9C0DA;
+  --ink-3: #929AB9;
+  --line: #222B4E;
+  --line-strong: #5B668F;
+  --brand: #A4B6FF;
+  --brand-hover: #C0CDFF;
+  --on-brand: #0B1433;
+  --tint: #16215A;
+  --field: #101C5C;
+  --field-2: #17277A;
+  --rose: #FF8FB1;
+  --rose-fill: #F0497F;
+  --rose-wash: #3A1226;
+  --mark: #7F9BFF;
+  --mark-muted: #66719C;
+  --mark-track: #1C2757;
+  --good: #6FD7A0;  --good-bg: #0E2A1D;
+  --warn: #F2C25B;  --warn-bg: #2E230A;
+  --bad: #FF9A8F;   --bad-bg: #3A1512;
+  --focus: #A4B6FF;
+  --shadow-1: 0 0 0 1px rgb(164 182 255 / 0.08);
+  --shadow-2: 0 0 0 1px rgb(164 182 255 / 0.12), 0 16px 32px -16px rgb(0 0 0 / 0.7);
+}
+
+/* Anything set on the blue field reads these instead: the field is blue in both themes. */
+.on-field {
+  --ink: #FFFFFF;
+  --ink-2: #C9D2F6;
+  --ink-3: #C9D2F6;
+  --line: rgb(255 255 255 / 0.18);
+  --line-strong: rgb(255 255 255 / 0.55);
+  --surface: rgb(255 255 255 / 0.07);
+  --brand: #FFFFFF;
+  --brand-hover: #E4EAFE;
+  --on-brand: #0E2270;
+  --rose: #FF9DBA;
+  --rose-wash: rgb(255 157 186 / 0.16);
+  --mark: #B4C3FF;
+  --mark-muted: rgb(255 255 255 / 0.45);
+  --mark-track: rgb(255 255 255 / 0.16);
+  --focus: #FFFFFF;
+  color: var(--ink);
+}

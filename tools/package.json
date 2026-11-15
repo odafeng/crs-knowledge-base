@@ -1,0 +1,18 @@
+{
+  "name": "site-tools",
+  "private": true,
+  "description": "Browser checks for the generated site. Not shipped to readers.",
+  "scripts": {
+    "test": "node --test e2e.test.js",
+    "verify": "node verify.js",
+    "measure": "node measure.js",
+    "lighthouse": "node lighthouse.mjs ../site"
+  },
+  "devDependencies": {
+    "@fontsource-variable/noto-sans-tc": "^5.3.1",
+    "axe-core": "^4.14.0",
+    "chrome-launcher": "^1.2.3",
+    "lighthouse": "^13.6.0",
+    "playwright": "^1.63.0"
+  }
+}

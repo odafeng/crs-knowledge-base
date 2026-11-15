@@ -1,0 +1,22 @@
+{% extends "base.html.j2" %}
+{% from "_macros.html.j2" import breadcrumb with context %}
+{% block title %}關於本站｜{{ site.SITE_NAME }}{% endblock %}
+{% block description %}本站的定位、內容怎麼產生、AI 用在哪裡。{% endblock %}
+{% block main %}
+<div class="container page">
+  {{ breadcrumb(crumbs) }}
+  <div class="prose">
+    <h1>關於本站</h1>
+    <p>{{ site.SITE_NAME }} 是給大腸直腸外科醫師的實證更新站，整理 mCRC 治療與機器手臂手術的臨床試驗、指引與給付異動。本站不提供病人衛教，也不提供門診或預約資訊。</p>
+    <h2>內容怎麼產生</h2>
+    <ul><li>每週二、五由程式掃描 PubMed 與主要期刊。</li><li>AI 依摘要評分並整理成文獻條目，每個數字都要能在摘要原文找到。</li><li>通過檢核的條目自動發布並標示「AI 未審」；沒通過的轉人工審核。</li><li>人工整理的條目標示「來源：人工整理」。</li></ul>
+    <h2>AI 新聞稿</h2>
+    <p>新聞稿由 AI 依本站文獻條目撰寫，標示「AI 新聞稿」。建置前會比對稿件中的數字是否出現在對應條目；這項檢查不能確認數字的用法或文字解讀是否正確。目前收錄的 7 篇稿件尚未經人工審核，也不開放搜尋引擎索引。Paper Watch 尚未串接自動寫稿。</p>
+    <h2>使用限制</h2>
+    <p>內容供醫療專業人員教育與臨床參考，不構成醫療建議。臨床決策請以原始文獻與現行指引為準。</p>
+    <h2>編輯者</h2>
+    <p>黃士峯（Shih-Feng Huang, MD），高雄榮民總醫院大腸直腸外科醫師。</p>
+    <p><a href="https://shihfenghuang.com">個人網站</a> · <a href="https://orcid.org/0000-0002-8037-4074">ORCID</a></p>
+  </div>
+</div>
+{% endblock %}

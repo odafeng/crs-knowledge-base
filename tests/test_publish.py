@@ -27,7 +27,6 @@ ABSTRACT = (
 def kb(tmp_path) -> KB:
     (tmp_path / "data").mkdir()
     shutil.copy(ROOT / "data" / "papers.json", tmp_path / "data" / "papers.json")
-    shutil.copy(ROOT / "sw.js", tmp_path / "sw.js")
     shutil.copytree(ROOT / "docs", tmp_path / "docs")
     return KB(root=tmp_path)
 
@@ -73,8 +72,7 @@ def _entry(kb: KB, paper_id: str) -> dict | None:
 
 
 class TestPublishPaper:
-    def test_writes_entry_page_and_precache(self, kb):
-        sw_before = kb.sw_js.read_text()
+    def test_writes_entry_and_detail_source(self, kb):
         entry = publish_paper(_paper(), "auto", TODAY, kb)
 
         saved = _entry(kb, "test-auto-2026")
@@ -89,10 +87,6 @@ class TestPublishPaper:
         assert "<script>" not in page and "<i>title</i>" not in page
         assert "✓ 摘要中找到" in page
 
-        sw = kb.sw_js.read_text()
-        assert "'./docs/mCRC-MSI-H/Test_NatMed_2026.html'" in sw
-        version = int(sw_before.split("-v", 1)[1].split("'", 1)[0])
-        assert f"-v{version + 1}'" in sw  # cache version bumped
         assert validate_data(kb.load(), kb.root) == []
 
     def test_accepted_banner(self, kb):
@@ -108,11 +102,11 @@ class TestPublishPaper:
         ],
     )
     def test_invalid_entry_leaves_kb_untouched(self, kb, overrides, message):
-        before = kb.papers_json.read_text(), kb.sw_js.read_text()
+        before = kb.papers_json.read_text()
         with pytest.raises(PublishError) as exc:
             publish_paper(_paper(**overrides), "auto", TODAY, kb)
         assert any(message in r for r in exc.value.reasons)
-        assert (kb.papers_json.read_text(), kb.sw_js.read_text()) == before
+        assert kb.papers_json.read_text() == before
         assert not (kb.root / "docs" / "mCRC-MSI-H" / "Test_NatMed_2026.html").exists()
 
     def test_unsafe_filename_falls_back_to_id(self, kb):
@@ -129,13 +123,10 @@ class TestPublishPaper:
 
 class TestUnpublish:
     def test_removes_published_paper(self, kb):
-        sw_before = kb.sw_js.read_text()
         entry = publish_paper(_paper(), "auto", TODAY, kb)
         assert unpublish("test-auto-2026", kb) == "paper test-auto-2026"
         assert _entry(kb, "test-auto-2026") is None
         assert not (kb.root / entry["file"]).exists()
-        assert "Test_NatMed_2026.html" not in kb.sw_js.read_text()
-        assert kb.sw_js.read_text() != sw_before  # version bumped again so clients drop the page
         assert validate_data(kb.load(), kb.root) == []
 
     def test_refuses_hand_curated_entry(self, kb):

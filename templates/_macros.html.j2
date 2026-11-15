@@ -1,0 +1,55 @@
+{% macro icon(name) %}<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">{{ icons[name] | safe }}</svg>{% endmacro %}
+
+{# The mark: two survival curves parting, the trial arm ending on a rose point. #}
+{% macro logo() %}<svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#1B3BC4"/><path d="M7 9h3v9h7v5h8" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 9h6v6h6v5h5" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="20" r="2.75" fill="#FF8FB1"/></svg>{% endmacro %}
+
+{% macro breadcrumb(crumbs) %}
+<nav class="breadcrumb" aria-label="麵包屑"><ol>
+  {% for name, crumb_path in crumbs %}{% if loop.last %}<li aria-current="page">{{ name }}</li>{% else %}<li><a href="{{ url(crumb_path) }}">{{ name }}</a></li>{% endif %}{% endfor %}
+</ol></nav>
+{% endmacro %}
+
+{% macro ai_chip(label) %}<span class="chip chip--ai">{{ icon("spark") }}{{ label }}</span>{% endmacro %}
+
+{% macro status(regulator, value, prefix="") %}{% set style, glyph = status_style[value] %}<span class="status status--{{ style }}">{{ icon(glyph) }}{{ prefix }}{{ status_labels[regulator][value] }}</span>{% endmacro %}
+
+{# The line above a paper: where it belongs and what kind of evidence it is. #}
+{% macro paper_meta(paper, when=none, with_topic=true) %}
+<p class="eyebrow">{% if when %}<time datetime="{{ when.isoformat() }}">{{ when.isoformat() }}</time>{% endif %}
+  {% if with_topic %}<a class="eyebrow__topic" href="{{ url(topic_path(paper.topic)) }}">{{ paper.topic.label }}</a>{% endif %}
+  <span>{{ paper.study_type }}</span><span>{{ paper.journal }} {{ paper.year }}</span><span>來源：{{ source_labels[paper.source] }}</span>
+  {% if paper.unreviewed %}{{ ai_chip("AI 未審") }}{% endif %}</p>
+{% endmacro %}
+
+{% macro entry(u, level=3) %}
+<li class="entry">
+  {% if u.kind == "paper" %}{{ paper_meta(u.paper, u.date) }}
+  {% else %}<p class="eyebrow"><time datetime="{{ u.date.isoformat() }}">{{ u.date.isoformat() }}</time><a class="eyebrow__topic" href="{{ url(topic_path(u.paper.topic)) }}">{{ u.paper.topic.label }}</a><span>評論</span></p>{% endif %}
+  <h{{ level }} class="entry__title"><a href="{{ url(paper_path(u.paper)) }}">{{ u.paper.regimen if u.kind == "paper" else u.title }}</a></h{{ level }}>
+  {% if u.kind == "paper" %}<p class="entry__result">{{ u.paper.result }}</p><p class="entry__line">{{ u.paper.bottom_line }}</p>
+  {% else %}<p class="entry__line">{{ u.summary }}</p>{% endif %}
+</li>
+{% endmacro %}
+
+{% macro paper_card(paper) %}
+<li class="paper">
+  {{ paper_meta(paper, with_topic=false) }}
+  <h3 class="paper__title"><a href="{{ url(paper_path(paper)) }}">{{ paper.regimen }}</a></h3>
+  <p class="paper__result">{{ paper.result }}</p>
+  <p class="paper__bottom">{{ paper.bottom_line }}</p>
+</li>
+{% endmacro %}
+
+{# A headline as phrases: lines break between phrases, not inside a word. #}
+{% macro phrases(item) %}{% for part in item.headline_parts %}{{ part }}{% if not loop.last %}<wbr>{% endif %}{% endfor %}{% endmacro %}
+
+{% macro key_stat(item, cls) %}<p class="{{ cls }}"><span class="num">{{ item.key.value }}<span class="stat__unit">{{ item.key.unit }}</span></span><span>{{ item.key.label }}</span></p>{% endmacro %}
+
+{% macro news_card(item, level=3) %}
+<li class="news-card">
+  <p class="eyebrow"><span class="eyebrow__topic">{{ item.paper.topic.label }}</span><time datetime="{{ item.published_at.isoformat() }}">{{ item.published_at.isoformat() }}</time>{% if item.unreviewed %}{{ ai_chip("AI 未審") }}{% endif %}</p>
+  <h{{ level }} class="news-card__title"><a href="{{ url(news_path(item)) }}">{{ phrases(item) }}</a></h{{ level }}>
+  <p class="news-card__dek">{{ item.dek }}</p>
+  {{ key_stat(item, "news-card__stat") }}
+</li>
+{% endmacro %}

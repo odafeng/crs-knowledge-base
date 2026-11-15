@@ -19,13 +19,49 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install -r scripts/requirements.txt pytest
+        run: pip install -r scripts/requirements.txt -r requirements-site.txt pytest
 
       - name: Validate data integrity
         run: python scripts/validate.py --ci
 
       - name: Run tests
         run: python -m pytest tests/ -v
+
+      - name: Build replacement site
+        env:
+          PUSH_PUBLIC_KEY: ${{ vars.PUSH_PUBLIC_KEY }}
+          PUSH_API: ${{ vars.PUSH_API }}
+          PUSH_API_KEY: ${{ vars.PUSH_API_KEY }}
+        run: python build.py
+
+      - name: Check generated links
+        run: python tools/check_links.py site
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: tools/package-lock.json
+
+      - name: Install browser test tools
+        working-directory: tools
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Test reader flows and offline use
+        working-directory: tools
+        run: npm test
+
+      - name: Check accessibility and responsive layouts
+        working-directory: tools
+        run: npm run verify
+
+      - name: Save built site
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-site
+          path: site
 
   deploy:
     needs: test
@@ -38,7 +74,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v4
+        with:
+          name: built-site
+          path: site
 
       - name: Setup Pages
         uses: actions/configure-pages@v6
@@ -46,7 +85,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: '.'
+          path: site
 
       - name: Deploy to GitHub Pages
         id: deployment

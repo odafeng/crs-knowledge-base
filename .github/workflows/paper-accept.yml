@@ -46,7 +46,7 @@ jobs:
         run: |
           git config user.name "paper-watch[bot]"
           git config user.email "bot@users.noreply.github.com"
-          git add data/papers.json docs sw.js
+          git add data/papers.json docs
           git commit -m "kb: $(cat "$RUNNER_TEMP/result.md") (accepted in #$ISSUE)"
           git pull --rebase
           git push

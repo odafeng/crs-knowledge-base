@@ -2,3 +2,8 @@ __pycache__/
 *.pyc
 .env
 .openevidence-mcp
+.venv/
+site/
+site-push/
+node_modules/
+test-results/

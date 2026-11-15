@@ -1,12 +1,11 @@
 # Seminar Hegemon
 
-> 大腸直腸外科臨床決策知識庫 — PWA + 7 個 AI Agent 自動文獻追蹤
+> 大腸直腸外科臨床決策知識庫 — 多頁實證更新站 + 7 個 AI Agent 自動文獻追蹤
 
 [![PWA](https://img.shields.io/badge/PWA-offline--ready-1a365d)](https://web.dev/progressive-web-apps/)
 [![Deploy](https://img.shields.io/badge/GitHub%20Pages-live-3182ce)](https://odafeng.github.io/crs-knowledge-base/)
 [![CI](https://github.com/odafeng/crs-knowledge-base/actions/workflows/ci.yml/badge.svg)](https://github.com/odafeng/crs-knowledge-base/actions/workflows/ci.yml)
 [![Paper Watch](https://github.com/odafeng/crs-knowledge-base/actions/workflows/paper-watch.yml/badge.svg)](https://github.com/odafeng/crs-knowledge-base/actions/workflows/paper-watch.yml)
-[![Tests](https://img.shields.io/badge/tests-63%20passed-38a169)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-38a169)](#授權)
 
 **Live**：<https://odafeng.github.io/crs-knowledge-base/>
@@ -18,7 +17,7 @@
 **Seminar Hegemon** 是一套面向**大腸直腸外科臨床醫師**的口袋型知識庫，搭載 **7 個 AI Agent 驅動的自動文獻追蹤系統**。
 
 - 讓主治醫師在 **30 秒內**查到關鍵試驗數據
-- **8 個 Topic-Specific AI Agent** 自動追蹤 PubMed + 主要期刊文獻（經 PubMed 查詢）
+- **7 個 Topic-Specific AI Agent** 自動追蹤 PubMed + 主要期刊文獻（經 PubMed 查詢）
 - 每個 agent 具備 **tool use + chain-of-thought** 能力，自主搜尋 PubMed、查閱 guideline、交叉比對既有文獻
 - 高分文獻若所有數字都能在 PubMed 摘要逐字查證，自動發布並標示「未經人工審核」；其餘開 GitHub Issue 待審（ADR-0013），並 LINE 推播
 
@@ -30,12 +29,12 @@
 
 ### 知識庫本體
 
-- **行動優先設計** — 單欄 + sticky header，手術衣口袋掏出來就查
-- **完全離線可用** — Service Worker precache 所有頁面（含 docs），醫院 Wi-Fi 死角也能用
-- **Deep Link** — hash routing（如 `#braf`、`#msih`），可直接分享特定主題連結
-- **可加入主畫面** — PWA manifest，行為近似原生 App
-- **生物標記導向** — 以 biomarker 為主軸的 mCRC 治療決策樹
-- **試驗時間軸 + 互動式柱狀圖** — 療效數據視覺比較
+- Python/Jinja2 產生首頁、消息、文獻、主題與訂閱頁；每頁都有獨立網址。
+- 收錄 7 篇 AI 新聞稿，保留 AI 未審標示與 `noindex`。建置時會檢查稿件數字是否出現在對應文獻條目，仍需人工確認解讀。
+- 搜尋消息與文獻，支援深色模式、字級調整及手機導覽。
+- Service Worker 預先快取網站頁面與素材，首次完整載入後可離線閱讀與搜尋。
+- 提供全部更新、新聞及各文獻主題的 RSS，以及 Atom、JSON Feed。
+- 現有詳細證據內文整合進新版頁面，保留來源說明與限制。
 
 ### AI 自動更新系統（Paper Watch）
 
@@ -139,10 +138,10 @@ PubMed    Journal feeds
 
 | 項目 | 選用 |
 |---|---|
-| 前端 | 原生 HTML5 + CSS3 + Vanilla JS（單檔 SPA） |
-| 離線 | Service Worker v12（precache all docs，只 cache GET + res.ok） |
-| 路由 | Hash-based deep link（`#braf`, `#msih`） |
-| 部署 | GitHub Pages |
+| 前端 | Python/Jinja2 產生靜態 HTML + CSS + Vanilla JS |
+| 離線 | 建置時產生 precache 清單與內容版本；網路失敗時讀取快取 |
+| 網址 | 多頁目錄路徑，例如 `mcrc/braf-v600e/`、`papers/beacon-2019/` |
+| 部署 | CI 建置與測試後，將 `site/` 部署到原 GitHub Pages 網址 |
 
 ### 後端（Pipeline）
 
@@ -154,7 +153,7 @@ PubMed    Journal feeds
 | 通知 | LINE Messaging API |
 | 網路 | exponential backoff retry (3x) |
 | 驗證 | `validate.py`（CI 自動跑） |
-| 測試 | pytest（71 tests） |
+| 測試 | pytest + Playwright E2E + axe-core |
 | Topic 管理 | `topics.py` Enum（single source of truth） |
 
 ---
@@ -185,16 +184,30 @@ PubMed    Journal feeds
 git clone https://github.com/odafeng/crs-knowledge-base.git
 cd crs-knowledge-base
 
-# 知識庫前端
-python3 -m http.server 8000  # http://localhost:8000
+# Python 3.12+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r scripts/requirements.txt -r requirements-site.txt
 
-# Pipeline
-cp .env.example .env  # 填入 API keys
-pip install -r scripts/requirements.txt
+# 建置與預覽新版（請服務 site/，不要服務 repo 根目錄）
+python build.py
+python -m http.server 8000 --directory site  # http://localhost:8000
 
-# 驗證 + 測試
-python scripts/validate.py
+# 驗證 + Python 測試
+python scripts/validate.py --ci
 python -m pytest tests/ -v
+python tools/check_links.py site
+
+# Browser E2E、離線閱讀與 accessibility
+cd tools
+npm ci
+npx playwright install chromium
+npm test
+npm run verify
+cd ..
+
+# Pipeline 設定
+cp .env.example .env  # 填入 API keys
 
 # Dry-run
 cd scripts && python main.py --dry-run
@@ -218,20 +231,50 @@ Paper Watch 自動偵測 → AI agent 評分 → ≥4 分 → GitHub Issue + LIN
 docs/<TopicSlug>/<FirstAuthor>_<Journal>_<Year>_<TrialName>[_<Subtopic>].html
 ```
 
-1. 建立 HTML 證據頁面（複製既有檔案改寫）
-2. 在 `index.html` 對應的 `*_PAPERS` array 新增 JS 物件
-3. `sw.js` CACHE_NAME 版本號 +1，precache 列表加入新檔
-4. Push → CI validate + test → GitHub Pages 部署
+1. 在 `docs/` 建立詳細證據 HTML，並於 `data/papers.json` 新增條目與 `file` 路徑。
+2. 需要新聞稿時，手動加入 `data/news.json`，指定 `paperId` 並標記審核狀態。
+3. 執行 `python build.py` 與測試。建置會套用新版版型，並自動更新離線快取。
+4. 變更推送至 main 後，CI 驗證資料、執行測試並部署 `site/`。
+
+---
+
+## 新版來源與部署
+
+| 路徑 | 用途 |
+|---|---|
+| `build.py`、`sitegen/` | 載入資料、產生頁面、Feed、metadata 與快取版本 |
+| `templates/`、`static/` | Jinja2 版型、樣式、字型、圖示與瀏覽器腳本 |
+| `data/papers.json`、`docs/` | 現有文獻資料與詳細證據內文 |
+| `data/news.json` | 目前正式建置採用的 7 篇 AI 未審新聞稿 |
+| `newsroom/gate.py` | 新聞稿的數字來源檢查，建置時強制執行 |
+| `push/` | Web Push 金鑰、發送工具及訂閱資料表範本 |
+| `tools/` | E2E、accessibility、連結與版面檢查工具 |
+| `site/` | 建置產物，已加入 `.gitignore` |
+
+新版直接取代原站，首頁與文獻頁都直接呈現內容，不產生 redirect。舊 hash 與 `docs/` 網址不再作為公開頁面；請改用新版網址。架構決策見 [ADR-0014](docs/adr/0014-generated-multipage-site.md)。
+
+### Web Push 設定
+
+網站在未設定推播時仍可閱讀、離線使用與訂閱 RSS。此次未建立訂閱後端，也未發送通知。
+
+若要啟用，先建置支援 `push/schema.sql` 的訂閱後端，執行 `python -m push.keys` 產生 VAPID 金鑰，再於 GitHub repository variables 設定 `PUSH_PUBLIC_KEY`、`PUSH_API`、`PUSH_API_KEY`。CI 會將公開設定帶入建置；私鑰不可放進 variables 或網站產物。
+
+發送工具需另外設定 `PUSH_SERVICE_KEY`、`VAPID_PRIVATE_KEY`、`VAPID_SUBJECT`：
+
+```bash
+python -m push.send --news data/news.json --id <新聞稿 id>
+```
+
+Web Push 尚未經實機驗證。Paper Watch 目前只發布文獻與評論，尚未自動產生新聞稿或發送 Web Push。
 
 ---
 
 ## Roadmap
 
-- [ ] 為 generic-CRS 和 robotic-surgery 加入 JS paper arrays + 前端頁面
 - [ ] ASCO 2026 Annual Meeting 最新資料收錄
 - [ ] 機器人手術 CME、TaTME 子主題
 - [ ] 肛門手術章節
-- [ ] Client-side fuzzy search
+- [ ] 搜尋加入 fuzzy matching
 - [ ] Token cost monitoring
 
 ---

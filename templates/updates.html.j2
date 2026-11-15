@@ -1,0 +1,19 @@
+{% extends "base.html.j2" %}
+{% from "_macros.html.j2" import entry, breadcrumb, icon with context %}
+{% block title %}文獻｜{{ site.SITE_NAME }}{% endblock %}
+{% block description %}依收錄日排列的全部文獻與評論，共 {{ updates | length }} 則。{% endblock %}
+{% block main %}
+<div class="container page">
+  {{ breadcrumb(crumbs) }}
+  <header class="page-head">
+    <h1>文獻</h1>
+    <p class="page-head__lead">全部收錄的文獻與評論，新的在前，共 {{ updates | length }} 則。</p>
+  </header>
+  <form class="search" role="search"><label class="visually-hidden" for="q">搜尋消息與文獻</label>{{ icon("search") }}<input id="q" type="search" name="q" placeholder="搜尋試驗、藥物、biomarker（例：NICHE、dostarlimab）" autocomplete="off" data-index="{{ url('/search.json') }}" data-suffix="{{ index_suffix }}"></form>
+  <div id="search-results" class="search-results" aria-live="polite"></div>
+  <ol class="entries page__section page__narrow">{% for u in updates %}{{ entry(u, level=2) }}{% endfor %}</ol>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url('/scripts/search.js') }}"></script>
+{% endblock %}

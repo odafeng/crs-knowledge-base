@@ -18,6 +18,7 @@ from usage import USAGE
 
 if TYPE_CHECKING:
     from anthropic import Anthropic
+    from anthropic.types.beta import BetaTextBlockParam
 
 # Most specific first: a letter that comments on a trial is reported as "Letter".
 COMMENTARY_TYPES: tuple[str, ...] = ("Editorial", "Letter", "News", "Newspaper Article", "Comment")
@@ -149,7 +150,7 @@ TRIAGE_SYSTEM_PROMPT = """你是大腸直腸癌知識庫的文獻助理。輸入
 4. has_new_data：是否包含原始報告沒有的新數據，例如更新追蹤、次分析數字、作者回覆中補充的結果。"""
 
 
-def _triage_system(kb: list[KBPaper]) -> list[dict]:
+def _triage_system(kb: list[KBPaper]) -> list["BetaTextBlockParam"]:
     """Instructions plus the KB trial list: identical for every commentary in a run, so it is
     the cached prefix. Anything per-article goes in the user message, after the breakpoint."""
     kb_lines = "\n".join(f"- {p.id} ｜ {p.year} {p.journal} ｜ {p.regimen}" for p in kb)

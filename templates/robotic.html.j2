@@ -1,0 +1,27 @@
+{% extends "base.html.j2" %}
+{% from "_macros.html.j2" import breadcrumb with context %}
+{% block title %}{{ section.page.title }}｜{{ site.SITE_NAME }}{% endblock %}
+{% block description %}{{ section.page.title }}的試驗實證。{% endblock %}
+{% block main %}
+<div class="container page">
+  {{ breadcrumb(crumbs) }}
+  <header class="page-head">
+    <h1>{{ section.page.title }}</h1>
+    <p class="page-head__lead">{{ section.cards | length }} 則實證整理，證據演進有 {{ section.timeline | length }} 個時間點。</p>
+  </header>
+  <section aria-labelledby="tl"><h2 class="rail-title" id="tl">證據演進</h2>
+    <ol class="timeline">{% for t in section.timeline %}<li><span class="timeline__when">{{ t.year }} · {{ t.venue }}</span>
+      <span class="timeline__what">{{ t.finding_html | replace("<br>", "，") | striptags }}</span>
+      {% if t.url and t.url.startswith("http") %}<a href="{{ t.url }}" rel="noopener">原文</a>{% endif %}</li>{% endfor %}</ol>
+  </section>
+  <section class="page__section" aria-labelledby="cards"><h2 id="cards">實證整理</h2>
+    {% for card in section.cards %}<details class="accordion"{% if loop.first %} open{% endif %}><summary>{{ card.title }}</summary>
+      <div class="richtext" tabindex="0" role="group" aria-label="{{ card.title }}">{{ card.body_html | safe }}</div></details>{% endfor %}
+  </section>
+  {% if section.details %}
+  <section class="page__section" aria-labelledby="details"><h2 id="details">詳細證據整理</h2>
+    {% for detail in section.details %}<div class="richtext" tabindex="0" role="region" aria-label="詳細證據整理 {{ loop.index }}，可左右捲動">{{ detail | safe }}</div>{% endfor %}
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

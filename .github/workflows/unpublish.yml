@@ -49,7 +49,7 @@ jobs:
         run: |
           git config user.name "paper-watch[bot]"
           git config user.email "bot@users.noreply.github.com"
-          git add -A data/papers.json docs sw.js
+          git add -A data/papers.json data/news.json docs
           git commit -m "kb: unpublish $TARGET" -m "Reason: $REASON" -m "Requested by @$GITHUB_ACTOR via the Unpublish workflow."
           git pull --rebase
           git push

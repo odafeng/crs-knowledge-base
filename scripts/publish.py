@@ -53,8 +53,8 @@ class KB:
         return self.root / "data" / "papers.json"
 
     @property
-    def sw_js(self) -> Path:
-        return self.root / "sw.js"
+    def news_json(self) -> Path:
+        return self.root / "data" / "news.json"
 
     def load(self) -> dict:
         return json.loads(self.papers_json.read_text())
@@ -64,7 +64,7 @@ class KB:
 
 
 def _esc(value):
-    """HTML-escape model-written strings: index.html renders entries with innerHTML."""
+    """HTML-escape model-written strings before storing them in the KB."""
     return html.escape(value, quote=False) if isinstance(value, str) else value
 
 
@@ -202,29 +202,6 @@ def render_doc_page(paper: dict, entry: dict) -> str:
 """
 
 
-def add_sw_asset(sw_text: str, asset: str) -> str:
-    """Precache ``asset`` and bump the cache version so clients pick it up."""
-    line = f"  './{asset}'"
-    if line in sw_text:
-        return sw_text
-    if "\n];" not in sw_text:
-        raise PublishError(["sw.js ASSETS 清單格式無法辨識"])
-    sw_text = sw_text.replace("\n];", f",\n{line}\n];", 1)
-    return bump_sw_version(sw_text)
-
-
-def remove_sw_asset(sw_text: str, asset: str) -> str:
-    line = f"  './{asset}'"
-    if line not in sw_text:
-        return sw_text
-    sw_text = sw_text.replace(f",\n{line}\n];", "\n];").replace(f"{line},\n", "")
-    return bump_sw_version(sw_text)
-
-
-def bump_sw_version(sw_text: str) -> str:
-    return re.sub(r"(CACHE_NAME = '[^']*-v)(\d+)'", lambda m: f"{m.group(1)}{int(m.group(2)) + 1}'", sw_text, count=1)
-
-
 def _check(data: dict, kb: KB, pending_files: frozenset[str] = frozenset()) -> None:
     errors = validate_data(data, kb.root, pending_files)
     if errors:
@@ -232,7 +209,7 @@ def _check(data: dict, kb: KB, pending_files: frozenset[str] = frozenset()) -> N
 
 
 def publish_paper(paper: dict, review: ReviewStatus, today: str, kb: KB | None = None) -> dict:
-    """Add the paper to papers.json, write its detail page, precache it. Returns the entry."""
+    """Add the paper and its detail source. The site build generates pages and precache assets."""
     kb = kb or KB()
     topic = paper.get("topic")
     if topic not in AUTO_PUBLISH_TOPICS:
@@ -247,7 +224,6 @@ def publish_paper(paper: dict, review: ReviewStatus, today: str, kb: KB | None =
 
     doc_path.parent.mkdir(parents=True, exist_ok=True)
     doc_path.write_text(render_doc_page(paper, entry))
-    kb.sw_js.write_text(add_sw_asset(kb.sw_js.read_text(), entry["file"]))
     kb.save(data)
     return entry
 
@@ -295,7 +271,11 @@ def unpublish(target: str, kb: KB | None = None) -> str:
                 _check(data, kb, frozenset({paper["file"]}) if paper.get("file") else frozenset())
                 if paper.get("file"):
                     (kb.root / paper["file"]).unlink(missing_ok=True)
-                    kb.sw_js.write_text(remove_sw_asset(kb.sw_js.read_text(), paper["file"]))
+                if kb.news_json.exists():
+                    news = json.loads(kb.news_json.read_text())
+                    remaining = [story for story in news if story["paperId"] != target]
+                    if remaining != news:
+                        kb.news_json.write_text(json.dumps(remaining, ensure_ascii=False, indent=2))
                 kb.save(data)
                 return f"paper {target}"
             for c in paper.get("commentary", []):

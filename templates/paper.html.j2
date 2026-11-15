@@ -1,0 +1,52 @@
+{% extends "base.html.j2" %}
+{% from "_macros.html.j2" import icon, paper_meta, paper_card, breadcrumb, ai_chip with context %}
+{% block title %}{{ paper.title }}｜{{ site.SITE_NAME }}{% endblock %}
+{% block description %}{{ paper.bottom_line }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block feed_links %}{% if feed_path(paper.topic.slug) in feeds %}<link rel="alternate" type="application/rss+xml" title="{{ site.SITE_NAME }}｜{{ paper.topic.label }}（RSS）" href="{{ url(feed_path(paper.topic.slug)) }}">
+{% endif %}{% endblock %}
+{% block main %}
+<div class="container page">
+  {{ breadcrumb(crumbs) }}
+  <article class="split">
+   <div>
+    <header class="story__head">
+      {{ paper_meta(paper) }}
+      <h1>{{ paper.regimen }}</h1>
+    </header>
+    {% if paper.unreviewed %}<div class="callout callout--ai" role="note">{{ icon("spark") }}<p>這一頁由 AI 依摘要整理，尚未經人工審核。數字已逐一比對摘要原文，但解讀可能有誤，請以原文為準。</p></div>{% endif %}
+    <p class="result"><span class="result__label">關鍵結果</span>{{ paper.result }}</p>
+    <p class="bottom-line">{{ paper.bottom_line }}</p>
+    {% if paper.detail_html %}
+    <section class="page__section" aria-labelledby="detail"><h2 id="detail">詳細證據整理</h2>
+      <div class="richtext" tabindex="0" role="region" aria-label="詳細證據整理，可左右捲動">{{ paper.detail_html | safe }}</div>
+    </section>
+    {% endif %}
+    {% if paper.commentary %}
+    <section class="page__section" aria-labelledby="commentary"><h2 id="commentary">相關評論</h2>
+      <ul class="entries">{% for c in paper.commentary %}<li class="entry"><p class="eyebrow"><span>{{ commentary_labels.get(c.kind, c.kind) }}</span><span>{{ c.journal }} {{ c.year or "" }}</span></p>
+        <h3 class="entry__title">{% if c.doi %}<a href="https://doi.org/{{ c.doi }}" rel="noopener">{{ c.title }}</a>{% else %}{{ c.title }}{% endif %}</h3><p class="entry__line">{{ c.summary }}</p></li>{% endfor %}</ul>
+    </section>{% endif %}
+   </div>
+   <aside class="split__rail" aria-label="研究資料與連結">
+    <dl class="facts">
+      <dt>期刊</dt><dd>{{ paper.journal }} {{ paper.year }}</dd>
+      <dt>研究設計</dt><dd>{{ paper.study_type }}</dd>
+      {% if paper.n %}<dt>收案數</dt><dd>{{ paper.n }}</dd>{% endif %}
+      <dt>主要指標</dt><dd>{{ paper.endpoint }}</dd>
+      <dt>資料來源</dt><dd>{{ source_labels[paper.source] }}</dd>
+      <dt>最近複查</dt><dd><time datetime="{{ paper.reviewed_at.isoformat() }}">{{ paper.reviewed_at.isoformat() }}</time></dd>
+    </dl>
+    <div class="actions actions--rail">
+      {% if paper.doi %}<a class="btn btn--primary" href="https://doi.org/{{ paper.doi }}" rel="noopener">{{ icon("external") }}看原文（DOI）</a>{% endif %}
+      {% for item in stories %}<a class="btn btn--secondary" href="{{ url(news_path(item)) }}">{{ icon("news") }}讀這篇的消息</a>{% endfor %}
+    </div>
+   </aside>
+  </article>
+  {% if related %}
+  <section class="page__section" aria-labelledby="related"><h2 id="related">同主題的其他文獻</h2>
+    <ul class="paper-list">{% for p in related %}{{ paper_card(p) }}{% endfor %}</ul>
+    <p class="page__more"><a href="{{ url(topic_path(paper.topic)) }}">看 {{ paper.topic.label }} 的全部文獻</a></p>
+  </section>{% endif %}
+</div>
+{% endblock %}

@@ -10,6 +10,7 @@ Each agent can autonomously decide to:
 import json
 import re
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET

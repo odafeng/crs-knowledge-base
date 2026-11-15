@@ -24,10 +24,10 @@ def test_generated_pages_have_disclaimer():
     assert DOC_NOTE in render_doc_page(paper, build_entry(paper, data, "auto", "2026-11-15"))
 
 
-def test_index_has_disclaimer_and_no_dead_entries():
-    html = (ROOT / "index.html").read_text()
-    assert 'class="disclaimer-footer"' in html
-    assert 'id="disclaimer-notice"' in html
+def test_index_has_disclaimer_and_no_dead_entries(built_site):
+    out, _ = built_site
+    html = (out / "index.html").read_text()
+    assert DOC_NOTE in html
     assert "內容建置中" not in html
 
 
@@ -50,8 +50,6 @@ def test_treatment_sections_come_from_json():
 
     from validate import validate_data
 
-    html = (ROOT / "index.html").read_text()
-    assert "<h3>&#x1F48A; 現行治療方案" not in html  # rendered from papers.json, not hard-coded
     data = json.loads((ROOT / "data" / "papers.json").read_text())
     for topic in ("mCRC-BRAF-V600E", "mCRC-KRAS-G12C", "mCRC-MSI-H", "mCRC-HER2"):
         assert data[topic]["standard_of_care"]["cards"], topic
@@ -64,8 +62,11 @@ def test_treatment_sections_come_from_json():
     assert any("unknown nhi" in e for e in errors)
 
 
-def test_home_has_search_latest_and_paper_links():
-    html = (ROOT / "index.html").read_text()
-    assert 'id="kb-search"' in html and "function runSearch" in html
-    assert 'id="latest-list"' in html and "function renderLatest" in html
-    assert "hash.startsWith('paper/')" in html  # #paper/<id> deep links
+def test_home_has_search_latest_and_paper_links(built_site):
+    out, _ = built_site
+    html = (out / "index.html").read_text()
+    assert 'aria-label="搜尋消息與文獻"' in html
+    assert "新收錄文獻" in html
+    assert 'href="papers/' in html
+    search = (out / "updates/index.html").read_text()
+    assert 'id="q"' in search and 'id="search-results"' in search

@@ -1,0 +1,474 @@
+[
+  {
+    "id": "niche2-five-year",
+    "paperId": "niche2-os",
+    "publishedAt": "2026-11-15",
+    "headline": [
+      "NICHE-2 五年追蹤：",
+      "術前雙免疫後 ",
+      "111 例",
+      "無一復發"
+    ],
+    "dek": "dMMR 局部進展結腸癌術前給 nivolumab 加 ipilimumab，術後中位追蹤 58.7 個月，3 年無病存活與 5 年整體存活都是 100%。",
+    "key": {
+      "value": "100",
+      "unit": "%",
+      "label": "3 年無病存活率（DFS）"
+    },
+    "figures": [
+      {
+        "kind": "numbers",
+        "stats": [
+          {
+            "label": "3 年無病存活率（DFS）",
+            "value": "100",
+            "unit": "%"
+          },
+          {
+            "label": "5 年整體存活率（OS）",
+            "value": "100",
+            "unit": "%"
+          },
+          {
+            "label": "依計畫書分析、無人復發",
+            "value": "111",
+            "unit": "例"
+          },
+          {
+            "label": "術後中位追蹤",
+            "value": "58.7",
+            "unit": "個月"
+          }
+        ]
+      }
+    ],
+    "figureNote": "數字出處：Lancet 2026 摘要。單臂 Phase 2，沒有對照組。",
+    "body": [
+      {
+        "heading": "發生了什麼",
+        "text": "NICHE-2 發表長期結果。Stage II–III dMMR 結腸癌病人在術前接受 nivolumab 加 ipilimumab，之後手術。術後中位追蹤 58.7 個月，依計畫書分析的 111 例沒有任何人復發。主要療效指標 3 年 DFS 是 100%，探索性指標 5 年 OS 也是 100%。"
+      },
+      {
+        "heading": "為什麼重要",
+        "text": "中位追蹤接近 5 年仍然零復發。對 dMMR 局部進展結腸癌，術前雙免疫治療已經有條件挑戰「先手術」的標準做法。"
+      },
+      {
+        "heading": "限制",
+        "text": "這是單臂 Phase 2，沒有對照組。5 年 OS 是探索性指標。"
+      },
+      {
+        "heading": "對臨床的意義",
+        "text": "證據等級沒有改變，仍然不是隨機試驗。這篇補上的是時間：先前的報告現在有接近 5 年的存活資料支持。"
+      }
+    ],
+    "review": {
+      "status": "auto"
+    }
+  },
+  {
+    "id": "azur1-dostarlimab",
+    "paperId": "azur1",
+    "publishedAt": "2026-11-15",
+    "headline": [
+      "AZUR-1：",
+      "dostarlimab 單藥，",
+      "76% 達 ",
+      "cCR12 或 pCR"
+    ],
+    "dek": "全球 Phase 2 收了 154 位 stage II–III dMMR/MSI-H 直腸癌病人。達到 cCR 或 pCR 的人沒有復發，FDA 已在 2026 年 10 月加速核准。",
+    "key": {
+      "value": "76",
+      "unit": "%",
+      "label": "達 cCR12 或 pCR（110/144）"
+    },
+    "figures": [
+      {
+        "kind": "meters",
+        "rows": [
+          {
+            "label": "達 cCR12 或 pCR",
+            "percent": 76,
+            "detail": "144 位可評估病人中的 110 位"
+          },
+          {
+            "label": "達 cCR 者維持 12 個月以上",
+            "percent": 98
+          }
+        ]
+      },
+      {
+        "kind": "numbers",
+        "stats": [
+          {
+            "label": "收案人數",
+            "value": "154",
+            "unit": "位"
+          },
+          {
+            "label": "達 cCR 或 pCR 者復發",
+            "value": "0",
+            "unit": "例"
+          }
+        ]
+      }
+    ],
+    "figureNote": "cCR12：臨床完全緩解持續 12 個月以上。數字出處：Ann Oncol 2026，本站條目整理自次級來源，尚未對照全文。",
+    "body": [
+      {
+        "heading": "發生了什麼",
+        "text": "AZUR-1 是全球 Phase 2 試驗，收了 154 位 stage II–III dMMR/MSI-H 直腸癌病人，以不手術為目標給 dostarlimab 單藥。144 位可評估病人中有 110 位（76%）達到 cCR12 或 pCR。達到 cCR 的人有 98% 維持 12 個月以上，達到 cCR 或 pCR 的人沒有復發。"
+      },
+      {
+        "heading": "為什麼重要",
+        "text": "dMMR 直腸癌免手術、免放化療的策略，從 12 例的 pilot 推進到註冊等級的證據。FDA 在 2026 年 10 月給了加速核准。"
+      },
+      {
+        "heading": "限制",
+        "text": "單臂 Phase 2。本站條目整理自次級來源，尚未對照全文；追蹤時間長度在本站條目中沒有記載。"
+      },
+      {
+        "heading": "對臨床的意義",
+        "text": "FDA 是加速核准，不是正式核准。台灣的 TFDA 許可與健保給付狀態，請看 MSI-H / dMMR 主題頁的核准與給付現況表。"
+      }
+    ],
+    "review": {
+      "status": "auto"
+    }
+  },
+  {
+    "id": "ifebemtinib-garsorasib",
+    "paperId": "ifebemtinib-garsorasib",
+    "publishedAt": "2026-11-15",
+    "headline": [
+      "FAK 抑制劑",
+      "加 garsorasib：",
+      "反應率翻倍，",
+      "但未達",
+      "統計顯著"
+    ],
+    "dek": "KRAS G12C mCRC 二線以上的 Phase 1–2 試驗。隨機部分只有 36 人，ORR 是 38.9% 對 16.7%，p=0.068。",
+    "key": {
+      "value": "38.9",
+      "unit": "%",
+      "label": "隨機組 ORR，對照組 16.7%（p=0.068）"
+    },
+    "figures": [
+      {
+        "kind": "compare",
+        "armA": "Ifebemtinib + garsorasib",
+        "armB": "Garsorasib 單用",
+        "rows": [
+          {
+            "label": "ORR",
+            "unit": "%",
+            "a": 38.9,
+            "b": 16.7
+          },
+          {
+            "label": "mPFS",
+            "unit": "個月",
+            "a": 7.7,
+            "b": 4.0
+          }
+        ]
+      },
+      {
+        "kind": "interval",
+        "label": "mPFS 的風險比（HR）",
+        "point": 0.48,
+        "low": 0.22,
+        "high": 1.04,
+        "note": "95% CI 跨過 1，差異未達統計顯著。"
+      }
+    ],
+    "figureNote": "隨機部分 36 人，全為中國病人。數字出處：Lancet Oncol 2026，本站條目整理自次級來源，尚未對照全文。",
+    "body": [
+      {
+        "heading": "發生了什麼",
+        "text": "Ifebemtinib 是 FAK 抑制劑。這個 Phase 1–2 試驗共 51 人，在二線以上的 KRAS G12C mCRC 比較 ifebemtinib 加 garsorasib 與 garsorasib 單用。隨機部分的 ORR 是 38.9% 對 16.7%（p=0.068），mPFS 是 7.7 對 4.0 個月（HR 0.48，95% CI 0.22–1.04）。另有單臂組：ORR 46.7%、mPFS 6.9 個月、mOS 14.3 個月。沒有第 4 級治療相關不良事件。"
+      },
+      {
+        "heading": "為什麼重要",
+        "text": "這是 anti-EGFR 以外的 G12C 組合策略，ORR 的數值翻了一倍。"
+      },
+      {
+        "heading": "限制",
+        "text": "隨機部分只有 36 人，全為中國病人。ORR 與 mPFS 的差異都沒有達到統計顯著。"
+      },
+      {
+        "heading": "對臨床的意義",
+        "text": "不改變臨床。G12C 抑制劑加 anti-EGFR 仍然是標準。"
+      }
+    ],
+    "review": {
+      "status": "auto"
+    }
+  },
+  {
+    "id": "unicorn-botensilimab",
+    "paperId": "unicorn",
+    "publishedAt": "2026-11-15",
+    "headline": [
+      "UNICORN：",
+      "botensilimab 併用",
+      "在 pMMR 結腸癌",
+      "有 36% ",
+      "主要病理反應"
+    ],
+    "dek": "可切除結腸癌術前使用 Fc 增強型 anti-CTLA-4。每組只有 14 人，屬於探索性訊號。",
+    "key": {
+      "value": "36",
+      "unit": "%",
+      "label": "pMMR 併用組的主要病理反應"
+    },
+    "figures": [
+      {
+        "kind": "meters",
+        "rows": [
+          {
+            "label": "pMMR：botensilimab + balstilimab",
+            "percent": 36,
+            "detail": "pCR 29%"
+          },
+          {
+            "label": "pMMR：botensilimab 單用",
+            "percent": 0
+          },
+          {
+            "label": "dMMR：botensilimab + balstilimab",
+            "percent": 100,
+            "detail": "pCR 93%"
+          },
+          {
+            "label": "dMMR：botensilimab 單用",
+            "percent": 36
+          }
+        ]
+      }
+    ],
+    "figureNote": "主要病理反應：殘存活腫瘤不超過 10%，中央判讀。每組 14 人。數字出處：Nat Med 2026，本站條目整理自次級來源，尚未對照全文。",
+    "body": [
+      {
+        "heading": "發生了什麼",
+        "text": "UNICORN 是 Phase 2 試驗，共 56 人，在可切除的 pMMR 與 dMMR 結腸癌術前給 botensilimab（Fc 增強型 anti-CTLA-4），併用或不併用 balstilimab（anti-PD-1）。pMMR 併用組的主要病理反應率是 36%（pCR 29%），pMMR 單用組是 0%。dMMR 併用組是 100%（pCR 93%），dMMR 單用組是 36%。"
+      },
+      {
+        "heading": "為什麼重要",
+        "text": "pMMR 結腸癌在併用組有 36% 達到主要病理反應，單用 botensilimab 則沒有。"
+      },
+      {
+        "heading": "限制",
+        "text": "每組只有 14 人，95% 信賴區間很寬。單用 botensilimab 在 pMMR 沒有反應。"
+      },
+      {
+        "heading": "對臨床的意義",
+        "text": "屬於探索性訊號，需要 Phase 3 驗證，目前不改變做法。"
+      }
+    ],
+    "review": {
+      "status": "auto"
+    }
+  },
+  {
+    "id": "watch-and-wait-pd1-mono",
+    "paperId": "li2026-ww-mono",
+    "publishedAt": "2026-11-15",
+    "headline": [
+      "PD-1 單藥後",
+      "觀察等待：",
+      "49 例",
+      "中位追蹤 ",
+      "35 個月",
+      "無事件"
+    ],
+    "dek": "中國 4 中心回溯研究，以內視鏡完全緩解來選病人。影像判定的 cCR 只有 44%。",
+    "key": {
+      "value": "0",
+      "unit": "例",
+      "label": "局部再生長或遠端轉移（中位追蹤 35 個月）"
+    },
+    "figures": [
+      {
+        "kind": "numbers",
+        "stats": [
+          {
+            "label": "3 年無病存活率（DFS）",
+            "value": "100",
+            "unit": "%"
+          },
+          {
+            "label": "3 年整體存活率（OS）",
+            "value": "100",
+            "unit": "%"
+          },
+          {
+            "label": "中位追蹤",
+            "value": "35",
+            "unit": "個月"
+          },
+          {
+            "label": "第 3–4 級治療相關不良事件",
+            "value": "0",
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "kind": "meters",
+        "rows": [
+          {
+            "label": "影像評估：完全緩解（cCR）",
+            "percent": 44
+          },
+          {
+            "label": "影像評估：部分緩解（PR）",
+            "percent": 35
+          },
+          {
+            "label": "影像評估：疾病穩定（SD）",
+            "percent": 21
+          }
+        ]
+      }
+    ],
+    "figureNote": "49 位病人全員符合內視鏡完全緩解。數字出處：Front Immunol 2026 摘要。",
+    "body": [
+      {
+        "heading": "發生了什麼",
+        "text": "中國 4 個中心回溯 49 位 stage II–III dMMR 大腸直腸癌病人。他們在術前接受 anti-PD-1 單藥後，以內視鏡完全緩解為依據選擇觀察等待。中位追蹤 35 個月，沒有局部再生長或遠端轉移，3 年 DFS 與 3 年 OS 都是 100%，沒有第 3–4 級治療相關不良事件。"
+      },
+      {
+        "heading": "為什麼重要",
+        "text": "影像判定為 cCR 的只有 44%，另有 35% 是 PR、21% 是 SD，但全員都符合內視鏡完全緩解。這提示影像會低估免疫治療的反應。"
+      },
+      {
+        "heading": "限制",
+        "text": "回溯研究。內視鏡完全緩解是事後定義，而且納入的病人全員符合，選擇偏差很大。"
+      },
+      {
+        "heading": "對臨床的意義",
+        "text": "需要前瞻性研究驗證，目前不足以改變做法。"
+      }
+    ],
+    "review": {
+      "status": "auto"
+    }
+  },
+  {
+    "id": "nccn-colon-v3-2026",
+    "paperId": "nccn-colon-2026",
+    "publishedAt": "2026-11-15",
+    "headline": [
+      "NCCN 結腸癌指引 ",
+      "v3.2026：",
+      "晚期治療",
+      "改依 biomarker ",
+      "編排"
+    ],
+    "dek": "更新 BRAF V600E 的推薦，並新增 fluoropyrimidine 治療前的 DPYD 檢測。",
+    "key": {
+      "value": "v3.2026",
+      "unit": "",
+      "label": "NCCN 結腸癌指引版本"
+    },
+    "figures": [],
+    "figureNote": "",
+    "body": [
+      {
+        "heading": "發生了什麼",
+        "text": "NCCN 結腸癌指引 v3.2026 的 Guidelines Insights 列出四項更新：晚期治療章節改依 biomarker 重組、更新 BRAF V600E 的晚期治療推薦、新增 fluoropyrimidine 治療前的 DPYD 檢測、依近期試驗更新非轉移性疾病的輔助治療。"
+      },
+      {
+        "heading": "為什麼重要",
+        "text": "BRAF V600E 的推薦更新承接 BREAKWATER 的證據。DPYD 檢測則是進入指引的新建議。"
+      },
+      {
+        "heading": "限制",
+        "text": "Insights 的摘要沒有列出推薦等級。本站條目只依摘要整理。"
+      },
+      {
+        "heading": "對臨床的意義",
+        "text": "細節需要對照指引全文，再決定院內流程要不要跟著調整。"
+      }
+    ],
+    "review": {
+      "status": "auto"
+    }
+  },
+  {
+    "id": "breakwater-os",
+    "paperId": "bw-nejm-2025",
+    "publishedAt": "2026-06-07",
+    "headline": [
+      "BREAKWATER：",
+      "一線 EC ",
+      "加 mFOLFOX6，",
+      "mOS 達 ",
+      "30.3 個月"
+    ],
+    "dek": "BRAF V600E mCRC 一線治療的 Phase 3 試驗，共 479 人。mOS 是 30.3 對 15.1 個月，HR 0.49。",
+    "key": {
+      "value": "30.3",
+      "unit": "個月",
+      "label": "mOS，標準治療組 15.1 個月（HR 0.49）"
+    },
+    "figures": [
+      {
+        "kind": "compare",
+        "armA": "EC + mFOLFOX6",
+        "armB": "標準治療",
+        "rows": [
+          {
+            "label": "mOS",
+            "unit": "個月",
+            "a": 30.3,
+            "b": 15.1
+          },
+          {
+            "label": "mPFS",
+            "unit": "個月",
+            "a": 12.8,
+            "b": 7.1
+          }
+        ]
+      },
+      {
+        "kind": "numbers",
+        "stats": [
+          {
+            "label": "OS 的風險比（HR）",
+            "value": "0.49",
+            "unit": ""
+          },
+          {
+            "label": "收案人數",
+            "value": "479",
+            "unit": "位"
+          }
+        ]
+      }
+    ],
+    "figureNote": "EC：encorafenib 加 cetuximab。數字出處：NEJM 2025，本站人工整理。",
+    "body": [
+      {
+        "heading": "發生了什麼",
+        "text": "BREAKWATER 是 Phase 3 隨機試驗，共 479 人，在 BRAF V600E mCRC 的一線治療比較 EC（encorafenib 加 cetuximab）加 mFOLFOX6 與標準治療。更新結果的 mPFS 是 12.8 對 7.1 個月，mOS 是 30.3 對 15.1 個月，HR 0.49。"
+      },
+      {
+        "heading": "為什麼重要",
+        "text": "mOS 30.3 個月，BRAF V600E mCRC 首次追上 BRAF 野生型的存活。死亡風險減半。"
+      },
+      {
+        "heading": "限制",
+        "text": "本站條目沒有記載 HR 的信賴區間與不良事件資料，請看原文。"
+      },
+      {
+        "heading": "對臨床的意義",
+        "text": "FDA 已核准 EC 加化療用於一線。台灣的 TFDA 許可與健保給付狀態，請看 BRAF V600E 主題頁的核准與給付現況表。"
+      }
+    ],
+    "review": {
+      "status": "auto"
+    }
+  }
+]
