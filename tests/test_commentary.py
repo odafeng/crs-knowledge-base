@@ -148,6 +148,23 @@ class TestTriage:
         assert "STELLAR303_Lancet_2025" in allowed  # model can only pick real KB ids
         assert "tools" not in kwargs  # lightweight: no agent tools
 
+    def test_kb_list_is_the_cached_prefix(self, editorial, kb):
+        """The stable part (instructions + KB list) sits in system with a cache breakpoint;
+        the article itself only appears after it, so later calls in a run hit the cache."""
+        client = MagicMock()
+        client.beta.messages.create.return_value = _structured_response(
+            {"target_id": None, "summary": "x", "has_substantive_critique": False, "has_new_data": False}
+        )
+        triage_commentary(client, editorial, kb, lambda pmids: {STELLAR_PMID: STELLAR_DOI})
+        kwargs = client.beta.messages.create.call_args.kwargs
+        (system,) = kwargs["system"]
+        assert system["cache_control"] == {"type": "ephemeral"}
+        assert "STELLAR303_Lancet_2025" in system["text"]
+        assert editorial["title"] not in system["text"]
+        user = kwargs["messages"][0]["content"]
+        assert editorial["title"] in user
+        assert "STELLAR303_Lancet_2025" in user  # the CommentOn hint stays per-article
+
     def test_unmapped(self, editorial, kb):
         editorial["comment_on_pmids"] = []
         client = MagicMock()
