@@ -21,6 +21,19 @@ def test_source_links_keep_their_text_without_publishing_old_urls():
     assert _clean_html('<p><a href="docs/test.html">Trial detail</a></p>') == "<p>Trial detail</p>"
 
 
+def test_build_records_the_revision_and_changes_cache_when_it_changes(tmp_path, monkeypatch):
+    kb = load_kb(ROOT / "data/papers.json")
+    out = tmp_path / "site"
+    monkeypatch.setenv("GITHUB_SHA", "a" * 40)
+    build_site(kb, out)
+    assert json.loads((out / "build-info.json").read_text()) == {"commit": "a" * 40}
+    before = (out / "sw.js").read_text()
+    monkeypatch.setenv("GITHUB_SHA", "b" * 40)
+    build_site(kb, out)
+    assert json.loads((out / "build-info.json").read_text()) == {"commit": "b" * 40}
+    assert (out / "sw.js").read_text() != before
+
+
 def test_build_replaces_site_without_redirects(built_site):
     out, stats = built_site
     assert stats["pages"] == 68

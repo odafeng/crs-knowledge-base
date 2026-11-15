@@ -9,6 +9,7 @@
 ## Decision
 
 - 以 `build.py`、`sitegen/`、`templates/`、`static/` 作為新版來源。GitHub Actions 建置到 `site/`，測試通過後將該產物部署到原本的 GitHub Pages 網址。
+- Pages 的 publishing source 設為 `workflow`，部署工作先檢查此設定，避免 repo 根目錄的 README 被另一條 branch build 發布成首頁。產物包含 `build-info.json`，記錄建置時的 `GITHUB_SHA`；本機未設定時為 `null`。
 - 移除根目錄的舊 SPA、manifest、Service Worker 及舊圖示。新版首頁直接輸出內容，不產生 redirect 頁或 hash 轉址。
 - `data/papers.json` 保留為文獻資料來源，`docs/**/*.html` 保留為詳細證據的內容來源，內文套入新版文獻頁或機器手臂主題頁，不另外部署舊 HTML。
 - 納入 zip 的 7 篇新聞稿至 `data/news.json`，保留 AI 未審標示與 `noindex`。建置時強制檢查新聞稿數字是否出現在對應文獻條目；這項檢查不等於語意或醫學事實審核。

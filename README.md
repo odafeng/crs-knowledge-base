@@ -22,7 +22,7 @@ GutHub 是這次改版的產品名稱。目前程式仍是 Python/Jinja2 靜態�
 
 目前公開網址是 **<https://odafeng.github.io/crs-knowledge-base/>**，平台為 GitHub Pages。
 
-2026-11-16 查核時，commit `d3de65d` 的 CI 已通過，公開網址已呈現 v3 首頁。Pages 設定仍為 `main` 根目錄建置，與 CI 的 artifact 發布流程並存；發布來源的收斂與回歸檢查追蹤於 **[A4 #56](https://github.com/odafeng/crs-knowledge-base/issues/56)**。
+Pages 使用 GitHub Actions 發布通過測試的 `site/` artifact，停用 `main` 根目錄的另一條建置路徑。部署前會檢查 Pages 的 `build_type` 為 `workflow`；公開的 [`build-info.json`](https://odafeng.github.io/crs-knowledge-base/build-info.json) 記錄該產物的 commit，供部署後核對版本。修復與驗證紀錄見 **[A4 #56](https://github.com/odafeng/crs-knowledge-base/issues/56)**。
 
 目前的 `ci.yml` 設計是：驗證資料 → pytest → 建置 `site/` → 連結、E2E 與 accessibility 檢查 → 部署同一份 artifact。未來 Next.js 與 API 的 hosting 由 [A1 #53](https://github.com/odafeng/crs-knowledge-base/issues/53) 選定，正式切換由 [F4 #79](https://github.com/odafeng/crs-knowledge-base/issues/79) 驗收。
 

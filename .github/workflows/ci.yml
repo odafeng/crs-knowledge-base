@@ -79,6 +79,11 @@ jobs:
           name: built-site
           path: site
 
+      - name: Verify Actions publishing source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: test "$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .build_type)" = workflow
+
       - name: Setup Pages
         uses: actions/configure-pages@v6
 

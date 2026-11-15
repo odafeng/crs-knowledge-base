@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 import shutil
 from collections.abc import Iterator
 from datetime import date, timedelta
@@ -253,6 +254,7 @@ def build_site(kb: KnowledgeBase, out: Path, explicit_index: bool = False) -> di
     _write(out, "/manifest.webmanifest", _manifest())
     _write(out, "/sitemap.xml", sitemap_xml(site.indexable))
     _write(out, "/robots.txt", robots_txt())
+    _write(out, "/build-info.json", json.dumps({"commit": os.environ.get("GITHUB_SHA") or None}))
     _write_service_worker(out)
     return {
         "pages": site.rendered,
