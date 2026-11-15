@@ -1,6 +1,6 @@
 # 0003. Score ≥4 Creates GitHub Issues, Not Auto-Merge
 
-**Status**: Accepted (supersedes earlier auto-merge design)
+**Status**: Superseded by [ADR-0013](0013-gated-auto-publish.md) (2026-11). Originally accepted, superseding the earlier auto-merge design
 
 ## Context
 

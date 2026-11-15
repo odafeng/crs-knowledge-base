@@ -236,6 +236,10 @@
 .comm-tag { font-size: 0.7rem; padding: 1px 6px; border-radius: 8px; background: #edf2f7; color: #4a5568; white-space: nowrap; }
 .comm-critique { background: #fff5f5; color: #c53030; }
 .comm-data { background: #fffbeb; color: #b7791f; }
+.rev-tag { font-size: 0.7rem; padding: 1px 6px; border-radius: 8px; white-space: nowrap; }
+.rev-auto { background: #fffbeb; color: #b7791f; border: 1px solid #f6e05e; }
+.rev-accepted { background: #ebf8ff; color: #2b6cb0; }
+.rev-note { font-size: 0.78rem; color: var(--text-sec); margin-bottom: 8px; }
 </style>
 </head>
 <body>
@@ -1025,6 +1029,8 @@ let currentMetric = 'mOS';
 // Relation type labels
 const REL_LABELS = { builds_on: '延伸自', supersedes: '更新自', subgroup_of: '次分析', same_regimen: '同方案', contradicts: '矛盾' };
 const REL_COLORS = { builds_on: '#38a169', supersedes: '#3182ce', subgroup_of: '#718096', same_regimen: '#d69e2e', contradicts: '#e53e3e' };
+const REVIEW_LABELS = { auto: 'AI 自動整理・未經人工審核', accepted: 'AI 整理・已人工確認' };
+const reviewTag = r => r ? `<span class="rev-tag rev-${r.status}">${REVIEW_LABELS[r.status] || r.status}</span>` : '';
 const COMMENTARY_LABELS = { Editorial: '社論', Letter: '讀者來信', Comment: '評論', News: '新聞', 'Newspaper Article': '新聞' };
 const STUDY_BADGES = { 'Phase 3 RCT': '#276749', 'Phase 3 RCT (updated)': '#2c5282', 'Phase 3 (Cohort 3)': '#2c5282', 'Phase 2 RCT': '#6b46c1', 'Biomarker (exploratory)': '#975a16', 'Post-hoc analysis': '#718096', 'Meta-analysis': '#b83280', 'Guideline': '#2b6cb0' };
 
@@ -1096,15 +1102,17 @@ function renderPaperCards(papers, elId) {
       const href = c.doi ? `https://doi.org/${c.doi}` : `https://pubmed.ncbi.nlm.nih.gov/${c.pmid}/`;
       const tags = (c.critique ? ' <span class="comm-tag comm-critique">含實質批評</span>' : '')
         + (c.newData ? ' <span class="comm-tag comm-data">含新數據</span>' : '');
-      return `<li><a href="${href}" target="_blank" rel="noopener noreferrer">${c.journal} ${c.year || ''}</a> <span class="comm-tag">${COMMENTARY_LABELS[c.type] || c.type}</span>${tags}<div class="comm-sum">${c.summary}</div></li>`;
+      return `<li><a href="${href}" target="_blank" rel="noopener noreferrer">${c.journal} ${c.year || ''}</a> <span class="comm-tag">${COMMENTARY_LABELS[c.type] || c.type}</span>${tags} ${reviewTag(c.review)}<div class="comm-sum">${c.summary}</div></li>`;
     }).join('');
     return `<div class="ev-card">
       <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
         <h4>${p.year} ${p.journal} — ${p.regimen.split(' vs ')[0]}</h4>
         <span style="font-size:0.72rem;padding:2px 7px;border-radius:8px;background:${badgeColor}15;color:${badgeColor};white-space:nowrap">${p.studyType}</span>
+        ${p.review && p.review.status === 'auto' ? '<span class="rev-tag rev-auto" title="AI 自動整理・未經人工審核">AI 未審</span>' : ''}
         <span class="arrow">&#9662;</span>
       </div>
       <div class="ev-card-body">
+        ${p.review ? `<div class="rev-note">${reviewTag(p.review)} 發布於 ${p.review.publishedAt}</div>` : ''}
         <table>
           <tr><td style="width:30%;font-weight:600;color:var(--primary)">方案</td><td>${p.regimen}</td></tr>
           <tr><td style="font-weight:600;color:var(--primary)">N</td><td>${p.n ?? '—'}</td></tr>

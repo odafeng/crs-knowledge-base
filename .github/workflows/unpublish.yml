@@ -1,0 +1,56 @@
+name: Unpublish
+
+# Take an auto-published or accepted entry off the site (ADR-0013).
+# Hand-curated entries are refused; edit those in git.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Paper id (e.g. niche2-os), or commentary DOI / PMID'
+        required: true
+        type: string
+      reason:
+        description: 'Why it is being removed (goes into the commit message)'
+        required: true
+        type: string
+
+concurrency:
+  group: kb-main-writes
+  cancel-in-progress: false
+
+jobs:
+  unpublish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TARGET: ${{ inputs.target }}
+      REASON: ${{ inputs.reason }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Remove from KB
+        working-directory: scripts
+        run: python unpublish.py --target "$TARGET"
+
+      - name: Commit, push, deploy
+        run: |
+          git config user.name "paper-watch[bot]"
+          git config user.email "bot@users.noreply.github.com"
+          git add -A data/papers.json docs sw.js
+          git commit -m "kb: unpublish $TARGET" -m "Reason: $REASON" -m "Requested by @$GITHUB_ACTOR via the Unpublish workflow."
+          git pull --rebase
+          git push
+          gh workflow run ci.yml --ref main

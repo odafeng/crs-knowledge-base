@@ -11,6 +11,7 @@ Checks:
 5. studyType values match known badges
 6. No duplicate DOIs
 7. Related commentary entries are complete, typed, and not duplicated
+8. Bot-published entries (``review`` field) carry a known status and date, and no raw HTML
 
 Usage:
   python scripts/validate.py        # run all checks
@@ -54,6 +55,24 @@ KNOWN_STUDY_TYPES = {
 REQUIRED_FIELDS = ["id", "year", "journal", "studyType", "regimen", "endpoint", "result", "bottomLine"]
 COMMENTARY_FIELDS = ["title", "journal", "type", "summary", "addedAt"]
 _DATE = re.compile(r"\d{4}-\d{2}-\d{2}$")
+# "auto": published by the gate without a human; "accepted": a reviewer approved it (ADR-0013)
+REVIEW_STATUSES = ("auto", "accepted")
+
+
+def _validate_review(label: str, item: dict) -> list[str]:
+    review = item.get("review")
+    if review is None:
+        return []
+    errors = []
+    if review.get("status") not in REVIEW_STATUSES:
+        errors.append(f"{label} has unknown review status: {review.get('status')!r}")
+    if not _DATE.match(str(review.get("publishedAt", ""))):
+        errors.append(f"{label} review.publishedAt must be YYYY-MM-DD")
+    # Model-written text is escaped on publish; raw markup here means it bypassed that.
+    for key, value in item.items():
+        if isinstance(value, str) and "<" in value:
+            errors.append(f"{label} field {key} contains raw HTML")
+    return errors
 
 
 def _validate_commentary(topic: str, pid: str, items: list[dict], seen: dict[str, str]) -> list[str]:
@@ -73,6 +92,7 @@ def _validate_commentary(topic: str, pid: str, items: list[dict], seen: dict[str
                 errors.append(f"{label} needs boolean {flag}")
         if c.get("addedAt") and not _DATE.match(c["addedAt"]):
             errors.append(f"{label} addedAt must be YYYY-MM-DD")
+        errors += _validate_review(label, c)
         if key:
             if key in seen:
                 errors.append(f"{label} duplicates {seen[key]}")
@@ -87,8 +107,12 @@ def validate() -> list[str]:
     return validate_data(json.loads(PAPERS_JSON.read_text()))
 
 
-def validate_data(data: dict) -> list[str]:
-    """Run all validation checks on parsed papers.json data."""
+def validate_data(data: dict, root: Path = PROJECT_ROOT, pending_files: frozenset[str] = frozenset()) -> list[str]:
+    """Run all validation checks on parsed papers.json data.
+
+    ``root`` is where ``file`` references resolve; ``pending_files`` are about to be
+    written by the caller and count as present.
+    """
     errors = []
     all_ids: dict[str, str] = {}  # id → topic
     all_dois: dict[str, str] = {}  # doi → topic
@@ -122,6 +146,8 @@ def validate_data(data: dict) -> list[str]:
                 if val is None or val == "":
                     errors.append(f"[{topic}] Paper '{pid}' has empty required field: {field}")
 
+            errors += _validate_review(f"[{topic}] Paper '{pid}'", p)
+
             # studyType
             st = p.get("studyType", "")
             if st and st not in KNOWN_STUDY_TYPES:
@@ -129,8 +155,8 @@ def validate_data(data: dict) -> list[str]:
 
             # Local file references
             file_ref = p.get("file")
-            if file_ref and not file_ref.startswith("http"):
-                file_path = PROJECT_ROOT / file_ref
+            if file_ref and not file_ref.startswith("http") and file_ref not in pending_files:
+                file_path = root / file_ref
                 if not file_path.exists():
                     errors.append(f"[{topic}] Paper '{pid}' references missing file: {file_ref}")
 

@@ -20,7 +20,7 @@
 - 讓主治醫師在 **30 秒內**查到關鍵試驗數據
 - **8 個 Topic-Specific AI Agent** 自動追蹤 PubMed + 主要期刊文獻（經 PubMed 查詢）
 - 每個 agent 具備 **tool use + chain-of-thought** 能力，自主搜尋 PubMed、查閱 guideline、交叉比對既有文獻
-- 高分文獻自動建立 GitHub Issue + LINE 推播通知
+- 高分文獻若所有數字都能在 PubMed 摘要逐字查證，自動發布並標示「未經人工審核」；其餘開 GitHub Issue 待審（ADR-0013），並 LINE 推播
 
 > **臨床免責聲明**：本網站僅供醫學教育與臨床參考用途，**不構成醫療建議**。
 
@@ -103,16 +103,19 @@ PubMed    Journal feeds
   ├─ Cross-paper batch context
   └─ [Submit] submit_classification
         │
-  score ≥ 4 ──→ GitHub Issue + LINE 推播
+  score ≥ 4 ──→ provenance gate（數字逐字比對摘要）
+                 ├─ 通過 → 自動發布（AI 未審）+ LINE
+                 └─ 未通過 → GitHub Issue（附原因）→ accepted label 一鍵發布
   parse fail ──→ [Review] Issue + parse-failed label
+  評論類文章 ──→ 輕量分流 → 掛到既有試驗的「相關評論」
 ```
 
 ### AI 評分標準
 
 | 分數 | 定義 | 動作 |
 |---|---|---|
-| **5** | Practice-changing | Issue + LINE |
-| **4** | High-impact | Issue + LINE |
+| **5** | Practice-changing | 過關卡自動發布，否則 Issue；LINE |
+| **4** | High-impact | 過關卡自動發布，否則 Issue；LINE |
 | **3** | Moderate | 忽略 |
 | **2** | Low | 忽略 |
 | **1** | Not relevant | 忽略 |

@@ -19,7 +19,7 @@ def _format_paper_message(paper):
     year = paper.get("year", "")
     doi = paper.get("doi", "")
     bottom_line = paper.get("ai_bottom_line", "")
-    action = "GitHub Issue"
+    action = "已自動發布到網站" if paper.get("publish_status") == "auto" else "待審，已開 GitHub Issue"
 
     lines = []
     if score and score >= 5:
@@ -41,7 +41,7 @@ def _format_paper_message(paper):
         lines.append(f"🔗 https://doi.org/{doi}")
 
     lines.append("")
-    lines.append(f"→ {action} created on GitHub")
+    lines.append(f"→ {action}")
 
     return "\n".join(lines)
 

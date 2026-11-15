@@ -48,16 +48,20 @@ class TestPipelineContract:
         assert "create_prs" not in code, "main.py must not use create_prs — all papers go to Issues only"
         assert "from create_pr" not in code, "main.py must not import from create_pr"
 
-    def test_score_4_goes_to_issues_not_pr(self):
-        """Score 4 papers must result in Issues, never auto-PR/merge."""
-        # This is a specification test: the pipeline's Layer 3 must be create_issues
+    def test_layer_3_is_gate_then_issues(self):
+        """ADR-0013: papers publish only through the provenance gate; the rest become issues. Never PRs."""
         import inspect
 
-        from main import run_pipeline
+        from main import publish_or_hold, run_pipeline
 
-        source = inspect.getsource(run_pipeline)
-        assert "create_issues" in source
-        assert "create_prs" not in source
+        pipeline = inspect.getsource(run_pipeline)
+        assert "publish_or_hold" in pipeline
+        assert "create_issues(held" in pipeline
+        assert "create_prs" not in pipeline
+
+        gate = inspect.getsource(publish_or_hold)
+        assert "evaluate_paper_gate" in gate
+        assert '"auto"' in gate  # pipeline-published entries are always marked unreviewed
 
 
 class TestIsConferenceSeason:

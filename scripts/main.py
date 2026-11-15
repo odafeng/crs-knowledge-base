@@ -22,7 +22,8 @@ from create_issues import create_commentary_review_issue, create_issues
 from fetch_pubmed import fetch_pubmed, resolve_dois
 from fetch_rss import AllFeedsFailedError, fetch_rss
 from notify_line import notify_papers
-from provenance import abstract_status
+from provenance import abstract_status, evaluate_commentary_gate, evaluate_paper_gate
+from publish import AUTO_PUBLISH_TOPICS, PublishError, publish_commentary, publish_paper
 
 
 def deduplicate_candidates(candidates):
@@ -58,6 +59,47 @@ def triage_all_commentary(commentary: list[dict], dry_run: bool) -> list[tuple[d
         print(f"  → {target or 'no KB trial (tracked only)'}")
         results.append((c, proposal))
     return results
+
+
+def publish_or_hold(classified: list[dict], today: str, dry_run: bool) -> tuple[list[dict], list[dict]]:
+    """Publish papers that pass the provenance gate; hold the rest for review (ADR-0013)."""
+    published, held = [], []
+    for paper in classified:
+        reasons = evaluate_paper_gate(paper, AUTO_PUBLISH_TOPICS).reasons
+        if not reasons and not dry_run:
+            try:
+                entry = publish_paper(paper, "auto", today)
+                print(f"  [Publish] {entry['id']} → {entry['file']}")
+            except PublishError as e:
+                reasons = e.reasons
+        if reasons:
+            paper["gate_reasons"] = reasons
+            paper["publish_status"] = "held"
+            held.append(paper)
+        else:
+            paper["publish_status"] = "auto"
+            published.append(paper)
+    return published, held
+
+
+def publish_or_hold_commentary(
+    triaged: list[tuple[dict, CommentaryProposal | None]], today: str, dry_run: bool
+) -> list[CommentaryProposal]:
+    """Publish commentary PubMed itself links to a KB trial; return the rest for review."""
+    auto, held = [], []
+    for paper, proposal in triaged:
+        if not proposal or not proposal.target_id:
+            continue
+        gate = evaluate_commentary_gate(proposal, paper.get("abstract", ""))
+        (auto if gate.passed else held).append(proposal)
+    if auto and not dry_run:
+        try:
+            changed = publish_commentary([(p.target_id, p.to_entry(today)) for p in auto], "auto", today)
+            print(f"  [Publish] commentary on {', '.join(changed) or 'nothing new'}")
+        except PublishError as e:
+            print(f"  [WARN] Commentary publish failed, sending to review: {e}", file=sys.stderr)
+            held += auto
+    return held
 
 
 def update_tracking(research: list[dict], triaged: list[tuple[dict, CommentaryProposal | None]], today: str) -> None:
@@ -148,11 +190,12 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
     research, commentary = split_commentary(candidates)
     print(f"[Pipeline] {len(research)} research, {len(commentary)} commentary")
 
-    # Commentary: lightweight triage. Never a new-paper issue; mapped items go to
-    # one review issue, unmapped ones are only tracked.
+    # Commentary: lightweight triage. Never a new-paper issue. Items PubMed links to
+    # a KB trial are published; other mapped items go to one review issue; unmapped
+    # ones are only tracked.
     triaged = triage_all_commentary(commentary, dry_run)
-    mapped = [p for _, p in triaged if p and p.target_id]
-    create_commentary_review_issue(mapped, today_str, dry_run=dry_run)
+    held_commentary = publish_or_hold_commentary(triaged, today_str, dry_run)
+    create_commentary_review_issue(held_commentary, today_str, dry_run=dry_run)
 
     # Layer 2: AI classification with topic-specific sub-agents
     print()
@@ -160,9 +203,11 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
     print(f"[Pipeline] Papers passing relevance threshold: {len(classified)}")
 
     if classified:
-        # Layer 3: All ≥4 papers get GitHub Issues for human review
-        print(f"\n[Pipeline] {len(classified)} papers → GitHub Issues")
-        create_issues(classified, dry_run=dry_run)
+        # Layer 3: papers passing the provenance gate are published; the rest get
+        # a review issue with the reasons (ADR-0013)
+        published, held = publish_or_hold(classified, today_str, dry_run)
+        print(f"\n[Pipeline] {len(published)} published, {len(held)} held for review")
+        create_issues(held, dry_run=dry_run)
 
         # LINE notification for all high-relevance papers
         print()
