@@ -62,3 +62,10 @@ def test_treatment_sections_come_from_json():
     errors = validate_data(data)
     assert any("cites unknown paper 'no-such-paper'" in e for e in errors)
     assert any("unknown nhi" in e for e in errors)
+
+
+def test_home_has_search_latest_and_paper_links():
+    html = (ROOT / "index.html").read_text()
+    assert 'id="kb-search"' in html and "function runSearch" in html
+    assert 'id="latest-list"' in html and "function renderLatest" in html
+    assert "hash.startsWith('paper/')" in html  # #paper/<id> deep links

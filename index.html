@@ -256,6 +256,17 @@
 .reg-accelerated, .reg-conditional { background: #fffbeb; color: #b7791f; }
 .reg-none { background: #fff5f5; color: #c53030; }
 .reg-note { font-size: 0.72rem; color: var(--text-sec); margin-top: 2px; }
+.home-search { margin: 12px 16px 0; }
+.home-search input { width: 100%; box-sizing: border-box; padding: 10px 12px; font-size: 0.95rem; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+#search-results { margin-top: 6px; }
+.search-hit, .latest-item { padding: 8px 10px; border-bottom: 1px solid var(--border); cursor: pointer; background: #fff; }
+.search-hit:first-child { border-radius: 8px 8px 0 0; }
+.sh-title, .li-title { font-size: 0.88rem; font-weight: 600; color: var(--primary); }
+.sh-sub, .li-sub { font-size: 0.76rem; color: var(--text-sec); }
+.li-meta { font-size: 0.72rem; color: var(--text-sec); margin-bottom: 2px; }
+.search-empty { font-size: 0.82rem; color: var(--text-sec); padding: 8px 2px; }
+#latest-section { margin: 16px; }
+.new-tag { font-size: 0.65rem; padding: 0 5px; border-radius: 6px; background: #e53e3e; color: #fff; }
 </style>
 </head>
 <body>
@@ -279,6 +290,10 @@
 
 <!-- HOME -->
 <div class="view active" id="v-home">
+  <div class="home-search">
+    <input id="kb-search" type="search" placeholder="搜尋試驗、藥物、biomarker（例：NICHE、dostarlimab、BRAF）" oninput="runSearch(this.value)" autocomplete="off" aria-label="搜尋知識庫">
+    <div id="search-results"></div>
+  </div>
   <div class="topic-grid">
     <div class="topic-card" onclick="navigate('v-mcrc','mCRC','轉移性大腸直腸癌')">
       <div class="tc-icon">&#x1F9EC;</div>
@@ -290,6 +305,10 @@
       <div class="tc-title">機器人手術</div>
       <div class="tc-desc">TME &middot; 吻合 &middot; 臨床試驗</div>
     </div>
+  </div>
+  <div class="ev-section" id="latest-section">
+    <h3>&#x1F195; 最新收錄</h3>
+    <div id="latest-list"></div>
   </div>
 </div>
 
@@ -882,6 +901,7 @@ function goBack() {
 function _handleHash() {
   const hash = location.hash.replace('#', '');
   if (!hash) return;
+  if (hash.startsWith('paper/')) { openPaper(decodeURIComponent(hash.slice(6))); return; }
   const viewId = 'v-' + hash;
   const target = document.getElementById(viewId);
   if (target) {
@@ -925,10 +945,92 @@ fetch('./data/papers.json')
     TME_CARDS = data['robotic-surgery'].tme_cards || [];
     TL_ANAST = data['robotic-surgery'].tl_anast || [];
     ANAST_CARDS = data['robotic-surgery'].anast_cards || [];
+    buildSearchIndex();
+    renderLatest();
     // Re-render current view if it needs data
     _handleHash();
   })
   .catch(err => console.warn('Failed to load papers.json:', err));
+
+// === SEARCH, LATEST, DEEP LINKS ===
+const TOPIC_VIEWS = {
+  'mCRC-BRAF-V600E': 'v-braf', 'mCRC-KRAS-G12C': 'v-krasg12c', 'mCRC-MSI-H': 'v-msih',
+  'mCRC-HER2': 'v-her2', 'mCRC-RAS-wt': 'v-raswt', 'generic-CRS': 'v-generic',
+};
+// Trial names and abbreviations clinicians type, mapped to how entries spell them.
+const SEARCH_ALIASES = {
+  breakwater: ['bw-', 'breakwater'], beacon: ['beacon'], keynote: ['kn177'], 'keynote-177': ['kn177'], 'kn-177': ['kn177'],
+  checkmate: ['cm142'], 'checkmate-142': ['cm142'], codebreak: ['cb101', 'cb300'], krystal: ['krystal'],
+  destiny: ['destiny'], nivo: ['nivolumab', 'nivo'], ipi: ['ipilimumab', 'ipi'], pembro: ['pembrolizumab'],
+  tdxd: ['t-dxd'], 't-dxd': ['t-dxd', 'trastuzumab deruxtecan'], 'fire-3': ['fire3'], azur: ['azur'],
+  stellar: ['stellar'], ec: ['encorafenib', 'ec '],
+};
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let SEARCH_INDEX = [];
+
+function buildSearchIndex() {
+  SEARCH_INDEX = [];
+  for (const [topic, view] of Object.entries(TOPIC_VIEWS)) {
+    for (const p of (KB_DATA[topic] || {}).papers || []) {
+      const hay = [p.id, p.file, p.regimen, p.result, p.bottomLine, p.journal, p.year, p.studyType, p.endpoint, topic].join(' ').toLowerCase();
+      SEARCH_INDEX.push({ id: p.id, year: p.year, view, title: `${p.year} ${p.journal} — ${p.regimen.split(' vs ')[0]}`, sub: headline(p), hay, open: () => openPaper(p.id) });
+      for (const c of p.commentary || []) {
+        SEARCH_INDEX.push({ id: p.id, year: c.year, view, title: `${c.journal} ${c.year || ''} ${COMMENTARY_LABELS[c.type] || c.type}：${c.title}`, sub: `評論 ${p.id}`, hay: [c.title, c.summary, c.journal, p.id].join(' ').toLowerCase(), open: () => openPaper(p.id) });
+      }
+    }
+  }
+  const robotic = KB_DATA['robotic-surgery'] || {};
+  (robotic.tme_cards || []).forEach((c, i) => SEARCH_INDEX.push({ year: 0, view: 'v-robotic-tme', title: c.title, sub: '機器人手術 › TME', hay: [c.title, c.tag, c.body].join(' ').toLowerCase(), open: () => openCard('v-robotic-tme', `tme-card-${i}`) }));
+  (robotic.anast_cards || []).forEach((c, i) => SEARCH_INDEX.push({ year: 0, view: 'v-robotic-anast', title: c.title, sub: '機器人手術 › 吻合', hay: [c.title, c.tag, c.body].join(' ').toLowerCase(), open: () => openCard('v-robotic-anast', `anast-card-${i}`) }));
+}
+
+function runSearch(query) {
+  const el = document.getElementById('search-results');
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) { el.innerHTML = ''; return; }
+  const matches = SEARCH_INDEX.filter(e => terms.every(t => e.hay.includes(t) || (SEARCH_ALIASES[t] || []).some(a => e.hay.includes(a))))
+    .sort((a, b) => b.year - a.year).slice(0, 20);
+  el.innerHTML = matches.length
+    ? matches.map((m, i) => `<div class="search-hit" onclick="SEARCH_HITS[${i}].open()"><div class="sh-title">${m.title}</div><div class="sh-sub">${(VIEW_META[m.view] || {}).title || ''}・${m.sub}</div></div>`).join('')
+    : `<div class="search-empty">找不到「${esc(query)}」</div>`;
+  window.SEARCH_HITS = matches;
+}
+
+function openCard(viewId, cardId) {
+  const meta = VIEW_META[viewId] || {};
+  navigate(viewId, meta.title, meta.sub, true);  // skipHash: a hashchange would re-render and close the card
+  const card = document.getElementById(cardId);
+  if (card) { card.classList.add('open'); card.scrollIntoView({ block: 'start' }); }
+}
+
+function openPaper(id) {
+  const topic = Object.keys(TOPIC_VIEWS).find(t => ((KB_DATA[t] || {}).papers || []).some(p => p.id === id));
+  if (!topic) return;
+  openCard(TOPIC_VIEWS[topic], `card-${id}`);
+  history.replaceState(null, '', `#paper/${encodeURIComponent(id)}`);
+}
+
+function renderLatest() {
+  let lastVisit = '';
+  try { lastVisit = localStorage.getItem('sh-last-visit') || ''; } catch (e) {}
+  const items = [];
+  for (const [topic, view] of Object.entries(TOPIC_VIEWS)) {
+    for (const p of (KB_DATA[topic] || {}).papers || []) {
+      items.push({ date: (p.review && p.review.publishedAt) || p.reviewedAt || '', year: p.year, view, id: p.id, review: p.review, title: `${p.year} ${p.journal} — ${p.regimen.split(' vs ')[0]}`, sub: headline(p) });
+      for (const c of p.commentary || []) {
+        items.push({ date: c.addedAt, year: c.year, view, id: p.id, review: c.review, title: `${c.journal} ${c.year || ''} ${COMMENTARY_LABELS[c.type] || c.type}`, sub: c.summary });
+      }
+    }
+  }
+  items.sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : b.year - a.year));
+  document.getElementById('latest-list').innerHTML = items.slice(0, 8).map(it => `
+    <div class="latest-item" onclick="openPaper('${it.id}')">
+      <div class="li-meta">${it.date}・${(VIEW_META[it.view] || {}).title || ''}${lastVisit && it.date > lastVisit ? ' <span class="new-tag">NEW</span>' : ''} ${reviewTag(it.review)}</div>
+      <div class="li-title">${it.title}</div>
+      <div class="li-sub">${it.sub}</div>
+    </div>`).join('');
+  try { localStorage.setItem('sh-last-visit', new Date().toISOString().slice(0, 10)); } catch (e) {}
+}
 
 // === RENDER FUNCTIONS ===
 let currentMetric = 'mOS';
@@ -1056,7 +1158,7 @@ function renderPaperCards(papers, elId) {
     }).join('');
     const newer = supersededBy[p.id];
     const sourceTag = SOURCE_LABELS[p.source] ? `<span class="src-tag" title="${SOURCE_TITLES[p.source]}">${SOURCE_LABELS[p.source]}</span>` : '';
-    return `<div class="ev-card${newer ? ' superseded' : ''}">
+    return `<div class="ev-card${newer ? ' superseded' : ''}" id="card-${p.id}">
       <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
         <h4>${p.year} ${p.journal} — ${p.regimen.split(' vs ')[0]}<div class="ev-headline">${newer ? `已有更新報告：${newer.year} ${newer.journal}` : headline(p)}</div></h4>
         <span style="font-size:0.72rem;padding:2px 7px;border-radius:8px;background:${badgeColor}15;color:${badgeColor};white-space:nowrap">${p.studyType}</span>
@@ -1126,7 +1228,7 @@ function renderTME() {
   renderTmeChart();
   // Evidence cards
   document.getElementById('tme-ev-cards').innerHTML = TME_CARDS.map((c,i) => `
-    <div class="ev-card" data-i="${i}">
+    <div class="ev-card" data-i="${i}" id="tme-card-${i}">
       <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
         <h4>${c.title}</h4>
         <span style="font-size:0.8rem;padding:2px 8px;border-radius:8px;background:#ebf8ff;color:var(--accent)">${c.tag}</span>
@@ -1183,7 +1285,7 @@ function renderAnast() {
   `).join('');
   // Evidence cards
   document.getElementById('anast-ev-cards').innerHTML = ANAST_CARDS.map((c,i) => `
-    <div class="ev-card" data-i="${i}">
+    <div class="ev-card" data-i="${i}" id="anast-card-${i}">
       <div class="ev-card-hdr" onclick="this.closest('.ev-card').classList.toggle('open')">
         <h4>${c.title}</h4>
         <span style="font-size:0.8rem;padding:2px 8px;border-radius:8px;background:#ebf8ff;color:var(--accent)">${c.tag}</span>
