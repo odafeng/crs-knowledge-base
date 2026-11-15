@@ -91,7 +91,8 @@ class TestPublishPaper:
 
         sw = kb.sw_js.read_text()
         assert "'./docs/mCRC-MSI-H/Test_NatMed_2026.html'" in sw
-        assert sw != sw_before and "-v19'" in sw  # cache version bumped
+        version = int(sw_before.split("-v", 1)[1].split("'", 1)[0])
+        assert f"-v{version + 1}'" in sw  # cache version bumped
         assert validate_data(kb.load(), kb.root) == []
 
     def test_accepted_banner(self, kb):
