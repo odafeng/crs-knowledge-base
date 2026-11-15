@@ -1,0 +1,68 @@
+# 0016. API、資料權威與雲端服務分工
+
+**Status**: Proposed（待 A1 選定供應商；production 切換另由 F4 核准）
+
+## Context
+
+現站以 JSON／HTML 為權威內容，GitHub Actions 執行 Python Paper Watch，網站建置產生 `site/`。新增使用者與留言後，需要可交易的持久資料、身分驗證、權限控制與可執行 API 的 hosting。
+
+目前有 Supabase 與全 Google Cloud 兩套候選。ADK 是 agent framework，Cloud Storage 是 object storage，Cloud SQL 是受管理的關聯式資料庫；它們分別處理不同責任，還需要網站執行環境與 Auth。供應商尚未由維護者選定。
+
+## Decision
+
+本節為提交 [A1 #53](https://github.com/odafeng/crs-knowledge-base/issues/53) 決定的架構提案：
+
+### 服務邊界
+
+- Next.js 負責公開頁面、互動 component、session 相關呈現與必要的伺服器端整合。
+- FastAPI 負責應用 API、寫入驗證、授權與管理流程；Python worker 執行文獻掃描、分類、來源查核及發布任務。長時間任務不放在留言 request 裡完成。
+- `papers`、`news`、研究 `commentary` 與讀者 `comments` 分開建模。公開 DTO、管理 DTO 與私有作者對應分開處理。
+- 一種業務寫入只設一個權威入口；不在 Next.js 與 FastAPI 各寫一套留言規則。若選 Supabase Data API，須與 FastAPI 使用相同政策，防止繞過權限或限速。
+- 具體 API contract、部署服務數量與連線方式在 A1 後由 B1/B2 固定，不為尚未需要的服務建立抽象。
+
+### 候選組合
+
+| 責任 | A：建議起步方案 | B：全 Google Cloud |
+|---|---|---|
+| Next.js | Vercel 等支援 server 的 hosting | Firebase App Hosting |
+| 身分 | Supabase Auth | Firebase Auth |
+| PostgreSQL | Supabase PostgreSQL | Cloud SQL PostgreSQL |
+| 檔案 | Supabase Storage | Cloud Storage |
+| Python | FastAPI／worker，按需使用 Cloud Run | FastAPI／Cloud Run 與排程任務 |
+
+A 的預期優點是 Auth、資料、Storage 的整合工作較少。B 適合已有 GCP 帳號、預算與 IAM 維運能力的情境。兩者都需依實際區域、流量、資料量與任務頻率估費，不在沒有使用量資料時承諾月費。
+
+### 資料遷移與單一權威
+
+1. 正式切換前，`data/papers.json`、`data/news.json` 與 `docs/` 仍為權威來源；資料庫只做可重建的匯入／staging 驗證。
+2. 匯入提供 dry-run、數量與雜湊 manifest、重跑去重、關聯驗證及交易／還原程序。保留 paper ID、slug、DOI、來源、複查日期、review 狀態、關聯與詳細證據。
+3. 在切換窗口凍結舊 writer，確認最後資料水位後啟用新的 PostgreSQL writer。GitHub Issues 的人工審核可繼續使用，但接受／撤下事件只能寫入新的權威資料。
+4. PostgreSQL 成為內容與留言的單一權威後，JSON 若保留則為單向 export。不得讓 git 與資料庫接受獨立的雙向寫入。
+5. rollback 必須處理切換後產生的留言及發布資料；不能單純回到舊靜態網站而遺失新寫入。
+
+### 部署與驗收
+
+- development、staging、production 的資源隔離、區域、費用上限及祕密交付由 [F1 #75](https://github.com/odafeng/crs-knowledge-base/issues/75) 確認。
+- GitHub Pages 可繼續服務現有靜態基線。完整的 Next.js server 與 FastAPI 另需選定 runtime；本提案不把它們部署成 Pages 的靜態檔案。
+- staging 通過內容 parity、unit/smoke/E2E、權限矩陣、mobile/accessibility 及還原演練後，才由 [F4 #79](https://github.com/odafeng/crs-knowledge-base/issues/79) 核准正式切換。
+- 新依賴固定版本並提交 lockfile。前端建立 TypeScript/lint/unit/smoke/E2E，Python 維持 Ruff/Pyright/pytest。
+
+## Consequences
+
+- API、長時間任務與資料寫入責任清楚，能重用現有 Python 程式。
+- PostgreSQL 的交易與關聯約束可用來保護留言、審核狀態及發布的一致性。
+- FastAPI 與 Next.js 帶來兩個 runtime，需維護 contract、部署、session 傳遞與監控。
+- Supabase 將部分權限與產品整合綁在其服務上；全 GCP 則需要更多 IAM、連線、Auth 整合與費用管理工作。
+- 匯入、單一 writer 切換與保留新留言的 rollback，比只搬靜態檔複雜；必須先在 staging 演練。
+- 本提案尚未建立雲端資源、執行 migration 或切換 production。
+
+## References
+
+- [A1 #53：雲端決策](https://github.com/odafeng/crs-knowledge-base/issues/53)
+- [Job B：資料與 API](https://github.com/odafeng/crs-knowledge-base/milestone/2)
+- [Job F：環境與正式切換](https://github.com/odafeng/crs-knowledge-base/milestone/6)
+- [ADR-0006：JSON 資料來源](0006-json-single-source-of-truth.md)
+- [Supabase 功能](https://supabase.com/docs/guides/getting-started/features)
+- [Firebase App Hosting](https://firebase.google.com/docs/app-hosting)
+- [Cloud SQL PostgreSQL](https://cloud.google.com/sql/docs/postgres/introduction)／[計費](https://cloud.google.com/sql/pricing)
+- [Cloud Storage](https://cloud.google.com/storage/docs/introduction)
