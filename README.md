@@ -1,297 +1,181 @@
-# Seminar Hegemon
+# GutHub
 
-> 大腸直腸外科臨床決策知識庫 — 多頁實證更新站 + 7 個 AI Agent 自動文獻追蹤
+大腸直腸外科實證知識庫，規劃加入專業討論與匿名留言。原名 **Seminar Hegemon**。
 
-[![PWA](https://img.shields.io/badge/PWA-offline--ready-1a365d)](https://web.dev/progressive-web-apps/)
-[![Deploy](https://img.shields.io/badge/GitHub%20Pages-live-3182ce)](https://odafeng.github.io/crs-knowledge-base/)
-[![CI](https://github.com/odafeng/crs-knowledge-base/actions/workflows/ci.yml/badge.svg)](https://github.com/odafeng/crs-knowledge-base/actions/workflows/ci.yml)
-[![Paper Watch](https://github.com/odafeng/crs-knowledge-base/actions/workflows/paper-watch.yml/badge.svg)](https://github.com/odafeng/crs-knowledge-base/actions/workflows/paper-watch.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-38a169)](#授權)
+GutHub 是這次改版的產品名稱。目前程式仍是 Python/Jinja2 靜態網站與 Paper Watch；Next.js、FastAPI、使用者登入及留言尚未實作。前端方向已確認為 **Next.js + TypeScript + React**，雲端供應商與匿名政策仍待決定。
 
-**Live**：<https://odafeng.github.io/crs-knowledge-base/>
+[CI](https://github.com/odafeng/crs-knowledge-base/actions/workflows/ci.yml) · [Paper Watch](https://github.com/odafeng/crs-knowledge-base/actions/workflows/paper-watch.yml) · [Jobs / milestones](https://github.com/odafeng/crs-knowledge-base/milestones) · [Issues](https://github.com/odafeng/crs-knowledge-base/issues)
 
----
+> 內容供醫療專業人員教育與臨床參考，不構成醫療建議。AI 整理與新聞稿的查核範圍有限，臨床判斷請回到原始文獻及現行指引。
 
-## 簡介
+## 目前能做什麼
 
-**Seminar Hegemon** 是一套面向**大腸直腸外科臨床醫師**的口袋型知識庫，搭載 **7 個 AI Agent 驅動的自動文獻追蹤系統**。
+- 依 biomarker 與手術主題閱讀文獻、詳細證據、治療方案及核准／給付狀態，保留資料來源和複查日期。
+- 閱讀 AI 新聞稿；未經人工審核的內容有標示，並使用 `noindex`。
+- 搜尋文獻與消息，調整深色模式和字級；首次完整載入後，可離線閱讀公開內容與搜尋。
+- 訂閱 RSS、Atom 或 JSON Feed。
+- 由七個主題的 Python agents 掃描 PubMed。通過 provenance gate 的條目標為 AI 未審；未通過的送 GitHub Issue，供人工決定是否收錄。
 
-- 讓主治醫師在 **30 秒內**查到關鍵試驗數據
-- **7 個 Topic-Specific AI Agent** 自動追蹤 PubMed + 主要期刊文獻（經 PubMed 查詢）
-- 每個 agent 具備 **tool use + chain-of-thought** 能力，自主搜尋 PubMed、查閱 guideline、交叉比對既有文獻
-- 高分文獻若所有數字都能在 PubMed 摘要逐字查證，自動發布並標示「未經人工審核」；其餘開 GitHub Issue 待審（ADR-0013），並 LINE 推播
+讀者留言將使用獨立的 `comments` 模型。現有文獻中的 `commentary` 是期刊社論、來信等研究評論，兩者不可混用。
 
-> **臨床免責聲明**：本網站僅供醫學教育與臨床參考用途，**不構成醫療建議**。
+## 部署現況
 
----
+目前公開網址是 **<https://odafeng.github.io/crs-knowledge-base/>**，平台為 GitHub Pages。
 
-## 功能特色
+2026-11-16 查核時，commit `d3de65d` 的 CI 已通過，公開網址已呈現 v3 首頁。Pages 設定仍為 `main` 根目錄建置，與 CI 的 artifact 發布流程並存；發布來源的收斂與回歸檢查追蹤於 **[A4 #56](https://github.com/odafeng/crs-knowledge-base/issues/56)**。
 
-### 知識庫本體
+目前的 `ci.yml` 設計是：驗證資料 → pytest → 建置 `site/` → 連結、E2E 與 accessibility 檢查 → 部署同一份 artifact。未來 Next.js 與 API 的 hosting 由 [A1 #53](https://github.com/odafeng/crs-knowledge-base/issues/53) 選定，正式切換由 [F4 #79](https://github.com/odafeng/crs-knowledge-base/issues/79) 驗收。
 
-- Python/Jinja2 產生首頁、消息、文獻、主題與訂閱頁；每頁都有獨立網址。
-- 收錄 7 篇 AI 新聞稿，保留 AI 未審標示與 `noindex`。建置時會檢查稿件數字是否出現在對應文獻條目，仍需人工確認解讀。
-- 搜尋消息與文獻，支援深色模式、字級調整及手機導覽。
-- Service Worker 預先快取網站頁面與素材，首次完整載入後可離線閱讀與搜尋。
-- 提供全部更新、新聞及各文獻主題的 RSS，以及 Atom、JSON Feed。
-- 現有詳細證據內文整合進新版頁面，保留來源說明與限制。
+repository 目前仍叫 `odafeng/crs-knowledge-base`。顯示名稱、repository 名稱和正式網域是不同變更，後兩者依 [A3 #55](https://github.com/odafeng/crs-knowledge-base/issues/55) 決定。
 
-### AI 自動更新系統（Paper Watch）
+## 建置工作如何追蹤
 
-- **7 個 Topic-Specific AI Agent** — 每個主題有專屬 Claude agent，內建完整治療演進脈絡
-- **Agentic Loop** — agent 可自主呼叫 6 個工具做多步推理（非單次 API call）
-- **Chain-of-Thought** — adaptive thinking（effort high），推理摘要完整記錄在 CI logs
-- **Cross-Paper Context** — 同批候選論文互相可見，支持相對判斷
-- **Structured Output** — 透過 `submit_classification` tool 強制 JSON 輸出，不依賴 regex 解析
-- **Conference Season Supplement** — 會議季自動搜尋 JCO/Ann Oncol/DCR meeting abstract supplements
-- **Supplement Search** — 會議季自動搜尋 JCO/Ann Oncol/DCR meeting abstract supplements
-- **LINE 推播** — 有新的重要文獻時即時通知
-- **Data Validation** — CI 自動檢查 ID 重複、relation target、缺檔、欄位完整性
+**Jobs 使用 milestones，Steps 使用 issues。** 依賴、驗收條件、負責人與討論放在 issue；README 只提供入口，不另維護待辦狀態。
 
----
-
-## 主題涵蓋（7 個 AI Agent）
-
-每個主題由一個獨立的 AI agent 負責，各自擁有該領域的完整知識脈絡：
-
-| # | 主題 | Agent 領域知識 | 文獻數 |
-|---|---|---|---|
-| 1 | **mCRC — BRAF V600E** | BEACON、BREAKWATER 全系列、ctDNA dynamics、NCCN | 8 |
-| 2 | **mCRC — KRAS G12C** | CodeBreaK、KRYSTAL、divarasib+cetuximab、FAK 組合 | 8 |
-| 3 | **mCRC — MSI-H / dMMR** | KEYNOTE-177、NICHE、dostarlimab / AZUR-1 non-op | 12 |
-| 4 | **mCRC — HER2** | DESTINY-CRC、MOUNTAINEER、T-DXd | 5 |
-| 5 | **mCRC — RAS-wt Anti-EGFR** | PARADIGM、sidedness、rechallenge | 9 |
-| 6 | **mCRC — Agnostic** | fruquintinib/FRESCO、regorafenib、TAS-102+bev/SUNLIGHT | new |
-| 7 | **Robotic Surgery** | REAL、ROLARR、TME/CME/anastomosis | 上線 |
-
-### Agent 工具清單
-
-| # | 工具 | 用途 |
+| Job | 工作範圍 | GitHub milestone |
 |---|---|---|
-| 1 | `search_pubmed` | 搜尋 PubMed（相關文獻、citing articles） |
-| 2 | `fetch_paper_details` | 用 PMID 取得完整摘要 |
-| 3 | `lookup_existing_papers` | 查閱 KB 既有文獻（判斷 relations） |
-| 4 | `web_fetch` | 瀏覽 DOI 頁面（readability 智能提取） |
-| 5 | `query_guidelines` | 搜尋 PubMed 上的 ASCO/ESMO/NCCN guideline 文章 |
-| 6 | `submit_classification` | 提交結構化評分結果（強制 JSON） |
+| A | 決策、現站發布修復、README 與 ADR | [GutHub 決策與上線基線](https://github.com/odafeng/crs-knowledge-base/milestone/1) |
+| B | 資料／API contract、FastAPI、schema、權限與內容匯入 | [資料模型與 API](https://github.com/odafeng/crs-knowledge-base/milestone/2) |
+| C | Next.js 閱讀頁面、搜尋、公開內容離線與品牌 | [Next.js 閱讀介面](https://github.com/odafeng/crs-knowledge-base/milestone/3) |
+| D | 登入、署名／匿名留言、防濫用與檢舉審核 | [身分與留言](https://github.com/odafeng/crs-knowledge-base/milestone/4) |
+| E | Paper Watch 的發布／撤下、排程與 ADK 評估 | [Paper Watch 遷移](https://github.com/odafeng/crs-knowledge-base/milestone/5) |
+| F | 雲端環境、staging、還原演練與正式切換 | [環境、驗收與正式切換](https://github.com/odafeng/crs-knowledge-base/milestone/6) |
 
----
-
-## 系統架構
-
-```
-┌─────────────────────────────────────────────────────────┐
-│              GitHub Actions (4 Workflows)                │
-├────────────────┬────────────────┬────────────────────────┤
-│ Paper Watch    │ Refresh        │ Refresh Conference     │
-│ Tue/Fri +      │ Guidelines     │ Dates                  │
-│ conference     │ Monthly        │ Quarterly              │
-│ daily          │                │                        │
-└───────┬────────┴────────────────┴────────────────────────┘
-        │
-  ┌─────┼─────────────┐
-  ▼     ▼             ▼
-PubMed    Journal feeds
-(+suppl)  (via PubMed)
-        │
-  deduplicate
-        │
-  7 AI Agents (agentic loop)
-  ├─ [CoT] Extended thinking
-  ├─ [Tool] search_pubmed / fetch_paper_details / ...
-  ├─ Cross-paper batch context
-  └─ [Submit] submit_classification
-        │
-  score ≥ 4 ──→ provenance gate（數字逐字比對摘要）
-                 ├─ 通過 → 自動發布（AI 未審）+ LINE
-                 └─ 未通過 → GitHub Issue（附原因）→ accepted label 一鍵發布
-  parse fail ──→ [Review] Issue + parse-failed label
-  評論類文章 ──→ 輕量分流 → 掛到既有試驗的「相關評論」
-```
-
-### AI 評分標準
-
-| 分數 | 定義 | 動作 |
-|---|---|---|
-| **5** | Practice-changing | 過關卡自動發布，否則 Issue；LINE |
-| **4** | High-impact | 過關卡自動發布，否則 Issue；LINE |
-| **3** | Moderate | 忽略 |
-| **2** | Low | 忽略 |
-| **1** | Not relevant | 忽略 |
-
-### 會議季掃描
-
-| 會議 | 窗口 (±2w buffer) | 頻率 |
-|---|---|---|
-| ASCO GI | 1/5 ~ 2/15 | 每日 |
-| ASCO Annual | 5/20 ~ 6/25 | 每日 |
-| ESMO World GI | 6/25 ~ 7/25 | 每日 |
-| ESMO Congress | 9/5 ~ 11/5 | 每日 |
-
-日期每季自動從官網抓取更新。非會議季：每週二、五。
-
----
-
-## 技術棧
-
-### 前端
-
-| 項目 | 選用 |
-|---|---|
-| 前端 | Python/Jinja2 產生靜態 HTML + CSS + Vanilla JS |
-| 離線 | 建置時產生 precache 清單與內容版本；網路失敗時讀取快取 |
-| 網址 | 多頁目錄路徑，例如 `mcrc/braf-v600e/`、`papers/beacon-2019/` |
-| 部署 | CI 建置與測試後，將 `site/` 部署到原 GitHub Pages 網址 |
-
-### 後端（Pipeline）
-
-| 項目 | 選用 |
-|---|---|
-| AI | Claude Fable 5.2 + adaptive thinking + tool use + server-side refusal fallback |
-| 文獻來源 | PubMed E-utilities（含 topic 查詢、期刊查詢、meeting abstract supplements）|
-| Guideline | PubMed guideline article search |
-| 通知 | LINE Messaging API |
-| 網路 | exponential backoff retry (3x) |
-| 驗證 | `validate.py`（CI 自動跑） |
-| 測試 | pytest + Playwright E2E + axe-core |
-| Topic 管理 | `topics.py` Enum（single source of truth） |
-
----
-
-## 部署與設定
-
-### GitHub Secrets
-
-| Secret | 必要性 | 說明 |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | **必要** | Claude API key。[取得](https://console.anthropic.com/settings/keys) |
-| `NCBI_API_KEY` | 選填 | PubMed rate limit 3→10 req/s。[申請](https://www.ncbi.nlm.nih.gov/account/settings/) |
-| `LINE_CHANNEL_ACCESS_TOKEN` | 選填 | LINE 推播 channel token |
-| `LINE_USER_ID` | 選填 | LINE 推播收件人 User ID（`U` 開頭） |
-
-### LINE 推播設定
-
-1. [LINE Developers Console](https://developers.line.biz/console/) 建立 Messaging API Channel
-2. Issue long-lived channel access token
-3. Basic settings 找到 User ID（`U` 開頭）
-4. 加入 GitHub Secrets
-
----
-
-## 本地開發
+開始工作前，先讀對應 milestone 的 open issues。`[me]` 是 agent 可執行的工作；`[wait]` 需先完成列出的依賴；`[you]` 是維護者需決定或提供資源的事項。新建的規劃 issues 只使用 `blocked`、`needs-decision` 等狀態 labels；既有文獻管線的分類 labels 維持原用途。
 
 ```bash
-git clone https://github.com/odafeng/crs-knowledge-base.git
-cd crs-knowledge-base
+gh issue list --repo odafeng/crs-knowledge-base --milestone 'A · GutHub 決策與上線基線' --state open
+```
 
-# Python 3.12+
+有程式變更時，從單一 Step 建立短期分支，例如 `c/c1-nextjs-foundation`；PR 使用 `Closes #N`。文件、決策與管理工作不預建分支。commit message 使用 English Conventional Commits，有 issue 時帶 `(#N)`。commit、push、PR 與 production 切換都依當次授權執行。
+
+## 目標架構與待決策範圍
+
+前端使用 Next.js、TypeScript、React。Python API 與 worker 承接目前的文獻處理邏輯；一般留言請求與長時間文獻掃描分開執行。供應商仍有兩套候選：
+
+| 責任 | 建議起步方案 | 全 Google Cloud 候選 |
+|---|---|---|
+| Next.js 執行環境 | Vercel 等支援 Next.js server 的 hosting | Firebase App Hosting |
+| 使用者登入 | Supabase Auth | Firebase Auth |
+| PostgreSQL | Supabase PostgreSQL | Cloud SQL PostgreSQL |
+| 檔案 | Supabase Storage | Cloud Storage |
+| Python API／worker | FastAPI／既有 Python 任務，按需部署 Cloud Run | FastAPI／Cloud Run 與排程任務 |
+| Agent framework | 先保留既有 agents，另評估 ADK | 同樣可先保留或另評估 ADK |
+
+這張表是規劃選項，不代表雲端資源已建立。ADK 的決定與資料庫供應商分開，不是網站及留言上線的前提。
+
+匿名政策依 [A2 #54](https://github.com/odafeng/crs-knowledge-base/issues/54) 決定。建議第一版先登入，再選署名或對其他讀者匿名；若同時開放免註冊留言，需加入匿名 session 的限速、驗證與管理方式。匿名作者對應不能只靠前端藏起來，公開 API、Data API、Realtime 及快取都必須隔離。
+
+## 資料與發布規則
+
+目前以 `data/papers.json`、`data/news.json` 與 `docs/**/*.html` 為內容來源；`site/` 是可重建產物。資料庫遷移前，這些來源仍是權威資料。
+
+切換後由選定的 PostgreSQL 成為內容與留言的單一權威來源。匯入需要 dry-run、數量／雜湊 manifest、重跑去重及回復方式；切換時先停舊 writer，再啟用新 writer。JSON 若繼續保留，作單向 export，不能同時讓 git 與資料庫接受獨立寫入。
+
+文獻 ID、DOI、關聯、來源、審核狀態及詳細證據必須保留。研究 commentary、讀者 comments、AI 新聞稿與來源證據各有不同用途；讀者留言不會自動成為文獻來源或進入發布管線。
+
+目前的發布規則見 [ADR-0013](docs/adr/0013-gated-auto-publish.md)：
+
+1. PubMed／期刊候選文獻先去重，再由 topic agent 分類與產生結構化資料。
+2. 通過程式檢查的來源、數字與研究設計才可自動發布，並標示 AI 未審；其他項目開 Issue。
+3. 人工接受由 `accepted` label workflow 處理；撤下使用 `Unpublish` workflow。人工整理內容不能任意用 bot 流程刪除。
+4. provenance gate 不能保證臨床解讀正確。更換儲存、API 或 agent framework 時，保留現有 gate 與回歸案例。
+
+新聞稿另外由 `newsroom/gate.py` 比對數字是否出現在對應條目。這項檢查不保證數字的組別、指標或文字解讀正確。Paper Watch 目前尚未自動寫新聞稿，也未串接 Web Push 發送。
+
+## 本機開發：目前的 v3 網站
+
+需要 Python 3.12+；browser checks 另需 Node.js 與 Chromium。以下指令操作現有程式，不是尚未建立的 Next.js／FastAPI 專案。
+
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r scripts/requirements.txt -r requirements-site.txt
 
-# 建置與預覽新版（請服務 site/，不要服務 repo 根目錄）
+# 建置與預覽；請服務 site/，不要服務 repo 根目錄
 python build.py
-python -m http.server 8000 --directory site  # http://localhost:8000
+python -m http.server 8000 --directory site
+```
 
-# 驗證 + Python 測試
+預覽網址：<http://localhost:8000/>。
+
+```bash
+# 資料、Python 與內部連結
 python scripts/validate.py --ci
-python -m pytest tests/ -v
+python -m pytest tests/ -q
 python tools/check_links.py site
 
-# Browser E2E、離線閱讀與 accessibility
+# Browser E2E、離線、accessibility 與版面
 cd tools
 npm ci
 npx playwright install chromium
 npm test
 npm run verify
-cd ..
-
-# Pipeline 設定
-cp .env.example .env  # 填入 API keys
-
-# Dry-run
-cd scripts && python main.py --dry-run
-
-# 手動觸發 (GitHub Actions)
-gh workflow run paper-watch.yml
-gh workflow run paper-watch.yml --field topic=mCRC-BRAF-V600E
 ```
 
----
+新前端的 lint、TypeScript、unit/smoke/E2E 由 [C1 #63](https://github.com/odafeng/crs-knowledge-base/issues/63) 建立；API 的 Ruff、Pyright、pytest 與啟動 smoke 由 [B2 #59](https://github.com/odafeng/crs-knowledge-base/issues/59) 建立。正式切換前，另需權限矩陣、資料匯入與還原驗證。
 
-## 新增證據文獻
+## Paper Watch 與設定
 
-### 自動（推薦）
+目前 `scripts/config.py` 管理模型、門檻與資料路徑，`scripts/topics.py` 管理主題，`scripts/queries.json` 管理搜尋與會議季窗口。一般掃描每週二、五；會議季另有每日排程。內容複查與會議日期更新有獨立 workflows。
 
-Paper Watch 自動偵測 → AI agent 評分 → ≥4 分 → GitHub Issue + LINE 通知 → 你審核決定是否收錄。
-
-### 手動
-
-```
-docs/<TopicSlug>/<FirstAuthor>_<Journal>_<Year>_<TrialName>[_<Subtopic>].html
-```
-
-1. 在 `docs/` 建立詳細證據 HTML，並於 `data/papers.json` 新增條目與 `file` 路徑。
-2. 需要新聞稿時，手動加入 `data/news.json`，指定 `paperId` 並標記審核狀態。
-3. 執行 `python build.py` 與測試。建置會套用新版版型，並自動更新離線快取。
-4. 變更推送至 main 後，CI 驗證資料、執行測試並部署 `site/`。
-
----
-
-## 新版來源與部署
-
-| 路徑 | 用途 |
+| 設定 | 用途 |
 |---|---|
-| `build.py`、`sitegen/` | 載入資料、產生頁面、Feed、metadata 與快取版本 |
-| `templates/`、`static/` | Jinja2 版型、樣式、字型、圖示與瀏覽器腳本 |
-| `data/papers.json`、`docs/` | 現有文獻資料與詳細證據內文 |
-| `data/news.json` | 目前正式建置採用的 7 篇 AI 未審新聞稿 |
-| `newsroom/gate.py` | 新聞稿的數字來源檢查，建置時強制執行 |
-| `push/` | Web Push 金鑰、發送工具及訂閱資料表範本 |
-| `tools/` | E2E、accessibility、連結與版面檢查工具 |
-| `site/` | 建置產物，已加入 `.gitignore` |
+| `ANTHROPIC_API_KEY` | 現有 Python agents 的必要設定 |
+| `NCBI_API_KEY` | PubMed API 的選填設定 |
+| `GH_TOKEN`／`GITHUB_TOKEN` | 發布、審核 issues 與 workflow 操作；Actions 由環境提供 |
+| `LINE_CHANNEL_ACCESS_TOKEN`、`LINE_USER_ID` | 選填 LINE 通知 |
+| `PUSH_PUBLIC_KEY`、`PUSH_API`、`PUSH_API_KEY` | 選填 Web Push 公開建置設定 |
+| `PUSH_SERVICE_KEY`、`VAPID_PRIVATE_KEY`、`VAPID_SUBJECT` | Web Push 發送端設定，私鑰不可進前端 |
 
-新版直接取代原站，首頁與文獻頁都直接呈現內容，不產生 redirect。舊 hash 與 `docs/` 網址不再作為公開頁面；請改用新版網址。架構決策見 [ADR-0014](docs/adr/0014-generated-multipage-site.md)。
-
-### Web Push 設定
-
-網站在未設定推播時仍可閱讀、離線使用與訂閱 RSS。此次未建立訂閱後端，也未發送通知。
-
-若要啟用，先建置支援 `push/schema.sql` 的訂閱後端，執行 `python -m push.keys` 產生 VAPID 金鑰，再於 GitHub repository variables 設定 `PUSH_PUBLIC_KEY`、`PUSH_API`、`PUSH_API_KEY`。CI 會將公開設定帶入建置；私鑰不可放進 variables 或網站產物。
-
-發送工具需另外設定 `PUSH_SERVICE_KEY`、`VAPID_PRIVATE_KEY`、`VAPID_SUBJECT`：
+祕密放 CI／平台 secret store，不貼在 README 或 issues。本機程式從環境讀取設定；複製 `.env.example` 後，需由自己的 shell／開發工具載入，不能假設程式會自動讀取 `.env`。
 
 ```bash
-python -m push.send --news data/news.json --id <新聞稿 id>
+# 以下均在 repository 根目錄執行
+python scripts/main.py --dry-run
+python scripts/main.py --dry-run --topic mCRC-BRAF-V600E
+
+# 手動觸發會產生外部操作的 workflow，先確認使用目的與設定
+gh workflow run paper-watch.yml --field dry_run=true
 ```
 
-Web Push 尚未經實機驗證。Paper Watch 目前只發布文獻與評論，尚未自動產生新聞稿或發送 Web Push。
+Web Push 的程式與 SQL 範本放在 `push/`，目前不等於已建立 Supabase Auth、留言資料庫或訂閱後端。尚未設定推播時，網站仍能閱讀與訂閱 Feed；實機推播驗證另待安排。
 
----
+手動新增內容時，在 `data/papers.json` 加入文獻條目與詳細 HTML 的 `file` 路徑；新聞稿加入 `data/news.json` 並指定 `paperId`、審核狀態。執行資料驗證、建置與測試後，再依授權提交。
 
-## Roadmap
+## Repository 結構
 
-- [ ] ASCO 2026 Annual Meeting 最新資料收錄
-- [ ] 機器人手術 CME、TaTME 子主題
-- [ ] 肛門手術章節
-- [ ] 搜尋加入 fuzzy matching
-- [ ] Token cost monitoring
+| 路徑 | 目前用途 |
+|---|---|
+| `build.py`、`sitegen/` | 載入內容、產生頁面、Feed、metadata 與離線快取版本 |
+| `templates/`、`static/` | 現行 Jinja2 版型、CSS、瀏覽器腳本、字型與圖示 |
+| `data/` | 文獻、新聞及 DOI／PMID 追蹤資料 |
+| `docs/**/*.html` | 詳細證據內容來源，不作為新版的獨立公開頁面 |
+| `scripts/` | PubMed、分類、來源查核、發布／撤下及維護任務 |
+| `newsroom/` | AI 新聞稿數字來源檢查 |
+| `push/` | Web Push 金鑰、發送工具與訂閱資料表範本 |
+| `tests/`、`tools/` | pytest 與 browser／連結／版面檢查 |
+| `.github/workflows/` | CI、Paper Watch、人工接受、撤下及維護排程 |
+| `docs/adr/` | 架構決策與取捨 |
+| `site/` | 建置產物，已 gitignore |
 
----
+## 架構決策
 
-## 作者
+| ADR | 內容 |
+|---|---|
+| [0013](docs/adr/0013-gated-auto-publish.md) | 現行有門檻的自動發布與人工審核 |
+| [0014](docs/adr/0014-generated-multipage-site.md) | 現行 Python/Jinja2 多頁網站 |
+| [0015](docs/adr/0015-guthub-nextjs-product-scope.md) | GutHub 名稱、Next.js／React 方向與遷移範圍 |
+| [0016](docs/adr/0016-api-data-cloud-boundaries.md) | API／worker、雲端候選、單一資料權威與切換 |
+| [0017](docs/adr/0017-comments-and-anonymous-identity.md) | 登入、匿名留言、公開資料與管理權限 |
+| [0018](docs/adr/0018-python-pipeline-and-adk.md) | Python 管線保留與 ADK 導入門檻 |
 
-**黃士峯（Shih-Feng Huang, MD）**
-Colorectal Surgeon, Kaohsiung Veterans General Hospital
+`Accepted` 表示已採用的方向，不代表功能已完成；實作與驗收狀態以對應 issues 為準。`Proposed` 的選項需由決策 issue 確認後再實作。
 
-- [shihfenghuang.com](https://shihfenghuang.com)
-- [@odafeng](https://github.com/odafeng)
-- ORCID: [0000-0002-8037-4074](https://orcid.org/0000-0002-8037-4074)
+## 維護者與授權
 
----
+黃士峯（Shih-Feng Huang, MD），高雄榮民總醫院大腸直腸外科醫師。
 
-## 授權
+[個人網站](https://shihfenghuang.com) · [GitHub](https://github.com/odafeng) · [ORCID](https://orcid.org/0000-0002-8037-4074)
 
-本專案以 [MIT License](LICENSE) 釋出。
-
-各篇 evidence pages 內容為原始文獻之摘要與整理，**所引用之臨床試驗數據與圖表智慧財產權屬於原作者與原出版單位**；本網站使用屬合理使用（fair use）範圍之教育用途。
+目前 repository 未附 LICENSE 檔，程式授權需由維護者補齊確認。文獻內容的權利仍屬原作者與出版單位；改名、搬站或使用 Storage 不會取得原始全文的再散布權。
