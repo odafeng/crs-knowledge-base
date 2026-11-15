@@ -148,9 +148,11 @@ class TestClassifyPaper:
         # and the reply is constrained to the classification schema instead.
         assert final_kwargs["tool_choice"] == {"type": "none"}
         assert final_kwargs["output_config"]["format"] == {"type": "json_schema", "schema": RESCUE_OUTPUT_SCHEMA}
-        # Same tools array on every call, so earlier thinking blocks stay valid.
+        # Same tools array and system prompt on every call, so earlier thinking blocks
+        # stay valid and the cached prefix keeps matching.
         first_kwargs = mock_client.beta.messages.create.call_args_list[0].kwargs
         assert final_kwargs["tools"] == first_kwargs["tools"]
+        assert final_kwargs["system"] == first_kwargs["system"]
 
     @patch("classify.ANTHROPIC_API_KEY", "test-key")
     def test_refusal_goes_to_review_without_retry(self, sample_candidate):
