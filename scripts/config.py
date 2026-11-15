@@ -34,6 +34,11 @@ TRIAGE_EFFORT = "low"
 # re-runs it within the same call on a model chosen by refusal category.
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
+# Stale-content review (check_stale.py): days since the last check before an item is listed.
+STALE_PAPER_DAYS = 365
+STALE_SOC_DAYS = 182  # 現行治療方案 is what clinicians read most; review it more often
+STALE_REGULATORY_DAYS = 182
+
 # GitHub
 GITHUB_TOKEN = os.environ.get("GH_TOKEN", os.environ.get("GITHUB_TOKEN", ""))
 GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY", "")
