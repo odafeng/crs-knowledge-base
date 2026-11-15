@@ -31,7 +31,10 @@ test('new site: navigation, news, search, preferences, and offline reading', asy
     const context = await browser.newContext({ viewport: { width: 360, height: 812 } });
     const page = await context.newPage();
     const errors = [];
-    page.on('pageerror', error => errors.push(error.message));
+    // Chromium reports a page-to-page fade it cancelled (the test navigates again before it ends) as a page error
+    // with no script stack. Readers see nothing, and no page script can catch it, so it is not counted.
+    const cancelledFade = /^Transition was aborted because of invalid state/;
+    page.on('pageerror', error => { if (!cancelledFade.test(error.message)) errors.push(error.message); });
     await page.goto(origin + BASE);
     await page.evaluate(() => navigator.serviceWorker.ready);
     assert.match(await page.locator('main').innerText(), /頭條/);
