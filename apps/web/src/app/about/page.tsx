@@ -1,16 +1,26 @@
 import type { Metadata } from "next";
-import { Breadcrumb } from "@/components/reading";
+import { pageJsonLd, pageMetadata } from "@/lib/seo";
+import { Breadcrumb, JsonLd } from "@/components/reading";
 import { HOME } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "關於本站｜GutHub",
-  description: "本站的定位、內容怎麼產生、AI 用在哪裡。",
-};
+export const metadata: Metadata = pageMetadata(
+  "關於本站",
+  "本站的定位、內容怎麼產生、AI 用在哪裡。",
+  "/about/",
+);
 
 // Copied from templates/about.html.j2; the site name follows A3 (display name GutHub).
 export default function AboutPage() {
   return (
     <div className="container page">
+      <JsonLd
+        data={pageJsonLd(
+          "關於本站",
+          "本站的定位、內容怎麼產生、AI 用在哪裡。",
+          "/about/",
+          [...HOME, ["關於本站", "/about/"]],
+        )}
+      />
       <Breadcrumb crumbs={[...HOME, ["關於本站", "/about/"]]} />
       <div className="prose">
         <h1>關於本站</h1>

@@ -1,6 +1,7 @@
+import { pageMetadata, pageJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Breadcrumb, RichHtml } from "@/components/reading";
+import { Breadcrumb, RichHtml, JsonLd } from "@/components/reading";
 import { listTopics } from "@/lib/content";
 import {
   findingText,
@@ -29,10 +30,11 @@ async function getSection(slug: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const found = await getSection((await params).slug);
   return found
-    ? {
-        title: `${found.title}｜GutHub`,
-        description: `${found.title}的試驗實證。`,
-      }
+    ? pageMetadata(
+        found.title,
+        `${found.title}的試驗實證。`,
+        `/robotic/${found.section.slug}/`,
+      )
     : {};
 }
 
@@ -40,10 +42,19 @@ export default async function RoboticPage({ params }: Props) {
   const found = await getSection((await params).slug);
   if (!found) notFound();
   const { title, section } = found;
+  const crumbs = [...ROBOTIC, [title, `/robotic/${section.slug}/`] as const];
 
   return (
     <div className="container page">
-      <Breadcrumb crumbs={[...ROBOTIC, [title, `/robotic/${section.slug}/`]]} />
+      <JsonLd
+        data={pageJsonLd(
+          title,
+          `${title}的試驗實證。`,
+          `/robotic/${section.slug}/`,
+          crumbs,
+        )}
+      />
+      <Breadcrumb crumbs={crumbs} />
       <header className="page-head">
         <h1>{title}</h1>
         <p className="page-head__lead">

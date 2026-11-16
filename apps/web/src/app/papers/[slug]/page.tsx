@@ -1,3 +1,4 @@
+import { pageMetadata, paperJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,6 +9,7 @@ import {
   PaperCard,
   PaperMeta,
   RichHtml,
+  JsonLd,
 } from "@/components/reading";
 import {
   getPaperBySlug,
@@ -40,7 +42,10 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const paper = await getPaperBySlug((await params).slug);
   return paper
-    ? { title: `${paperTitle(paper)}｜GutHub`, description: paper.bottomLine }
+    ? pageMetadata(paperTitle(paper), paper.bottomLine, paperPath(paper), {
+        indexable: !isUnreviewed(paper),
+        type: "article",
+      })
     : {};
 }
 
@@ -66,6 +71,7 @@ export default async function PaperPage({ params }: Props) {
 
   return (
     <div className="container page">
+      <JsonLd data={paperJsonLd(paper, topic, crumbs)} />
       <Breadcrumb crumbs={crumbs} />
       <article className="split">
         <div>
