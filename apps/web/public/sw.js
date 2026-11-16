@@ -180,3 +180,50 @@ self.addEventListener("fetch", (event) => {
       : networkFirst(event.request),
   );
 });
+
+// Web Push (C5 #95): the announce-news job sends { title, body, url, tag } for each new story. Only paths on this
+// site are opened, whatever the message says.
+function sitePath(value) {
+  try {
+    const target = new URL(value || "/", self.location.origin);
+    return target.origin === self.location.origin ? target.pathname : "/";
+  } catch {
+    return "/";
+  }
+}
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data?.json() ?? {};
+  } catch {
+    // Unreadable message: still say there is news, rather than nothing.
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "GutHub 有新消息", {
+      body: data.body || "",
+      tag: data.tag,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/badge-96.png",
+      data: { url: sitePath(data.url) },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL(
+    sitePath(event.notification.data?.url),
+    self.location.origin,
+  ).href;
+  event.waitUntil(
+    (async () => {
+      const tabs = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      const open = tabs.find((tab) => tab.url === target);
+      return open ? open.focus() : self.clients.openWindow(target);
+    })(),
+  );
+});

@@ -1,5 +1,7 @@
 // Building blocks of the reading pages, ported from templates/_macros.html.j2.
 import Link from "next/link";
+import { PushToggle } from "@/components/push-toggle";
+import { pushEnabled } from "@/lib/push";
 import {
   headline,
   isUnreviewed,
@@ -256,15 +258,28 @@ export function Entry({
 }
 
 /**
- * Subscribe box (templates/_alerts.html.j2) in its RSS form. The push button comes back with C5 (#95), which
- * migrates Web Push; until then the box offers RSS only, as the current site does without a push key.
+ * Subscribe box (templates/_alerts.html.j2). With a push key (C5 #95) it leads with push, as the current site does;
+ * without one it offers RSS only.
  */
 export function Alerts() {
   return (
     <section className="alerts" aria-labelledby="alerts-title">
-      <h2 id="alerts-title">訂閱新消息</h2>
-      <p>把訂閱網址加進 RSS 閱讀器，新的消息與文獻會自動出現。</p>
+      {pushEnabled ? (
+        <>
+          <h2 id="alerts-title">新消息一出來就通知你</h2>
+          <p>
+            開啟推播後，新的消息一發布，手機或電腦就會跳出通知。也可以用 RSS
+            訂閱。
+          </p>
+        </>
+      ) : (
+        <>
+          <h2 id="alerts-title">訂閱新消息</h2>
+          <p>把訂閱網址加進 RSS 閱讀器，新的消息與文獻會自動出現。</p>
+        </>
+      )}
       <div className="alerts__actions">
+        {pushEnabled && <PushToggle icon={<Icon name="bell" />} />}
         <a className="btn btn--secondary" href={NEWS_FEED}>
           <Icon name="rss" />
           RSS

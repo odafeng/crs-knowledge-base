@@ -43,6 +43,8 @@ TABLES = [
     "content_writer",
     "paper_watch_state",
     "publish_events",
+    "push_subscriptions",
+    "push_announcements",
 ]
 VIEWS = ["public_papers", "public_news", "public_comments"]
 CLIENT_ROLES = ["anon", "authenticated", "service_role"]

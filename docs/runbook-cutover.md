@@ -82,6 +82,22 @@ gcloud run services update guthub-api --project=$P --region=asia-northeast1 --re
 5. **資料本身損壞**（最後手段）：用 Supabase dashboard 的備份還原。這會蓋掉備份時間之後的所有留言與帳號變更，執行前先用 `tools/restore-drill.sh` 的方式匯出一份目前的資料留存。
 6. API 正常後**恢復寫入**，在 F4 issue 記錄原因與時間。
 
+## 啟用推播（選擇性）
+
+推播預設關閉（ADR-0023）。要在某個環境開啟：
+
+1. 產生一組 VAPID 金鑰：`python -m push.keys`。印出的私鑰只存進 Secret Manager，不要貼到其他地方：
+   ```sh
+   printf %s '<私鑰>' | gcloud secrets create vapid-private-key --project=$P --data-file=-
+   gcloud secrets add-iam-policy-binding vapid-private-key --project=$P \
+     --member=serviceAccount:api-runtime@$P.iam.gserviceaccount.com --role=roles/secretmanager.secretAccessor
+   ```
+2. 公鑰設成 Vercel 的 `NEXT_PUBLIC_PUSH_PUBLIC_KEY`（`--no-sensitive`），重新部署網站，訂閱框就會出現推播按鈕。
+3. 設定 repository 變數 `PUSH_ENABLED=true`，再部署一次 API。部署 workflow 會建立 `announce-news` job，以及每 30 分鐘執行一次的排程。
+4. 用自己的手機或電腦開啟推播，發布一則新消息，確認 30 分鐘內收到通知。
+
+Cloud Scheduler 每個帳單帳戶有 3 個免費排程，超過後每個每月 USD 0.10；Secret Manager 超過免費版本數後，每個版本每月 USD 0.06。
+
 ## 告警
 
 用 `python3 tools/setup_monitoring.py $P <API 主機名稱> [通知管道 ...]` 建立，重複執行不會重複建立。

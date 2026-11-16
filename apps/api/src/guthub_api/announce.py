@@ -1,0 +1,91 @@
+"""Push new stories to every subscribed browser (C5 #95). Run as a scheduled job: maintenance announce-news.
+
+A story is announced at most once: its app.push_announcements row is claimed before anything is sent, so reruns,
+page rebuilds and deploys never repeat a notification. Only stories published in the last FRESH_DAYS days qualify,
+so a backlog imported later (or a job that was off for a week) does not notify anyone about old news.
+"""
+
+import json
+from collections.abc import Callable
+from dataclasses import dataclass
+
+import psycopg
+from pywebpush import WebPushException, webpush
+
+GONE = {404, 410}  # the push service says this subscription no longer exists
+TTL = 24 * 3600  # a phone that stays offline longer than a day does not get yesterday's story
+FRESH_DAYS = 2
+
+
+@dataclass(frozen=True)
+class Subscription:
+    endpoint: str
+    p256dh: str
+    auth: str
+
+
+type Deliver = Callable[[Subscription, str, str], None]
+
+
+def payload(news_id: str, headline: list[str], dek: str) -> str:
+    """What sw.js receives: the notification text and the story's path on the site."""
+    return json.dumps(
+        {"title": "".join(headline), "body": dek, "url": f"/news/{news_id}/", "tag": news_id}, ensure_ascii=False
+    )
+
+
+def web_push(private_key: str, subject: str) -> Deliver:
+    def deliver(subscription: Subscription, data: str, topic: str) -> None:
+        webpush(
+            {"endpoint": subscription.endpoint, "keys": {"p256dh": subscription.p256dh, "auth": subscription.auth}},
+            data,
+            vapid_private_key=private_key,
+            vapid_claims={"sub": subject},  # a fresh dict each time: the library adds aud and exp to it
+            ttl=TTL,
+            headers={"Topic": topic},  # a second push about the same story replaces the first while still queued
+        )
+
+    return deliver
+
+
+def announce_news(url: str, deliver: Deliver) -> dict[str, int]:
+    totals = {"stories": 0, "sent": 0, "removed": 0, "failed": 0}
+    with psycopg.connect(url, autocommit=True) as conn:
+        stories = conn.execute(
+            "select n.id, n.headline, n.dek from app.public_news n"
+            " where n.published_at >= current_date - %s"
+            " and not exists (select 1 from app.push_announcements a where a.news_id = n.id)"
+            " order by n.published_at, n.id",
+            (FRESH_DAYS,),
+        ).fetchall()
+        for news_id, headline, dek in stories:
+            claimed = conn.execute(
+                "insert into app.push_announcements (news_id) values (%s) on conflict do nothing returning news_id",
+                (news_id,),
+            ).fetchone()
+            if claimed is None:  # another run got there first
+                continue
+            data, topic = payload(news_id, headline, dek), news_id[:32]
+            sent = removed = failed = 0
+            rows = conn.execute("select endpoint, p256dh, auth from app.push_subscriptions").fetchall()
+            for row in rows:
+                subscription = Subscription(*row)
+                try:
+                    deliver(subscription, data, topic)
+                    sent += 1
+                except WebPushException as error:
+                    # One dead or failing browser must not stop the rest; a gone one is deleted so it is not retried.
+                    if error.response is not None and error.response.status_code in GONE:
+                        conn.execute("delete from app.push_subscriptions where endpoint = %s", (subscription.endpoint,))
+                        removed += 1
+                    else:
+                        failed += 1
+            conn.execute(
+                "update app.push_announcements set sent = %s, removed = %s, failed = %s where news_id = %s",
+                (sent, removed, failed, news_id),
+            )
+            totals["stories"] += 1
+            totals["sent"] += sent
+            totals["removed"] += removed
+            totals["failed"] += failed
+    return totals

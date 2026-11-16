@@ -53,12 +53,27 @@ function setup() {
       headers: route.headers,
     });
   };
+  const shown: { title: string; options: NotificationOptions }[] = [];
+  const opened: string[] = [];
+  const windows: { url: string; focused: boolean; focus(): Promise<void> }[] =
+    [];
   const self = {
+    registration: {
+      showNotification: async (title: string, options: NotificationOptions) => {
+        shown.push({ title, options });
+      },
+    },
     location: new URL(ORIGIN),
     addEventListener: (type: string, fn: (event: unknown) => void) =>
       (listeners[type] = fn),
     skipWaiting: async () => {},
-    clients: { claim: async () => {} },
+    clients: {
+      claim: async () => {},
+      matchAll: async () => windows,
+      openWindow: async (target: string) => {
+        opened.push(target);
+      },
+    },
   };
   vm.runInNewContext(SOURCE, {
     self,
@@ -95,6 +110,25 @@ function setup() {
     cache: () => caches.get("guthub-public-v1")!,
     cached: (path: string) =>
       caches.get("guthub-public-v1")?.entries.has(`${ORIGIN}${path}`) ?? false,
+    shown,
+    opened,
+    windows,
+    push: (data: unknown) =>
+      extendable("push", {
+        data:
+          data === undefined
+            ? null
+            : {
+                json: () =>
+                  typeof data === "string" ? JSON.parse(data) : data,
+              },
+      }),
+    click: (data: unknown) => {
+      let closed = false;
+      return extendable("notificationclick", {
+        notification: { data, close: () => (closed = true) },
+      }).then(() => closed);
+    },
     install: () => extendable("install"),
     activate: () => extendable("activate"),
     sync: (force = true) =>
@@ -264,5 +298,66 @@ describe("service worker", () => {
       "guthub-public-v1",
       "unrelated",
     ]);
+  });
+});
+
+describe("push notifications (C5 #95)", () => {
+  it("shows the story the sender announced", async () => {
+    const sw = setup();
+    await sw.push({
+      title: "NICHE-2 五年追蹤",
+      body: "111 例無一復發",
+      url: "/news/niche2-five-year/",
+      tag: "niche2-five-year",
+    });
+    expect(sw.shown).toEqual([
+      {
+        title: "NICHE-2 五年追蹤",
+        options: {
+          body: "111 例無一復發",
+          tag: "niche2-five-year",
+          icon: "/icons/icon-192.png",
+          badge: "/icons/badge-96.png",
+          data: { url: "/news/niche2-five-year/" },
+        },
+      },
+    ]);
+  });
+
+  it("never points a notification at another site", async () => {
+    const sw = setup();
+    await sw.push({ title: "x", body: "", url: "https://evil.example/a" });
+    await sw.push({ title: "y", body: "", url: "//evil.example/b" });
+    expect(sw.shown.map((n) => n.options.data)).toEqual([
+      { url: "/" },
+      { url: "/" },
+    ]);
+  });
+
+  it("still notifies when the message cannot be read", async () => {
+    const sw = setup();
+    await sw.push("not json");
+    await sw.push(undefined);
+    expect(sw.shown.map((n) => [n.title, n.options.data])).toEqual([
+      ["GutHub 有新消息", { url: "/" }],
+      ["GutHub 有新消息", { url: "/" }],
+    ]);
+  });
+
+  it("opens the story on click, or focuses a tab that already shows it", async () => {
+    const sw = setup();
+    expect(await sw.click({ url: "/news/a/" })).toBe(true);
+    expect(sw.opened).toEqual([`${ORIGIN}/news/a/`]);
+    const tab = {
+      url: `${ORIGIN}/news/b/`,
+      focused: false,
+      async focus() {
+        this.focused = true;
+      },
+    };
+    sw.windows.push(tab);
+    await sw.click({ url: "/news/b/" });
+    expect(tab.focused).toBe(true);
+    expect(sw.opened).toHaveLength(1);
   });
 });

@@ -19,9 +19,10 @@
 .btn--icon { width: var(--target); padding: 0; }
 .btn[hidden] { display: none; }
 .btn:disabled { border-color: var(--line); background: var(--sunken); color: var(--ink-3); cursor: not-allowed; }
-/* The bell shows a rose dot once push is on. */
-.btn[data-push-state="on"] { position: relative; color: var(--brand); }
-.btn[data-push-state="on"]::after { content: ""; position: absolute; inset-block-start: 0.6rem; inset-inline-end: 0.6rem; width: 0.5rem; height: 0.5rem; border: 2px solid var(--surface); border-radius: 50%; background: var(--rose-fill); box-sizing: content-box; }
+/* The header bell shows a rose dot once push is on. Icon buttons only: on a primary button the brand text colour
+   would sit on the brand background. */
+.btn--icon[data-push-state="on"] { position: relative; color: var(--brand); }
+.btn--icon[data-push-state="on"]::after { content: ""; position: absolute; inset-block-start: 0.6rem; inset-inline-end: 0.6rem; width: 0.5rem; height: 0.5rem; border: 2px solid var(--surface); border-radius: 50%; background: var(--rose-fill); box-sizing: content-box; }
 
 /* Segmented control: text size */
 .segmented { display: inline-flex; border: 1px solid var(--line-strong); border-radius: var(--radius-control); overflow: hidden; }
