@@ -247,3 +247,38 @@ def test_database_outage_returns_503_without_details() -> None:
             schema("Error").validate(response.json())
             assert response.json()["error"]["code"] == "unavailable"
             assert "127.0.0.1" not in response.text
+
+
+# --- daily pick (G2 #113) ---------------------------------------------------------------------------------------------
+
+
+def test_daily_pick_takes_the_days_story_with_its_papers_bottom_line(client: TestClient) -> None:
+    from guthub_api.daily import collect
+
+    assert DB_URL
+    with psycopg.connect(DB_URL) as conn:
+        news = conn.execute(
+            "select id, paper_id, published_at from app.public_news order by published_at desc limit 1"
+        ).fetchone()
+        assert news is not None
+        news_id, paper_id, day = news
+        bottom_line = conn.execute("select bottom_line from app.papers where id = %s", (paper_id,)).fetchone()
+        assert bottom_line is not None
+        kinds = {c.kind for c in collect(conn, day)}
+    assert "news" in kinds
+
+    response = client.get(f"{API_PREFIX}/daily-pick", params={"date": day.isoformat()})
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "public, max-age=300"
+    body = response.json()
+    schema("DailyPick").validate(body)
+    pick = body["pick"]
+    assert pick["kind"] == "news" and pick["date"] == day.isoformat()
+    assert pick["url"].startswith("/news/") and pick["conclusion"] == bottom_line[0]
+
+
+def test_daily_pick_is_empty_on_a_day_without_new_content(client: TestClient) -> None:
+    response = client.get(f"{API_PREFIX}/daily-pick", params={"date": "2001-01-01"})
+    assert response.status_code == 200
+    assert response.json() == {"date": "2001-01-01", "pick": None}
+    assert client.get(f"{API_PREFIX}/daily-pick", params={"date": "yesterday"}).status_code == 422

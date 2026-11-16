@@ -521,6 +521,27 @@ paths:
       description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
         permission. An active reader commented, liked or reported that week; weeks start on Monday, Asia/Taipei.'
       x-required-permission: comments:moderate
+  /daily-pick:
+    get:
+      operationId: getDailyPick
+      summary: The one item to show or send for a day; null when nothing new was added that day.
+      security: []
+      parameters:
+      - name: date
+        in: query
+        required: false
+        schema: {type: string, format: date}
+        description: Defaults to today in Asia/Taipei.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DailyPick'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Public; Cache-Control: public, max-age=300. Order: coverage or approval changes, news, papers;
+        reviewed before unreviewed. The conclusion is an existing bottom line, never new wording.'
 components:
   securitySchemes:
     BearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
@@ -950,6 +971,25 @@ components:
               newAccounts: {type: integer, minimum: 0}
               comments: {type: integer, minimum: 0}
               likes: {type: integer, minimum: 0, description: Likes given that week and still standing.}
+    DailyPick:
+      type: object
+      additionalProperties: false
+      required: [date, pick]
+      properties:
+        date: {type: string, format: date}
+        pick:
+          oneOf:
+          - type: 'null'
+          - type: object
+            additionalProperties: false
+            required: [kind, title, conclusion, url, date, unreviewed]
+            properties:
+              kind: {type: string, enum: [regulatory, news, paper]}
+              title: {type: string}
+              conclusion: {type: string, description: An entry's existing bottom line.}
+              url: {type: string, description: Path on the site.}
+              date: {type: string, format: date}
+              unreviewed: {type: boolean, description: True for AI-written entries not yet reviewed.}
     AccountUpdate:
       type: object
       additionalProperties: false
