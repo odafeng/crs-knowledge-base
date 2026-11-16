@@ -10,8 +10,9 @@ const check = (ok, message) => { if (!ok) problems.push(message); };
 const cachedPaths = page => page.evaluate(async name =>
   (await (await caches.open(name)).keys()).map(r => new URL(r.url).pathname), CACHE);
 
+let browser;
 (async () => {
-  const browser = await chromium.launch();
+  browser = await chromium.launch();
 
   // Search states, with the service worker out of the way so the network can fail.
   {
@@ -107,11 +108,10 @@ const cachedPaths = page => page.evaluate(async name =>
     await context.close();
   }
 
-  await browser.close();
   console.log('problems:', problems.length);
   problems.forEach(problem => console.log('  -', problem));
   if (problems.length) process.exitCode = 1;
 })().catch(error => {
   console.error(error);
   process.exitCode = 1;
-});
+}).finally(() => browser?.close());

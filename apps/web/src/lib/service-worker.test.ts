@@ -228,6 +228,32 @@ describe("service worker", () => {
     }
   });
 
+  it("stores listed public pages that a host marked private, but nothing else marked private", async () => {
+    // Vercel answers dynamic pages with private, no-store whatever next.config says; X-GutHub-Public names the
+    // index pages that hold no reader data (next.config.ts PUBLIC_DYNAMIC_PAGES).
+    sw.routes.set("/updates/", {
+      ...html(),
+      headers: {
+        "Content-Type": "text/html",
+        "Cache-Control":
+          "private, no-cache, no-store, max-age=0, must-revalidate",
+        "X-GutHub-Public": "1",
+      },
+    });
+    await sw.get("/updates/");
+    expect(sw.cached("/updates/")).toBe(true);
+    sw.routes.set("/account/", {
+      ...html(),
+      headers: {
+        "Content-Type": "text/html",
+        "Cache-Control": "private, no-store",
+        "X-GutHub-Public": "0",
+      },
+    });
+    await sw.get("/account/");
+    expect(sw.cached("/account/")).toBe(false);
+  });
+
   it("clears older caches, including the current site's, on activate", async () => {
     sw.caches.set("seminar-hegemon-59e05d21907ff017", new MemoryCache());
     sw.caches.set("guthub-public-v0", new MemoryCache());
