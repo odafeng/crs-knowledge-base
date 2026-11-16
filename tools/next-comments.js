@@ -127,7 +127,9 @@ let browser;
 
   step('likes (H1): B likes A\'s comment, it survives a reload, A only sees the count');
   const likeButton = othersItem.getByRole('button', { name: /^讚/ });
+  const liked = b.waitForResponse(r => r.url().endsWith('/likes') && r.request().method() === 'PUT');
   await likeButton.click();
+  check((await liked).ok(), 'likes: like request failed');
   await othersItem.locator('button[aria-pressed="true"]').waitFor();
   check((await likeButton.innerText()).includes('1'), `likes: count after liking is ${await likeButton.innerText()}`);
   await b.reload();
@@ -138,7 +140,10 @@ let browser;
   const ownItem = section(a).locator('.comment', { hasText: first });
   await ownItem.getByText('1 個讚').waitFor();
   check(await ownItem.getByRole('button', { name: /^讚/ }).count() === 0, 'likes: author can like own comment');
+  // The button updates before the request finishes; wait for the API's answer before checking it.
+  const unliked = b.waitForResponse(r => r.url().endsWith('/likes') && r.request().method() === 'DELETE');
   await reloaded.getByRole('button', { name: /^讚/ }).click();
+  check((await unliked).ok(), 'likes: unlike request failed');
   await reloaded.locator('button[aria-pressed="false"]').waitFor();
   check((await publicComments()).find(c => c.body === first)?.likeCount === 0, 'likes: unlike did not reach the API');
 
