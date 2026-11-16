@@ -31,6 +31,25 @@ supabase db reset          # 在乾淨資料庫上重新套用全部 migration
   - 資料被破壞：用 Supabase 的備份或 PITR 還原到變更前的時間點，再重放之後的寫入。
   - 實際演練由 [F3 #78](https://github.com/odafeng/crs-knowledge-base/issues/78) 負責，這份 README 不代表已演練過。
 
+## 內容匯入（B4 #61）
+
+`import_content.py`（repo 根目錄）把 `data/*.json` 和 `docs/` 的詳細 HTML 單向複製到 `app` schema。切換前 JSON 仍是權威來源，資料庫只是可以重建的副本，匯入也不會寫回 JSON。
+
+```sh
+python import_content.py --dry-run                                  # 只檢查與產生 manifest，不連資料庫
+python import_content.py --database-url "$URL" --dry-run            # 在 transaction 裡實際跑一遍，回報變動後 rollback
+python import_content.py --database-url "$URL" --manifest out.json  # 正式匯入
+```
+
+`$URL` 也可以改用 `GUTHUB_IMPORT_DATABASE_URL` 環境變數傳入，連線的 role 必須擁有 `app` 的表（`guthub_api` 不能寫內容）。
+
+- 整批在一個 transaction 內，任何錯誤都會整批 rollback，資料庫不會停在一半的狀態。資料檢查錯誤（缺少文件、未知主題、news 沒有審核狀態）會在連資料庫之前就停止。
+- 重跑時只更新有變動的列。relations 和期刊 commentary 依 paper 整批替換；來源中已經消失的 paper 和 news 會標記 `withdrawn_at`，不刪除，因為讀者留言可能參照它們。來源恢復後會自動解除撤下。
+- manifest 記錄來源檔（JSON 與被引用的 `docs/` 文件）的 sha256，以及每張表的筆數和內容 hash。兩次匯入的 manifest 相同，就代表結果相同。
+- 還原：資料庫內容可以隨時從 git 裡的 JSON 重建，用目標 commit 的檔案重跑匯入即可。如果要回到匯入前的資料庫狀態，用 Supabase 的備份或 PITR。
+
+`topics.metrics`（Paper Watch agent 的輸入）、`topics.soc_title`、`papers.source_file` 雖然不在公開 contract 裡，也一併保存，切換時才不會遺失。
+
 ## 各環境要另外做的事（F1 #75）
 
 `guthub_api` 是 `nologin` role。每個環境要建立自己的 login role 並授予 `guthub_api`，密碼由祕密管理注入，不寫進 migration：
