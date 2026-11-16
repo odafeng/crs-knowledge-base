@@ -1,0 +1,4 @@
+# API contract validation used by pytest; install alongside the existing runtime requirements.
+jsonschema==4.26.0
+openapi-spec-validator==0.9.0
+PyYAML==6.0.3

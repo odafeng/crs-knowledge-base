@@ -19,7 +19,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install -r scripts/requirements.txt -r requirements-site.txt pytest
+        run: pip install -r scripts/requirements.txt -r requirements-site.txt -r requirements-dev.txt
 
       - name: Validate data integrity
         run: python scripts/validate.py --ci
