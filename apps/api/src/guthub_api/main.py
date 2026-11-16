@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from guthub_api.accounts import router as accounts_router
 from guthub_api.auth import TokenVerifier
+from guthub_api.comments import router as comments_router
 from guthub_api.content import router as content_router
 from guthub_api.db import open_pool
 from guthub_api.errors import install_error_handling
@@ -59,6 +60,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(content_router, prefix=API_PREFIX)
     app.include_router(accounts_router, prefix=API_PREFIX)
+    app.include_router(comments_router, prefix=API_PREFIX)
     return app
 
 
