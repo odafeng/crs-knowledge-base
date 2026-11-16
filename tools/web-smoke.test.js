@@ -187,6 +187,28 @@ test('Next.js start: reading pages render from the read API', { timeout: 90000 }
       for (const needle of needles) assert.ok(html.includes(needle), `${path} lacks ${needle}`);
       assert.ok(!html.includes('href="docs/'), `${path} keeps a link into docs/`);
     }
+    // Feeds keep the current site's IDs and are served without a trailing-slash redirect (C2c #92).
+    const feedChecks = {
+      '/rss.xml': ['<guid isPermaLink="false">tag:odafeng.github.io,2026:paper/smoke-beacon</guid>',
+        '<link>https://odafeng.github.io/crs-knowledge-base/news/smoke-news/</link>'],
+      '/feed/news.xml': ['tag:odafeng.github.io,2026:news/smoke-news'],
+      '/feed/smoke-braf.xml': ['tag:odafeng.github.io,2026:commentary/smoke-beacon/10.1056/c'],
+      '/atom.xml': ['<id>tag:odafeng.github.io,2026:feed/atom.xml</id>'],
+      '/feed.json': ['"id": "tag:odafeng.github.io,2026:news/smoke-news"'],
+      '/sitemap.xml': ['<loc>https://odafeng.github.io/crs-knowledge-base/robotic/tme/</loc>'],
+      '/robots.txt': ['Sitemap: https://odafeng.github.io/crs-knowledge-base/sitemap.xml'],
+    };
+    for (const [path, needles] of Object.entries(feedChecks)) {
+      const response = await fetch(origin + path, { redirect: 'manual' });
+      assert.equal(response.status, 200, path);
+      const body = await response.text();
+      for (const needle of needles) assert.ok(body.includes(needle), `${path} lacks ${needle}`);
+    }
+    // AI-unreviewed pages stay out of the sitemap, like the current site.
+    assert.ok(!(await (await fetch(`${origin}/sitemap.xml`)).text()).includes('/papers/smoke-beacon/'));
+    const paperHtml = await (await fetch(`${origin}/papers/smoke-beacon/`)).text();
+    assert.ok(paperHtml.includes('<link rel="canonical" href="https://odafeng.github.io/crs-knowledge-base/papers/smoke-beacon/"/>'));
+    assert.ok(paperHtml.includes('"@type":"MedicalWebPage"'));
     for (const path of ['/papers/BEACON_2019/', '/papers/beacon-2019/', '/news/missing/', '/mcrc/robotic/', '/robotic/nope/']) {
       assert.equal((await fetch(origin + path)).status, 404, path);
     }

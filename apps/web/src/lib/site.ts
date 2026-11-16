@@ -146,18 +146,26 @@ const ENTITIES: Record<string, string> = {
   apos: "'",
   nbsp: "\u00a0",
 };
-export function findingText(html: string): string {
-  return html
-    .replace(/<br\s*\/?>/gi, "，")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entity, name: string) => {
+
+/** Decodes HTML character references, like Python's html.unescape for the references the data uses. */
+export function decodeEntities(text: string): string {
+  return text.replace(
+    /&(#x[0-9a-f]+|#\d+|[a-z]+);/gi,
+    (entity, name: string) => {
       if (name[0] !== "#") return ENTITIES[name.toLowerCase()] ?? entity;
       const code =
         name[1].toLowerCase() === "x"
           ? parseInt(name.slice(2), 16)
           : parseInt(name.slice(1), 10);
       return String.fromCodePoint(code);
-    });
+    },
+  );
+}
+
+export function findingText(html: string): string {
+  return decodeEntities(
+    html.replace(/<br\s*\/?>/gi, "，").replace(/<[^>]*>/g, ""),
+  );
 }
 
 // --- navigation (templates/base.html.j2) ------------------------------------------------------------------------

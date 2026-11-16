@@ -1,3 +1,4 @@
+import { pageMetadata, newsJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,6 +9,7 @@ import {
   Icon,
   NewsCard,
   Phrases,
+  JsonLd,
 } from "@/components/reading";
 import { getNews, listNews, listPapers, listTopics } from "@/lib/content";
 import {
@@ -32,7 +34,10 @@ type Props = { params: Promise<{ id: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const item = await getNews((await params).id);
   return item
-    ? { title: `${headline(item)}｜GutHub`, description: item.dek }
+    ? pageMetadata(headline(item), item.dek, newsPath(item), {
+        indexable: !isUnreviewed(item),
+        type: "article",
+      })
     : {};
 }
 
@@ -50,10 +55,12 @@ export default async function NewsPage({ params }: Props) {
   const topic = topicOf(item.paperId);
   const others = otherNews(news, item, papers);
   const unreviewed = isUnreviewed(item);
+  const crumbs = [...NEWS, [headline(item), newsPath(item)] as const];
 
   return (
     <article className="container page">
-      <Breadcrumb crumbs={[...NEWS, [headline(item), newsPath(item)]]} />
+      <JsonLd data={newsJsonLd(item, paper, topic, crumbs)} />
+      <Breadcrumb crumbs={crumbs} />
       <div className="split">
         <div>
           <header className="story__head">

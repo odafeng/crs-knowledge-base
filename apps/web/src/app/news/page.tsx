@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageJsonLd, pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { connection } from "next/server";
 import {
@@ -7,14 +8,16 @@ import {
   Breadcrumb,
   KeyStat,
   Phrases,
+  JsonLd,
 } from "@/components/reading";
 import { listNews, listPapers, listTopics } from "@/lib/content";
 import { isUnreviewed, NEWS, newsPath, topicPath } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "最新消息｜GutHub",
-  description: "新文獻的新聞稿。由 AI 依本站的文獻條目撰寫並標示。",
-};
+export const metadata: Metadata = pageMetadata(
+  "最新消息",
+  "由 AI 依本站文獻條目撰寫的新聞稿。",
+  "/news/",
+);
 
 export default async function NewsIndex() {
   await connection();
@@ -25,6 +28,14 @@ export default async function NewsIndex() {
   ]);
   return (
     <div className="container page">
+      <JsonLd
+        data={pageJsonLd(
+          "最新消息",
+          "由 AI 依本站文獻條目撰寫的新聞稿。",
+          "/news/",
+          NEWS,
+        )}
+      />
       <Breadcrumb crumbs={NEWS} />
       <header className="page-head">
         <h1>最新消息</h1>

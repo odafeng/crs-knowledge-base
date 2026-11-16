@@ -1,3 +1,11 @@
+import {
+  DESCRIPTION,
+  pageJsonLd,
+  pageMetadata,
+  SITE_NAME,
+  TAGLINE,
+} from "@/lib/seo";
+import { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { NewsFigure } from "@/components/news-figure";
@@ -9,6 +17,7 @@ import {
   NewsCard,
   Phrases,
   Status,
+  JsonLd,
 } from "@/components/reading";
 import { listNews, listPapers, listTopics } from "@/lib/content";
 import {
@@ -20,11 +29,17 @@ import {
   topicPath,
   updates,
   weekStats,
+  HOME,
 } from "@/lib/site";
 
 const longDate = (iso: string) => {
   const [year, month, day] = iso.split("-").map(Number);
   return `${year} 年 ${month} 月 ${day} 日`;
+};
+
+export const metadata: Metadata = {
+  ...pageMetadata(TAGLINE, DESCRIPTION, "/"),
+  title: `${SITE_NAME}｜${TAGLINE}`,
 };
 
 export default async function Home() {
@@ -46,6 +61,7 @@ export default async function Home() {
 
   return (
     <>
+      <JsonLd data={pageJsonLd(SITE_NAME, DESCRIPTION, "/", HOME)} />
       <h1 className="visually-hidden">GutHub：大腸直腸外科實證更新</h1>
       {lead && (
         <section className="lead on-field" aria-labelledby="lead-title">

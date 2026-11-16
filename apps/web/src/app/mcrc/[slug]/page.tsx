@@ -1,3 +1,4 @@
+import { pageMetadata, pageJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
@@ -6,6 +7,7 @@ import {
   PaperCard,
   RichHtml,
   Status,
+  JsonLd,
 } from "@/components/reading";
 import { getTopicBySlug, listNews, listPapers } from "@/lib/content";
 import {
@@ -26,10 +28,11 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const topic = await getTopicBySlug((await params).slug);
   return topic
-    ? {
-        title: `${topic.title}｜GutHub`,
-        description: `${topic.title}的試驗實證，共 ${topic.paperCount} 篇。`,
-      }
+    ? pageMetadata(
+        topic.label,
+        `${topic.title}的試驗實證，共 ${topic.paperCount} 篇。`,
+        topicPath(topic),
+      )
     : {};
 }
 
@@ -42,10 +45,19 @@ export default async function TopicPage({ params }: Props) {
   const ids = new Set(papers.map((p) => p.id));
   const stories = news.filter((item) => ids.has(item.paperId)).slice(0, 3);
   const regulatory = regulatoryRows(topic);
+  const crumbs = [...MCRC, [topic.label, topicPath(topic)] as const];
 
   return (
     <div className="container page">
-      <Breadcrumb crumbs={[...MCRC, [topic.label, topicPath(topic)]]} />
+      <JsonLd
+        data={pageJsonLd(
+          topic.label,
+          `${topic.title}的試驗實證，共 ${papers.length} 篇。`,
+          topicPath(topic),
+          crumbs,
+        )}
+      />
+      <Breadcrumb crumbs={crumbs} />
       <header className="page-head">
         <h1>{topic.title}</h1>
         <p className="page-head__lead">共 {papers.length} 篇文獻。</p>

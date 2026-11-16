@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
+import { pageJsonLd, pageMetadata } from "@/lib/seo";
 import { connection } from "next/server";
-import { Breadcrumb, Entry } from "@/components/reading";
+import { Breadcrumb, Entry, JsonLd } from "@/components/reading";
 import { listPapers, listTopics } from "@/lib/content";
 import { HOME, updates } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "文獻｜GutHub",
-  description: "依收錄日排列的全部文獻與評論。",
-};
+export const metadata: Metadata = pageMetadata(
+  "文獻",
+  "依收錄日排列的全部文獻與評論。",
+  "/updates/",
+);
 
 export default async function UpdatesPage() {
   await connection();
@@ -16,6 +18,14 @@ export default async function UpdatesPage() {
   const topicOf = (key: string) => topics.find((t) => t.key === key);
   return (
     <div className="container page">
+      <JsonLd
+        data={pageJsonLd(
+          "文獻",
+          "依收錄日排列的全部文獻與評論。",
+          "/updates/",
+          [...HOME, ["文獻", "/updates/"]],
+        )}
+      />
       <Breadcrumb crumbs={[...HOME, ["文獻", "/updates/"]]} />
       <header className="page-head">
         <h1>文獻</h1>

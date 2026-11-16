@@ -2,7 +2,7 @@
 
 大腸直腸外科實證知識庫，規劃加入專業討論與匿名留言。原名 **Seminar Hegemon**。
 
-GutHub 是這次改版的產品名稱。正式站仍使用 Python/Jinja2 靜態網站與 Paper Watch；`apps/web/` 已建立 **Next.js + TypeScript + React** 基礎，尚未接入完整閱讀頁面。FastAPI、使用者登入與留言尚未實作，雲端供應商與匿名政策仍待決定。
+GutHub 是這次改版的產品名稱。正式站仍使用 Python/Jinja2 靜態網站與 Paper Watch。新架構已經完成資料庫（Supabase PostgreSQL）、內容匯入、FastAPI 讀取 API，以及 `apps/web/` 的 **Next.js + TypeScript + React** 閱讀頁、索引頁、SEO 與 feed，但還沒部署。登入、留言、搜尋、離線閱讀與推播仍在進行中。雲端與匿名政策已經決定（見 ADR-0016、ADR-0017）。
 
 [CI](https://github.com/odafeng/crs-knowledge-base/actions/workflows/ci.yml) · [Paper Watch](https://github.com/odafeng/crs-knowledge-base/actions/workflows/paper-watch.yml) · [Jobs / milestones](https://github.com/odafeng/crs-knowledge-base/milestones) · [Issues](https://github.com/odafeng/crs-knowledge-base/issues)
 
@@ -49,20 +49,20 @@ gh issue list --repo odafeng/crs-knowledge-base --milestone 'A · GutHub 決策�
 
 有程式變更時，從單一 Step 建立短期分支，例如 `c/c1-nextjs-foundation`；PR 使用 `Closes #N`。文件、決策與管理工作不預建分支。commit message 使用 English Conventional Commits，有 issue 時帶 `(#N)`。commit、push、PR 與 production 切換都依當次授權執行。
 
-## 目標架構與待決策範圍
+## 目標架構
 
-前端使用 Next.js、TypeScript、React。Python API 與 worker 承接目前的文獻處理邏輯；一般留言請求與長時間文獻掃描分開執行。供應商仍有兩套候選：
+前端是 Next.js、TypeScript、React，閱讀頁以 server 端 ISR 從 FastAPI 讀取資料（ADR-0015）。Python API 與 worker 承接目前的文獻處理邏輯；一般請求和長時間的文獻掃描分開執行。A1 #53 選定的服務分工如下（ADR-0016）：
 
-| 責任 | 建議起步方案 | 全 Google Cloud 候選 |
-|---|---|---|
-| Next.js 執行環境 | Vercel 等支援 Next.js server 的 hosting | Firebase App Hosting |
-| 使用者登入 | Supabase Auth | Firebase Auth |
-| PostgreSQL | Supabase PostgreSQL | Cloud SQL PostgreSQL |
-| 檔案 | Supabase Storage | Cloud Storage |
-| Python API／worker | FastAPI／既有 Python 任務，按需部署 Cloud Run | FastAPI／Cloud Run 與排程任務 |
-| Agent framework | 先保留既有 agents，另評估 ADK | 同樣可先保留或另評估 ADK |
+| 責任 | 採用 |
+|---|---|
+| Next.js 執行環境 | 能執行 Next.js server 的 hosting，供應商由 F1 #75 決定 |
+| 使用者登入 | Supabase Auth：Google 與 Email 一次性連結（ADR-0017） |
+| PostgreSQL | Supabase PostgreSQL，`app` schema 不對 Data API 公開 |
+| 檔案 | Supabase Storage |
+| Python API／worker | FastAPI 與既有 Python 任務，部署在 Cloud Run |
+| Agent framework | MVP 保留現有 agents；ADK 先做單一主題 pilot（ADR-0018、E5 #90） |
 
-這張表是規劃選項，不代表雲端資源已建立。ADK 的決定與資料庫供應商分開，不是網站及留言上線的前提。
+雲端資源（帳號、staging／production 的專案、預算）尚未建立，由 F1 #75 提供。
 
 匿名政策依 [A2 #54](https://github.com/odafeng/crs-knowledge-base/issues/54)：第一版需登入，發文時可選署名或對其他讀者匿名，不開放免註冊留言；首篇留言先審，審核與檢舉由維護者處理（細節見 [ADR-0017](docs/adr/0017-comments-and-anonymous-identity.md)）。匿名作者對應不能只靠前端藏起來，公開 API、Data API、Realtime 及快取都必須隔離。
 
@@ -117,7 +117,17 @@ npm run verify
 
 ## 本機開發：Next.js 前端
 
-使用 Node.js 24 LTS。`apps/web/` 是遷移中的閱讀介面，沿用 v3 的 CSS tokens 與本地字型；首頁的「閱讀文獻」連到現行正式站。正式部署仍發布 `site/`，不會部署這個骨架。
+使用 Node.js 24 LTS。`apps/web/` 是遷移中的閱讀介面，沿用 v3 的 CSS tokens 與本地字型，網址也和現站相同。正式部署仍發布 `site/`，Next.js 版要等正式切換（F4）才會上線。
+
+頁面需要 FastAPI 讀取 API（見 `apps/api/README.md`）。環境變數：
+
+| 變數 | 用途 | 設定時機 |
+|---|---|---|
+| `GUTHUB_API_URL` | API 位址，例如 `http://127.0.0.1:8000/api/v1` | 執行時（`next build` 不會呼叫 API） |
+| `GUTHUB_SITE_ORIGIN` | canonical、feed 與 sitemap 使用的網址。預設為現站 `https://odafeng.github.io/crs-knowledge-base`，正式切換時才改 | build 與執行時 |
+| `GUTHUB_SITE_PUBLIC` | 設為 `1` 才允許搜尋引擎索引，並只對 AI 未審頁面加 noindex。未設定時全站都是 noindex，避免預覽站跟正式站搶搜尋結果 | build 與執行時 |
+
+Feed 的 GUID 固定用 `tag:odafeng.github.io,2026:` 開頭，不會跟著 `GUTHUB_SITE_ORIGIN` 改變，所以換網址後訂閱者不會收到重複的舊文章。
 
 ```bash
 cd apps/web
@@ -132,7 +142,7 @@ npm --prefix ../../tools exec playwright install chromium
 npm run smoke
 ```
 
-`src/lib/api.generated.ts` 由 `contracts/openapi.yaml` 產生。修改 contract 後執行 `npm run contract:generate` 並提交產物；CI 的 `contract:check` 會拒絕過期 types。`getPaper` 可指定 API origin 或注入 fixture fetcher，目前尚無 API server。`/api/health` 只供前端啟動檢查。
+`src/lib/api.generated.ts` 由 `contracts/openapi.yaml` 產生。修改 contract 後執行 `npm run contract:generate` 並提交產物；CI 的 `contract:check` 會拒絕過期 types。server 端資料讀取在 `src/lib/content.ts`。只有 contract 格式的 `not_found` 才會當成「找不到」，其他 404 一律視為錯誤，避免 ISR 把錯誤結果快取起來。`/api/health` 只供前端啟動檢查。smoke test 會啟動一個 mock API，檢查每一類頁面、feed 與 SEO 標記。
 
 Next.js CI 會執行 checks、runtime dependency audit、build 與 Playwright 測試。ESLint 暫用 9.x，以符合 Next.js 所帶 plugins 的 peer dependencies；開發依賴中仍有上游 `minimatch` 的 moderate advisory，runtime audit 另行檢查，不以跨 major override 掩蓋相容性問題。
 

@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
+import { pageJsonLd, pageMetadata } from "@/lib/seo";
 import { connection } from "next/server";
-import { Alerts, Breadcrumb } from "@/components/reading";
+import { Alerts, Breadcrumb, JsonLd } from "@/components/reading";
 import { listNews, listPapers, listTopics } from "@/lib/content";
 import { feedList, HOME } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "訂閱｜GutHub",
-  description: "用 RSS 接收新消息，或只訂閱關心的主題。",
-};
+export const metadata: Metadata = pageMetadata(
+  "訂閱",
+  "用推播或 RSS 接收新消息，或只訂閱關心的主題。",
+  "/subscribe/",
+);
 
 export default async function SubscribePage() {
   await connection();
@@ -26,6 +28,14 @@ export default async function SubscribePage() {
   ];
   return (
     <div className="container page">
+      <JsonLd
+        data={pageJsonLd(
+          "訂閱",
+          "用推播或 RSS 接收新消息，或只訂閱關心的主題。",
+          "/subscribe/",
+          [...HOME, ["訂閱", "/subscribe/"]],
+        )}
+      />
       <Breadcrumb crumbs={[...HOME, ["訂閱", "/subscribe/"]]} />
       <header className="page-head">
         <h1>訂閱</h1>

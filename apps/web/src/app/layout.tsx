@@ -2,13 +2,28 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { TabBar } from "@/components/site-nav";
+import { robots, SITE_NAME } from "@/lib/seo";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "GutHub｜大腸直腸外科實證更新",
   description:
     "整理大腸直腸外科的文獻、研究結果與資料來源，供醫療專業人員閱讀與參考。",
-  robots: { index: false, follow: false },
+  robots: robots(),
+  alternates: {
+    types: {
+      "application/rss+xml": [
+        { url: "/rss.xml", title: `${SITE_NAME}｜全部更新（RSS）` },
+        { url: "/feed/news.xml", title: `${SITE_NAME}｜最新消息（RSS）` },
+      ],
+      "application/atom+xml": [
+        { url: "/atom.xml", title: `${SITE_NAME}｜全部更新（Atom）` },
+      ],
+      "application/feed+json": [
+        { url: "/feed.json", title: `${SITE_NAME}｜全部更新（JSON Feed）` },
+      ],
+    },
+  },
   icons: { icon: "/favicon.svg" },
 };
 
