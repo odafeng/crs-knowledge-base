@@ -45,6 +45,39 @@ def test_every_paper_has_source_and_review_date():
     assert any("reviewedAt must be YYYY-MM-DD" in e for e in errors)
 
 
+def test_added_date_is_optional_but_must_be_a_date_not_after_review():
+    import json
+
+    from validate import validate_data
+
+    data = json.loads((ROOT / "data" / "papers.json").read_text())
+    paper = data["mCRC-MSI-H"]["papers"][0]
+    paper["addedAt"] = "2026/08/19"
+    assert any("addedAt must be YYYY-MM-DD" in e for e in validate_data(data))
+    paper["addedAt"] = "2999-01-01"
+    assert any("addedAt is after reviewedAt" in e for e in validate_data(data))
+    paper["addedAt"] = paper["reviewedAt"]
+    assert validate_data(data) == []
+
+
+def test_papers_list_on_the_date_paper_watch_found_them():
+    """addedAt (the Paper Watch issue date) dates a hand-added paper; reviewedAt stays the last check (#26-#34)."""
+    import json
+    from datetime import date
+
+    from sitegen.load import load_kb
+
+    kb = load_kb(ROOT / "data" / "papers.json")
+    by_id = {p.id: p for p in kb.papers}
+    assert by_id["li2026-ww-mono"].published_at == date(2026, 8, 19)
+    assert by_id["nccn-colon-2026"].published_at == date(2026, 11, 13)
+    assert by_id["li2026-ww-mono"].reviewed_at == date(2026, 11, 15)
+    raw = json.loads((ROOT / "data" / "papers.json").read_text())
+    undated = [p["id"] for b in raw.values() for p in b.get("papers", []) if "addedAt" not in p]
+    assert all(by_id[i].published_at == by_id[i].reviewed_at for i in undated)
+    assert len({u.date for u in kb.updates() if u.kind == "paper"}) > 2
+
+
 def test_treatment_sections_come_from_json():
     import json
 

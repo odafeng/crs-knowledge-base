@@ -132,8 +132,12 @@ def load_kb(path: Path, news_path: Path | None = None) -> KnowledgeBase:
                     doi=p.get("doi"),
                     source=p["source"],
                     reviewed_at=reviewed_at,
+                    # When the paper entered the KB: the bot's publish date, else the Paper Watch issue date
+                    # (addedAt) for hand-added papers, else the review date.
                     published_at=date.fromisoformat(review["publishedAt"][:10])
                     if review.get("publishedAt")
+                    else date.fromisoformat(p["addedAt"])
+                    if p.get("addedAt")
                     else reviewed_at,
                     unreviewed=review.get("status") == "auto",
                     commentary=tuple(_commentary(c) for c in p.get("commentary", [])),

@@ -363,8 +363,16 @@ export interface components {
             relations: components["schemas"]["Relation"][];
             /** @enum {string} */
             source: "fulltext" | "abstract" | "secondary" | "curated";
-            /** Format: date */
+            /**
+             * Format: date
+             * @description When the numbers were last checked.
+             */
             reviewedAt: string;
+            /**
+             * Format: date
+             * @description When Paper Watch found a hand-added paper (its review issue date). Lists date a paper by review.publishedAt, else addedAt, else reviewedAt.
+             */
+            addedAt?: string;
             review?: components["schemas"]["Review"];
             commentary?: components["schemas"]["ResearchCommentary"][];
             /** @description Detailed evidence retained from the source document; the API must sanitize HTML before returning it. */

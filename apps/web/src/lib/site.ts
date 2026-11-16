@@ -88,8 +88,9 @@ export const paperTitle = (
 ) => `${paper.regimen}（${paper.journal} ${paper.year}）`;
 
 /** The date a paper went public: its review date if published by the pipeline, else its last review. */
+/** When a paper entered the KB: the bot's publish date, else the Paper Watch issue date, else the review date. */
 export const publishedAt = (paper: Paper) =>
-  paper.review?.publishedAt?.slice(0, 10) ?? paper.reviewedAt;
+  paper.review?.publishedAt?.slice(0, 10) ?? paper.addedAt ?? paper.reviewedAt;
 
 /** Newest first, as sitegen's KnowledgeBase.by_topic. */
 export function byTopic(papers: readonly Paper[], topicKey: string): Paper[] {

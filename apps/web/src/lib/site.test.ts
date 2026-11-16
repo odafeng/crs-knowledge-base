@@ -8,6 +8,7 @@ import {
   findingText,
   otherNews,
   paperTitle,
+  publishedAt,
   regulatoryRows,
   repairCardHtml,
   type News,
@@ -50,6 +51,22 @@ const story = (id: string, paperId: string): News => ({
   figures: [],
   body: [],
   review: { status: "accepted" },
+});
+
+describe("a paper's listing date", () => {
+  it("prefers the bot's publish date, then the Paper Watch issue date, then the review date", () => {
+    const curated = paper("a", "mCRC-MSI-H", 2026);
+    expect(publishedAt(curated)).toBe("2026-01-01");
+    expect(publishedAt({ ...curated, addedAt: "2025-12-01" })).toBe(
+      "2025-12-01",
+    );
+    expect(
+      publishedAt({
+        ...paper("b", "mCRC-MSI-H", 2026, "2025-11-01T08:00:00Z"),
+        addedAt: "2025-10-01",
+      }),
+    ).toBe("2025-11-01");
+  });
 });
 
 describe("presentation rules mirrored from sitegen", () => {

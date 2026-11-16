@@ -162,7 +162,8 @@
           }
         ],
         "source": "abstract",
-        "reviewedAt": "2026-11-15"
+        "reviewedAt": "2026-11-15",
+        "addedAt": "2026-11-13"
       }
     ],
     "metrics": {
@@ -510,7 +511,8 @@
         "file": "docs/mCRC-KRAS-G12C/Song_LancetOncol_2026_IfebemtinibGarsorasib.html",
         "relations": [],
         "source": "secondary",
-        "reviewedAt": "2026-11-15"
+        "reviewedAt": "2026-11-15",
+        "addedAt": "2026-08-29"
       }
     ],
     "metrics": null,
@@ -735,7 +737,8 @@
           }
         ],
         "source": "abstract",
-        "reviewedAt": "2026-11-15"
+        "reviewedAt": "2026-11-15",
+        "addedAt": "2026-10-30"
       },
       {
         "id": "azur1",
@@ -756,7 +759,8 @@
           }
         ],
         "source": "secondary",
-        "reviewedAt": "2026-11-15"
+        "reviewedAt": "2026-11-15",
+        "addedAt": "2026-10-26"
       },
       {
         "id": "unicorn",
@@ -777,7 +781,8 @@
           }
         ],
         "source": "secondary",
-        "reviewedAt": "2026-11-15"
+        "reviewedAt": "2026-11-15",
+        "addedAt": "2026-11-04"
       },
       {
         "id": "li2026-ww-mono",
@@ -798,7 +803,8 @@
           }
         ],
         "source": "abstract",
-        "reviewedAt": "2026-11-15"
+        "reviewedAt": "2026-11-15",
+        "addedAt": "2026-08-19"
       }
     ],
     "metrics": null,
@@ -1240,7 +1246,7 @@
             "summary": "Bando 與 Yoshino 評論：STELLAR-303 是 MSS mCRC 首個達到 OS 獲益的免疫治療 Phase 3，可能重塑後線治療並帶動 biomarker 導向的 MSS 免疫治療研究",
             "critique": false,
             "newData": false,
-            "addedAt": "2026-11-15"
+            "addedAt": "2026-06-07"
           }
         ],
         "source": "curated",

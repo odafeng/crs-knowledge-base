@@ -12,7 +12,8 @@ Checks:
 6. No duplicate DOIs
 7. Related commentary entries are complete, typed, and not duplicated
 8. Bot-published entries (``review`` field) carry a known status and date, and no raw HTML
-9. Every paper says how its numbers were checked (``source``) and when (``reviewedAt``)
+9. Every paper says how its numbers were checked (``source``) and when (``reviewedAt``); an optional
+   ``addedAt`` (when Paper Watch found it) is a date no later than ``reviewedAt``
 10. "現行治療方案" cards (``standard_of_care``) cite existing papers, carry a review date, and
     regulatory rows use known statuses
 
@@ -185,6 +186,12 @@ def validate_data(data: dict, root: Path = PROJECT_ROOT, pending_files: frozense
                 errors.append(f"[{topic}] Paper '{pid}' has unknown source: {p.get('source')!r}")
             if not _DATE.match(str(p.get("reviewedAt", ""))):
                 errors.append(f"[{topic}] Paper '{pid}' reviewedAt must be YYYY-MM-DD")
+            # addedAt: when Paper Watch found a hand-added paper (its issue date); lists and feeds date it by this.
+            if "addedAt" in p:
+                if not _DATE.match(str(p["addedAt"])):
+                    errors.append(f"[{topic}] Paper '{pid}' addedAt must be YYYY-MM-DD")
+                elif str(p["addedAt"]) > str(p.get("reviewedAt", "")):
+                    errors.append(f"[{topic}] Paper '{pid}' addedAt is after reviewedAt")
 
             # studyType
             st = p.get("studyType", "")

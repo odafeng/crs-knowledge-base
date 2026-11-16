@@ -131,6 +131,7 @@ def _papers(db: Conn, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "relations": relations.get(row["id"], []),
             "source": row["source"],
             "reviewedAt": _iso(row["reviewed_at"]),
+            **({"addedAt": _iso(row["added_at"])} if row["added_at"] else {}),
             **_review(row),
             "commentary": commentary.get(row["id"], []),
             "detailHtml": clean(row["detail_html"]),
