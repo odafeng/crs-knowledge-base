@@ -94,6 +94,8 @@ gcloud run services update guthub-api --project=$P --region=asia-northeast1 --re
 
 告警建立時沒有掛通知管道，事件只會出現在 Cloud Console 的 Monitoring → Incidents。要收到 email，先在 Monitoring → Alerting → Edit notification channels 新增自己的 email，再把管道名稱（`projects/$P/notificationChannels/<id>`）加進兩條告警政策。預算告警會寄給帳單管理員，不需要另外設定。
 
-2026-11-17 在 staging 驗證：用不存在的子指令讓 `purge-deleted-authors` 執行失敗一次，確認 job 告警會開事件。
+2026-11-17 在 staging 驗證：用不存在的子指令讓 `purge-deleted-authors` 執行失敗一次，幾分鐘後 `run.googleapis.com/job/completed_execution_count`（`result=failed`）記到 1，這正是 job 告警的條件。通知是否寄達，要等通知管道設定好後再實測一次。
+
+同一天也在 staging 實際打開與關閉暫停開關：暫停時寫入回 503 加 `retry-after: 600`，CORS 標頭照常並公開 `Retry-After`，讀取維持 200；恢復後寫入回到正常的 401（未登入）。
 
 Supabase 與 Vercel 的用量用各自的內建通知：Supabase Pro 預設開啟 spend cap，Vercel 在接近方案上限時寄信給帳號擁有者。
