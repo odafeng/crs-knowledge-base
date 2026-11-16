@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     comment_burst_limit: int = Field(default=5, ge=1)
     comment_burst_minutes: int = Field(default=10, ge=1)
     comment_daily_limit: int = Field(default=50, ge=1)
-    # Likes a reader may add per burst window (H1 #123); unlikes are free.
+    # Like and unlike changes a reader may make per burst window (H1 #123); repeats that change nothing are free.
     comment_like_limit: int = Field(default=60, ge=1)
 
     @model_validator(mode="after")

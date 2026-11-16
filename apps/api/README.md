@@ -75,7 +75,7 @@ uv run --frozen pytest
 |---|---|
 | `GUTHUB_COMMENT_BURST_LIMIT`／`GUTHUB_COMMENT_BURST_MINUTES` | 5 則／10 分鐘 |
 | `GUTHUB_COMMENT_DAILY_LIMIT` | 50 則（最近 24 小時） |
-| `GUTHUB_COMMENT_LIKE_LIMIT` | 60 個讚／`GUTHUB_COMMENT_BURST_MINUTES`（取消讚不計） |
+| `GUTHUB_COMMENT_LIKE_LIMIT` | 60 次按讚或取消／`GUTHUB_COMMENT_BURST_MINUTES`（狀態沒變的重複請求不計） |
 
 CORS 會公開 `Retry-After`，讓網站告訴讀者要等多久。
 

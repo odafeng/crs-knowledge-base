@@ -691,3 +691,20 @@ def test_liking_is_rate_limited(world: World) -> None:
         assert codes == [200, 200, 200, 429]
     finally:
         client.__exit__(None, None, None)
+
+
+def test_toggling_a_like_cannot_get_around_the_limit(world: World) -> None:
+    # Unliking deletes the like, so the limit counts like and unlike events instead of current likes.
+    client = limited_client(comment_like_limit=4)
+    try:
+        comment = published(client, world, world.author, "Toggle me")
+        codes = [like(client, world, world.other, comment, method).status_code for method in ["PUT", "DELETE"] * 3]
+        # The fifth change is refused, so the sixth (an unlike of a like that never happened) changes nothing and is free.
+        assert codes == [200, 200, 200, 200, 429, 200]
+        assert like(client, world, world.other, comment).status_code == 429
+        # Repeating a request that changes nothing is free.
+        state = like(client, world, world.other, comment, "DELETE")
+        assert state.status_code == 200
+        assert state.json() == {"likeCount": 0, "liked": False}
+    finally:
+        client.__exit__(None, None, None)

@@ -321,36 +321,50 @@ def like_comment(comment_id: CommentId, user: SignedIn, db: Db, request: Request
     comment, author = _visible_comment(db, comment_id)
     if author == user.id:
         raise HTTPException(status_code=403, detail="You cannot like your own comment")
-    settings: Settings = request.app.state.settings
-    with db.transaction():
-        db.execute("select pg_advisory_xact_lock(hashtextextended(%s, 0))", (f"likes:{user.id}",))
-        already = db.execute(
-            "select 1 from app.comment_likes where comment_id = %s and account_id = %s", (comment, user.id)
-        ).fetchone()
-        if already is None:
-            recent = db.execute(
-                "select count(*) as n, ceil(extract(epoch from min(created_at)"
-                " + %(minutes)s * interval '1 minute' - now())) as retry from app.comment_likes"
-                " where account_id = %(user)s and created_at > now() - %(minutes)s * interval '1 minute'",
-                {"user": user.id, "minutes": settings.comment_burst_minutes},
-            ).fetchone()
-            assert recent is not None
-            if recent["n"] >= settings.comment_like_limit:
-                raise HTTPException(
-                    status_code=429,
-                    detail="Too many likes; try again later",
-                    headers={"Retry-After": str(max(1, int(recent["retry"] or 1)))},
-                )
-            db.execute("insert into app.comment_likes (comment_id, account_id) values (%s, %s)", (comment, user.id))
+    _set_like(db, user, comment, liked=True, settings=request.app.state.settings)
     return _like_state(db, comment, user)
 
 
 @router.delete("/comments/{comment_id}/likes")
-def unlike_comment(comment_id: CommentId, user: SignedIn, db: Db, response: Response) -> dict[str, Any]:
+def unlike_comment(
+    comment_id: CommentId, user: SignedIn, db: Db, request: Request, response: Response
+) -> dict[str, Any]:
     response.headers.update(PRIVATE)
     comment, _ = _visible_comment(db, comment_id)
-    db.execute("delete from app.comment_likes where comment_id = %s and account_id = %s", (comment, user.id))
+    _set_like(db, user, comment, liked=False, settings=request.app.state.settings)
     return _like_state(db, comment, user)
+
+
+def _set_like(db: Conn, user: User, comment: UUID, *, liked: bool, settings: Settings) -> None:
+    """Likes or unlikes. A change costs one event against the reader's limit; a request that changes nothing is free.
+
+    Events, not current likes, are counted: unliking deletes the like, so like/unlike cycles would otherwise reset it.
+    """
+    with db.transaction():
+        db.execute("select pg_advisory_xact_lock(hashtextextended(%s, 0))", (f"likes:{user.id}",))
+        has = db.execute(
+            "select 1 from app.comment_likes where comment_id = %s and account_id = %s", (comment, user.id)
+        ).fetchone()
+        if (has is not None) == liked:
+            return
+        recent = db.execute(
+            "select count(*) as n, ceil(extract(epoch from min(created_at)"
+            " + %(minutes)s * interval '1 minute' - now())) as retry from app.comment_like_events"
+            " where account_id = %(user)s and created_at > now() - %(minutes)s * interval '1 minute'",
+            {"user": user.id, "minutes": settings.comment_burst_minutes},
+        ).fetchone()
+        assert recent is not None
+        if recent["n"] >= settings.comment_like_limit:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many likes; try again later",
+                headers={"Retry-After": str(max(1, int(recent["retry"] or 1)))},
+            )
+        if liked:
+            db.execute("insert into app.comment_likes (comment_id, account_id) values (%s, %s)", (comment, user.id))
+        else:
+            db.execute("delete from app.comment_likes where comment_id = %s and account_id = %s", (comment, user.id))
+        db.execute("insert into app.comment_like_events (account_id) values (%s)", (user.id,))
 
 
 @router.get("/me/likes")
