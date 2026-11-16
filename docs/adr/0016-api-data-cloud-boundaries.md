@@ -61,7 +61,7 @@ A 的預期優點是 Auth、資料、Storage 的整合工作較少。B 適合已
 
 ### 部署與驗收
 
-- development、staging、production 的資源隔離、區域、費用上限及祕密交付由 [F1 #75](https://github.com/odafeng/crs-knowledge-base/issues/75) 確認。
+- staging 與 production 使用彼此獨立的 Supabase project 與 Cloud Run service，各自設定預算與最小權限（2026-11-16 維護者於 [F1 #75](https://github.com/odafeng/crs-knowledge-base/issues/75) 確認）。帳號、區域、費用上限及祕密交付仍待 F1 提供。
 - GitHub Pages 可繼續服務現有靜態基線。完整的 Next.js server 與 FastAPI 另需選定 runtime；不把它們部署成 Pages 的靜態檔案。
 - staging 通過內容 parity、unit/smoke/E2E、權限矩陣、mobile/accessibility 及還原演練後，才由 [F4 #79](https://github.com/odafeng/crs-knowledge-base/issues/79) 核准正式切換。
 - 新依賴固定版本並提交 lockfile。前端建立 TypeScript/lint/unit/smoke/E2E，Python 維持 Ruff/Pyright/pytest。

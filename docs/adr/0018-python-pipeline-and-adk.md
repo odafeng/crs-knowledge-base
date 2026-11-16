@@ -1,6 +1,6 @@
 # 0018. 保留 Python 文獻管線，獨立決定 ADK 導入
 
-**Status**: Proposed（ADK 導入時機待 E4；既有發布規則仍依 ADR-0013）
+**Status**: Accepted（2026-11-16 維護者於 [E4 #74](https://github.com/odafeng/crs-knowledge-base/issues/74) 選擇單一主題 ADK pilot；既有發布規則仍依 ADR-0013）
 
 ## Context
 
@@ -10,7 +10,9 @@
 
 ## Decision
 
-以下導入方式由 [E4 #74](https://github.com/odafeng/crs-knowledge-base/issues/74) 決定：
+維護者選擇先做單一主題的 ADK pilot，MVP 的 Paper Watch 繼續使用現有 Python agents。pilot 的主題、模型與費用上限由 [E5 #90](https://github.com/odafeng/crs-knowledge-base/issues/90) 確認後才實作；pilot 結果不影響 MVP 的時程。
+
+以下原則同時適用於 MVP 管線與 pilot：
 
 - 建議 MVP 保留現有 Python agents。先以固定 fixtures 與 contract tests 保護目前行為，再改寫儲存 adapter、發布與排程整合。
 - API 與 worker 共用來源查核及發布規則；查核邏輯不綁在 Next.js component、agent prompt 或特定雲端 SDK 裡。
