@@ -2,7 +2,7 @@
 
 大腸直腸外科實證知識庫，規劃加入專業討論與匿名留言。原名 **Seminar Hegemon**。
 
-GutHub 是這次改版的產品名稱。正式站仍使用 Python/Jinja2 靜態網站與 Paper Watch。新架構已經完成資料庫（Supabase PostgreSQL）、內容匯入、FastAPI 讀取 API，以及 `apps/web/` 的 **Next.js + TypeScript + React** 閱讀頁、索引頁、SEO、feed、搜尋、深色模式與字級，以及公開內容的離線閱讀，但還沒部署。登入、留言與推播仍在進行中。雲端與匿名政策已經決定（見 ADR-0016、ADR-0017）。
+GutHub 是這次改版的產品名稱。正式站仍使用 Python/Jinja2 靜態網站與 Paper Watch。新架構已經完成資料庫（Supabase PostgreSQL）、內容匯入、FastAPI 讀取 API，以及 `apps/web/` 的 **Next.js + TypeScript + React** 閱讀頁、索引頁、SEO、feed、搜尋、深色模式與字級，公開內容的離線閱讀，以及登入（Email 連結；Google 等 F1 提供 OAuth client），但還沒部署。留言與推播仍在進行中。雲端與匿名政策已經決定（見 ADR-0016、ADR-0017）。
 
 [CI](https://github.com/odafeng/crs-knowledge-base/actions/workflows/ci.yml) · [Paper Watch](https://github.com/odafeng/crs-knowledge-base/actions/workflows/paper-watch.yml) · [Jobs / milestones](https://github.com/odafeng/crs-knowledge-base/milestones) · [Issues](https://github.com/odafeng/crs-knowledge-base/issues)
 
@@ -126,6 +126,9 @@ npm run verify
 | `GUTHUB_API_URL` | API 位址，例如 `http://127.0.0.1:8000/api/v1` | 執行時（`next build` 不會呼叫 API） |
 | `GUTHUB_SITE_ORIGIN` | canonical、feed 與 sitemap 使用的網址。預設為現站 `https://odafeng.github.io/crs-knowledge-base`，正式切換時才改 | build 與執行時 |
 | `GUTHUB_SITE_PUBLIC` | 設為 `1` 才允許搜尋引擎索引，並只對 AI 未審頁面加 noindex。未設定時全站都是 noindex，避免預覽站跟正式站搶搜尋結果 | build 與執行時 |
+| `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | 登入用的 Supabase project URL 與 publishable key（可公開）。三個 `NEXT_PUBLIC_*` 都設定時才顯示登入入口 | build 時（會寫進瀏覽器端程式） |
+| `NEXT_PUBLIC_GUTHUB_API_URL` | 瀏覽器呼叫 API 的位址；API 的 `GUTHUB_CORS_ORIGINS` 要列入網站 origin | build 時 |
+| `NEXT_PUBLIC_AUTH_GOOGLE` | 設為 `1` 才顯示 Google 登入（需要 F1 的 OAuth client） | build 時 |
 
 Feed 的 GUID 固定用 `tag:odafeng.github.io,2026:` 開頭，不會跟著 `GUTHUB_SITE_ORIGIN` 改變，所以換網址後訂閱者不會收到重複的舊文章。
 
@@ -136,6 +139,7 @@ python build.py --out /tmp/current-site
 python tools/check_next_parity.py /tmp/current-site http://127.0.0.1:3000   # 頁面、內部連結、feed、sitemap、JSON-LD、noindex
 node tools/next-verify.js http://127.0.0.1:3000                            # axe（WCAG 2.2 AA）、閱讀流程、鍵盤
 node tools/next-offline.js http://127.0.0.1:3000                           # 搜尋、偏好保存、Service Worker 離線閱讀
+node tools/next-auth.js http://127.0.0.1:3000 http://127.0.0.1:8000/api/v1  # 登入、顯示名稱、登出、換帳號（需要 SUPABASE_URL、SUPABASE_SERVICE_KEY）
 ```
 
 ```bash
@@ -214,6 +218,7 @@ Web Push 的程式與 SQL 範本放在 `push/`，目前不等於已建立 Supaba
 | [0017](docs/adr/0017-comments-and-anonymous-identity.md) | 登入、匿名留言、公開資料與管理權限 |
 | [0018](docs/adr/0018-python-pipeline-and-adk.md) | Python 管線保留與 ADK 導入門檻 |
 | [0019](docs/adr/0019-nextjs-offline-sync-and-client-search.md) | Next.js 離線快取改為對照公開索引同步 |
+| [0020](docs/adr/0020-browser-session-and-bearer-api.md) | 登入 session 只存在瀏覽器，API 只收 Bearer token |
 
 `Accepted` 表示已採用的方向，不代表功能已完成；實作與驗收狀態以對應 issues 為準。`Proposed` 的選項需由決策 issue 確認後再實作。
 

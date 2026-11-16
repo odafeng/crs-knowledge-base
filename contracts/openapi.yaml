@@ -190,6 +190,47 @@ paths:
             schema: {$ref: '#/components/schemas/CommentCreate'}
       description: 'Requires a verified session. Set Cache-Control: private, no-store. Ownership and allowed identity
         modes are checked server-side.'
+  /me:
+    get:
+      operationId: getAccount
+      summary: The signed-in reader's display name and role; displayName is null until the reader chooses one.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Account'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. The admin role is read from the
+        database, never from token claims or user metadata.'
+    put:
+      operationId: updateAccount
+      summary: Choose or change the public display name; creates the account on first use.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Account'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AccountUpdate'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. 409 when the account was
+        deleted.'
   /me/comments:
     get:
       operationId: listOwnComments
@@ -708,6 +749,23 @@ components:
         body: {type: string, minLength: 1, description: 'Plain text, not HTML. Deployment policy controls maximum
             length.'}
         anonymous: {type: boolean, description: Server rejects unsupported modes until A2 is decided.}
+    Account:
+      type: object
+      additionalProperties: false
+      required: [displayName, isAdmin]
+      properties:
+        displayName:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 80
+          description: Public name chosen by the reader (ADR-0017); never taken from Google or the email address.
+        isAdmin: {type: boolean}
+    AccountUpdate:
+      type: object
+      additionalProperties: false
+      required: [displayName]
+      properties:
+        displayName: {type: string, minLength: 1, maxLength: 80, description: Leading and trailing spaces are removed.}
     CommentUpdate:
       type: object
       additionalProperties: false

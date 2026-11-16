@@ -7,6 +7,8 @@ const { PAGES } = require('./serve');
 
 const ORIGIN = (process.argv[2] || 'http://127.0.0.1:3000').replace(/\/$/, '');
 const axeSrc = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+// Pages only the Next.js site has (D1 #67), checked as a visitor sees them.
+const NEXT_ONLY = ['login/', 'account/', 'auth/callback/'];
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 
 (async () => {
@@ -18,7 +20,7 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-prac
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    for (const path of PAGES) {
+    for (const path of [...PAGES, ...NEXT_ONLY]) {
       const response = await page.goto(`${ORIGIN}/${path}`, { waitUntil: 'load' });
       if (response.status() !== 200) problems.push(`/${path} @${width}: HTTP ${response.status()}`);
       await page.addScriptTag({ content: axeSrc });

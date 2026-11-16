@@ -27,6 +27,7 @@ python -m pytest tests/test_api_contract.py -q
 | `/topics`、`/topics/{topicKey}` | 主題、治療卡片及 robotic sections |
 | `/search` | 文獻／消息搜尋；回傳可開啟的網站 path |
 | `/papers/{paperId}/comments` | GET 只列已公開留言；POST 驗證 session 與政策 |
+| `/me` | 本人的顯示名稱與管理角色；PUT 設定顯示名稱，第一次設定時建立帳號（D1） |
 | `/me/comments` | 本人的留言與審核狀態，私有回應 |
 | `/comments/{commentId}` | 本人修改／刪除；以伺服器查核 ownership |
 | `/comments/{commentId}/reports` | 經驗證 session 提交檢舉 |

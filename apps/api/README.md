@@ -21,6 +21,8 @@ curl localhost:8000/api/v1/health
 |---|---|---|
 | `GUTHUB_ENVIRONMENT` | `development`、`test`、`staging`、`production` | `development` |
 | `GUTHUB_DATABASE_URL` | PostgreSQL 連線字串，使用被授予 `guthub_api` 的 login role（見 [supabase/README.md](../../supabase/README.md)） | 無；`staging`、`production` 缺少時啟動失敗 |
+| `GUTHUB_SUPABASE_URL` | Supabase project URL，例如 `http://127.0.0.1:54321`。用它的 Auth JWKS 驗證登入 token | 無；未設定時需要登入的端點回 503 |
+| `GUTHUB_CORS_ORIGINS` | 允許從瀏覽器呼叫 API 的網站 origin，JSON 陣列，例如 `["https://guthub.example"]` | `[]`（不開 CORS） |
 
 ## 檢查
 
@@ -35,11 +37,21 @@ uv run --frozen pytest
 資料庫測試需要先 `supabase start`（見 [supabase/README.md](../../supabase/README.md)），再帶入連線設定。沒有設定時會 skip；CI 設了 `GUTHUB_REQUIRE_DB=1`，缺設定會直接失敗。
 
 ```sh
-eval "$(supabase status -o env --workdir ../.. | grep -E '^(DB_URL|REST_URL|ANON_KEY|SERVICE_ROLE_KEY)=')"
-GUTHUB_TEST_DATABASE_URL=$DB_URL GUTHUB_TEST_REST_URL=$REST_URL \
+eval "$(supabase status -o env --workdir ../.. | grep -E '^(API_URL|DB_URL|REST_URL|ANON_KEY|SERVICE_ROLE_KEY)=')"
+GUTHUB_TEST_DATABASE_URL=$DB_URL GUTHUB_TEST_REST_URL=$REST_URL GUTHUB_TEST_SUPABASE_URL=$API_URL \
 GUTHUB_TEST_ANON_KEY=$ANON_KEY GUTHUB_TEST_SERVICE_KEY=$SERVICE_ROLE_KEY \
 uv run --frozen pytest
 ```
+
+## 帳號與登入（D1）
+
+登入由 Supabase Auth 處理（Google 與 Email 一次性連結，ADR-0017）。API 只接受 `Authorization: Bearer <access token>`，不讀 cookie；token 用 Supabase 的 JWKS 驗章（只接受 ES256／RS256），並檢查 `aud`、`iss`、`exp`、`role`，匿名登入的 session 一律拒絕。設計與取捨見 [ADR-0020](../../docs/adr/0020-browser-session-and-bearer-api.md)。
+
+- `GET /me`：本人的顯示名稱與是否為管理者。還沒設定名稱時 `displayName` 是 `null`。
+- `PUT /me`：設定或修改顯示名稱（去頭尾空白後 1–80 字，不可含控制字元）；第一次設定時建立帳號。
+- 管理者只看 `app.accounts.is_admin`，由維護者直接在資料庫設定；token 的 metadata 不能授權。`accounts.require_admin` 給 D5 的審核端點使用。
+
+回應都帶 `Cache-Control: private, no-store` 與 `Vary: Authorization`。
 
 ## 讀取 API（B5）
 
