@@ -7,7 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount, type Account } from "@/components/account";
-import { apiFetch, apiUrl, authEnabled } from "@/lib/auth";
+import { apiFetch, apiUrl, authEnabled, returnPath } from "@/lib/auth";
 import {
   BODY_MAX,
   bodyError,
@@ -210,7 +210,9 @@ function CommentForm({
     return (
       <p className="comment-gate">
         登入後就能留言，可以選擇署名或匿名。{" "}
-        <Link href={`/login/?next=${encodeURIComponent(path)}`}>登入</Link>
+        <Link href={`/login/?next=${encodeURIComponent(returnPath(path))}`}>
+          登入
+        </Link>
       </p>
     );
   }
@@ -218,7 +220,9 @@ function CommentForm({
     return (
       <p className="comment-gate">
         留言前請先
-        <Link href={`/account/?welcome=1&next=${encodeURIComponent(path)}`}>
+        <Link
+          href={`/account/?welcome=1&next=${encodeURIComponent(returnPath(path))}`}
+        >
           設定顯示名稱
         </Link>
         。

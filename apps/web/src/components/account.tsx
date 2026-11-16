@@ -7,7 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 import { Icon } from "@/components/reading";
-import { apiFetch, authEnabled, supabase } from "@/lib/auth";
+import { apiFetch, authEnabled, returnPath, supabase } from "@/lib/auth";
 
 export type Account =
   | { status: "loading" }
@@ -121,7 +121,7 @@ export function AccountLink() {
   return (
     <Link
       className="btn btn--quiet btn--icon account-link"
-      href={`/login/?next=${encodeURIComponent(path)}`}
+      href={`/login/?next=${encodeURIComponent(returnPath(path))}`}
       aria-label="登入"
     >
       <Icon name="account" />
