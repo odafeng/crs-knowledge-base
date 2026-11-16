@@ -5,10 +5,13 @@ names a browser, not a person, and is never linked to an account (privacy policy
 job (guthub_api.announce), not part of the API.
 """
 
+import base64
+import binascii
 from typing import Annotated
 
+from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi import APIRouter, Depends, Response
-from pydantic import BaseModel, ConfigDict, StringConstraints
+from pydantic import AfterValidator, BaseModel, ConfigDict, StringConstraints
 
 from guthub_api.db import Conn, get_conn
 
@@ -23,10 +26,32 @@ type Endpoint = Annotated[str, StringConstraints(max_length=2048, pattern=PUSH_S
 NO_STORE = {"Cache-Control": "no-store"}
 
 
+def _decode(value: str) -> bytes:
+    try:
+        return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+    except (binascii.Error, ValueError) as exc:
+        raise ValueError("must be base64url") from exc
+
+
+def _p256_point(value: str) -> str:
+    # The sender encrypts to this key: one that is not a real P-256 point would fail at send time, so it is refused here.
+    try:
+        ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), _decode(value))
+    except ValueError as exc:
+        raise ValueError("must be an uncompressed P-256 public key") from exc
+    return value
+
+
+def _auth_secret(value: str) -> str:
+    if len(_decode(value)) != 16:
+        raise ValueError("must be a 16-byte auth secret")
+    return value
+
+
 class PushKeys(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
-    p256dh: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_-]{80,100}$")]
-    auth: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_-]{16,32}$")]
+    p256dh: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_-]{80,100}$"), AfterValidator(_p256_point)]
+    auth: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_-]{16,32}$"), AfterValidator(_auth_secret)]
 
 
 class PushSubscription(BaseModel):

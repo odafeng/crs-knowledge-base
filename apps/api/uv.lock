@@ -631,6 +631,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pyjwt", extra = ["crypto"] },
     { name = "pywebpush" },
+    { name = "requests" },
     { name = "uvicorn" },
 ]
 
@@ -653,6 +654,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.6" },
     { name = "pyjwt", extras = ["crypto"], specifier = ">=2.10" },
     { name = "pywebpush", specifier = ">=2.0,<3" },
+    { name = "requests", specifier = ">=2.32" },
     { name = "uvicorn", specifier = ">=0.32" },
 ]
 

@@ -11,6 +11,7 @@ from urllib.parse import quote
 
 import psycopg
 import pytest
+import requests
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 from pywebpush import WebPushException
@@ -26,7 +27,8 @@ if not DB_URL:
         raise RuntimeError("GUTHUB_REQUIRE_DB=1 but GUTHUB_TEST_DATABASE_URL is not set")
     pytest.skip("GUTHUB_TEST_DATABASE_URL not set", allow_module_level=True)
 API_DB_URL = f"{DB_URL}{'&' if '?' in DB_URL else '?'}options={quote('-c role=guthub_api')}"
-P256DH = "B" + "A" * 86
+# A real P-256 point: the API parses the key, so a string of the right shape is not enough.
+P256DH = "BEq92_TdZHWFumPXL2bSHnBMqQBmT_W8m21dM7uY3rkkXPMVrQbusl5OczVDTV0mymDHq9gvO-BlkPCo5biR1do"
 AUTH = "c" * 22
 
 
@@ -106,6 +108,9 @@ def test_subscribe_renew_and_unsubscribe(client: TestClient) -> None:
         {"endpoint": endpoint("x" * 2100), "keys": {"p256dh": P256DH, "auth": AUTH}},
         {"endpoint": endpoint("x"), "keys": {"p256dh": "not base64!", "auth": AUTH}},
         {"endpoint": endpoint("x"), "keys": {"p256dh": P256DH, "auth": "short"}},
+        # Right shape, not a point on the curve: would make the sender's encryption fail for everyone after it.
+        {"endpoint": endpoint("x"), "keys": {"p256dh": "B" + "A" * 86, "auth": AUTH}},
+        {"endpoint": endpoint("x"), "keys": {"p256dh": P256DH, "auth": "c" * 23}},
         {"endpoint": endpoint("x"), "keys": {"p256dh": P256DH, "auth": AUTH}, "account": "someone"},
     ],
 )
@@ -124,6 +129,10 @@ class FakePush:
         self.delivered: list[tuple[str, dict[str, str], str]] = []
 
     def __call__(self, sub: Subscription, data: str, topic: str) -> None:
+        if sub.endpoint.endswith("unusable"):  # fails before reaching any push service, e.g. a key that cannot encrypt
+            raise ValueError("invalid key")
+        if sub.endpoint.endswith("offline"):  # the network to the push service failed: says nothing about the browser
+            raise requests.ConnectionError("timed out")
         status = 410 if sub.endpoint.endswith("gone") else 500 if sub.endpoint.endswith("broken") else None
         if status:
             raise WebPushException("push failed", response=SimpleNamespace(status_code=status))
@@ -131,14 +140,15 @@ class FakePush:
 
 
 def test_a_fresh_story_is_announced_once_and_gone_browsers_are_dropped(stories: dict[str, str]) -> None:
-    for name in ("phone", "gone", "broken"):
+    # "unusable" sorts first, so the rest are sent only if its failure does not stop the job.
+    for name in ("phone", "gone", "broken", "a-unusable", "offline"):
         sql(
             "insert into app.push_subscriptions (endpoint, p256dh, auth) values (%s, %s, %s)",
             (endpoint(name), P256DH, AUTH),
         )
     push = FakePush()
 
-    assert announce_news(API_DB_URL, push) == {"stories": 1, "sent": 1, "removed": 1, "failed": 1}
+    assert announce_news(API_DB_URL, push) == {"stories": 1, "sent": 1, "removed": 2, "failed": 2}
     assert push.delivered == [
         (
             endpoint("phone"),
@@ -148,10 +158,11 @@ def test_a_fresh_story_is_announced_once_and_gone_browsers_are_dropped(stories: 
     ]
     assert sql("select endpoint from app.push_subscriptions where endpoint like '%c5-test-%' order by 1") == [
         (endpoint("broken"),),
+        (endpoint("offline"),),
         (endpoint("phone"),),
     ]
     assert sql("select sent, removed, failed from app.push_announcements where news_id = %s", (stories["fresh"],)) == [
-        (1, 1, 1)
+        (1, 2, 2)
     ]
     # Reruns (the schedule, a rebuild, a deploy) send nothing more; the old story never qualified.
     assert announce_news(API_DB_URL, push) == {"stories": 0, "sent": 0, "removed": 0, "failed": 0}

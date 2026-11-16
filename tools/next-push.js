@@ -12,7 +12,7 @@ const fs = require('node:fs');
 
 const WEB = process.argv[2].replace(/\/$/, '');
 const ENDPOINT = `https://fcm.googleapis.com/fcm/send/e2e-${Date.now()}`;
-const KEYS = { p256dh: `B${'A'.repeat(86)}`, auth: 'e2e-auth-secret-123456' };
+const KEYS = { p256dh: 'BEq92_TdZHWFumPXL2bSHnBMqQBmT_W8m21dM7uY3rkkXPMVrQbusl5OczVDTV0mymDHq9gvO-BlkPCo5biR1do', auth: 'e2e-auth-secret-123456' };
 const AXE = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 const problems = [];

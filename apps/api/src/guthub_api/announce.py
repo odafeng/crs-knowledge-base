@@ -6,14 +6,19 @@ so a backlog imported later (or a job that was off for a week) does not notify a
 """
 
 import json
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 
 import psycopg
+import requests
 from pywebpush import WebPushException, webpush
+
+logger = logging.getLogger("guthub_api.announce")
 
 GONE = {404, 410}  # the push service says this subscription no longer exists
 TTL = 24 * 3600  # a phone that stays offline longer than a day does not get yesterday's story
+TIMEOUT = 10  # seconds per push service request, so one slow service cannot hold up the job
 FRESH_DAYS = 2
 
 
@@ -43,9 +48,14 @@ def web_push(private_key: str, subject: str) -> Deliver:
             vapid_claims={"sub": subject},  # a fresh dict each time: the library adds aud and exp to it
             ttl=TTL,
             headers={"Topic": topic},  # a second push about the same story replaces the first while still queued
+            timeout=TIMEOUT,
         )
 
     return deliver
+
+
+def _drop(conn: psycopg.Connection, subscription: Subscription) -> None:
+    conn.execute("delete from app.push_subscriptions where endpoint = %s", (subscription.endpoint,))
 
 
 def announce_news(url: str, deliver: Deliver) -> dict[str, int]:
@@ -74,12 +84,21 @@ def announce_news(url: str, deliver: Deliver) -> dict[str, int]:
                     deliver(subscription, data, topic)
                     sent += 1
                 except WebPushException as error:
-                    # One dead or failing browser must not stop the rest; a gone one is deleted so it is not retried.
+                    # The push service answered: a gone browser is deleted; anything else may work next time.
                     if error.response is not None and error.response.status_code in GONE:
-                        conn.execute("delete from app.push_subscriptions where endpoint = %s", (subscription.endpoint,))
+                        _drop(conn, subscription)
                         removed += 1
                     else:
                         failed += 1
+                except requests.RequestException:
+                    # The network to the push service failed (timeout, connection): the browser may be fine.
+                    failed += 1
+                except Exception:
+                    # One browser must never stop the story reaching the others. This failed before any push service
+                    # answered, e.g. keys that cannot encrypt, so it can never work: drop it.
+                    logger.warning("Dropping a subscription that cannot be sent to", exc_info=True)
+                    _drop(conn, subscription)
+                    removed += 1
             conn.execute(
                 "update app.push_announcements set sent = %s, removed = %s, failed = %s where news_id = %s",
                 (sent, removed, failed, news_id),
