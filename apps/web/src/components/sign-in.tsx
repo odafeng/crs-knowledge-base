@@ -130,7 +130,8 @@ export function LoginForm() {
       </div>
       <p className="note">
         不需要密碼。第一次登入時會請你自訂公開顯示名稱，不會自動使用 Google
-        姓名或 Email。
+        姓名或 Email。登入即表示你已閱讀<Link href="/privacy/">隱私權政策</Link>
+        。
       </p>
     </div>
   );

@@ -141,6 +141,11 @@ for (const mode of ['start', 'dev']) {
         new URL(await page.locator('link[rel="apple-touch-icon"]').getAttribute('href'), origin).href,
       ];
       for (const asset of assets) assert.equal((await page.request.get(asset)).status(), 200, asset);
+      // Privacy policy (C6 #110): linked from every page's footer and readable without signing in.
+      const privacyHref = await page.locator('.site-footer a', { hasText: '隱私權政策' }).getAttribute('href');
+      const privacy = await page.request.get(new URL(privacyHref, origin).href);
+      assert.equal(privacy.status(), 200);
+      assert.match(await privacy.text(), /Supabase/);
       assert.equal((await page.goto(`${origin}/missing-page`)).status(), 404);
       await page.getByRole('link', { name: /^GutHub/ }).click();
       await page.waitForURL(origin + '/');
