@@ -14,7 +14,9 @@ PORT="${RESTORE_PORT:-55432}"
 CONTAINER="guthub-restore-drill-$$"
 WORK=$(mktemp -d)
 chmod 700 "$WORK"
-TARGET="postgresql://postgres:drill@127.0.0.1:${PORT}/postgres"
+# The restored copy holds emails and author mappings: random password, and reachable from this machine only.
+PASSWORD=$(openssl rand -hex 16)
+TARGET="postgresql://postgres:${PASSWORD}@127.0.0.1:${PORT}/postgres"
 
 cleanup() {
   docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
@@ -31,7 +33,7 @@ ls -l "$WORK/backup.dump" | awk '{print "    app schema: " $5 " bytes"}'
 echo "    auth users: $(wc -l < "$WORK/auth-users.csv" | tr -d ' ')"
 
 echo "2/4 start an empty Postgres 17"
-docker run -d --name "$CONTAINER" -e POSTGRES_PASSWORD=drill -p "${PORT}:5432" postgres:17 >/dev/null
+docker run -d --name "$CONTAINER" -e POSTGRES_PASSWORD="$PASSWORD" -p "127.0.0.1:${PORT}:5432" postgres:17 >/dev/null
 for _ in $(seq 1 60); do psql "$TARGET" -qtAc "select 1" >/dev/null 2>&1 && break; sleep 1; done
 # Roles the schema's policies and grants name; Supabase creates these itself.
 psql "$TARGET" -q -v ON_ERROR_STOP=1 <<'SQL'
