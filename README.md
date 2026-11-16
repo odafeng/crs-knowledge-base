@@ -24,9 +24,9 @@ GutHub 是這次改版的產品名稱。正式站仍使用 Python/Jinja2 靜態�
 
 Pages 使用 GitHub Actions 發布通過測試的 `site/` artifact，停用 `main` 根目錄的另一條建置路徑。部署前會檢查 Pages 的 `build_type` 為 `workflow`；公開的 [`build-info.json`](https://odafeng.github.io/crs-knowledge-base/build-info.json) 記錄該產物的 commit，供部署後核對版本。修復與驗證紀錄見 **[A4 #56](https://github.com/odafeng/crs-knowledge-base/issues/56)**。
 
-目前的 `ci.yml` 設計是：驗證資料 → pytest → 建置 `site/` → 連結、E2E 與 accessibility 檢查 → 部署同一份 artifact。未來 Next.js 與 API 的 hosting 由 [A1 #53](https://github.com/odafeng/crs-knowledge-base/issues/53) 選定，正式切換由 [F4 #79](https://github.com/odafeng/crs-knowledge-base/issues/79) 驗收。
+目前的 `ci.yml` 設計是：驗證資料 → pytest → 建置 `site/` → 連結、E2E 與 accessibility 檢查 → 部署同一份 artifact。依 [A1 #53](https://github.com/odafeng/crs-knowledge-base/issues/53) 的決定，資料庫、Auth 與檔案採 Supabase，FastAPI 與 Python worker 部署在 Cloud Run（[ADR-0016](docs/adr/0016-api-data-cloud-boundaries.md)）；正式切換由 [F4 #79](https://github.com/odafeng/crs-knowledge-base/issues/79) 驗收。
 
-repository 目前仍叫 `odafeng/crs-knowledge-base`。顯示名稱、repository 名稱和正式網域是不同變更，後兩者依 [A3 #55](https://github.com/odafeng/crs-knowledge-base/issues/55) 決定。
+repository 目前仍叫 `odafeng/crs-knowledge-base`。顯示名稱、repository 名稱和正式網域是不同變更。依 [A3 #55](https://github.com/odafeng/crs-knowledge-base/issues/55)，這一階段只改顯示名稱，repository 與公開網址維持不變。
 
 ## 建置工作如何追蹤
 
@@ -64,7 +64,7 @@ gh issue list --repo odafeng/crs-knowledge-base --milestone 'A · GutHub 決策�
 
 這張表是規劃選項，不代表雲端資源已建立。ADK 的決定與資料庫供應商分開，不是網站及留言上線的前提。
 
-匿名政策依 [A2 #54](https://github.com/odafeng/crs-knowledge-base/issues/54) 決定。建議第一版先登入，再選署名或對其他讀者匿名；若同時開放免註冊留言，需加入匿名 session 的限速、驗證與管理方式。匿名作者對應不能只靠前端藏起來，公開 API、Data API、Realtime 及快取都必須隔離。
+匿名政策依 [A2 #54](https://github.com/odafeng/crs-knowledge-base/issues/54)：第一版需登入，發文時可選署名或對其他讀者匿名，不開放免註冊留言；首篇留言先審，審核與檢舉由維護者處理（細節見 [ADR-0017](docs/adr/0017-comments-and-anonymous-identity.md)）。匿名作者對應不能只靠前端藏起來，公開 API、Data API、Realtime 及快取都必須隔離。
 
 ## 資料與發布規則
 

@@ -1,6 +1,6 @@
 # GutHub API contract
 
-`openapi.yaml` 是前後端共用的 OpenAPI 3.1 contract，版本為 `0.1.0`。目前還沒有對應的 API server；Auth、雲端及匿名模式仍依 A1/A2 決定。本契約固定資料格式與可見性，不會自行啟用免註冊或匿名發文。
+`openapi.yaml` 是前後端共用的 OpenAPI 3.1 contract，版本為 `0.1.0`。目前還沒有對應的 API server。Auth 採 Supabase、API 部署於 Cloud Run（ADR-0016）；留言需登入，可選對其他讀者匿名，不開放免註冊（ADR-0017）。本契約固定資料格式與可見性。
 
 API 使用 `/api/v1`。前端可從這份檔案產生 TypeScript types；FastAPI 實作需通過相同 fixtures。檢查方式：
 
@@ -32,7 +32,7 @@ python -m pytest tests/test_api_contract.py -q
 | `/comments/{commentId}/reports` | 經驗證 session 提交檢舉 |
 | `/admin/comments`、`/admin/comments/{commentId}` | 具 `comments:moderate` permission 的管理流程 |
 
-所有 mutation、本人資料及管理回應使用 `Cache-Control: private, no-store`。權限由伺服器驗證，不能因持有一般 session 就操作他人資料。匿名 session 若獲准，也是要驗證的 session；其可用操作由 A2 決定。
+所有 mutation、本人資料及管理回應使用 `Cache-Control: private, no-store`。權限由伺服器驗證，不能因持有一般 session 就操作他人資料。MVP 不啟用 Supabase 匿名登入；伺服器以 claims 拒絕匿名 session 的寫入。
 
 公開 `PublicComment` 不包含 account ID、作者對應、email 或管理 metadata。`anonymous=true` 時 `displayName` 必須為 null，畫面自行顯示匿名標籤；具名時僅提供可公開的顯示名稱。本人操作使用私有 `/me/comments`，不靠在公開列表暴露作者 ID 來判斷 ownership。公開 DTO 的未列出欄位均不接受。
 
@@ -40,7 +40,7 @@ python -m pytest tests/test_api_contract.py -q
 
 ## 分頁與錯誤
 
-列表使用 `limit` 與 opaque `cursor`，回傳 `items`、`nextCursor`；最後一頁為 null。搜尋需有至少兩個字元。讀者留言長度、發文速率與審核轉換仍由 A2 的部署政策決定。
+列表使用 `limit` 與 opaque `cursor`，回傳 `items`、`nextCursor`；最後一頁為 null。搜尋需有至少兩個字元。讀者留言上限 2000 字元，每帳號 10 分鐘 5 則、每日 50 則；帳號首則留言為 `pending`，之後直接 `published`（ADR-0017）。schema 的 `maxLength` 由 D2 補上。
 
 錯誤固定為 `error: {code, message, requestId}`，涵蓋 401、403、404、409、422、429、503。錯誤回應不可包含 token、私有作者資訊、資料庫錯誤或來源全文。429 的限制由服務端實作，不能只在 UI 阻止送出。
 

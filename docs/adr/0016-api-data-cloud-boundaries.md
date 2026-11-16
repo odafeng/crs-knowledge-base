@@ -1,16 +1,27 @@
 # 0016. API、資料權威與雲端服務分工
 
-**Status**: Proposed（待 A1 選定供應商；production 切換另由 F4 核准）
+**Status**: Accepted（2026-11-16 由維護者於 [A1 #53](https://github.com/odafeng/crs-knowledge-base/issues/53) 選定方案 A；production 切換另由 F4 核准）
 
 ## Context
 
 現站以 JSON／HTML 為權威內容，GitHub Actions 執行 Python Paper Watch，網站建置產生 `site/`。新增使用者與留言後，需要可交易的持久資料、身分驗證、權限控制與可執行 API 的 hosting。
 
-目前有 Supabase 與全 Google Cloud 兩套候選。ADK 是 agent framework，Cloud Storage 是 object storage，Cloud SQL 是受管理的關聯式資料庫；它們分別處理不同責任，還需要網站執行環境與 Auth。供應商尚未由維護者選定。
+評估時有 Supabase 與全 Google Cloud 兩套候選。ADK 是 agent framework，Cloud Storage 是 object storage，Cloud SQL 是受管理的關聯式資料庫；它們分別處理不同責任，還需要網站執行環境與 Auth。
 
 ## Decision
 
-本節為提交 [A1 #53](https://github.com/odafeng/crs-knowledge-base/issues/53) 決定的架構提案：
+採用方案 A：Next.js 前端 + Supabase（PostgreSQL／Auth／Storage）；既有 Python 服務（FastAPI 與 worker）按需部署 Cloud Run。
+
+| 責任 | 採用 |
+|---|---|
+| 公開頁面與互動 UI | Next.js；server hosting 供應商由 [F1 #75](https://github.com/odafeng/crs-knowledge-base/issues/75) 依帳號與預算確認 |
+| 應用 API、寫入驗證、授權、管理流程 | FastAPI，部署於 Cloud Run |
+| 文獻掃描、分類、發布任務 | Python worker，部署於 Cloud Run（jobs 或排程觸發） |
+| 身分 | Supabase Auth |
+| 內容與留言的權威資料庫 | Supabase PostgreSQL（唯一權威；不另設 Cloud SQL） |
+| 檔案 | Supabase Storage |
+
+Supabase Data API 不作為留言或內容的寫入入口；寫入一律經 FastAPI，避免繞過限速與審核規則。若前端直接讀取 Supabase，僅限公開 view，並以 RLS 驗證。帳號、區域、費用上限與祕密交付仍由 F1 確認。
 
 ### 服務邊界
 
@@ -20,7 +31,7 @@
 - 一種業務寫入只設一個權威入口；不在 Next.js 與 FastAPI 各寫一套留言規則。若選 Supabase Data API，須與 FastAPI 使用相同政策，防止繞過權限或限速。
 - 具體 API contract、部署服務數量與連線方式在 A1 後由 B1/B2 固定，不為尚未需要的服務建立抽象。
 
-### 候選組合
+### 評估過的候選組合（記錄用）
 
 | 責任 | A：建議起步方案 | B：全 Google Cloud |
 |---|---|---|
@@ -43,7 +54,7 @@ A 的預期優點是 Auth、資料、Storage 的整合工作較少。B 適合已
 ### 部署與驗收
 
 - development、staging、production 的資源隔離、區域、費用上限及祕密交付由 [F1 #75](https://github.com/odafeng/crs-knowledge-base/issues/75) 確認。
-- GitHub Pages 可繼續服務現有靜態基線。完整的 Next.js server 與 FastAPI 另需選定 runtime；本提案不把它們部署成 Pages 的靜態檔案。
+- GitHub Pages 可繼續服務現有靜態基線。完整的 Next.js server 與 FastAPI 另需選定 runtime；不把它們部署成 Pages 的靜態檔案。
 - staging 通過內容 parity、unit/smoke/E2E、權限矩陣、mobile/accessibility 及還原演練後，才由 [F4 #79](https://github.com/odafeng/crs-knowledge-base/issues/79) 核准正式切換。
 - 新依賴固定版本並提交 lockfile。前端建立 TypeScript/lint/unit/smoke/E2E，Python 維持 Ruff/Pyright/pytest。
 
@@ -54,7 +65,8 @@ A 的預期優點是 Auth、資料、Storage 的整合工作較少。B 適合已
 - FastAPI 與 Next.js 帶來兩個 runtime，需維護 contract、部署、session 傳遞與監控。
 - Supabase 將部分權限與產品整合綁在其服務上；全 GCP 則需要更多 IAM、連線、Auth 整合與費用管理工作。
 - 匯入、單一 writer 切換與保留新留言的 rollback，比只搬靜態檔複雜；必須先在 staging 演練。
-- 本提案尚未建立雲端資源、執行 migration 或切換 production。
+- FastAPI 跑在 Cloud Run、資料在 Supabase，兩者跨供應商連線，需處理連線池、延遲與兩邊的祕密管理。
+- 本決策尚未建立雲端資源、執行 migration 或切換 production。
 
 ## References
 

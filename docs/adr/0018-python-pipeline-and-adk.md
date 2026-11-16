@@ -16,7 +16,7 @@
 - API 與 worker 共用來源查核及發布規則；查核邏輯不綁在 Next.js component、agent prompt 或特定雲端 SDK 裡。
 - 保留 ADR-0013 的 provenance gate、AI 未審標示、人工接受／撤下與人工整理內容保護；既有研究設計、來源不完整及錯誤數字的回歸案例必須繼續通過。
 - 舊 JSON writer 與新 PostgreSQL writer 的切換依 ADR-0016。接受／撤下事件與重試使用冪等識別，不產生第二條獨立內容權威。
-- 掃描與分類作為排程／背景任務執行；保存單主題、人工觸發、dry-run、concurrency、timeout、重試及用量上限。實際執行環境依 A1。
+- 掃描與分類作為排程／背景任務執行；保存單主題、人工觸發、dry-run、concurrency、timeout、重試及用量上限。執行環境依 ADR-0016 為 Cloud Run。
 - 排程改造前先保留目前一般與會議季行為。測試不得發送真實通知或無限制呼叫付費模型。
 - 若決定做 ADK pilot，只遷移一個有明確用途的流程，用同一批 fixtures 比較來源／數字正確性、gate 結果、人工介入、費用與耗時，先寫通過及退出條件。
 - ADK 可以搭配不同模型與儲存服務，採用它不等於同時改用 Gemini 或 Cloud SQL。更換模型、公開 AI 問答或自動寫新聞稿，需各自有需求與驗收，不能隨 framework 遷移一併加入。
