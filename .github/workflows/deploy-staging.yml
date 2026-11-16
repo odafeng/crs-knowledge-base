@@ -125,6 +125,28 @@ jobs:
             gcloud scheduler jobs create http announce-news-every-30-minutes "${ARGS[@]}"
           fi
 
+      # Coverage and approval watch (G5 #116): weekly, opens review issues and never edits a card. Needs the same
+      # secrets as Paper Watch (content database, GitHub token), so it stays off until REGULATORY_WATCH_ENABLED=true.
+      - name: Deploy the coverage watch job
+        if: vars.REGULATORY_WATCH_ENABLED == 'true'
+        run: |
+          gcloud run jobs deploy regulatory-watch --project="$PROJECT" --region="$REGION" \
+            --image="$IMAGES/worker:$GITHUB_SHA" --service-account="$WORKER_RUNTIME" \
+            --command=python --args=scripts/regulatory_watch.py \
+            --set-secrets=GUTHUB_CONTENT_DATABASE_URL=guthub-content-database-url:latest,GH_TOKEN=paper-watch-github-token:latest \
+            --set-env-vars=GITHUB_REPOSITORY="$GITHUB_REPOSITORY" \
+            --memory=1Gi --max-retries=0 --task-timeout=1800
+          gcloud run jobs add-iam-policy-binding regulatory-watch --project="$PROJECT" --region="$REGION" \
+            --member="serviceAccount:$WORKER_RUNTIME" --role=roles/run.invoker --format=none
+          ARGS=(--project="$PROJECT" --location="$REGION" --schedule="0 9 * * 1" --time-zone="Asia/Taipei"
+            --uri="https://run.googleapis.com/v2/projects/$PROJECT/locations/$REGION/jobs/regulatory-watch:run"
+            --http-method=POST --oauth-service-account-email="$WORKER_RUNTIME")
+          if gcloud scheduler jobs describe regulatory-watch-weekly --project="$PROJECT" --location="$REGION" >/dev/null 2>&1; then
+            gcloud scheduler jobs update http regulatory-watch-weekly "${ARGS[@]}"
+          else
+            gcloud scheduler jobs create http regulatory-watch-weekly "${ARGS[@]}"
+          fi
+
       # Paper Watch calls a paid model and opens GitHub issues, so it stays off until the maintainer provides its
       # secrets and sets the repository variable PAPER_WATCH_ENABLED=true (E3 #76).
       - name: Deploy the Paper Watch job

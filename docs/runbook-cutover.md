@@ -106,6 +106,7 @@ Cloud Scheduler 每個帳單帳戶有 3 個免費排程，超過後每個每月 
 | --- | --- | --- |
 | GutHub API health check failing | `/api/v1/health` 每 5 分鐘檢查一次，超過一個區域失敗 | Cloud Run 的 `guthub-api` 日誌；health 在資料庫連不上時回 503，所以也要看 Supabase 狀態頁 |
 | GutHub Cloud Run job failed | 任何 Cloud Run job 執行失敗（每日清除作者對應、Paper Watch） | `gcloud run jobs executions list --job=<job>` 和該次執行的日誌；Paper Watch 失敗最常見的原因是 Anthropic 額度用完（見 `docs/維運筆記.md`） |
+| regulatory-watch 開出的 issue（標題以「[G5 監測]」開頭） | 健保給付規定有新版、章節消失，或 TFDA 許可證在卡片查核日之後異動、註銷 | 對照 issue 裡的新條文或適應症全文更新卡片；job 不會自動改卡片 |
 | 預算 50%／90%／100% | 每月花費（staging 320 TWD、prod 960 TWD） | Billing 報表，看是哪個服務 |
 
 告警建立時沒有掛通知管道，事件只會出現在 Cloud Console 的 Monitoring → Incidents。要收到 email，先在 Monitoring → Alerting → Edit notification channels 新增自己的 email，再把管道名稱（`projects/$P/notificationChannels/<id>`）加進兩條告警政策。預算告警會寄給帳單管理員，不需要另外設定。

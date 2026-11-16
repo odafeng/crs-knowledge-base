@@ -1,0 +1,5 @@
+﻿異動,藥品代號,藥品英文名稱,藥品中文名稱,成分,規格量,規格單位,單複方,支付價,有效起日,有效迄日,藥商,製造廠名稱,劑型,藥品分類,分類分組名稱,ATC代碼,給付規定章節,藥品代碼超連結,給付規定章節連結
+,KC00877248,ERBITUX 5MG/ML,爾必得舒,CETUXIMAB 5 MG/ML,,,單方,1.00,1100101,1141231,藥商,廠,注射劑,研發廠,x,L01FE01,9.27.,https://example.test,https://info.nhi.gov.tw/api/INAE3000/INAE3000S01/getPDF?DurgFileName=9.27._20250101.pdf
+,KC00877248,ERBITUX 5MG/ML,爾必得舒,CETUXIMAB 5 MG/ML,,,單方,1.00,1150101,9991231,藥商,廠,注射劑,研發廠,x,L01FE01,9.27.,https://example.test,https://info.nhi.gov.tw/api/INAE3000/INAE3000S01/getPDF?DurgFileName=9.27._20260501.pdf
+,KC00941248,VECTIBIX 20MG/ML,維必施,PANITUMUMAB 20 MG/ML,,,單方,1.00,1150101,9991231,藥商,廠,注射劑,研發廠,x,L01FE02,9.53.,https://example.test,https://info.nhi.gov.tw/api/INAE3000/INAE3000S01/getPDF?DurgFileName=9.53._20260201.pdf
+,B004858100,OTHER,其他,OTHER 3 MG,,,單方,1.00,960901,980930,藥商,廠,錠,研發廠,x,N05AF01,,https://example.test,
