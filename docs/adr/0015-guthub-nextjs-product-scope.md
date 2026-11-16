@@ -17,6 +17,7 @@
 - 本次 MVP 包含登入、文獻頁留言及 ADR-0017 的匿名模式（登入後可選對其他讀者匿名）。回覆樹、投票、個人收藏、即時聊天與公開 AI 問答不預先納入。
 - 現有 v3 在新架構驗收前保留為可建置基線。現站部署缺陷另由 [A4 #56](https://github.com/odafeng/crs-knowledge-base/issues/56) 處理。
 - Next.js 專案放在 `apps/web/`，與現行 Python/Jinja2 共存。遷移期間共用 `static/styles/` 與本地字型，API types 由 `contracts/openapi.yaml` 產生並由 CI 檢查同步；前端啟動檢查不連接外部 API、Auth 或資料庫。
+- 閱讀頁採 server 端 ISR（2026-11-16 維護者於 C2 #64 開工前確認）：Next.js server component 向 FastAPI 讀資料，頁面每 5 分鐘重新生成，與 API 的 `Cache-Control: public, max-age=300` 一致。內容更新不必重建網站。登入與留言等個人化區域另由使用者端動態處理，不放進共享快取。這需要一個能執行 Next.js server 的環境，由 [F1 #75](https://github.com/odafeng/crs-knowledge-base/issues/75) 提供。
 - Jobs 使用 milestones、Steps 使用 issues；實作與驗收狀態不重複寫入本 ADR。供應商與資料分工見 [ADR-0016](0016-api-data-cloud-boundaries.md)，留言政策見 [ADR-0017](0017-comments-and-anonymous-identity.md)。
 
 本 ADR 在 Next.js 正式切換後取代 ADR-0014 的前端實作部分；在此之前，ADR-0014 仍描述目前可執行的網站。
@@ -27,6 +28,7 @@
 - 現有內容與品質控制有明確的遷移驗收，不會因改框架而被省略。
 - Next.js 引入 Node.js runtime、TypeScript、套件升級與新的 CI 工作，維護成本高於現有靜態網站。
 - 遷移期間需維持現行與新前端兩條可驗證路徑；正式切換後才整理過渡程式。
+- ISR 讓網站在 FastAPI 或資料庫故障時仍可回傳上一次生成的頁面，但新內容最多會晚 5 分鐘出現，而且多了一個需要部署與監控的 Next.js server。
 - 大範圍更名容易連帶破壞 canonical、Feed ID、PWA scope 與 CI 設定。只改顯示名稱避開了這個風險，代價是品牌名稱與網址暫時不一致；日後若換網域，canonical、Feed ID 與 PWA scope 的遷移要另開 Step 處理。
 
 ## References
