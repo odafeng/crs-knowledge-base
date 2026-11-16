@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { DisplaySettings } from "@/components/display-settings";
+import { OfflineReading } from "@/components/offline-reading";
 import { SiteHeader } from "@/components/site-header";
 import { TabBar } from "@/components/site-nav";
+import { PREFS_SCRIPT } from "@/lib/prefs";
 import { robots, SITE_NAME } from "@/lib/seo";
 import "./globals.css";
 
@@ -37,7 +40,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="zh-Hant-TW">
+    // PREFS_SCRIPT sets data-theme / data-font-size on <html> before hydration.
+    <html lang="zh-Hant-TW" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: PREFS_SCRIPT }} />
+      </head>
       <body>
         <a className="skip-link" href="#main">
           跳到主要內容
@@ -58,9 +65,11 @@ export default function RootLayout({
                 <Link href="/updates/">全部文獻</Link>
               </nav>
             </div>
+            <DisplaySettings />
           </div>
         </footer>
         <TabBar />
+        <OfflineReading />
       </body>
     </html>
   );

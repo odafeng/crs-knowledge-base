@@ -238,6 +238,9 @@ jobs:
       - name: Accessibility and the reading flow
         run: node tools/next-verify.js "http://127.0.0.1:$WEB_PORT"
 
+      - name: Search, reading preferences and offline reading
+        run: node tools/next-offline.js "http://127.0.0.1:$WEB_PORT"
+
   deploy:
     needs: [test, web, api, e2e]
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')

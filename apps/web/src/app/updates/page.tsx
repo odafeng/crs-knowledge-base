@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { pageJsonLd, pageMetadata } from "@/lib/seo";
 import { connection } from "next/server";
 import { Breadcrumb, Entry, JsonLd } from "@/components/reading";
+import { SearchBox } from "@/components/search-box";
 import { listPapers, listTopics } from "@/lib/content";
 import { HOME, updates } from "@/lib/site";
 
@@ -33,8 +34,8 @@ export default async function UpdatesPage() {
           全部收錄的文獻與評論，新的在前，共 {rows.length} 則。
         </p>
       </header>
-      {/* The search box returns with C3 (#65), which migrates search and reading preferences. */}
-      <ol className="entries page__section page__narrow" id="q">
+      <SearchBox />
+      <ol className="entries page__section page__narrow">
         {rows.map((update) => (
           <Entry
             update={update}

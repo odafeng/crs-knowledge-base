@@ -6,11 +6,48 @@ const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../..",
 );
+// Public index pages read the API at request time (connection()), so Next.js marks them private by default.
+// They hold no per-reader data; saying so lets the service worker keep them for offline reading (C3 #65).
+// List pages here explicitly: account and admin pages must keep the private default.
+const PUBLIC_DYNAMIC_PAGES = [
+  "/",
+  "/updates/",
+  "/news/",
+  "/topics/",
+  "/mcrc/",
+  "/robotic/",
+  "/subscribe/",
+];
+
 const nextConfig: NextConfig = {
   // The current site's URLs end with a slash (/papers/{slug}/); keep them unchanged.
   trailingSlash: true,
   outputFileTracingRoot: repositoryRoot,
   turbopack: { root: repositoryRoot },
+  // Browsers must always check for a new service worker (Next.js PWA guide).
+  async headers() {
+    return [
+      ...PUBLIC_DYNAMIC_PAGES.map((source) => ({
+        source,
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+        ],
+      })),
+      {
+        source: "/sw.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: "default-src 'self'; script-src 'self'",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
