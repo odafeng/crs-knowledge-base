@@ -23,6 +23,8 @@ export const DESCRIPTION =
 const LANG = "zh-Hant-TW";
 /** Stable prefix for RSS <guid>, Atom <id> and JSON Feed ids (sitegen config.FEED_TAG). Never change it. */
 export const FEED_TAG = "tag:odafeng.github.io,2026";
+/** Open Graph image for every page, as on the current site (templates/base.html.j2). */
+export const SHARE_IMAGE = "/icons/icon-512.png";
 const FEED_LIMIT = 30;
 
 /**
@@ -72,7 +74,9 @@ export function pageMetadata(
       description,
       url: absolute(path),
       locale: "zh_TW",
+      images: [absolute(SHARE_IMAGE)],
     },
+    twitter: { card: "summary_large_image" },
   };
 }
 

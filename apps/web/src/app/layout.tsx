@@ -5,13 +5,12 @@ import { OfflineReading } from "@/components/offline-reading";
 import { SiteHeader } from "@/components/site-header";
 import { TabBar } from "@/components/site-nav";
 import { PREFS_SCRIPT } from "@/lib/prefs";
-import { robots, SITE_NAME } from "@/lib/seo";
+import { DESCRIPTION, robots, SITE_NAME, TAGLINE } from "@/lib/seo";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "GutHub｜大腸直腸外科實證更新",
-  description:
-    "整理大腸直腸外科的文獻、研究結果與資料來源，供醫療專業人員閱讀與參考。",
+  title: `${SITE_NAME}｜${TAGLINE}`,
+  description: DESCRIPTION,
   robots: robots(),
   alternates: {
     types: {
@@ -27,13 +26,15 @@ export const metadata: Metadata = {
       ],
     },
   },
-  icons: { icon: "/favicon.svg" },
+  // The manifest link comes from app/manifest.ts.
+  icons: { icon: "/favicon.svg", apple: "/icons/icon-192.png" },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#0E2270",
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({

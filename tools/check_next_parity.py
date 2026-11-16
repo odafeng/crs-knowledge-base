@@ -6,7 +6,8 @@ Run Next.js with GUTHUB_SITE_PUBLIC=1 so per-page noindex can be compared. Check
 - every page of the current site exists on the Next.js site, with the same noindex decision;
 - every internal link on every Next.js page resolves;
 - each RSS/Atom/JSON feed has the same items per GUID (link, dates, title, summary, categories);
-- sitemap.xml (as a set), robots.txt, canonical and JSON-LD per page (after the Seminar Hegemon -> GutHub rename).
+- sitemap.xml (as a set), robots.txt, canonical, share image and JSON-LD per page, and the web app manifest
+  (after the Seminar Hegemon -> GutHub rename).
 Same-day item order may differ (the API orders by ID, sitegen by file order); IDs and content may not.
 Exits 1 on any difference.
 """
@@ -30,7 +31,7 @@ problems: list[str] = []
 def fetch(path: str) -> tuple[int, str]:
     try:
         with urllib.request.urlopen(BASE + path, timeout=30) as response:
-            return response.status, response.read().decode()
+            return response.status, response.read().decode(errors="replace")  # link targets include icons
     except urllib.error.HTTPError as error:
         return error.code, ""
 
@@ -64,11 +65,13 @@ def meta(html: str, pattern: str) -> str | None:
 
 CANONICAL = r'<link rel="canonical" href="([^"]+)"'
 ROBOTS = r'<meta name="robots" content="([^"]+)"'
+OG_IMAGE = r'<meta property="og:image" content="([^"]+)"'
+TWITTER_CARD = r'<meta name="twitter:card" content="([^"]+)"'
 
 # 1. Pages, noindex, canonical and JSON-LD.
 pages = sorted("/" + str(p.parent.relative_to(OLD)) + "/" for p in OLD.rglob("index.html") if p.parent != OLD)
 pages = ["/", *pages]
-missing, noindex_diff, canonical_diff, jsonld_diff, html = [], [], [], [], {}
+missing, noindex_diff, canonical_diff, share_diff, jsonld_diff, html = [], [], [], [], [], {}
 for path in pages:
     status, body = fetch(path)
     if status != 200:
@@ -80,12 +83,15 @@ for path in pages:
         noindex_diff.append(path)
     if meta(old, CANONICAL) != meta(body, CANONICAL):
         canonical_diff.append(path)
+    if any(meta(old, tag) != meta(body, tag) for tag in (OG_IMAGE, TWITTER_CARD)):
+        share_diff.append(path)
     expected = json.loads(json.dumps(jsonld(old), ensure_ascii=False).replace("Seminar Hegemon", "GutHub"))
     if expected != jsonld(body):
         jsonld_diff.append(path)
 check(f"{len(pages)} current pages exist on Next.js", not missing, ", ".join(missing[:10]))
 check("noindex decisions match (GUTHUB_SITE_PUBLIC=1)", not noindex_diff, ", ".join(noindex_diff[:10]))
 check("canonical links match", not canonical_diff, ", ".join(canonical_diff[:10]))
+check("share image and card match", not share_diff, ", ".join(share_diff[:10]))
 check("JSON-LD matches", not jsonld_diff, ", ".join(jsonld_diff[:10]))
 
 # 2. Internal links on every Next.js page.
@@ -171,6 +177,13 @@ check("/robots.txt", (OLD / "robots.txt").read_text(encoding="utf-8") == fetch("
 old_index = sorted(json.loads((OLD / "search.json").read_text(encoding="utf-8")), key=lambda e: e["path"])
 new_index = sorted(json.loads(fetch("/search.json")[1]), key=lambda e: e["path"])
 check(f"/search.json: {len(new_index)} entries", old_index == new_index)
+
+# 6. The web app manifest (C4 #66): only the display name changes; scope, start_url and icons stay the same.
+old_manifest = json.loads(
+    (OLD / "manifest.webmanifest").read_text(encoding="utf-8").replace("Seminar Hegemon", "GutHub")
+)
+new_manifest = json.loads(fetch("/manifest.webmanifest")[1] or "null")
+check("/manifest.webmanifest", old_manifest == new_manifest, f"current={old_manifest} new={new_manifest}")
 
 print(f"\nproblems: {len(problems)}")
 sys.exit(1 if problems else 0)
