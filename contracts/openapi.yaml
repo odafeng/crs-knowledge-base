@@ -520,7 +520,9 @@ components:
         source:
           type: string
           enum: [fulltext, abstract, secondary, curated]
-        reviewedAt: {type: string, format: date}
+        reviewedAt: {type: string, format: date, description: When the numbers were last checked.}
+        addedAt: {type: string, format: date, description: 'When Paper Watch found a hand-added paper (its review
+            issue date). Lists date a paper by review.publishedAt, else addedAt, else reviewedAt.'}
         review: {$ref: '#/components/schemas/Review'}
         commentary:
           type: array

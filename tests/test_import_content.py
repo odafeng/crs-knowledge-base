@@ -144,7 +144,7 @@ def export(conn) -> dict[str, list[dict]]:
             commentary.setdefault(row[0], []).append({**item, "newData": row[9], "addedAt": row[10].isoformat()})
         cur.execute(
             "select id, slug, topic_key, year, journal, study_type, n, regimen, endpoint, result, bottom_line, doi,"
-            " source, reviewed_at, detail_html, withdrawn_at is not null from app.papers"
+            " source, reviewed_at, detail_html, withdrawn_at is not null, added_at from app.papers"
         )
         papers = []
         for r in cur.fetchall():
@@ -154,6 +154,7 @@ def export(conn) -> dict[str, list[dict]]:
                     "n": r[6], "regimen": r[7], "endpoint": r[8], "result": r[9], "bottomLine": r[10], "doi": r[11],
                     "source": r[12], "reviewedAt": r[13].isoformat(), "detailHtml": r[14], "withdrawn": r[15],
                     "relations": relations.get(r[0], []), "commentary": commentary.get(r[0], []),
+                    **({"addedAt": r[16].isoformat()} if r[16] else {}),
                 }
             )  # fmt: skip
         cur.execute(

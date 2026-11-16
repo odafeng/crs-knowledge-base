@@ -49,6 +49,7 @@ COLUMNS: dict[str, tuple[str, ...]] = {
         "review_published_at",
         "detail_html",
         "source_file",
+        "added_at",
     ),  # fmt: skip
     "paper_relations": ("paper_id", "target_id", "type"),
     "research_commentary": (
@@ -217,6 +218,7 @@ def _paper_rows(rows: Rows, root: Path, topic_key: str, p: dict, loaded: Any) ->
             "review_published_at": published,
             "detail_html": loaded.detail_html,
             "source_file": file or None,
+            "added_at": p.get("addedAt"),
         }
     )
     rows.tables["paper_relations"] += [
@@ -428,6 +430,8 @@ def export_kb(conn: Any, root: Path) -> None:
             "source": p["source"],
             "reviewedAt": p["reviewed_at"].isoformat(),
         }
+        if p["added_at"]:
+            entry["addedAt"] = p["added_at"].isoformat()
         if p["source_file"]:
             entry["file"] = p["source_file"]
             document(p["source_file"], p["detail_html"])

@@ -41,8 +41,12 @@ test('new site: navigation, news, search, preferences, and offline reading', asy
     assert.match(await page.locator('main').innerText(), /頭條/);
     assert.equal(await page.locator('h1').count(), 1);
     assert.equal(await page.locator('header [data-push-toggle]').isVisible(), false);
-    await page.locator('.lead__actions a').click();
-    await page.waitForURL('**/news/niche2-five-year/');
+    // The lead is the newest story, whichever that is; follow its link rather than naming it.
+    const lead = page.locator('.lead__actions a');
+    const leadUrl = new URL(await lead.getAttribute('href'), page.url()).href;
+    assert.match(leadUrl, /\/news\/[^/]+\/$/);
+    await lead.click();
+    await page.waitForURL(leadUrl);
     assert.equal(await page.locator('meta[name="robots"]').getAttribute('content'), 'noindex, follow');
     assert.match(await page.locator('main').innerText(), /尚未經人工審核/);
     await page.goto(origin + BASE + 'updates/');
