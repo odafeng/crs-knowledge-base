@@ -201,7 +201,8 @@ jobs:
             -e 's/^API_URL=/SUPABASE_URL=/p' \
             -e 's/^PUBLISHABLE_KEY=/SUPABASE_PUBLISHABLE_KEY=/p' \
             -e 's/^SERVICE_ROLE_KEY=/SUPABASE_SERVICE_KEY=/p' \
-            -e 's/^MAILPIT_URL=/MAILPIT_URL=/p' >> "$GITHUB_ENV"
+            -e 's/^MAILPIT_URL=/MAILPIT_URL=/p' \
+            -e 's/^DB_URL=/DATABASE_URL=/p' >> "$GITHUB_ENV"
 
       - name: Import content and start the API as guthub_api
         run: |
@@ -254,6 +255,10 @@ jobs:
 
       - name: Sign-in, account name, sign-out and switching accounts
         run: node tools/next-auth.js "http://127.0.0.1:$WEB_PORT" "http://127.0.0.1:$API_PORT/api/v1"
+
+      # DATABASE_URL approves the first comment, standing in for moderation (D5).
+      - name: Reader discussion on paper pages
+        run: node tools/next-comments.js "http://127.0.0.1:$WEB_PORT" "http://127.0.0.1:$API_PORT/api/v1"
 
   deploy:
     needs: [test, web, api, e2e]

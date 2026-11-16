@@ -2,7 +2,7 @@
 
 大腸直腸外科實證知識庫，規劃加入專業討論與匿名留言。原名 **Seminar Hegemon**。
 
-GutHub 是這次改版的產品名稱。正式站仍使用 Python/Jinja2 靜態網站與 Paper Watch。新架構已經完成資料庫（Supabase PostgreSQL）、內容匯入、FastAPI 讀取 API，以及 `apps/web/` 的 **Next.js + TypeScript + React** 閱讀頁、索引頁、SEO、feed、搜尋、深色模式與字級，公開內容的離線閱讀，以及登入（Email 連結；Google 等 F1 提供 OAuth client），但還沒部署。留言與推播仍在進行中。雲端與匿名政策已經決定（見 ADR-0016、ADR-0017）。
+GutHub 是這次改版的產品名稱。正式站仍使用 Python/Jinja2 靜態網站與 Paper Watch。新架構已經完成資料庫（Supabase PostgreSQL）、內容匯入、FastAPI 讀取 API，以及 `apps/web/` 的 **Next.js + TypeScript + React** 閱讀頁、索引頁、SEO、feed、搜尋、深色模式與字級，公開內容的離線閱讀，登入（Email 連結；Google 等 F1 提供 OAuth client）與文獻頁讀者留言，但還沒部署。留言的頻率限制、管理審核與推播仍在進行中。雲端與匿名政策已經決定（見 ADR-0016、ADR-0017）。
 
 [CI](https://github.com/odafeng/crs-knowledge-base/actions/workflows/ci.yml) · [Paper Watch](https://github.com/odafeng/crs-knowledge-base/actions/workflows/paper-watch.yml) · [Jobs / milestones](https://github.com/odafeng/crs-knowledge-base/milestones) · [Issues](https://github.com/odafeng/crs-knowledge-base/issues)
 
@@ -140,6 +140,7 @@ python tools/check_next_parity.py /tmp/current-site http://127.0.0.1:3000   # �
 node tools/next-verify.js http://127.0.0.1:3000                            # axe（WCAG 2.2 AA）、閱讀流程、鍵盤
 node tools/next-offline.js http://127.0.0.1:3000                           # 搜尋、偏好保存、Service Worker 離線閱讀
 node tools/next-auth.js http://127.0.0.1:3000 http://127.0.0.1:8000/api/v1  # 登入、顯示名稱、登出、換帳號（需要 SUPABASE_URL、SUPABASE_SERVICE_KEY）
+node tools/next-comments.js http://127.0.0.1:3000 http://127.0.0.1:8000/api/v1  # 文獻頁留言：待審、署名／匿名、修改刪除、檢舉、失敗重送（另需 DATABASE_URL）
 ```
 
 ```bash

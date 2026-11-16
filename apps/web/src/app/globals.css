@@ -55,3 +55,85 @@
   border-radius: 50%;
   background: var(--brand);
 }
+
+/* Reader discussion on paper pages (D3 #69) */
+.comment-list {
+  display: grid;
+  gap: var(--space-4);
+  margin: var(--space-5) 0;
+  padding: 0;
+  list-style: none;
+}
+.comment {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+.comment__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+}
+.comment__author {
+  color: var(--ink);
+  font-weight: 600;
+}
+.comment__body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.comment__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.comment-form {
+  display: grid;
+  gap: var(--space-2);
+  margin-block-start: var(--space-5);
+}
+.comment-form label {
+  font-weight: 600;
+}
+.comment-form textarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  font: inherit;
+  resize: vertical;
+}
+.comment-form__identity {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+  padding: 0;
+  border: 0;
+}
+.comment-form__identity legend {
+  margin-block-end: var(--space-2);
+  font-weight: 600;
+}
+.comment-form__identity label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-weight: 400;
+}
+.comment-form__identity input {
+  margin-block-start: 0.35em;
+}
+.comment-form > .btn {
+  justify-self: start;
+}
+.comment-gate {
+  margin-block-start: var(--space-5);
+}

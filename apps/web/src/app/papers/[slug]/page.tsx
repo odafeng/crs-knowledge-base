@@ -1,6 +1,7 @@
 import { pageMetadata, paperJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ReaderComments } from "@/components/comments";
 import { notFound } from "next/navigation";
 import {
   AiChip,
@@ -130,6 +131,7 @@ export default async function PaperPage({ params }: Props) {
               </ul>
             </section>
           )}
+          <ReaderComments paperId={paper.id} />
         </div>
         <aside className="split__rail" aria-label="研究資料與連結">
           <dl className="facts">

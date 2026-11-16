@@ -30,17 +30,19 @@ export function supabase(): SupabaseClient {
   return client;
 }
 
+/** The GutHub API URL for `path`, as the browser reaches it. */
+export function apiUrl(path: string): string {
+  const base = process.env.NEXT_PUBLIC_GUTHUB_API_URL ?? "";
+  return `${base.replace(/\/$/, "")}${path}`;
+}
+
 /** Calls the GutHub API as the signed-in reader. */
 export function apiFetch(
   path: string,
   token: string,
   init: RequestInit = {},
 ): Promise<Response> {
-  const base = (process.env.NEXT_PUBLIC_GUTHUB_API_URL ?? "").replace(
-    /\/$/,
-    "",
-  );
-  return fetch(`${base}${path}`, {
+  return fetch(apiUrl(path), {
     ...init,
     credentials: "omit",
     cache: "no-store",
