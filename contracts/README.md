@@ -41,7 +41,7 @@ python -m pytest tests/test_api_contract.py -q
 
 ## 分頁與錯誤
 
-列表使用 `limit` 與 opaque `cursor`，回傳 `items`、`nextCursor`；最後一頁為 null。搜尋需有至少兩個字元。讀者留言上限 2000 字元，每帳號 10 分鐘 5 則、每日 50 則；帳號首則留言為 `pending`，之後直接 `published`（ADR-0017）。schema 的 `maxLength` 由 D2 補上。
+列表使用 `limit` 與 opaque `cursor`，回傳 `items`、`nextCursor`；最後一頁為 null。搜尋需有至少兩個字元。讀者留言上限 2000 字元（檢舉理由 1000 字元），每帳號 10 分鐘 5 則、每日 50 則；帳號首則留言為 `pending`，之後直接 `published`（ADR-0017）。留言是純文字，只允許換行與 tab 兩種控制字元。作者修改不會改變審核狀態。
 
 錯誤固定為 `error: {code, message, requestId}`，涵蓋 401、403、404、409、422、429、503。錯誤回應不可包含 token、私有作者資訊、資料庫錯誤或來源全文。429 的限制由服務端實作，不能只在 UI 阻止送出。
 

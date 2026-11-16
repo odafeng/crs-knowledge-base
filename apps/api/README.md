@@ -53,6 +53,20 @@ uv run --frozen pytest
 
 回應都帶 `Cache-Control: private, no-store` 與 `Vary: Authorization`。
 
+## 讀者留言（D2）
+
+留言是純文字，存在獨立的 `app.comments`，和期刊 commentary 分開，也不會成為文獻的證據或來源（ADR-0017）。
+
+| 端點 | 誰可以用 | 說明 |
+|---|---|---|
+| `GET /papers/{id}/comments` | 所有人 | 只列已公開、未刪除的留言；文獻撤下後回 404。依 `(created_at, id)` 分頁，翻頁期間有新留言也不會重複或漏掉 |
+| `POST /papers/{id}/comments` | 已設定顯示名稱的讀者 | 署名留言保存發文當時的名稱；匿名留言不回傳任何作者資訊。帳號第一則留言是 `pending`，由資料庫 trigger 決定 |
+| `GET /me/comments` | 本人 | 自己的留言與審核狀態（含 `pending`、`hidden`） |
+| `PATCH`、`DELETE /comments/{id}` | 只有作者（管理者也不行） | 修改不改變審核狀態；刪除是軟刪除，90 天後清除作者對應 |
+| `POST /comments/{id}/reports` | 已設定顯示名稱的讀者 | 只能檢舉看得到的留言，不能檢舉自己的；同一則只能檢舉一次（409） |
+
+本文 1–2000 字元、檢舉理由 1–1000 字元，只允許換行與 tab 兩種控制字元。發文頻率限制在 D4、審核與隱藏在 D5。
+
 ## 讀取 API（B5）
 
 `/papers`、`/papers/{id}`、`/news`、`/news/{id}`、`/topics`、`/topics/{key}`、`/search` 依 contract 實作：

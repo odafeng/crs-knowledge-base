@@ -1,0 +1,240 @@
+"""Reader comments on papers (D2 #68, ADR-0017).
+
+Comments are plain text in their own table, apart from journal commentary and never part of a paper's evidence. The
+public list reads only app.public_comments, which has no author column; signed comments carry the name snapshot taken
+when posting. Only the author may edit or delete (soft delete); moderation (approve, hide) is D5. The first comment of
+an account waits for moderation, enforced by a database trigger whatever the API sends. Posting limits are D4.
+"""
+
+import base64
+import binascii
+import json
+from datetime import datetime
+from typing import Annotated, Any
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
+from psycopg import errors
+from pydantic import AfterValidator, BaseModel, ConfigDict, StringConstraints
+
+from guthub_api.auth import User, current_user
+from guthub_api.db import Conn, get_conn
+
+BODY_MAX = 2000  # ADR-0017; the database allows up to 10000 so this can change without a migration
+REASON_MAX = 1000
+PUBLIC_CACHE = "public, max-age=30"
+PRIVATE = {"Cache-Control": "private, no-store", "Vary": "Authorization"}
+ALLOWED_CONTROLS = {"\n", "\r", "\t"}
+
+router = APIRouter()
+type Db = Annotated[Conn, Depends(get_conn)]
+type SignedIn = Annotated[User, Depends(current_user)]
+type Limit = Annotated[int, Query(ge=1, le=100)]
+type Cursor = Annotated[str | None, Query()]
+type CommentId = Annotated[str, Path()]
+
+
+def _plain_text(value: str) -> str:
+    if not value.strip():
+        raise ValueError("must not be blank")
+    if any((ch < " " and ch not in ALLOWED_CONTROLS) or ch == "\x7f" for ch in value):
+        raise ValueError("must not contain control characters")
+    return value
+
+
+type Body = Annotated[str, StringConstraints(max_length=BODY_MAX), AfterValidator(_plain_text)]
+type Reason = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=REASON_MAX), AfterValidator(_plain_text)
+]
+
+
+class CommentCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    body: Body
+    anonymous: bool
+
+
+class CommentUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    body: Body
+
+
+class ReportCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    reason: Reason
+
+
+# --- helpers ------------------------------------------------------------------------------------------------------
+
+
+def _iso(value: datetime) -> str:
+    return value.isoformat().replace("+00:00", "Z")
+
+
+def _public(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": str(row["id"]),
+        "paperId": row["paper_id"],
+        "body": row["body"],
+        "anonymous": row["anonymous"],
+        "displayName": row["display_name"],
+        "createdAt": _iso(row["created_at"]),
+        "updatedAt": _iso(row["updated_at"]),
+    }
+
+
+def _receipt(row: dict[str, Any]) -> dict[str, Any]:
+    return {"id": str(row["id"]), "paperId": row["paper_id"], "status": row["status"]}
+
+
+# Keyset cursor on (created_at, id): comments arrive all the time, and an offset would repeat or skip them.
+def _decode_cursor(cursor: str | None) -> tuple[datetime, UUID] | None:
+    if cursor is None:
+        return None
+    try:
+        value = json.loads(base64.urlsafe_b64decode(cursor.encode()))
+        return datetime.fromisoformat(value["t"]), UUID(value["i"])
+    except (binascii.Error, ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(status_code=422, detail="Invalid cursor") from exc
+
+
+def _encode_cursor(row: dict[str, Any]) -> str:
+    raw = json.dumps({"t": row["created_at"].isoformat(), "i": str(row["id"])})
+    return base64.urlsafe_b64encode(raw.encode()).decode()
+
+
+def _page(rows: list[dict[str, Any]], limit: int, item: Any) -> dict[str, Any]:
+    more = len(rows) > limit
+    rows = rows[:limit]
+    return {"items": [item(row) for row in rows], "nextCursor": _encode_cursor(rows[-1]) if more else None}
+
+
+def _require_public_paper(db: Conn, paper_id: str) -> None:
+    if db.execute("select 1 from app.public_papers where id = %s", (paper_id,)).fetchone() is None:
+        raise HTTPException(status_code=404, detail="Paper not found")
+
+
+def _display_name(db: Conn, user: User) -> str:
+    row = db.execute(
+        "select display_name from app.accounts where id = %s and deleted_at is null", (user.id,)
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=403, detail="Choose a display name before commenting")
+    return row["display_name"]
+
+
+def _own_comment(db: Conn, user: User, comment_id: str) -> None:
+    """404 for unknown or deleted comments; 403 when the comment belongs to someone else (including admins)."""
+    try:
+        uuid = UUID(comment_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Comment not found") from exc
+    row = db.execute("select author_id from app.comments where id = %s and deleted_at is null", (uuid,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if row["author_id"] != user.id:
+        raise HTTPException(status_code=403, detail="Only the author can change this comment")
+
+
+# --- endpoints ----------------------------------------------------------------------------------------------------
+
+
+@router.get("/papers/{paper_id}/comments")
+def list_comments(
+    paper_id: str, db: Db, response: Response, limit: Limit = 20, cursor: Cursor = None
+) -> dict[str, Any]:
+    after = _decode_cursor(cursor)
+    _require_public_paper(db, paper_id)
+    rows = db.execute(
+        "select id, paper_id, body, anonymous, display_name, created_at, updated_at from app.public_comments"
+        " where paper_id = %s and (%s::timestamptz is null or (created_at, id) > (%s::timestamptz, %s::uuid))"
+        " order by created_at, id limit %s",
+        (paper_id, after and after[0], after and after[0], after and after[1], limit + 1),
+    ).fetchall()
+    response.headers["Cache-Control"] = PUBLIC_CACHE
+    return _page(rows, limit, _public)
+
+
+@router.post("/papers/{paper_id}/comments", status_code=201)
+def create_comment(paper_id: str, comment: CommentCreate, user: SignedIn, db: Db, response: Response) -> dict[str, Any]:
+    response.headers.update(PRIVATE)
+    _require_public_paper(db, paper_id)
+    name = _display_name(db, user)
+    row = db.execute(
+        "insert into app.comments (paper_id, author_id, body, anonymous, display_name)"
+        " values (%s, %s, %s, %s, %s) returning id, paper_id, status",
+        (paper_id, user.id, comment.body, comment.anonymous, None if comment.anonymous else name),
+    ).fetchone()
+    assert row is not None
+    return _receipt(row)
+
+
+@router.get("/me/comments")
+def list_own_comments(
+    user: SignedIn, db: Db, response: Response, limit: Limit = 20, cursor: Cursor = None
+) -> dict[str, Any]:
+    response.headers.update(PRIVATE)
+    after = _decode_cursor(cursor)
+    rows = db.execute(
+        "select id, paper_id, body, anonymous, display_name, status, created_at, updated_at from app.comments"
+        " where author_id = %s and deleted_at is null"
+        " and (%s::timestamptz is null or (created_at, id) > (%s::timestamptz, %s::uuid))"
+        " order by created_at, id limit %s",
+        (user.id, after and after[0], after and after[0], after and after[1], limit + 1),
+    ).fetchall()
+    return _page(rows, limit, lambda row: {"comment": _public(row), "status": row["status"]})
+
+
+@router.patch("/comments/{comment_id}")
+def update_own_comment(
+    comment_id: CommentId, update: CommentUpdate, user: SignedIn, db: Db, response: Response
+) -> dict[str, Any]:
+    response.headers.update(PRIVATE)
+    _own_comment(db, user, comment_id)
+    row = db.execute(
+        "update app.comments set body = %s, updated_at = now() where id = %s and author_id = %s"
+        " and deleted_at is null returning id, paper_id, status",
+        (update.body, comment_id, user.id),
+    ).fetchone()
+    if row is None:  # deleted between the check and the update
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return _receipt(row)
+
+
+@router.delete("/comments/{comment_id}", status_code=204)
+def delete_own_comment(comment_id: CommentId, user: SignedIn, db: Db, response: Response) -> None:
+    response.headers.update(PRIVATE)
+    _own_comment(db, user, comment_id)
+    db.execute(
+        "update app.comments set deleted_at = now() where id = %s and author_id = %s and deleted_at is null",
+        (comment_id, user.id),
+    )
+
+
+@router.post("/comments/{comment_id}/reports", status_code=201)
+def report_comment(
+    comment_id: CommentId, report: ReportCreate, user: SignedIn, db: Db, response: Response
+) -> dict[str, Any]:
+    response.headers.update(PRIVATE)
+    _display_name(db, user)  # reporting also needs an account
+    try:
+        uuid = UUID(comment_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Comment not found") from exc
+    # Only comments the reader can see are reportable; the private author column is read for the self-check only.
+    row = db.execute(
+        "select c.author_id from app.public_comments p join app.comments c on c.id = p.id where p.id = %s", (uuid,)
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if row["author_id"] == user.id:
+        raise HTTPException(status_code=403, detail="You cannot report your own comment")
+    try:
+        created = db.execute(
+            "insert into app.comment_reports (comment_id, reporter_id, reason) values (%s, %s, %s) returning id",
+            (uuid, user.id, report.reason),
+        ).fetchone()
+    except errors.UniqueViolation as exc:
+        raise HTTPException(status_code=409, detail="You have already reported this comment") from exc
+    assert created is not None
+    return {"id": str(created["id"]), "commentId": str(uuid)}

@@ -497,9 +497,9 @@ export interface components {
             updatedAt: string;
         } & unknown;
         CommentCreate: {
-            /** @description Plain text, not HTML. Deployment policy controls maximum length. */
+            /** @description Plain text, not HTML; newlines and tabs are the only control characters allowed (ADR-0017). */
             body: string;
-            /** @description Server rejects unsupported modes until A2 is decided. */
+            /** @description true hides the name from other readers; the platform keeps the author mapping for the author and moderators (ADR-0017). */
             anonymous: boolean;
         };
         Account: {
