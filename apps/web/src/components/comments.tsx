@@ -102,6 +102,8 @@ function Discussion({ paperId }: { paperId: string }) {
 
   const mine = ownComments(owned.user === user ? owned.items : [], paperId);
   const liked = likes.user === user ? likes.ids : new Set<string>();
+  // Until both private lists arrive, an own comment looks like someone else's; offer no like button before that.
+  const ownKnown = Boolean(user) && owned.user === user && likes.user === user;
 
   async function more() {
     if (list.kind !== "ready" || !list.next) return;
@@ -163,6 +165,7 @@ function Discussion({ paperId }: { paperId: string }) {
               status="published"
               mine={mine.ids.has(comment.id)}
               liked={liked.has(comment.id)}
+              ownKnown={ownKnown}
               account={signedIn}
               onChanged={refresh}
             />
@@ -325,6 +328,7 @@ function CommentItem({
   account,
   onChanged,
   liked = false,
+  ownKnown = false,
 }: {
   comment: PublicComment;
   status: OwnedComment["status"];
@@ -332,6 +336,7 @@ function CommentItem({
   account: SignedIn | null;
   onChanged: () => void;
   liked?: boolean;
+  ownKnown?: boolean;
 }) {
   const [mode, setMode] = useState<"view" | "edit" | "delete" | "report">(
     "view",
@@ -456,7 +461,7 @@ function CommentItem({
           count={comment.likeCount}
           liked={liked}
           // Readers with a display name can like others' comments; everyone else just sees the count.
-          canLike={!mine && account?.displayName != null}
+          canLike={ownKnown && !mine && account?.displayName != null}
           token={account?.token ?? ""}
         />
       )}
