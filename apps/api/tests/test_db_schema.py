@@ -38,6 +38,8 @@ TABLES = [
     "comments",
     "comment_reports",
     "moderation_events",
+    "content_writer",
+    "publish_events",
 ]
 VIEWS = ["public_papers", "public_news", "public_comments"]
 CLIENT_ROLES = ["anon", "authenticated", "service_role"]

@@ -52,6 +52,26 @@ python import_content.py --database-url "$URL" --manifest out.json  # 正式匯�
 
 `topics.metrics`（Paper Watch agent 的輸入）、`topics.soc_title`、`papers.source_file` 雖然不在公開 contract 裡，也一併保存，切換時才不會遺失。
 
+## 單一寫入端與切換（E2 #73）
+
+`app.content_writer` 記錄目前由誰寫入內容：`json`（預設，git 裡的檔案）或 `postgres`。`import_content.py` 只在 `json` 時執行；切換後再匯入會被拒絕，避免 git 的舊內容蓋掉資料庫的新寫入。設計見 [ADR-0021](../docs/adr/0021-single-content-writer-and-cutover.md)。
+
+```sh
+python content_writer.py status   --database-url "$URL"
+python content_writer.py cutover  --database-url "$URL"           # 資料庫內容與 JSON 完全相同才切換，並寫 data/WRITER=postgres
+python content_writer.py rollback --database-url "$URL"           # 把資料庫內容匯出回 repository，交還給 JSON
+python content_writer.py export   --database-url "$URL" --out DIR  # 單向匯出（現行靜態網站、備份）
+```
+
+切換步驟：
+1. 停用 Paper Watch、accept 與 unpublish 三個 workflows。
+2. 用 `import_content.py` 匯入最後一版 JSON。
+3. 執行 `cutover`。
+4. commit `data/WRITER`。
+5. 讓 worker 設定 `GUTHUB_CONTENT_DATABASE_URL` 之後再恢復排程。
+
+切換後，`main.py`、`accept_issue.py`、`unpublish.py` 都在資料庫交易裡寫入，每個請求記在 `app.publish_events`，同一個 workflow run 重跑時不會重複寫入。
+
 ## 各環境要另外做的事（F1 #75）
 
 `guthub_api` 是 `nologin` role。每個環境要建立自己的 login role 並授予 `guthub_api`，密碼由祕密管理注入，不寫進 migration：

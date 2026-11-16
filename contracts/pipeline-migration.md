@@ -23,6 +23,6 @@ python -m pytest tests/test_pipeline_contract.py -q
 
 `semantic-number-swap` 是刻意保留的限制案例：摘要寫樣本數 56、反應率 36%，條目卻寫反應率 56%。因為 56 確實出現在摘要與 evidence claim，現行 gate 仍會通過。這不是正確的臨床結果，也不是未來模型的合格答案；它用來防止把「數字可追溯」誤稱為「解讀正確」。未來若增加指標／組別檢查，需明確修改此預期並說明新的查核能力。
 
-既有單元測試繼續涵蓋 XML 解析、來源格式與其他錯誤。這份 contract 未驗證真實供應商故障、GitHub 權限、並行 writer、資料庫 transaction 或部署後的快取失效；這些由 E2、E3 與 F2 驗證，不能由這批 fixtures 推定通過。
+既有單元測試繼續涵蓋 XML 解析、來源格式與其他錯誤。這份 contract 未驗證真實供應商故障、GitHub 權限或部署後的快取失效；這些由 E3 與 F2 驗證，不能由這批 fixtures 推定通過。並行 writer 與資料庫 transaction 由 E2 的 `tests/test_content_writer.py` 驗證：資料庫模式跑的是同一套 `publish.py`，見 [ADR-0021](../docs/adr/0021-single-content-writer-and-cutover.md)。
 
 相關決策：[ADR-0013](../docs/adr/0013-gated-auto-publish.md)、[ADR-0018](../docs/adr/0018-python-pipeline-and-adk.md)。工作與後續討論以 [E1 #72](https://github.com/odafeng/crs-knowledge-base/issues/72) 為準。

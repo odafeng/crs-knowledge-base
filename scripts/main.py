@@ -19,6 +19,7 @@ from config import (
     save_tracked_dois,
     tracking_key,
 )
+from content_store import content_session
 from create_issues import create_commentary_review_issue, create_issues
 from fetch_pubmed import fetch_pubmed, resolve_dois
 from fetch_rss import AllFeedsFailedError, fetch_rss
@@ -70,8 +71,12 @@ def publish_or_hold(classified: list[dict], today: str, dry_run: bool) -> tuple[
         reasons = evaluate_paper_gate(paper, AUTO_PUBLISH_TOPICS).reasons
         if not reasons and not dry_run:
             try:
-                entry = publish_paper(paper, "auto", today)
-                print(f"  [Publish] {entry['id']} → {entry['file']}")
+                target = paper.get("doi") or f"pmid:{paper.get('pmid')}"
+                with content_session("publish_paper", target) as session:
+                    if session.done is None:
+                        entry = publish_paper(paper, "auto", today, **session.kb_args)
+                        session.record(f"publish {entry['id']} ({entry['file']})")
+                print(f"  [Publish] {session.done or session.summary}")
             except PublishError as e:
                 reasons = e.reasons
         if reasons:
@@ -96,8 +101,12 @@ def publish_or_hold_commentary(
         (auto if gate.passed else held).append(proposal)
     if auto and not dry_run:
         try:
-            changed = publish_commentary([(p.target_id, p.to_entry(today)) for p in auto], "auto", today)
-            print(f"  [Publish] commentary on {', '.join(changed) or 'nothing new'}")
+            items = [(p.target_id, p.to_entry(today)) for p in auto]
+            with content_session("publish_commentary", ",".join(sorted({t for t, _ in items}))) as session:
+                if session.done is None:
+                    changed = publish_commentary(items, "auto", today, **session.kb_args)
+                    session.record(f"commentary on {', '.join(changed) or 'nothing new'}")
+            print(f"  [Publish] {session.done or session.summary}")
         except PublishError as e:
             print(f"  [WARN] Commentary publish failed, sending to review: {e}", file=sys.stderr)
             held += auto
