@@ -31,7 +31,8 @@ python -m pytest tests/test_api_contract.py -q
 | `/me/comments` | 本人的留言與審核狀態，私有回應 |
 | `/comments/{commentId}` | 本人修改／刪除；以伺服器查核 ownership |
 | `/comments/{commentId}/reports` | 經驗證 session 提交檢舉 |
-| `/admin/comments`、`/admin/comments/{commentId}` | 具 `comments:moderate` permission 的管理流程 |
+| `/admin/comments`、`/admin/comments/{commentId}` | 具 `comments:moderate` permission 的管理流程：佇列、公開／隱藏（必填原因） |
+| `/admin/comments/{commentId}/author` | 查看作者；原因必填，每次查閱都寫入稽核紀錄 |
 
 所有 mutation、本人資料及管理回應使用 `Cache-Control: private, no-store`。權限由伺服器驗證，不能因持有一般 session 就操作他人資料。MVP 不啟用 Supabase 匿名登入；伺服器以 claims 拒絕匿名 session 的寫入。
 

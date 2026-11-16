@@ -4,6 +4,7 @@ import {
   bodyError,
   errorMessage,
   ownComments,
+  paperPathFromId,
   type OwnedComment,
   type PublicComment,
 } from "./comments";
@@ -88,5 +89,12 @@ describe("ownComments marks the reader's comments without any author field", () 
       ["b", "pending"],
       ["c", "hidden"],
     ]);
+  });
+});
+
+describe("paperPathFromId", () => {
+  it("follows the importer's slug rule", () => {
+    expect(paperPathFromId("BEACON_2019")).toBe("/papers/beacon-2019/");
+    expect(paperPathFromId("niche2")).toBe("/papers/niche2/");
   });
 });

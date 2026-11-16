@@ -2,7 +2,7 @@
 
 大腸直腸外科實證知識庫，規劃加入專業討論與匿名留言。原名 **Seminar Hegemon**。
 
-GutHub 是這次改版的產品名稱。正式站仍使用 Python/Jinja2 靜態網站與 Paper Watch。新架構已經完成資料庫（Supabase PostgreSQL）、內容匯入、FastAPI 讀取 API，以及 `apps/web/` 的 **Next.js + TypeScript + React** 閱讀頁、索引頁、SEO、feed、搜尋、深色模式與字級，公開內容的離線閱讀，登入（Email 連結；Google 等 F1 提供 OAuth client）與文獻頁讀者留言，但還沒部署。留言的頻率限制、管理審核與推播仍在進行中。雲端與匿名政策已經決定（見 ADR-0016、ADR-0017）。
+GutHub 是這次改版的產品名稱。正式站仍使用 Python/Jinja2 靜態網站與 Paper Watch。新架構已經完成資料庫（Supabase PostgreSQL）、內容匯入、FastAPI 讀取 API，以及 `apps/web/` 的 **Next.js + TypeScript + React** 閱讀頁、索引頁、SEO、feed、搜尋、深色模式與字級，公開內容的離線閱讀，登入（Email 連結；Google 等 F1 提供 OAuth client）、文獻頁讀者留言、發文限制與留言審核，但還沒部署。推播仍在進行中。雲端與匿名政策已經決定（見 ADR-0016、ADR-0017）。
 
 [CI](https://github.com/odafeng/crs-knowledge-base/actions/workflows/ci.yml) · [Paper Watch](https://github.com/odafeng/crs-knowledge-base/actions/workflows/paper-watch.yml) · [Jobs / milestones](https://github.com/odafeng/crs-knowledge-base/milestones) · [Issues](https://github.com/odafeng/crs-knowledge-base/issues)
 

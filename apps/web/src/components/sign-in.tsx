@@ -287,6 +287,11 @@ export function AccountSettings() {
       {account.email && (
         <p className="note">登入帳號：{account.email}（不會公開）</p>
       )}
+      {account.isAdmin && (
+        <p>
+          <Link href="/admin/comments/">留言審核</Link>
+        </p>
+      )}
       <button className="btn btn--secondary" type="button" onClick={leave}>
         登出
       </button>

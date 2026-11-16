@@ -1,5 +1,6 @@
 // Reader discussion on a paper page, end to end (D3 #69): visitor, first comment waiting for moderation, signed and
-// anonymous comments, the author's edit and delete, another reader's report, failure and retry, double submit.
+// anonymous comments, the author's edit and delete, another reader's report, failure and retry, double submit,
+// limits and resends (D4), and the moderation queue (D5).
 // Usage: node tools/next-comments.js <Next.js origin> <API base>
 // Env: SUPABASE_URL, SUPABASE_SERVICE_KEY (local demo key), DATABASE_URL (local; stands in for moderation, D5).
 const { execFileSync } = require('node:child_process');
@@ -183,9 +184,56 @@ let browser;
   await section(b).getByRole('button', { name: '送出留言' }).click();
   await section(b).getByText(/已送出|已發布/).waitFor();
 
+  step('moderation (D5): only the admin sees the queue; reasons are required and recorded');
+  await b.goto(`${ORIGIN}/admin/comments/`);
+  await b.getByText('需要管理者權限。').waitFor();
+  const bToken = await b.evaluate(() => JSON.parse(localStorage.getItem(
+    Object.keys(localStorage).find(k => k.endsWith('-auth-token')))).access_token);
+  const denied = await fetch(`${API}/admin/comments`, { headers: { Authorization: `Bearer ${bToken}` } });
+  check(denied.status === 403, `moderation: non-admin API answer ${denied.status}`);
+  const edited = `${anonymousBody} (edited)`;
+  await b.goto(`${ORIGIN}${PAPER}`);
+  const anonymousForB = section(b).locator('.comment', { hasText: edited });
+  await anonymousForB.getByRole('button', { name: '檢舉' }).click();
+  await anonymousForB.getByLabel('檢舉原因').fill('Unsourced claim');
+  await anonymousForB.getByRole('button', { name: '送出檢舉' }).click();
+  await anonymousForB.getByText('已收到檢舉，維護者會處理。').waitFor();
+
+  const moderatorName = `Moderator ${run}`;
+  const m = await signedIn(browser, moderatorName);
+  psql(`update app.accounts set is_admin = true where display_name = ${literal(moderatorName)}`);
+  await m.goto(`${ORIGIN}/admin/comments/`);
+  const reportedAnonymous = m.locator('.comment', { hasText: edited });
+  await reportedAnonymous.getByText('Unsourced claim').waitFor();
+  check(await reportedAnonymous.getByText(`Reader A ${run}`).count() === 0, 'moderation: anonymous author shown by default');
+  await reportedAnonymous.getByRole('button', { name: '查看作者' }).click();
+  await reportedAnonymous.getByText('請先寫下處理原因').waitFor();
+  await reportedAnonymous.getByLabel(/處理原因/).fill('Checking for repeat abuse');
+  await reportedAnonymous.getByRole('button', { name: '查看作者' }).click();
+  await reportedAnonymous.getByText(`作者：Reader A ${run}`).waitFor();
+
+  await m.addScriptTag({ content: AXE });
+  const queueAxe = await m.evaluate(tags => axe.run(document.querySelector('main'), { runOnly: { type: 'tag', values: tags } }), TAGS);
+  check(queueAxe.violations.length === 0, `axe queue: ${queueAxe.violations.map(v => `${v.id} ${v.nodes[0].target}`).join('; ')}`);
+
+  const reportedSigned = m.locator('.comment', { hasText: first });
+  await reportedSigned.getByLabel(/處理原因/).fill('Off topic');
+  await reportedSigned.getByRole('button', { name: '隱藏' }).click();
+  await reportedSigned.waitFor({ state: 'detached' });
+  check((await publicComments()).every(c => c.body !== first), 'moderation: hidden comment still public');
+
+  const waiting = m.locator('.comment', { hasText: keyboard });
+  await waiting.getByLabel(/處理原因/).fill('First comment is fine');
+  await waiting.getByRole('button', { name: '公開' }).click();
+  await waiting.waitFor({ state: 'detached' });
+  check((await publicComments()).some(c => c.body === keyboard), 'moderation: approved comment not public');
+  const audit = psql(`select string_agg(e.action::text, ',' order by e.id) from app.moderation_events e
+    join app.comments c on c.id = e.comment_id where c.body in (${literal(edited)}, ${literal(first)}, ${literal(keyboard)})`);
+  check(audit === 'reveal_author,hide,resolve_report,publish', `moderation: audit trail ${audit}`);
+
   console.log('comments: visitor gate, pending first comment, single send on double click, approval, signed and anonymous,');
   console.log('          edit, failure keeps text and retry, others cannot edit or delete, report once, delete, keyboard,');
-  console.log('          resend after a lost response, over the limit and recovery');
+  console.log('          resend after a lost response, over the limit and recovery, moderation with audit');
   console.log('problems:', problems.length);
   problems.forEach(problem => console.log('  -', problem));
   if (problems.length) process.exitCode = 1;

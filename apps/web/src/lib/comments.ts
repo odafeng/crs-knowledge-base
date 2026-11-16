@@ -76,3 +76,8 @@ export function ownComments(items: OwnedComment[], paperId: string) {
 export function commentDate(iso: string): string {
   return iso.slice(0, 10);
 }
+
+/** The paper page for a paper ID (the importer's slug rule: lower case, underscores as hyphens). */
+export function paperPathFromId(paperId: string): string {
+  return `/papers/${paperId.toLowerCase().replace(/_/g, "-")}/`;
+}

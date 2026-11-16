@@ -52,6 +52,11 @@ class World:
     admin: uuid.UUID
     newbie: uuid.UUID  # signed in, no display name yet
 
+    def newbie_with_name(self) -> uuid.UUID:
+        """The newbie, after choosing a name: an account with no comments yet."""
+        sql("insert into app.accounts (id, display_name) values (%s, 'Newbie') on conflict do nothing", (self.newbie,))
+        return self.newbie
+
     def headers(self, user: uuid.UUID | None) -> dict[str, str]:
         if user is None:
             return {}
@@ -472,3 +477,138 @@ def test_limits_hold_across_instances_and_concurrent_requests(world: World) -> N
     finally:
         for instance in instances:
             instance.__exit__(None, None, None)
+
+
+# --- moderation (D5 #71) ------------------------------------------------------------------------------------------
+
+
+def moderate(
+    client: TestClient, w: World, user: uuid.UUID | None, comment: str, action: str, reason: str = "ok"
+) -> Any:
+    return client.patch(
+        f"{API_PREFIX}/admin/comments/{comment}", headers=w.headers(user), json={"action": action, "reason": reason}
+    )
+
+
+def queue(client: TestClient, w: World) -> list[dict[str, Any]]:
+    response = client.get(f"{API_PREFIX}/admin/comments", headers=w.headers(w.admin), params={"limit": 100})
+    assert response.status_code == 200, response.text
+    assert response.headers["Cache-Control"] == "private, no-store"
+    schema("ModerationItemPage").validate(response.json())
+    return [item for item in response.json()["items"] if item["comment"]["paperId"] == w.paper]
+
+
+def events(comment: str) -> list[tuple[Any, ...]]:
+    return [tuple(row) for row in sql(
+        "select actor_id, action::text, reason from app.moderation_events where comment_id = %s order by id", (comment,)
+    )]  # fmt: skip
+
+
+def report(client: TestClient, w: World, user: uuid.UUID, comment: str, reason: str = "spam") -> None:
+    response = client.post(f"{API_PREFIX}/comments/{comment}/reports", headers=w.headers(user), json={"reason": reason})
+    assert response.status_code == 201, response.text
+
+
+@pytest.mark.parametrize(("who", "status"), [("visitor", 401), ("author", 403), ("newbie", 403), ("admin", 200)])
+def test_only_admins_see_the_queue(client: TestClient, world: World, who: str, status: int) -> None:
+    user = None if who == "visitor" else getattr(world, who)
+    assert client.get(f"{API_PREFIX}/admin/comments", headers=world.headers(user)).status_code == status
+
+
+def test_queue_holds_pending_and_reported_comments_without_authors(client: TestClient, world: World) -> None:
+    pending = post(client, world, world.newbie_with_name(), "First ever", anonymous=True).json()["id"]
+    reported = published(client, world, world.author, "Questionable", anonymous=True)
+    published(client, world, world.author, "Fine")
+    report(client, world, world.other, reported, "misleading dose")
+    report(client, world, world.admin, reported, "spam")
+    items = {item["comment"]["id"]: item for item in queue(client, world)}
+    assert set(items) == {pending, reported}
+    assert items[pending]["status"] == "pending" and items[pending]["reportCount"] == 0
+    assert items[reported]["reportCount"] == 2
+    assert sorted(r["reason"] for r in items[reported]["reports"]) == ["misleading dose", "spam"]
+    text = json.dumps(items)
+    assert str(world.author) not in text and str(world.other) not in text and "Author" not in text
+
+
+def test_publishing_a_first_comment_lets_later_ones_through(client: TestClient, world: World) -> None:
+    first = post(client, world, world.author, "First").json()["id"]
+    response = moderate(client, world, world.admin, first, "publish", "on topic")
+    assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "private, no-store"
+    schema("CommentReceipt").validate(response.json())
+    assert response.json()["status"] == "published"
+    assert events(first) == [(world.admin, "publish", "on topic")]
+    assert post(client, world, world.author, "Second").json()["status"] == "published"
+    assert first not in [item["comment"]["id"] for item in queue(client, world)]
+
+
+def test_hiding_removes_a_comment_and_closes_its_reports(client: TestClient, world: World) -> None:
+    comment = published(client, world, world.author, "Rude")
+    report(client, world, world.other, comment)
+    assert moderate(client, world, world.admin, comment, "hide", "personal attack").json()["status"] == "hidden"
+    assert listed(client, world)["items"] == []
+    assert queue(client, world) == []
+    assert sql(
+        "select count(*) from app.comment_reports where comment_id = %s and resolved_at is null", (comment,)
+    ) == [(0,)]
+    assert events(comment) == [
+        (world.admin, "hide", "personal attack"),
+        (world.admin, "resolve_report", "personal attack"),
+    ]
+    # Restoring brings it back.
+    assert moderate(client, world, world.admin, comment, "publish", "appeal accepted").json()["status"] == "published"
+    assert [c["id"] for c in listed(client, world)["items"]] == [comment]
+
+
+def test_keeping_a_reported_comment_dismisses_the_reports(client: TestClient, world: World) -> None:
+    comment = published(client, world, world.author, "Unpopular but fine")
+    report(client, world, world.other, comment)
+    assert moderate(client, world, world.admin, comment, "publish", "not a violation").status_code == 200
+    assert queue(client, world) == []
+    assert [c["id"] for c in listed(client, world)["items"]] == [comment]
+
+
+def test_moderation_conflicts_and_bad_requests(client: TestClient, world: World) -> None:
+    comment = published(client, world, world.author)
+    assert moderate(client, world, world.admin, comment, "publish").status_code == 409  # nothing to do
+    moderate(client, world, world.admin, comment, "hide")
+    assert moderate(client, world, world.admin, comment, "hide").status_code == 409
+    for body in ({"action": "hide", "reason": " "}, {"action": "delete", "reason": "x"}, {"action": "hide"}):
+        response = client.patch(f"{API_PREFIX}/admin/comments/{comment}", headers=world.headers(world.admin), json=body)
+        assert response.status_code == 422
+    client.delete(f"{API_PREFIX}/comments/{comment}", headers=world.headers(world.author))
+    assert moderate(client, world, world.admin, comment, "publish").status_code == 404
+    assert moderate(client, world, world.admin, str(uuid.uuid4()), "publish").status_code == 404
+
+
+@pytest.mark.parametrize("who", ["visitor", "author", "other"])
+def test_non_admins_cannot_moderate(client: TestClient, world: World, who: str) -> None:
+    comment = post(client, world, world.author, "Waiting").json()["id"]
+    user = None if who == "visitor" else getattr(world, who)
+    assert moderate(client, world, user, comment, "publish").status_code in (401, 403)
+    assert sql("select status::text from app.comments where id = %s", (comment,)) == [("pending",)]
+    assert events(comment) == []
+
+
+def test_revealing_an_anonymous_author_needs_a_reason_and_is_recorded(client: TestClient, world: World) -> None:
+    comment = published(client, world, world.author, "Anonymous claim", anonymous=True)
+    url = f"{API_PREFIX}/admin/comments/{comment}/author"
+    assert client.post(url, headers=world.headers(world.other), json={"reason": "curious"}).status_code == 403
+    assert client.post(url, headers=world.headers(world.admin), json={"reason": " "}).status_code == 422
+    assert events(comment) == []
+    response = client.post(url, headers=world.headers(world.admin), json={"reason": "repeated harassment report"})
+    assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "private, no-store"
+    schema("AuthorIdentity").validate(response.json())
+    assert response.json() == {"accountId": str(world.author), "displayName": "Author"}
+    assert events(comment) == [(world.admin, "reveal_author", "repeated harassment report")]
+    # After the 90-day purge the mapping is gone and cannot be revealed.
+    sql("update app.comments set deleted_at = now(), author_id = null where id = %s", (comment,))
+    assert client.post(url, headers=world.headers(world.admin), json={"reason": "again"}).status_code == 404
+
+
+def test_moderation_never_touches_papers_or_journal_commentary(client: TestClient, world: World) -> None:
+    before = client.get(f"{API_PREFIX}/papers/{world.paper}").json()
+    comment = published(client, world, world.author)
+    moderate(client, world, world.admin, comment, "hide", "spam")
+    assert client.get(f"{API_PREFIX}/papers/{world.paper}").json() == before
