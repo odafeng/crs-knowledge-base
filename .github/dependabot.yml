@@ -1,0 +1,10 @@
+# Keeps the commit SHAs that workflows pin third-party actions to up to date (the tag stays in a comment).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      include: scope
