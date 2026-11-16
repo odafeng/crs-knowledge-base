@@ -1,0 +1,900 @@
+openapi: 3.1.1
+info: {title: GutHub API contract, version: 0.1.0, description: Provider-neutral planned contract. No server or
+    authentication provider is implemented by this specification. Identity modes and publication policy remain subject
+    to A1/A2.}
+servers:
+- {url: /api/v1}
+security: []
+paths:
+  /health:
+    get:
+      operationId: health
+      summary: health
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Health'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /papers:
+    get:
+      operationId: listPapers
+      summary: listPapers
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaperPage'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/Limit'}
+      - {$ref: '#/components/parameters/Cursor'}
+      - name: topic
+        in: query
+        schema: {$ref: '#/components/schemas/TopicKey'}
+  /papers/{paperId}:
+    get:
+      operationId: getPaper
+      summary: getPaper
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Paper'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/PaperId'}
+  /news:
+    get:
+      operationId: listNews
+      summary: listNews
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NewsPage'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/Limit'}
+      - {$ref: '#/components/parameters/Cursor'}
+  /news/{newsId}:
+    get:
+      operationId: getNews
+      summary: getNews
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/News'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/NewsId'}
+  /topics:
+    get:
+      operationId: listTopics
+      summary: listTopics
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TopicPage'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/Limit'}
+      - {$ref: '#/components/parameters/Cursor'}
+  /topics/{topicKey}:
+    get:
+      operationId: getTopic
+      summary: getTopic
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Topic'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/TopicKey'}
+  /search:
+    get:
+      operationId: search
+      summary: search
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SearchHitPage'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/Limit'}
+      - {$ref: '#/components/parameters/Cursor'}
+      - name: q
+        in: query
+        required: true
+        schema: {type: string, minLength: 2}
+  /papers/{paperId}/comments:
+    get:
+      operationId: listComments
+      summary: List only published comments; anonymous author mappings are never returned.
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PublicCommentPage'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/Limit'}
+      - {$ref: '#/components/parameters/Cursor'}
+      - {$ref: '#/components/parameters/PaperId'}
+    post:
+      operationId: createComment
+      summary: createComment
+      security:
+      - BearerAuth: []
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CommentReceipt'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/PaperId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CommentCreate'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Ownership and allowed identity
+        modes are checked server-side.'
+  /me/comments:
+    get:
+      operationId: listOwnComments
+      summary: listOwnComments
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/OwnedCommentPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/Limit'}
+      - {$ref: '#/components/parameters/Cursor'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Ownership and allowed identity
+        modes are checked server-side.'
+  /comments/{commentId}:
+    patch:
+      operationId: updateOwnComment
+      summary: updateOwnComment
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CommentReceipt'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/CommentId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CommentUpdate'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Ownership and allowed identity
+        modes are checked server-side.'
+    delete:
+      operationId: deleteOwnComment
+      summary: deleteOwnComment
+      security:
+      - BearerAuth: []
+      responses:
+        '204': {description: Deleted}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/CommentId'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Ownership and allowed identity
+        modes are checked server-side.'
+  /comments/{commentId}/reports:
+    post:
+      operationId: reportComment
+      summary: reportComment
+      security:
+      - BearerAuth: []
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReportReceipt'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/CommentId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReportCreate'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Ownership and allowed identity
+        modes are checked server-side.'
+  /admin/comments:
+    get:
+      operationId: listModerationQueue
+      summary: listModerationQueue
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ModerationItemPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/Limit'}
+      - {$ref: '#/components/parameters/Cursor'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
+        permission; clients cannot grant themselves this permission.'
+      x-required-permission: comments:moderate
+  /admin/comments/{commentId}:
+    patch:
+      operationId: moderateComment
+      summary: moderateComment
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CommentReceipt'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/CommentId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ModerationRequest'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
+        permission; clients cannot grant themselves this permission.'
+      x-required-permission: comments:moderate
+components:
+  securitySchemes:
+    BearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+    Cursor:
+      name: cursor
+      in: query
+      schema: {type: string, description: Opaque cursor returned by this endpoint; clients must not interpret it.}
+    PaperId:
+      name: paperId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    CommentId:
+      name: commentId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    NewsId:
+      name: newsId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    TopicKey:
+      name: topicKey
+      in: path
+      required: true
+      schema: {$ref: '#/components/schemas/TopicKey'}
+  schemas:
+    TopicKey:
+      type: string
+      enum: [mCRC-BRAF-V600E, mCRC-KRAS-G12C, mCRC-MSI-H, mCRC-HER2, mCRC-RAS-wt, generic-CRS, robotic-surgery]
+    Review:
+      type: object
+      additionalProperties: false
+      required: [status, publishedAt]
+      properties:
+        status:
+          type: string
+          enum: [auto, accepted]
+        publishedAt: {type: string, format: date}
+    Relation:
+      type: object
+      additionalProperties: false
+      required: [targetId, type]
+      properties:
+        targetId: {type: string, minLength: 1}
+        type:
+          type: string
+          enum: [builds_on, supersedes, subgroup_of, same_regimen, contradicts]
+    ResearchCommentary:
+      type: object
+      additionalProperties: false
+      required: [title, journal, type, summary, critique, newData, addedAt]
+      properties:
+        doi:
+          type: [string, 'null']
+        pmid:
+          type: [string, 'null']
+        title: {type: string, minLength: 1}
+        journal: {type: string, minLength: 1}
+        year:
+          type: [integer, 'null']
+        type:
+          type: string
+          enum: [Editorial, Letter, News, Newspaper Article, Comment]
+        summary: {type: string}
+        critique: {type: boolean}
+        newData: {type: boolean}
+        addedAt: {type: string, format: date}
+        review: {$ref: '#/components/schemas/Review'}
+      anyOf:
+      - required: [doi]
+        properties:
+          doi: {type: string, minLength: 1}
+      - required: [pmid]
+        properties:
+          pmid: {type: string, minLength: 1}
+    Paper:
+      type: object
+      additionalProperties: false
+      required: [id, slug, topic, year, journal, studyType, regimen, endpoint, result, bottomLine, relations, source,
+        reviewedAt, detailHtml]
+      properties:
+        id: {type: string, minLength: 1, description: Stable existing paper ID; preserve case and underscores.}
+        slug: {type: string, pattern: '^[a-z0-9][a-z0-9-]*$'}
+        topic: {$ref: '#/components/schemas/TopicKey'}
+        year: {type: integer}
+        journal: {type: string, minLength: 1}
+        studyType:
+          type: string
+          enum: [Biomarker (exploratory), Guideline, Meta-analysis, Phase 1, Phase 1-2, Phase 1-2 (expanded), Phase
+              1b, Phase 2, Phase 2 (exploratory), Phase 2 (updated), Phase 2 RCT, Phase 2a (basket), Phase 3 (Cohort
+              3), Phase 3 RCT, Phase 3 RCT (final OS), Phase 3 RCT (final), Phase 3 RCT (updated), Pooled analysis,
+            Post-hoc analysis, Retrospective cohort]
+        n:
+          type: [integer, string, 'null']
+        regimen: {type: string, minLength: 1}
+        endpoint: {type: string, minLength: 1}
+        result: {type: string, minLength: 1}
+        bottomLine: {type: string, minLength: 1}
+        doi:
+          type: [string, 'null']
+        relations:
+          type: array
+          items: {$ref: '#/components/schemas/Relation'}
+        source:
+          type: string
+          enum: [fulltext, abstract, secondary, curated]
+        reviewedAt: {type: string, format: date}
+        review: {$ref: '#/components/schemas/Review'}
+        commentary:
+          type: array
+          items: {$ref: '#/components/schemas/ResearchCommentary'}
+        detailHtml: {type: string, description: Detailed evidence retained from the source document; the API must
+            sanitize HTML before returning it.}
+    Stat:
+      type: object
+      additionalProperties: false
+      required: [label, value]
+      properties:
+        label: {type: string}
+        value:
+          type: [string, number]
+        unit: {type: string}
+    NewsSection:
+      type: object
+      additionalProperties: false
+      required: [heading, text]
+      properties:
+        heading: {type: string}
+        text: {type: string}
+    CompareRow:
+      type: object
+      additionalProperties: false
+      required: [label, unit, a, b]
+      properties:
+        label: {type: string}
+        unit: {type: string}
+        a: {type: number}
+        b: {type: number}
+    Meter:
+      type: object
+      additionalProperties: false
+      required: [label, percent]
+      properties:
+        label: {type: string}
+        percent: {type: number, minimum: 0, maximum: 100}
+        detail: {type: string}
+    Figure:
+      oneOf:
+      - {$ref: '#/components/schemas/NumbersFigure'}
+      - {$ref: '#/components/schemas/CompareFigure'}
+      - {$ref: '#/components/schemas/MetersFigure'}
+      - {$ref: '#/components/schemas/IntervalFigure'}
+      discriminator: {propertyName: kind}
+    NumbersFigure:
+      type: object
+      additionalProperties: false
+      required: [kind, stats]
+      properties:
+        kind:
+          type: string
+          enum: [numbers]
+        stats:
+          type: array
+          items: {$ref: '#/components/schemas/Stat'}
+    CompareFigure:
+      type: object
+      additionalProperties: false
+      required: [kind, armA, armB, rows]
+      properties:
+        kind:
+          type: string
+          enum: [compare]
+        armA: {type: string}
+        armB: {type: string}
+        rows:
+          type: array
+          items: {$ref: '#/components/schemas/CompareRow'}
+    MetersFigure:
+      type: object
+      additionalProperties: false
+      required: [kind, rows]
+      properties:
+        kind:
+          type: string
+          enum: [meters]
+        rows:
+          type: array
+          items: {$ref: '#/components/schemas/Meter'}
+    IntervalFigure:
+      type: object
+      additionalProperties: false
+      required: [kind, label, point, low, high]
+      properties:
+        kind:
+          type: string
+          enum: [interval]
+        label: {type: string}
+        point: {type: number}
+        low: {type: number}
+        high: {type: number}
+        note: {type: string}
+    News:
+      type: object
+      additionalProperties: false
+      required: [id, paperId, publishedAt, headline, dek, key, figures, body, review]
+      properties:
+        id: {type: string, pattern: '^[a-z0-9][a-z0-9-]*$'}
+        paperId: {type: string, minLength: 1}
+        publishedAt: {type: string, format: date}
+        headline:
+          type: array
+          items: {type: string}
+        dek: {type: string}
+        key: {$ref: '#/components/schemas/Stat'}
+        figures:
+          type: array
+          items: {$ref: '#/components/schemas/Figure'}
+        figureNote: {type: string}
+        body:
+          type: array
+          items: {$ref: '#/components/schemas/NewsSection'}
+        review: {$ref: '#/components/schemas/NewsReview'}
+    RegulatoryRow:
+      type: object
+      additionalProperties: false
+      required: [regimen, fda, tfda, nhi, checkedAt]
+      properties:
+        regimen: {type: string}
+        fda:
+          type: string
+          enum: [approved, accelerated, none, unknown]
+        tfda:
+          type: string
+          enum: [approved, none, unknown]
+        nhi:
+          type: string
+          enum: [covered, conditional, none, unknown]
+        fdaNote: {type: string}
+        tfdaNote: {type: string}
+        nhiNote: {type: string}
+        checkedAt: {type: string, format: date}
+        sources:
+          type: array
+          items: {type: string, format: uri}
+    SocCard:
+      type: object
+      additionalProperties: false
+      required: [title, icon, body_html, reviewedAt, refs]
+      properties:
+        title: {type: string}
+        icon: {type: string}
+        body_html: {type: string}
+        reviewedAt: {type: string, format: date}
+        refs:
+          type: array
+          items: {type: string}
+        regulatory:
+          type: array
+          items: {$ref: '#/components/schemas/RegulatoryRow'}
+    TimelineItem:
+      type: object
+      additionalProperties: false
+      required: [yr, venue, finding]
+      properties:
+        yr:
+          type: [string, integer]
+        venue: {type: string}
+        finding: {type: string}
+        file:
+          type: [string, 'null']
+        cls: {type: string, description: Legacy presentation hint; clients map only recognized values to local styles.}
+    RoboticCard:
+      type: object
+      additionalProperties: false
+      required: [title, tag, body]
+      properties:
+        title: {type: string}
+        tag: {type: string}
+        body: {type: string}
+        cls: {type: string, description: Legacy presentation hint.}
+    RoboticSection:
+      type: object
+      additionalProperties: false
+      required: [slug, timeline, cards, detailHtml]
+      properties:
+        slug:
+          type: string
+          enum: [tme, anastomosis]
+        timeline:
+          type: array
+          items: {$ref: '#/components/schemas/TimelineItem'}
+        cards:
+          type: array
+          items: {$ref: '#/components/schemas/RoboticCard'}
+        detailHtml:
+          type: array
+          items: {type: string}
+    Topic:
+      type: object
+      additionalProperties: false
+      required: [key, slug, label, title, paperCount, standardOfCare, roboticSections]
+      properties:
+        key: {$ref: '#/components/schemas/TopicKey'}
+        slug: {type: string}
+        label: {type: string}
+        title: {type: string}
+        paperCount: {type: integer, minimum: 0}
+        standardOfCare:
+          type: array
+          items: {$ref: '#/components/schemas/SocCard'}
+        roboticSections:
+          type: array
+          items: {$ref: '#/components/schemas/RoboticSection'}
+    SearchHit:
+      type: object
+      additionalProperties: false
+      required: [kind, id, path, title, summary]
+      properties:
+        kind:
+          type: string
+          enum: [paper, news]
+        id: {type: string}
+        path: {type: string, pattern: ^/}
+        title: {type: string}
+        summary: {type: string}
+    PublicComment:
+      type: object
+      additionalProperties: false
+      required: [id, paperId, body, anonymous, displayName, createdAt, updatedAt]
+      properties:
+        id: {type: string}
+        paperId: {type: string}
+        body: {type: string, minLength: 1}
+        anonymous: {type: boolean}
+        displayName:
+          type: [string, 'null']
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+      allOf:
+      - if:
+          properties:
+            anonymous: {const: true}
+        then:
+          properties:
+            displayName: {type: 'null'}
+        else:
+          properties:
+            displayName: {type: string, minLength: 1}
+    CommentCreate:
+      type: object
+      additionalProperties: false
+      required: [body, anonymous]
+      properties:
+        body: {type: string, minLength: 1, description: 'Plain text, not HTML. Deployment policy controls maximum
+            length.'}
+        anonymous: {type: boolean, description: Server rejects unsupported modes until A2 is decided.}
+    CommentUpdate:
+      type: object
+      additionalProperties: false
+      required: [body]
+      properties:
+        body: {type: string, minLength: 1}
+    CommentReceipt:
+      type: object
+      additionalProperties: false
+      required: [id, paperId, status]
+      properties:
+        id: {type: string}
+        paperId: {type: string}
+        status:
+          type: string
+          enum: [pending, published, hidden]
+    OwnedComment:
+      type: object
+      additionalProperties: false
+      required: [comment, status]
+      properties:
+        comment: {$ref: '#/components/schemas/PublicComment'}
+        status:
+          type: string
+          enum: [pending, published, hidden]
+      description: Private response for the authenticated owner; never shared-cache this response.
+    ReportCreate:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: {type: string, minLength: 1}
+    ReportReceipt:
+      type: object
+      additionalProperties: false
+      required: [id, commentId]
+      properties:
+        id: {type: string}
+        commentId: {type: string}
+    ModerationRequest:
+      type: object
+      additionalProperties: false
+      required: [action, reason]
+      properties:
+        action:
+          type: string
+          enum: [publish, hide]
+        reason: {type: string, minLength: 1}
+    ModerationItem:
+      type: object
+      additionalProperties: false
+      required: [comment, status, reportCount]
+      properties:
+        comment: {$ref: '#/components/schemas/PublicComment'}
+        status:
+          type: string
+          enum: [pending, published, hidden]
+        reportCount: {type: integer, minimum: 0}
+      description: Private moderator response. Does not include the private author mapping.
+    Error:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, requestId]
+          properties:
+            code:
+              type: string
+              enum: [validation_error, not_found, unauthenticated, forbidden, rate_limited, conflict, unavailable]
+            message: {type: string}
+            requestId: {type: string}
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+    PaperPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Paper'}
+        nextCursor:
+          type: [string, 'null']
+    NewsPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/News'}
+        nextCursor:
+          type: [string, 'null']
+    TopicPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Topic'}
+        nextCursor:
+          type: [string, 'null']
+    SearchHitPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/SearchHit'}
+        nextCursor:
+          type: [string, 'null']
+    PublicCommentPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/PublicComment'}
+        nextCursor:
+          type: [string, 'null']
+    OwnedCommentPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/OwnedComment'}
+        nextCursor:
+          type: [string, 'null']
+    ModerationItemPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ModerationItem'}
+        nextCursor:
+          type: [string, 'null']
+    NewsReview:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [auto, accepted]
+        publishedAt: {type: string, format: date}
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Forbidden:
+      description: Not authorized or mode unavailable
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Conflict:
+      description: Conflicting state
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    InvalidRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    RateLimited:
+      description: Rate limited
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Unavailable:
+      description: Service unavailable
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}

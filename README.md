@@ -90,7 +90,7 @@ gh issue list --repo odafeng/crs-knowledge-base --milestone 'A · GutHub 決策�
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r scripts/requirements.txt -r requirements-site.txt
+pip install -r scripts/requirements.txt -r requirements-site.txt -r requirements-dev.txt
 
 # 建置與預覽；請服務 site/，不要服務 repo 根目錄
 python build.py
@@ -155,6 +155,7 @@ Web Push 的程式與 SQL 範本放在 `push/`，目前不等於已建立 Supaba
 | `newsroom/` | AI 新聞稿數字來源檢查 |
 | `push/` | Web Push 金鑰、發送工具與訂閱資料表範本 |
 | `tests/`、`tools/` | pytest 與 browser／連結／版面檢查 |
+| `contracts/` | 規劃中的 OpenAPI contract 與來源／隱私邊界驗證，目前尚無 API server |
 | `.github/workflows/` | CI、Paper Watch、人工接受、撤下及維護排程 |
 | `docs/adr/` | 架構決策與取捨 |
 | `site/` | 建置產物，已 gitignore |
