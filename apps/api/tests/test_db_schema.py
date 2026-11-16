@@ -53,6 +53,11 @@ def cur() -> Iterator[psycopg.Cursor]:
 
 
 def seed(cur: psycopg.Cursor) -> None:
+    # Start from empty tables whatever the database holds (e.g. after an import); the rollback restores them.
+    cur.execute(
+        "truncate app.topics, app.papers, app.paper_relations, app.research_commentary, app.news, app.accounts,"
+        " app.comments, app.comment_reports, app.moderation_events cascade"
+    )
     cur.execute(
         "insert into app.topics (key, slug, label, title) values ('mCRC-MSI-H', 'msi-h', 'MSI-H', 'MSI-H mCRC')"
     )
