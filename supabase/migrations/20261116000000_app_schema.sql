@@ -168,6 +168,20 @@ create trigger comments_initial_status
 before insert on app.comments
 for each row execute function app.set_initial_comment_status();
 
+-- Removing an account (purge, or deleting the auth user) first soft-deletes its comments, so nulling author_id never
+-- violates the comments check and one stale row cannot block erasure for everyone. security definer because
+-- guthub_api reaches this only through the purge function, and auth.users deletes come from the auth admin.
+create function app.soft_delete_account_comments() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  update app.comments set deleted_at = now() where author_id = old.id and deleted_at is null;
+  return old;
+end $$;
+
+create trigger accounts_soft_delete_comments
+before delete on app.accounts
+for each row execute function app.soft_delete_account_comments();
+
 -- Clears private author mappings 90 days after deletion and removes accounts deleted that long ago. security definer
 -- because guthub_api has no DELETE grant; this fixed rule is the only way it can remove accounts.
 create function app.purge_deleted_authors() returns void

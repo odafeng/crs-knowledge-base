@@ -309,3 +309,20 @@ def test_purge_removes_accounts_deleted_over_90_days_ago(cur: psycopg.Cursor) ->
     cur.execute("select app.purge_deleted_authors()")
     cur.execute("select id from app.accounts order by display_name")
     assert {row[0] for row in cur.fetchall()} == {account_id("admin"), account_id("author")}
+
+
+def test_purging_an_account_soft_deletes_its_remaining_comments(cur: psycopg.Cursor) -> None:
+    live, _ = add_comment(cur, "other")
+    cur.execute("update app.accounts set deleted_at = now() - interval '91 days' where id = %s", (account_id("other"),))
+
+    as_role(cur, "guthub_api")
+    cur.execute("select app.purge_deleted_authors()")
+    cur.execute("select author_id, deleted_at is not null from app.comments where id = %s", (live,))
+    assert cur.fetchone() == (None, True)
+
+
+def test_deleting_an_auth_user_directly_still_succeeds(cur: psycopg.Cursor) -> None:
+    live, _ = add_comment(cur)
+    cur.execute("delete from auth.users where id = %s", (account_id("author"),))
+    cur.execute("select author_id, deleted_at is not null from app.comments where id = %s", (live,))
+    assert cur.fetchone() == (None, True)
