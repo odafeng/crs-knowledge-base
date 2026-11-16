@@ -1,0 +1,11 @@
+# Build context is the repository root; send only what the worker image copies.
+*
+!scripts
+!sitegen
+!newsroom
+!worker
+!import_content.py
+!content_writer.py
+!requirements-site.txt
+**/__pycache__
+**/.pytest_cache

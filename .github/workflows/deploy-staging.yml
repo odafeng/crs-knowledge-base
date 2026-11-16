@@ -1,0 +1,115 @@
+name: Deploy staging
+
+# Deploys the API and the scheduled jobs to the staging Google Cloud project (E3 #76, ADR-0016). GitHub Actions
+# signs in through workload identity federation as the deployer service account; there is no long-lived key.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api/**'
+      - 'worker/**'
+      - 'scripts/**'
+      - 'sitegen/**'
+      - 'newsroom/**'
+      - 'import_content.py'
+      - 'content_writer.py'
+      - 'supabase/migrations/**'
+      - '.github/workflows/deploy-staging.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT: guthub-staging
+  REGION: asia-northeast1
+  IMAGES: asia-northeast1-docker.pkg.dev/guthub-staging/guthub
+  WIF_PROVIDER: projects/687867762639/locations/global/workloadIdentityPools/github/providers/github-oidc
+  DEPLOYER: deployer@guthub-staging.iam.gserviceaccount.com
+  API_RUNTIME: api-runtime@guthub-staging.iam.gserviceaccount.com
+  WORKER_RUNTIME: worker-runtime@guthub-staging.iam.gserviceaccount.com
+  SUPABASE_REF: dlfhqneoqxlelczqcxif
+  SUPABASE_POOLER: aws-0-ap-northeast-1.pooler.supabase.com
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOYER }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.115.0
+
+      # Before the new code: the API reads the tables these migrations create.
+      - name: Apply database migrations
+        run: |
+          PASSWORD=$(gcloud secrets versions access latest --secret=supabase-db-password --project="$PROJECT")
+          echo "::add-mask::$PASSWORD"
+          supabase db push --include-all \
+            --db-url "postgresql://postgres.${SUPABASE_REF}:${PASSWORD}@${SUPABASE_POOLER}:5432/postgres?sslmode=require"
+
+      - name: Build and push images
+        run: |
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          docker build -t "$IMAGES/api:$GITHUB_SHA" apps/api
+          docker build -f worker/Dockerfile -t "$IMAGES/worker:$GITHUB_SHA" .
+          docker push "$IMAGES/api:$GITHUB_SHA"
+          docker push "$IMAGES/worker:$GITHUB_SHA"
+
+      # Public read API; writes need a Supabase session. Small limits keep staging inside its budget.
+      - name: Deploy the API
+        env:
+          CORS_ORIGINS: ${{ vars.STAGING_WEB_ORIGINS || '[]' }}
+        run: |
+          gcloud run deploy guthub-api --project="$PROJECT" --region="$REGION" \
+            --image="$IMAGES/api:$GITHUB_SHA" --service-account="$API_RUNTIME" \
+            --set-secrets=GUTHUB_DATABASE_URL=guthub-api-database-url:latest \
+            --set-env-vars="^@^GUTHUB_ENVIRONMENT=staging@GUTHUB_SUPABASE_URL=https://${SUPABASE_REF}.supabase.co@GUTHUB_CORS_ORIGINS=${CORS_ORIGINS}" \
+            --allow-unauthenticated --min-instances=0 --max-instances=2 --cpu=1 --memory=512Mi \
+            --concurrency=40 --timeout=30
+          URL=$(gcloud run services describe guthub-api --project="$PROJECT" --region="$REGION" --format='value(status.url)')
+          for i in $(seq 1 10); do curl -sf "$URL/api/v1/health" && exit 0; sleep 3; done
+          exit 1
+
+      # The privacy policy promises that deleted comments lose their author mapping after 90 days (ADR-0017).
+      - name: Deploy the daily purge job
+        run: |
+          gcloud run jobs deploy purge-deleted-authors --project="$PROJECT" --region="$REGION" \
+            --image="$IMAGES/api:$GITHUB_SHA" --service-account="$API_RUNTIME" \
+            --command=python --args=-m,guthub_api.maintenance,purge-deleted-authors \
+            --set-secrets=GUTHUB_DATABASE_URL=guthub-api-database-url:latest \
+            --set-env-vars=GUTHUB_ENVIRONMENT=staging --max-retries=1 --task-timeout=300
+          gcloud run jobs add-iam-policy-binding purge-deleted-authors --project="$PROJECT" --region="$REGION" \
+            --member="serviceAccount:$WORKER_RUNTIME" --role=roles/run.invoker --format=none
+          ARGS=(--project="$PROJECT" --location="$REGION" --schedule="30 3 * * *" --time-zone="Asia/Taipei"
+            --uri="https://run.googleapis.com/v2/projects/$PROJECT/locations/$REGION/jobs/purge-deleted-authors:run"
+            --http-method=POST --oauth-service-account-email="$WORKER_RUNTIME")
+          if gcloud scheduler jobs describe purge-deleted-authors-daily --project="$PROJECT" --location="$REGION" >/dev/null 2>&1; then
+            gcloud scheduler jobs update http purge-deleted-authors-daily "${ARGS[@]}"
+          else
+            gcloud scheduler jobs create http purge-deleted-authors-daily "${ARGS[@]}"
+          fi
+
+      # Paper Watch calls a paid model and opens GitHub issues, so it stays off until the maintainer provides its
+      # secrets and sets the repository variable PAPER_WATCH_ENABLED=true (E3 #76).
+      - name: Deploy the Paper Watch job
+        if: vars.PAPER_WATCH_ENABLED == 'true'
+        run: |
+          gcloud run jobs deploy paper-watch --project="$PROJECT" --region="$REGION" \
+            --image="$IMAGES/worker:$GITHUB_SHA" --service-account="$WORKER_RUNTIME" \
+            --set-secrets=GUTHUB_CONTENT_DATABASE_URL=guthub-content-database-url:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,GH_TOKEN=paper-watch-github-token:latest \
+            --set-env-vars=GITHUB_REPOSITORY="$GITHUB_REPOSITORY" --args=--dry-run \
+            --max-retries=0 --task-timeout=3600 --parallelism=1
