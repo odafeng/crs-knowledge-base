@@ -15,6 +15,13 @@ repos:
         pass_filenames: false
         files: ^(apps/web/|contracts/openapi\.yaml$)
 
+      - id: api-check
+        name: FastAPI lint, format, types, and tests
+        entry: bash -c 'cd apps/api && uv run --frozen ruff check . && uv run --frozen ruff format --check . && uv run --frozen pyright && uv run --frozen pytest -q'
+        language: system
+        pass_filenames: false
+        files: ^(apps/api/|contracts/openapi\.yaml$)
+
       - id: pyright
         name: pyright
         entry: pyright
