@@ -1218,6 +1218,57 @@
         "reviewedAt": "2026-06-07"
       }
     ],
+    "standard_of_care": {
+      "title": "現行治療方案最佳實踐",
+      "cards": [
+        {
+          "title": "第一線治療（1L）：依原發部位選擇生物製劑",
+          "icon": "&#x1F7E2;",
+          "body_html": "<p><strong>適用族群：RAS 原生型（All-RAS 檢測）mCRC</strong></p>\n<table>\n  <tr><th>研究</th><th>比較</th><th>族群</th><th>結果</th></tr>\n  <tr><td><strong>PARADIGM</strong>（JAMA 2023）</td><td>Panitumumab vs bevacizumab + mFOLFOX6</td><td>左側</td><td>OS 37.9 vs 34.3 個月，HR 0.82；R0 切除 18.3% vs 11.6%</td></tr>\n  <tr><td>FIRE-3（Lancet Oncol 2014；最終分析 Br J Cancer 2020）</td><td>Cetuximab vs bevacizumab + FOLFIRI</td><td>RAS wt</td><td>OS 28.7 vs 25.0 個月，HR 0.77；extended RAS wt OS 33.1 vs 25.6 個月，HR 0.70</td></tr>\n  <tr><td>CALGB/SWOG 80405（JAMA 2017）</td><td>Cetuximab vs bevacizumab + 化療</td><td>整體</td><td>OS 30.0 vs 29.0 個月，HR 0.88（NS）；左側 cetuximab OS 39.3 個月</td></tr>\n  <tr><td>PEAK（JCO 2014，Phase 2）</td><td>Panitumumab vs bevacizumab + mFOLFOX6</td><td>RAS wt</td><td>OS 34.2 vs 24.3 個月，HR 0.62</td></tr>\n  <tr><td>左右側合併分析（Ann Oncol 2017，6 個 RCT）</td><td>Anti-EGFR vs 對照</td><td>左側／右側</td><td>左側 OS HR 0.75；右側 OS HR 1.12（無效益）</td></tr>\n</table>\n<p>左側原發：anti-EGFR（cetuximab 或 panitumumab）+ 雙藥化療為首選。右側原發：anti-EGFR 未見存活效益，第一線不建議使用。</p>",
+          "refs": [
+            "paradigm",
+            "fire3",
+            "fire3-final",
+            "calgb",
+            "peak",
+            "sidedness-pooled"
+          ],
+          "reviewedAt": "2026-11-17",
+          "regulatory": [
+            {
+              "regimen": "Cetuximab + FOLFIRI／FOLFOX（一線）",
+              "fda": "approved",
+              "fdaNote": "FDA 仿單的第一線僅併用 FOLFIRI（K-Ras 野生型、EGFR 表現）",
+              "tfda": "approved",
+              "tfdaNote": "爾必得舒（衛署菌疫輸字第000877號）：RAS 原生型，併用 FOLFIRI 或 FOLFOX 作為第一線",
+              "nhi": "conditional",
+              "nhiNote": "給付規定 9.27（115/5/1 版）：需 All-RAS 檢測報告與事前審查，每次申請 18 週，影像證實無惡化才可續用；與 panitumumab 擇一、不得併用 bevacizumab；R0 切除且無轉移病灶者不給付；條文未限制原發部位",
+              "checkedAt": "2026-11-17",
+              "sources": [
+                "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=8bc6397e-4bd8-4d37-a007-a327e4da34d9",
+                "https://data.fda.gov.tw/data/opendata/export/37/json",
+                "https://info.nhi.gov.tw/api/INAE3000/INAE3000S01/getPDF?DurgFileName=9.27._20260501.pdf"
+              ]
+            },
+            {
+              "regimen": "Panitumumab + FOLFOX／FOLFIRI（一線）",
+              "fda": "approved",
+              "fdaNote": "FDA 仿單的第一線僅併用 FOLFOX（KRAS 與 NRAS 皆野生型）",
+              "tfda": "approved",
+              "tfdaNote": "維必施（衛署菌疫輸字第000941號）：RAS 基因正常，併用 FOLFOX 或 FOLFIRI 作為第一線",
+              "nhi": "conditional",
+              "nhiNote": "給付規定 9.53（115/2/1 版）：需 All-RAS 檢測報告與事前審查，每次申請 18 週，影像證實無惡化才可續用；與 cetuximab 擇一、不得併用 bevacizumab；R0 切除且無轉移病灶者不給付；條文未限制原發部位",
+              "checkedAt": "2026-11-17",
+              "sources": [
+                "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=e0fa4bca-f245-4d92-ae29-b0c630a315c2",
+                "https://data.fda.gov.tw/data/opendata/export/37/json",
+                "https://info.nhi.gov.tw/api/INAE3000/INAE3000S01/getPDF?DurgFileName=9.53._20260201.pdf"
+              ]
+            }
+          ]
+        }
+      ]
+    },
     "metrics": null
   },
   "generic-CRS": {
