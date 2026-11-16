@@ -14,7 +14,7 @@
 
 | 責任 | 採用 |
 |---|---|
-| 公開頁面與互動 UI | Next.js；server hosting 供應商由 [F1 #75](https://github.com/odafeng/crs-knowledge-base/issues/75) 依帳號與預算確認 |
+| 公開頁面與互動 UI | Next.js，部署於 Vercel（2026-11-17 維護者於 [F1 #75](https://github.com/odafeng/crs-knowledge-base/issues/75) 確認）；帳號與預算仍由 F1 提供 |
 | 應用 API、寫入驗證、授權、管理流程 | FastAPI，部署於 Cloud Run |
 | 文獻掃描、分類、發布任務 | Python worker，部署於 Cloud Run（jobs 或排程觸發） |
 | 身分 | Supabase Auth |
@@ -74,6 +74,7 @@ A 的預期優點是 Auth、資料、Storage 的整合工作較少。B 適合已
 - Supabase 將部分權限與產品整合綁在其服務上；全 GCP 則需要更多 IAM、連線、Auth 整合與費用管理工作。
 - 匯入、單一 writer 切換與保留新留言的 rollback，比只搬靜態檔複雜；必須先在 staging 演練。
 - FastAPI 跑在 Cloud Run、資料在 Supabase，兩者跨供應商連線，需處理連線池、延遲與兩邊的祕密管理。
+- 網站在 Vercel、API 在 Cloud Run、資料在 Supabase，三個供應商各有帳單、權限與祕密要管理；瀏覽器呼叫 API 是跨 origin，CORS 只允許網站的 origin（ADR-0020）。
 - 身分規則只在 FastAPI 一處，維護簡單；代價是 API 若有越權漏洞（例如可改他人留言的 IDOR），資料庫不會再擋一次，所以 D2 的權限矩陣測試是主要防線。
 - 本決策尚未建立雲端資源、執行 migration 或切換 production。
 
