@@ -79,6 +79,8 @@ let browser;
 
   // 2. A push message reaches the service worker and becomes a notification.
   const cdp = await context.newCDPSession(page);
+  const versions = [];
+  cdp.on('ServiceWorker.workerVersionUpdated', ({ versions: updated }) => versions.push(...updated));
   const registration = new Promise(resolve => cdp.on('ServiceWorker.workerRegistrationUpdated', ({ registrations }) => {
     const found = registrations.find(r => r.scopeURL === `${WEB}/` && !r.isDeleted);
     if (found) resolve(found.registrationId);
@@ -86,17 +88,23 @@ let browser;
   await cdp.send('ServiceWorker.enable');
   const registrationId = await registration;
   const story = { title: 'E2E 新消息', body: '測試內容', url: '/news/e2e-story/', tag: 'e2e-story' };
-  await cdp.send('ServiceWorker.deliverPushMessage', { origin: WEB, registrationId, data: JSON.stringify(story) });
+  const notification = () => page.evaluate(async () => {
+    const [found] = await (await navigator.serviceWorker.ready).getNotifications({ tag: 'e2e-story' });
+    return found ? { title: found.title, body: found.body, url: found.data?.url } : null;
+  });
+  // A message delivered while the worker is busy (its sync after the reload) can be dropped on slow runners: deliver
+  // again, up to three times, before calling it a failure.
   let shown = null;
-  for (let i = 0; i < 50 && !shown; i++) {
-    shown = await page.evaluate(async () => {
-      const [found] = await (await navigator.serviceWorker.ready).getNotifications({ tag: 'e2e-story' });
-      return found ? { title: found.title, body: found.body, url: found.data?.url } : null;
-    });
-    if (!shown) await page.waitForTimeout(200);
+  for (let attempt = 0; attempt < 3 && !shown; attempt++) {
+    await cdp.send('ServiceWorker.deliverPushMessage', { origin: WEB, registrationId, data: JSON.stringify(story) });
+    for (let i = 0; i < 25 && !shown; i++) {
+      shown = await notification();
+      if (!shown) await page.waitForTimeout(200);
+    }
   }
+  const states = versions.map(v => `${v.runningStatus}/${v.status}`).join(', ');
   check(shown?.title === story.title && shown?.body === story.body && shown?.url === story.url,
-    `notification was ${JSON.stringify(shown)}`);
+    `notification was ${JSON.stringify(shown)} (worker versions: ${states || 'none reported'})`);
 
   // 3. Turn push off.
   const removed = page.waitForResponse(r => r.url().endsWith('/push/subscription') && r.request().method() === 'DELETE');

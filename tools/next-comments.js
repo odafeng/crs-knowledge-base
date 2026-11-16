@@ -253,9 +253,24 @@ let browser;
     join app.comments c on c.id = e.comment_id where c.body in (${literal(edited)}, ${literal(first)}, ${literal(keyboard)})`);
   check(audit === 'reveal_author,hide,resolve_report,publish', `moderation: audit trail ${audit}`);
 
+  // Weekly activity (G10 #121): counts for the maintainer only, never a list of readers.
+  await m.goto(`${ORIGIN}/admin/stats/`);
+  const thisWeek = m.locator('tr[aria-current="date"]');
+  await thisWeek.waitFor();
+  check(await m.locator('table.activity tbody tr').count() === 12, 'stats: not 12 weeks');
+  const active = Number(await thisWeek.locator('.activity__count').innerText());
+  check(active >= 2, `stats: ${active} active readers this week, expected at least the two in this run`);
+  check(await m.getByText(`Reader A ${run}`).count() === 0, 'stats: a reader name is shown');
+  await m.addScriptTag({ content: AXE });
+  const statsAxe = await m.evaluate(tags => axe.run(document.querySelector('main'), { runOnly: { type: 'tag', values: tags } }), TAGS);
+  check(statsAxe.violations.length === 0, `axe stats: ${statsAxe.violations.map(v => `${v.id} ${v.nodes[0].target}`).join('; ')}`);
+  await a.goto(`${ORIGIN}/admin/stats/`);
+  await a.getByText('需要管理者權限').waitFor();
+
   console.log('comments: visitor gate, pending first comment, single send on double click, approval, signed and anonymous,');
   console.log('          edit, failure keeps text and retry, others cannot edit or delete, report once, delete, keyboard,');
-  console.log('          resend after a lost response, over the limit and recovery, likes, moderation with audit');
+  console.log('          resend after a lost response, over the limit and recovery, likes, moderation with audit,');
+  console.log('          weekly activity counts for the maintainer only');
   console.log('problems:', problems.length);
   problems.forEach(problem => console.log('  -', problem));
   if (problems.length) process.exitCode = 1;

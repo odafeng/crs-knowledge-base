@@ -708,3 +708,52 @@ def test_toggling_a_like_cannot_get_around_the_limit(world: World) -> None:
         assert state.json() == {"likeCount": 0, "liked": False}
     finally:
         client.__exit__(None, None, None)
+
+
+# --- weekly activity (G10 #121) ---------------------------------------------------------------------------------------
+
+
+def weekly(client: TestClient, w: World, user: uuid.UUID | None = None) -> Any:
+    response = client.get(f"{API_PREFIX}/admin/stats/weekly", headers=w.headers(user or w.admin))
+    assert response.status_code == 200, response.text
+    assert response.headers["cache-control"] == "private, no-store"
+    schema("WeeklyActivity").validate(response.json())
+    return response.json()
+
+
+def test_weekly_activity_counts_people_not_actions(client: TestClient, world: World) -> None:
+    before = weekly(client, world)
+    comment = lambda user, ago: sql(  # noqa: E731
+        "insert into app.comments (paper_id, author_id, body, anonymous, created_at)"
+        " values (%s, %s, 'x', true, now() - %s * interval '1 day') returning id",
+        (world.paper, user, ago),
+    )[0][0]
+    first = comment(world.author, 0)
+    comment(world.author, 0)
+    sql("insert into app.comment_likes (comment_id, account_id) values (%s, %s)", (first, world.other))
+    sql("insert into app.comment_like_events (account_id) values (%s)", (world.other,))
+    sql("insert into app.comment_like_events (account_id, created_at) values (%s, now() - interval '14 days')",
+        (world.admin,))  # fmt: skip
+    sql("insert into app.comment_reports (comment_id, reporter_id, reason) values (%s, %s, 'r')", (first, world.other))
+    after = weekly(client, world)
+
+    assert len(after["weeks"]) == 12 and after["timezone"] == "Asia/Taipei"
+    delta = [
+        {key: a[key] - b[key] for key in ("activeReaders", "newAccounts", "comments", "likes")}
+        for a, b in zip(after["weeks"], before["weeks"], strict=True)
+    ]
+    # This week: the author (two comments) and the other reader (a like and a report) are two people.
+    assert delta[-1] == {"activeReaders": 2, "newAccounts": 0, "comments": 2, "likes": 1}
+    assert delta[-3]["activeReaders"] == 1
+    assert all(d == dict.fromkeys(d, 0) for d in delta[:-3] + [delta[-2]])
+    # Only counts leave the API: no account IDs, names or emails.
+    text = json.dumps(after)
+    assert all(str(uid) not in text for uid in (world.author, world.other, world.admin))
+    assert "Author" not in text and "example.test" not in text
+    sql("delete from app.comment_like_events where account_id = any(%s)", ([world.other, world.admin],))
+
+
+def test_weekly_activity_is_for_the_maintainer_only(client: TestClient, world: World) -> None:
+    url = f"{API_PREFIX}/admin/stats/weekly"
+    assert client.get(url).status_code == 401
+    assert client.get(url, headers=world.headers(world.other)).status_code == 403

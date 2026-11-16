@@ -188,6 +188,25 @@
   font-size: var(--text-sm);
 }
 
+/* Weekly activity (G10 #121): the number stays readable text; the bar only shows the trend. */
+.activity__count {
+  display: inline-block;
+  min-inline-size: 2.5ch;
+  font-variant-numeric: tabular-nums;
+}
+.activity__bar {
+  display: inline-block;
+  block-size: 0.6em;
+  max-inline-size: 8rem;
+  margin-inline-start: var(--space-2);
+  border-radius: 2px;
+  background: var(--brand);
+  vertical-align: middle;
+}
+.activity tr[aria-current] th {
+  font-weight: 700;
+}
+
 @media print {
   @page {
     size: A4;
