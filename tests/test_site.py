@@ -78,6 +78,16 @@ def test_papers_list_on_the_date_paper_watch_found_them():
     assert len({u.date for u in kb.updates() if u.kind == "paper"}) > 2
 
 
+def test_news_about_those_papers_carries_the_same_date():
+    from sitegen.load import load_kb
+
+    kb = load_kb(ROOT / "data" / "papers.json", ROOT / "data" / "news.json")
+    for story in kb.news:
+        if story.paper.published_at != story.paper.reviewed_at:  # a paper dated by its Paper Watch issue
+            assert story.published_at == story.paper.published_at, story.id
+    assert len({story.published_at for story in kb.news}) > 2
+
+
 def test_treatment_sections_come_from_json():
     import json
 
