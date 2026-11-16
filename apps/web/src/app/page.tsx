@@ -19,7 +19,8 @@ import {
   Status,
   JsonLd,
 } from "@/components/reading";
-import { listNews, listPapers, listTopics } from "@/lib/content";
+import { getDailyPick, listNews, listPapers, listTopics } from "@/lib/content";
+import { dailyLabel } from "@/lib/daily";
 import {
   byTopic,
   isUnreviewed,
@@ -45,11 +46,13 @@ export const metadata: Metadata = {
 export default async function Home() {
   // Rendered per request so `next build` never calls the API; API reads stay cached for 300 s (lib/content.ts).
   await connection();
-  const [papers, news, topics] = await Promise.all([
+  const [papers, news, topics, daily] = await Promise.all([
     listPapers(),
     listNews(),
     listTopics(),
+    getDailyPick(),
   ]);
+  const pick = daily?.pick;
   const topicOf = (paperId: string) =>
     topics.find((t) => t.key === papers.find((p) => p.id === paperId)?.topic);
   const [lead, ...rest] = news;
@@ -63,6 +66,20 @@ export default async function Home() {
     <>
       <JsonLd data={pageJsonLd(SITE_NAME, DESCRIPTION, "/", HOME)} />
       <h1 className="visually-hidden">GutHub：大腸直腸外科實證更新</h1>
+      {daily && pick && (
+        <section className="daily" aria-labelledby="daily-title">
+          <div className="container daily__inner">
+            <h2 className="daily__label" id="daily-title">
+              {dailyLabel(pick.date, daily.date)}
+            </h2>
+            <p className="daily__title">
+              <Link href={pick.url}>{pick.title}</Link>
+              {pick.unreviewed && <AiChip label="AI 未審" />}
+            </p>
+            <p className="daily__conclusion">{pick.conclusion}</p>
+          </div>
+        </section>
+      )}
       {lead && (
         <section className="lead on-field" aria-labelledby="lead-title">
           <svg

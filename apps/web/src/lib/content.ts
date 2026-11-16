@@ -1,5 +1,6 @@
 // Server-side reads for the public pages: ISR fetches against the FastAPI read API (ADR-0015, B5).
 import { apiError } from "./api";
+import type { DailyPick } from "./daily";
 import type { News, Paper, Topic } from "./site";
 
 /** Matches the API's `Cache-Control: public, max-age=300`. Pages export the same value as `revalidate`. */
@@ -85,4 +86,11 @@ export async function getTopicBySlug(
   return (
     (await listTopics(options)).find((topic) => topic.slug === slug) ?? null
   );
+}
+
+/** The day's pick, or the latest earlier one; null if the API has none (or predates G2), so the home page still renders. */
+export async function getDailyPick(
+  options?: Options,
+): Promise<DailyPick | null> {
+  return get<DailyPick>("/daily-pick?recent=true", options).catch(() => null);
 }

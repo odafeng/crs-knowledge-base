@@ -532,6 +532,11 @@ paths:
         required: false
         schema: {type: string, format: date}
         description: Defaults to today in Asia/Taipei.
+      - name: recent
+        in: query
+        required: false
+        schema: {type: boolean, default: false}
+        description: When the day has nothing new, return the latest earlier day's pick; its own date says which day.
       responses:
         '200':
           description: Success

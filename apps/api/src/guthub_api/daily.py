@@ -92,12 +92,36 @@ def collect(conn: Connection[Any], day: date) -> list[Candidate]:
     ]
 
 
+def latest_day(conn: Connection[Any], before: date) -> date | None:
+    """The most recent day before `before` on which something was added."""
+    row = (
+        conn.cursor(row_factory=dict_row)
+        .execute(
+            "select max(day) as day from ("
+            " select published_at as day from app.public_news where published_at < %(before)s"
+            " union all select coalesce(review_published_at, added_at, reviewed_at) from app.public_papers"
+            "  where coalesce(review_published_at, added_at, reviewed_at) < %(before)s) as days",
+            {"before": before},
+        )
+        .fetchone()
+    )
+    return row["day"] if row else None
+
+
 @router.get("/daily-pick")
-def daily_pick(db: Db, response: Response, day: Annotated[date | None, Query(alias="date")] = None) -> dict[str, Any]:
-    """The pick for `date` (default: today in Taiwan), or null when nothing new was added that day."""
+def daily_pick(
+    db: Db,
+    response: Response,
+    day: Annotated[date | None, Query(alias="date")] = None,
+    recent: bool = False,
+) -> dict[str, Any]:
+    """The pick for `date` (default: today in Taiwan). With `recent`, a day with nothing new falls back to the latest
+    earlier day that had something (the home page always shows one); the pick's own date says which day that was."""
     day = day or datetime.now(TAIPEI).date()
     response.headers["Cache-Control"] = PUBLIC_CACHE
     pick = choose(collect(db, day))
+    if pick is None and recent and (earlier := latest_day(db, day)) is not None:
+        pick = choose(collect(db, earlier))
     if pick is None:
         return {"date": day.isoformat(), "pick": None}
     return {
