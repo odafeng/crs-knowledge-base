@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, LiteralString
 
-from sitegen.config import ROBOTIC_KEY, TOPICS
+from sitegen.config import ROBOTIC_KEY, ROBOTIC_PAGES, TOPICS
 from sitegen.load import load_kb
 
 ROOT = Path(__file__).resolve().parent
@@ -253,8 +253,31 @@ def manifest(rows: Rows) -> dict[str, Any]:
     return {"sources": dict(sorted(rows.sources.items())), "tables": tables}
 
 
-def apply(conn: Any, rows: Rows, *, dry_run: bool = False) -> dict[str, dict[str, int]]:
-    """Write all rows in one transaction and return per-table change counts. dry_run rolls back at the end."""
+class WriterError(RuntimeError):
+    """The database is not in the writer mode this write needs (E2 #73)."""
+
+
+def check_writer(conn: Any, expected: str) -> None:
+    """Locks the writer row for this transaction and refuses to write unless the database is in `expected` mode."""
+    row = conn.execute("select writer from app.content_writer for update").fetchone()
+    writer = row[0] if row else None
+    if writer != expected:
+        raise WriterError(
+            f"content writer is {writer!r}, not {expected!r}: "
+            + (
+                "the database is the authority now; export it instead of importing JSON"
+                if writer == "postgres"
+                else "the database is not the authority yet (content_writer.py cutover)"
+            )
+        )
+
+
+def apply(conn: Any, rows: Rows, *, dry_run: bool = False, writer: str = "json") -> dict[str, dict[str, int]]:
+    """Write all rows in one transaction and return per-table change counts. dry_run rolls back at the end.
+
+    `writer` is the mode the database must be in: the JSON import runs only before cutover, and the database writer
+    (scripts/content_store.py) reuses this after it.
+    """
     from psycopg import Rollback, sql
     from psycopg.types.json import Jsonb
 
@@ -323,6 +346,7 @@ def apply(conn: Any, rows: Rows, *, dry_run: bool = False) -> dict[str, dict[str
 
     changes: dict[str, dict[str, int]] = {}
     with conn.transaction(), conn.cursor() as cur:
+        check_writer(conn, writer)
         for table in ("topics", "papers", "news"):
             try:
                 changes[table] = upsert(cur, table)
@@ -339,6 +363,105 @@ def apply(conn: Any, rows: Rows, *, dry_run: bool = False) -> dict[str, dict[str
         if dry_run:
             raise Rollback()
     return changes
+
+
+def export_kb(conn: Any, root: Path) -> None:
+    """Write the database's public content back as data/papers.json, data/news.json and docs/ under `root` (E2 #73).
+
+    The inverse of build_rows for everything not withdrawn: build_rows(root) afterwards yields the same rows, so the
+    manifest matches. Detail documents are written as minimal pages holding the stored detail HTML, which is what the
+    site reads from them. Order: papers by year (newest first) then ID; news newest first, as the API lists them.
+    """
+    from psycopg.rows import dict_row
+
+    def rows(query: LiteralString, *params: Any) -> list[dict[str, Any]]:
+        with conn.cursor(row_factory=dict_row) as cur:
+            return cur.execute(query, params).fetchall()
+
+    def review(status: str | None, published: Any) -> dict[str, Any]:
+        if not status:
+            return {}
+        return {"review": {"status": status, **({"publishedAt": published.isoformat()} if published else {})}}
+
+    def document(path: str, html: str) -> None:
+        target = root / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(f"<!doctype html>\n<html><body>{html}</body></html>\n", encoding="utf-8")
+
+    topics = {t["key"]: t for t in rows("select * from app.topics")}
+    relations: dict[str, list[dict[str, str]]] = {}
+    for r in rows("select paper_id, target_id, type from app.paper_relations order by paper_id, target_id, type"):
+        relations.setdefault(r["paper_id"], []).append({"targetId": r["target_id"], "type": r["type"]})
+    commentary: dict[str, list[dict[str, Any]]] = {}
+    for c in rows("select * from app.research_commentary order by paper_id, added_at, coalesce(doi, pmid, title)"):
+        item = {k: v for k, v in (("doi", c["doi"]), ("pmid", c["pmid"])) if v}
+        item |= {"title": c["title"], "journal": c["journal"]}
+        item |= {"year": c["year"]} if c["year"] is not None else {}
+        item |= {"type": c["type"], "summary": c["summary"], "critique": c["critique"], "newData": c["new_data"]}
+        item |= {"addedAt": c["added_at"].isoformat()} | review(c["review_status"], c["review_published_at"])
+        commentary.setdefault(c["paper_id"], []).append(item)
+
+    raw: dict[str, Any] = {}
+    for topic in TOPICS:
+        t = topics.get(topic.key)
+        block: dict[str, Any] = {"papers": []}
+        if t and (t["soc_title"] is not None or t["standard_of_care"]):
+            block["standard_of_care"] = {
+                **({"title": t["soc_title"]} if t["soc_title"] is not None else {}),
+                "cards": t["standard_of_care"],
+            }
+        block["metrics"] = t["metrics"] if t else {}
+        raw[topic.key] = block
+    for p in rows("select * from app.papers where withdrawn_at is null order by year desc, id"):
+        entry: dict[str, Any] = {
+            "id": p["id"],
+            "year": p["year"],
+            "journal": p["journal"],
+            "studyType": p["study_type"],
+            "n": p["n"],
+            "regimen": p["regimen"],
+            "endpoint": p["endpoint"],
+            "result": p["result"],
+            "bottomLine": p["bottom_line"],
+            "doi": p["doi"] or "",
+            "relations": relations.get(p["id"], []),
+            "source": p["source"],
+            "reviewedAt": p["reviewed_at"].isoformat(),
+        }
+        if p["source_file"]:
+            entry["file"] = p["source_file"]
+            document(p["source_file"], p["detail_html"])
+        if p["id"] in commentary:
+            entry["commentary"] = commentary[p["id"]]
+        entry |= review(p["review_status"], p["review_published_at"])
+        raw[p["topic_key"]]["papers"].append(entry)
+
+    robotic = topics.get(ROBOTIC_KEY) or {"robotic_sections": [], "metrics": {}}
+    block = {"papers": [], "metrics": robotic.get("metrics", {})}
+    sections = {s["slug"]: s for s in robotic["robotic_sections"]}
+    for page in ROBOTIC_PAGES:
+        section = sections.get(page.slug, {"timeline": [], "cards": [], "detailHtml": []})
+        block[page.timeline_key], block[page.cards_key] = section["timeline"], section["cards"]
+        details = iter(section["detailHtml"])
+        for item in section["timeline"]:
+            if item.get("file", "").startswith("docs/"):
+                document(item["file"], next(details, ""))
+    raw[ROBOTIC_KEY] = block
+
+    news = []
+    for n in rows(
+        "select n.* from app.news n join app.papers p on p.id = n.paper_id"
+        " where n.withdrawn_at is null and p.withdrawn_at is null order by n.published_at desc, n.id"
+    ):
+        story = {"id": n["id"], "paperId": n["paper_id"], "publishedAt": n["published_at"].isoformat()}
+        story |= {"headline": n["headline"], "dek": n["dek"], "key": n["key"], "figures": n["figures"]}
+        story |= {"figureNote": n["figure_note"]} if n["figure_note"] is not None else {}
+        story |= {"body": n["body"]} | review(n["review_status"], n["review_published_at"])
+        news.append(story)
+
+    (root / "data").mkdir(parents=True, exist_ok=True)
+    (root / "data/papers.json").write_text(json.dumps(raw, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (root / "data/news.json").write_text(json.dumps(news, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def main(argv: list[str] | None = None) -> int:

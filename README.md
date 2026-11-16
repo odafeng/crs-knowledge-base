@@ -220,6 +220,7 @@ Web Push 的程式與 SQL 範本放在 `push/`，目前不等於已建立 Supaba
 | [0018](docs/adr/0018-python-pipeline-and-adk.md) | Python 管線保留與 ADK 導入門檻 |
 | [0019](docs/adr/0019-nextjs-offline-sync-and-client-search.md) | Next.js 離線快取改為對照公開索引同步 |
 | [0020](docs/adr/0020-browser-session-and-bearer-api.md) | 登入 session 只存在瀏覽器，API 只收 Bearer token |
+| [0021](docs/adr/0021-single-content-writer-and-cutover.md) | 內容同一時間只有一個寫入端，切換前比對資料庫與 JSON |
 
 `Accepted` 表示已採用的方向，不代表功能已完成；實作與驗收狀態以對應 issues 為準。`Proposed` 的選項需由決策 issue 確認後再實作。
 

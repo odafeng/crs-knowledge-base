@@ -40,7 +40,7 @@ jobs:
         working-directory: scripts
         run: |
           gh issue view "$ISSUE" --json body -q .body > "$RUNNER_TEMP/body.md"
-          python accept_issue.py --body-file "$RUNNER_TEMP/body.md" --result-file "$RUNNER_TEMP/result.md"
+          python accept_issue.py --body-file "$RUNNER_TEMP/body.md" --result-file "$RUNNER_TEMP/result.md" --issue "$ISSUE"
 
       - name: Commit, push, deploy
         run: |

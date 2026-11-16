@@ -9,6 +9,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
+from content_store import content_session
 from issue_data import checked_indices, extract
 from publish import KB, PublishError, publish_commentary, publish_paper
 
@@ -36,9 +37,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Publish an accepted review issue")
     parser.add_argument("--body-file", type=Path, required=True)
     parser.add_argument("--result-file", type=Path, required=True)
+    parser.add_argument("--issue", default="unknown", help="issue number, part of the retry key in database mode")
     args = parser.parse_args()
+    body = args.body_file.read_text()
+    action = "publish_paper" if extract(body, "paper") else "publish_commentary"
     try:
-        summary = accept(args.body_file.read_text(), date.today().isoformat())
+        with content_session(action, f"issue-{args.issue}") as session:
+            summary = session.done or session.record(accept(body, date.today().isoformat(), session.kb))
     except PublishError as e:
         args.result_file.write_text("無法發布：\n" + "\n".join(f"- {r}" for r in e.reasons))
         print(e, file=sys.stderr)

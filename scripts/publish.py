@@ -42,6 +42,15 @@ class PublishError(Exception):
         self.reasons = reasons
 
 
+#: "json" while data/*.json is the content authority; the cutover to PostgreSQL writes "postgres" (E2 #73).
+WRITER_FILE = "data/WRITER"
+
+
+def json_writer_active(root: Path = ROOT) -> bool:
+    flag = root / WRITER_FILE
+    return not flag.exists() or flag.read_text(encoding="utf-8").strip() == "json"
+
+
 @dataclass
 class KB:
     """The files a publish touches, rooted at the repository (tests use a temp copy)."""
@@ -60,6 +69,8 @@ class KB:
         return json.loads(self.papers_json.read_text())
 
     def save(self, data: dict) -> None:
+        if not json_writer_active(self.root):
+            raise PublishError(["內容已改由資料庫寫入（data/WRITER），JSON 檔不再接受發布或撤下"])
         self.papers_json.write_text(json.dumps(data, ensure_ascii=False, indent=2))
 
 
