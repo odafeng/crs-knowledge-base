@@ -2,6 +2,7 @@
 // Usage: node tools/next-auth.js <Next.js origin> <API base, e.g. http://127.0.0.1:8000/api/v1>
 // Env: SUPABASE_URL, SUPABASE_SERVICE_KEY (local demo key), MAILPIT_URL (optional: also sends a real email).
 const { chromium } = require('playwright');
+const { signInLink: linkFor } = require('./sign-in-link');
 
 const ORIGIN = (process.argv[2] || 'http://127.0.0.1:3000').replace(/\/$/, '');
 const API = (process.argv[3] || 'http://127.0.0.1:8000/api/v1').replace(/\/$/, '');
@@ -11,21 +12,8 @@ const check = (ok, message) => { if (!ok) problems.push(message); };
 const step = message => console.log(`- ${message}`);
 const run = Date.now().toString(36);
 
-async function admin(path, body) {
-  const response = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
-    method: 'POST',
-    headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!response.ok) throw new Error(`${path} ${response.status} ${await response.text()}`);
-  return response.json();
-}
-
 /** A one-time sign-in link for `email`, as the email template builds it. */
-async function signInLink(email) {
-  const link = await admin('/admin/generate_link', { type: 'magiclink', email });
-  return `${ORIGIN}/auth/callback/?token_hash=${link.hashed_token ?? link.properties.hashed_token}&type=email`;
-}
+const signInLink = email => linkFor(ORIGIN, email);
 
 async function mailedLink(email) {
   for (let i = 0; i < 40; i++) {
