@@ -748,9 +748,11 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
-        /** @description Service unavailable */
+        /** @description Service unavailable. With Retry-After, writes are paused for planned maintenance (reads keep working); without it, a dependency such as the database is down. */
         Unavailable: {
             headers: {
+                /** @description Seconds until writes are expected to reopen; only sent during planned maintenance. */
+                "Retry-After"?: number;
                 [name: string]: unknown;
             };
             content: {

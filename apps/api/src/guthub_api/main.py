@@ -1,4 +1,4 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request, Response
@@ -9,11 +9,13 @@ from guthub_api.auth import TokenVerifier
 from guthub_api.comments import router as comments_router
 from guthub_api.content import router as content_router
 from guthub_api.db import open_pool
-from guthub_api.errors import install_error_handling
+from guthub_api.errors import error_response, install_error_handling
 from guthub_api.moderation import router as moderation_router
 from guthub_api.settings import Settings
 
 API_PREFIX = "/api/v1"
+WRITE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+MAINTENANCE_RETRY_SECONDS = 600
 
 
 @asynccontextmanager
@@ -35,6 +37,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.pool = None
     supabase_url = app.state.settings.supabase_url
     app.state.verifier = TokenVerifier.for_supabase(supabase_url) if supabase_url else None
+    if app.state.settings.writes_paused:
+        # Registered first so request IDs and CORS wrap it; the check sits here, not in each route, so a new write
+        # route cannot miss it. Retry-After tells the web app this is planned maintenance, not an outage.
+        @app.middleware("http")
+        async def pause_writes(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+            if request.method in WRITE_METHODS and request.url.path.startswith(API_PREFIX):
+                return error_response(
+                    request,
+                    503,
+                    "unavailable",
+                    "Writes are paused for maintenance",
+                    {"Retry-After": str(MAINTENANCE_RETRY_SECONDS)},
+                )
+            return await call_next(request)
+
     install_error_handling(app)
     if app.state.settings.cors_origins:
         # Bearer tokens, not cookies: no credentials mode, so a listed origin still cannot ride on a user's session.

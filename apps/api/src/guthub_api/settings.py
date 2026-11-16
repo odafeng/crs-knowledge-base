@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     comment_daily_limit: int = Field(default=50, ge=1)
     # Like and unlike changes a reader may make per burst window (H1 #123); repeats that change nothing are free.
     comment_like_limit: int = Field(default=60, ge=1)
+    # Maintenance switch for cutover and rollback (F3 #78, docs/runbook-cutover.md): every write answers 503 with
+    # Retry-After while reads keep working.
+    writes_paused: bool = False
 
     @model_validator(mode="after")
     def deployed_environments_need_a_database(self) -> Self:

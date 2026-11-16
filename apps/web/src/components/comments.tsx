@@ -13,6 +13,7 @@ import {
   bodyError,
   commentDate,
   errorMessage,
+  retryAfterOf,
   ownComments,
   type Action,
   type CommentPage,
@@ -247,7 +248,7 @@ function CommentForm({
     ).catch(() => null);
     sending.current = false;
     if (!response?.ok) {
-      const retryAfter = Number(response?.headers.get("Retry-After")) || null;
+      const retryAfter = retryAfterOf(response);
       return setState({
         kind: "error",
         message: errorMessage(response?.status ?? null, "post", retryAfter),
@@ -366,7 +367,11 @@ function CommentItem({
     setBusy(false);
     if (response?.ok) return true;
     setMessage({
-      text: errorMessage(response?.status ?? null, action),
+      text: errorMessage(
+        response?.status ?? null,
+        action,
+        retryAfterOf(response),
+      ),
       error: true,
     });
     return false;
@@ -594,7 +599,9 @@ function LikeButton({
     setBusy(false);
     if (response?.ok) return setState(await response.json());
     setState(before);
-    setError(errorMessage(response?.status ?? null, "like"));
+    setError(
+      errorMessage(response?.status ?? null, "like", retryAfterOf(response)),
+    );
   }
 
   return (
