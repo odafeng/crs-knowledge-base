@@ -166,5 +166,11 @@ check(
 )
 check("/robots.txt", (OLD / "robots.txt").read_text(encoding="utf-8") == fetch("/robots.txt")[1])
 
+# 5. The search index (C3 #65): same entries, so search finds the same things. Order is not compared: the
+# current site lists entries in data-file order, the Next.js site in the API's newest-first order.
+old_index = sorted(json.loads((OLD / "search.json").read_text(encoding="utf-8")), key=lambda e: e["path"])
+new_index = sorted(json.loads(fetch("/search.json")[1]), key=lambda e: e["path"])
+check(f"/search.json: {len(new_index)} entries", old_index == new_index)
+
 print(f"\nproblems: {len(problems)}")
 sys.exit(1 if problems else 0)

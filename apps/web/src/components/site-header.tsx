@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/display-settings";
 import { Icon } from "@/components/reading";
 import { SiteNav } from "@/components/site-nav";
 
@@ -37,6 +38,7 @@ export function SiteHeader() {
         >
           <Icon name="search" />
         </Link>
+        <ThemeToggle />
       </div>
     </header>
   );
