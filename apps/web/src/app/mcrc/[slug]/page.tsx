@@ -1,5 +1,6 @@
 import { pageMetadata, pageJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   Breadcrumb,
@@ -17,6 +18,7 @@ import {
   repairCardHtml,
   topicPath,
 } from "@/lib/site";
+import { boardPath } from "@/lib/tumor-board";
 
 export const revalidate = 300;
 export async function generateStaticParams() {
@@ -61,6 +63,13 @@ export default async function TopicPage({ params }: Props) {
       <header className="page-head">
         <h1>{topic.title}</h1>
         <p className="page-head__lead">共 {papers.length} 篇文獻。</p>
+        {topic.standardOfCare.length > 0 && (
+          <p>
+            <Link className="btn btn--secondary" href={boardPath(topic)}>
+              Tumor board 一頁摘要
+            </Link>
+          </p>
+        )}
       </header>
       {stories.length > 0 && (
         <section aria-labelledby="stories">
