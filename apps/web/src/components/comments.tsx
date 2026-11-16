@@ -17,6 +17,7 @@ import {
   type Action,
   type CommentPage,
   type CommentReceipt,
+  type LikeState,
   type OwnedComment,
   type OwnedCommentPage,
   type PublicComment,
@@ -39,6 +40,10 @@ function Discussion({ paperId }: { paperId: string }) {
   const [owned, setOwned] = useState<{ user: string; items: OwnedComment[] }>({
     user: "",
     items: [],
+  });
+  const [likes, setLikes] = useState<{ user: string; ids: Set<string> }>({
+    user: "",
+    ids: new Set(),
   });
   const [version, setVersion] = useState(0);
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
@@ -82,14 +87,23 @@ function Discussion({ paperId }: { paperId: string }) {
         if (live && page) setOwned({ user, items: page.items });
       })
       .catch(() => undefined);
+    apiFetch(`/me/likes?paperId=${encodeURIComponent(paperId)}`, token)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((own: { commentIds: string[] } | null) => {
+        if (live && own) setLikes({ user, ids: new Set(own.commentIds) });
+      })
+      .catch(() => undefined);
     return () => {
       live = false;
     };
     // The token refreshes hourly; refetching then is unnecessary, so only the user and changes count.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, version]);
+  }, [user, version, paperId]);
 
   const mine = ownComments(owned.user === user ? owned.items : [], paperId);
+  const liked = likes.user === user ? likes.ids : new Set<string>();
+  // Until both private lists arrive, an own comment looks like someone else's; offer no like button before that.
+  const ownKnown = Boolean(user) && owned.user === user && likes.user === user;
 
   async function more() {
     if (list.kind !== "ready" || !list.next) return;
@@ -150,6 +164,8 @@ function Discussion({ paperId }: { paperId: string }) {
               comment={comment}
               status="published"
               mine={mine.ids.has(comment.id)}
+              liked={liked.has(comment.id)}
+              ownKnown={ownKnown}
               account={signedIn}
               onChanged={refresh}
             />
@@ -311,12 +327,16 @@ function CommentItem({
   mine,
   account,
   onChanged,
+  liked = false,
+  ownKnown = false,
 }: {
   comment: PublicComment;
   status: OwnedComment["status"];
   mine: boolean;
   account: SignedIn | null;
   onChanged: () => void;
+  liked?: boolean;
+  ownKnown?: boolean;
 }) {
   const [mode, setMode] = useState<"view" | "edit" | "delete" | "report">(
     "view",
@@ -433,6 +453,18 @@ function CommentItem({
       ) : (
         <p className="comment__body">{comment.body}</p>
       )}
+      {status === "published" && (
+        <LikeButton
+          // Remount when the server's numbers change, so a refresh replaces any optimistic state.
+          key={`${comment.likeCount}-${liked}`}
+          commentId={comment.id}
+          count={comment.likeCount}
+          liked={liked}
+          // Readers with a display name can like others' comments; everyone else just sees the count.
+          canLike={ownKnown && !mine && account?.displayName != null}
+          token={account?.token ?? ""}
+        />
+      )}
       {mode === "view" && (mine || canReport) && (
         <div className="comment__actions">
           {mine ? (
@@ -518,5 +550,65 @@ function CommentItem({
         )}
       </div>
     </li>
+  );
+}
+
+function LikeButton({
+  commentId,
+  count,
+  liked,
+  canLike,
+  token,
+}: {
+  commentId: string;
+  count: number;
+  liked: boolean;
+  canLike: boolean;
+  token: string;
+}) {
+  const [state, setState] = useState<LikeState>({ likeCount: count, liked });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!canLike) {
+    return state.likeCount > 0 ? (
+      <p className="comment__likes">{state.likeCount} 個讚</p>
+    ) : null;
+  }
+
+  async function toggle() {
+    if (busy) return;
+    const before = state;
+    const next = !before.liked;
+    // Show the change at once; the server's answer (or a failure) settles it.
+    setState({ liked: next, likeCount: before.likeCount + (next ? 1 : -1) });
+    setBusy(true);
+    setError(null);
+    const response = await apiFetch(`/comments/${commentId}/likes`, token, {
+      method: next ? "PUT" : "DELETE",
+    }).catch(() => null);
+    setBusy(false);
+    if (response?.ok) return setState(await response.json());
+    setState(before);
+    setError(errorMessage(response?.status ?? null, "like"));
+  }
+
+  return (
+    <div className="comment__likes">
+      <button
+        className="btn btn--quiet"
+        type="button"
+        aria-pressed={state.liked}
+        onClick={toggle}
+      >
+        讚<span aria-hidden="true">・{state.likeCount}</span>
+        <span className="visually-hidden">，目前 {state.likeCount} 個讚</span>
+      </button>
+      {error && (
+        <p className="note" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }

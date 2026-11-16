@@ -3,7 +3,8 @@
 Comments are plain text in their own table, apart from journal commentary and never part of a paper's evidence. The
 public list reads only app.public_comments, which has no author column; signed comments carry the name snapshot taken
 when posting. Only the author may edit or delete (soft delete); moderation (approve, hide) is D5. The first comment of
-an account waits for moderation, enforced by a database trigger whatever the API sends. Posting limits and resend\ndetection (D4) run in the database under a per-author lock, so they hold across API instances.
+an account waits for moderation, enforced by a database trigger whatever the API sends. Readers can like visible
+comments of others (H1); only counts are public. Posting limits and resend\ndetection (D4) run in the database under a per-author lock, so they hold across API instances.
 """
 
 import base64
@@ -26,6 +27,8 @@ REASON_MAX = 1000
 DUPLICATE_MINUTES = 10  # the same text on the same paper within this window is a resend, not a new comment
 PUBLIC_CACHE = "public, max-age=30"
 PRIVATE = {"Cache-Control": "private, no-store", "Vary": "Authorization"}
+#: Like count for the comment aliased `c` in a query; who liked it never leaves the database.
+LIKE_COUNT = "(select count(*) from app.comment_likes l where l.comment_id = c.id) as like_count"
 ALLOWED_CONTROLS = {"\n", "\r", "\t"}
 
 router = APIRouter()
@@ -82,6 +85,7 @@ def _public(row: dict[str, Any]) -> dict[str, Any]:
         "displayName": row["display_name"],
         "createdAt": _iso(row["created_at"]),
         "updatedAt": _iso(row["updated_at"]),
+        "likeCount": row["like_count"],
     }
 
 
@@ -148,9 +152,11 @@ def list_comments(
     after = _decode_cursor(cursor)
     _require_public_paper(db, paper_id)
     rows = db.execute(
-        "select id, paper_id, body, anonymous, display_name, created_at, updated_at from app.public_comments"
-        " where paper_id = %s and (%s::timestamptz is null or (created_at, id) > (%s::timestamptz, %s::uuid))"
-        " order by created_at, id limit %s",
+        "select c.id, c.paper_id, c.body, c.anonymous, c.display_name, c.created_at, c.updated_at, "
+        + LIKE_COUNT
+        + " from app.public_comments c"
+        " where c.paper_id = %s and (%s::timestamptz is null or (c.created_at, c.id) > (%s::timestamptz, %s::uuid))"
+        " order by c.created_at, c.id limit %s",
         (paper_id, after and after[0], after and after[0], after and after[1], limit + 1),
     ).fetchall()
     response.headers["Cache-Control"] = PUBLIC_CACHE
@@ -216,10 +222,11 @@ def list_own_comments(
     response.headers.update(PRIVATE)
     after = _decode_cursor(cursor)
     rows = db.execute(
-        "select id, paper_id, body, anonymous, display_name, status, created_at, updated_at from app.comments"
-        " where author_id = %s and deleted_at is null"
-        " and (%s::timestamptz is null or (created_at, id) > (%s::timestamptz, %s::uuid))"
-        " order by created_at, id limit %s",
+        "select c.id, c.paper_id, c.body, c.anonymous, c.display_name, c.status, c.created_at, c.updated_at, "
+        + LIKE_COUNT
+        + " from app.comments c where c.author_id = %s and c.deleted_at is null"
+        " and (%s::timestamptz is null or (c.created_at, c.id) > (%s::timestamptz, %s::uuid))"
+        " order by c.created_at, c.id limit %s",
         (user.id, after and after[0], after and after[0], after and after[1], limit + 1),
     ).fetchall()
     return _page(rows, limit, lambda row: {"comment": _public(row), "status": row["status"]})
@@ -278,3 +285,97 @@ def report_comment(
         raise HTTPException(status_code=409, detail="You have already reported this comment") from exc
     assert created is not None
     return {"id": str(created["id"]), "commentId": str(uuid)}
+
+
+# --- likes (H1 #123) ----------------------------------------------------------------------------------------------
+
+
+def _visible_comment(db: Conn, comment_id: str) -> tuple[UUID, UUID | None]:
+    """The comment's ID and private author, if readers can see it; 404 otherwise."""
+    try:
+        uuid = UUID(comment_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Comment not found") from exc
+    row = db.execute(
+        "select c.author_id from app.public_comments p join app.comments c on c.id = p.id where p.id = %s", (uuid,)
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return uuid, row["author_id"]
+
+
+def _like_state(db: Conn, comment: UUID, user: User) -> dict[str, Any]:
+    row = db.execute(
+        "select count(*) as likes, coalesce(bool_or(account_id = %s), false) as liked"
+        " from app.comment_likes where comment_id = %s",
+        (user.id, comment),
+    ).fetchone()
+    assert row is not None
+    return {"likeCount": row["likes"], "liked": row["liked"]}
+
+
+@router.put("/comments/{comment_id}/likes")
+def like_comment(comment_id: CommentId, user: SignedIn, db: Db, request: Request, response: Response) -> dict[str, Any]:
+    response.headers.update(PRIVATE)
+    _display_name(db, user)  # liking needs an account, like posting
+    comment, author = _visible_comment(db, comment_id)
+    if author == user.id:
+        raise HTTPException(status_code=403, detail="You cannot like your own comment")
+    _set_like(db, user, comment, liked=True, settings=request.app.state.settings)
+    return _like_state(db, comment, user)
+
+
+@router.delete("/comments/{comment_id}/likes")
+def unlike_comment(
+    comment_id: CommentId, user: SignedIn, db: Db, request: Request, response: Response
+) -> dict[str, Any]:
+    response.headers.update(PRIVATE)
+    comment, _ = _visible_comment(db, comment_id)
+    _set_like(db, user, comment, liked=False, settings=request.app.state.settings)
+    return _like_state(db, comment, user)
+
+
+def _set_like(db: Conn, user: User, comment: UUID, *, liked: bool, settings: Settings) -> None:
+    """Likes or unlikes. A change costs one event against the reader's limit; a request that changes nothing is free.
+
+    Events, not current likes, are counted: unliking deletes the like, so like/unlike cycles would otherwise reset it.
+    """
+    with db.transaction():
+        db.execute("select pg_advisory_xact_lock(hashtextextended(%s, 0))", (f"likes:{user.id}",))
+        has = db.execute(
+            "select 1 from app.comment_likes where comment_id = %s and account_id = %s", (comment, user.id)
+        ).fetchone()
+        if (has is not None) == liked:
+            return
+        recent = db.execute(
+            "select count(*) as n, ceil(extract(epoch from min(created_at)"
+            " + %(minutes)s * interval '1 minute' - now())) as retry from app.comment_like_events"
+            " where account_id = %(user)s and created_at > now() - %(minutes)s * interval '1 minute'",
+            {"user": user.id, "minutes": settings.comment_burst_minutes},
+        ).fetchone()
+        assert recent is not None
+        if recent["n"] >= settings.comment_like_limit:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many likes; try again later",
+                headers={"Retry-After": str(max(1, int(recent["retry"] or 1)))},
+            )
+        if liked:
+            db.execute("insert into app.comment_likes (comment_id, account_id) values (%s, %s)", (comment, user.id))
+        else:
+            db.execute("delete from app.comment_likes where comment_id = %s and account_id = %s", (comment, user.id))
+        db.execute("insert into app.comment_like_events (account_id) values (%s)", (user.id,))
+
+
+@router.get("/me/likes")
+def list_own_likes(
+    user: SignedIn, db: Db, response: Response, paper_id: Annotated[str, Query(alias="paperId", min_length=1)]
+) -> dict[str, Any]:
+    """Which visible comments on one paper the reader has liked, so the page can show them pressed."""
+    response.headers.update(PRIVATE)
+    rows = db.execute(
+        "select l.comment_id from app.comment_likes l join app.public_comments p on p.id = l.comment_id"
+        " where l.account_id = %s and p.paper_id = %s order by l.created_at",
+        (user.id, paper_id),
+    ).fetchall()
+    return {"commentIds": [str(row["comment_id"]) for row in rows]}

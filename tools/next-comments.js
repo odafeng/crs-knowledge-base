@@ -125,6 +125,28 @@ let browser;
   await othersItem.getByRole('button', { name: '送出檢舉' }).click();
   await othersItem.getByText('你已經檢舉過這則留言。').waitFor();
 
+  step('likes (H1): B likes A\'s comment, it survives a reload, A only sees the count');
+  const likeButton = othersItem.getByRole('button', { name: /^讚/ });
+  const liked = b.waitForResponse(r => r.url().endsWith('/likes') && r.request().method() === 'PUT');
+  await likeButton.click();
+  check((await liked).ok(), 'likes: like request failed');
+  await othersItem.locator('button[aria-pressed="true"]').waitFor();
+  check((await likeButton.innerText()).includes('1'), `likes: count after liking is ${await likeButton.innerText()}`);
+  await b.reload();
+  const reloaded = section(b).locator('.comment', { hasText: first });
+  await reloaded.locator('button[aria-pressed="true"]').waitFor();
+  check((await publicComments()).find(c => c.body === first)?.likeCount === 1, 'likes: API count is not 1');
+  await a.reload();
+  const ownItem = section(a).locator('.comment', { hasText: first });
+  await ownItem.getByText('1 個讚').waitFor();
+  check(await ownItem.getByRole('button', { name: /^讚/ }).count() === 0, 'likes: author can like own comment');
+  // The button updates before the request finishes; wait for the API's answer before checking it.
+  const unliked = b.waitForResponse(r => r.url().endsWith('/likes') && r.request().method() === 'DELETE');
+  await reloaded.getByRole('button', { name: /^讚/ }).click();
+  check((await unliked).ok(), 'likes: unlike request failed');
+  await reloaded.locator('button[aria-pressed="false"]').waitFor();
+  check((await publicComments()).find(c => c.body === first)?.likeCount === 0, 'likes: unlike did not reach the API');
+
   step('author deletes after confirming');
   const retryItem = section(a).locator('.comment', { hasText: retry });
   await retryItem.getByRole('button', { name: '刪除' }).click();
@@ -233,7 +255,7 @@ let browser;
 
   console.log('comments: visitor gate, pending first comment, single send on double click, approval, signed and anonymous,');
   console.log('          edit, failure keeps text and retry, others cannot edit or delete, report once, delete, keyboard,');
-  console.log('          resend after a lost response, over the limit and recovery, moderation with audit');
+  console.log('          resend after a lost response, over the limit and recovery, likes, moderation with audit');
   console.log('problems:', problems.length);
   problems.forEach(problem => console.log('  -', problem));
   if (problems.length) process.exitCode = 1;

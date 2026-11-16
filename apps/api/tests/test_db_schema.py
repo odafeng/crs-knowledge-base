@@ -38,6 +38,8 @@ TABLES = [
     "comments",
     "comment_reports",
     "moderation_events",
+    "comment_likes",
+    "comment_like_events",
     "content_writer",
     "publish_events",
 ]

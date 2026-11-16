@@ -249,6 +249,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/comments/{commentId}/likes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Like a visible comment by someone else; repeating it changes nothing.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. Needs an account with a display name; own comments cannot be liked.
+         */
+        put: operations["likeComment"];
+        post?: never;
+        /**
+         * Remove the reader's like; repeating it changes nothing.
+         * @description Requires a verified session. Set Cache-Control: private, no-store.
+         */
+        delete: operations["unlikeComment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/likes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Visible comments on one paper that the reader has liked.
+         * @description Requires a verified session. Set Cache-Control: private, no-store.
+         */
+        get: operations["listOwnLikes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/comments": {
         parameters: {
             query?: never;
@@ -523,6 +567,8 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            /** @description Number of readers who liked it; who they are is never returned. */
+            likeCount: number;
         } & unknown;
         CommentCreate: {
             /** @description Plain text, not HTML; newlines and tabs are the only control characters allowed (ADR-0017). */
@@ -538,6 +584,13 @@ export interface components {
         AccountUpdate: {
             /** @description Leading and trailing spaces are removed. */
             displayName: string;
+        };
+        LikeState: {
+            likeCount: number;
+            liked: boolean;
+        };
+        OwnLikes: {
+            commentIds: string[];
         };
         CommentUpdate: {
             body: string;
@@ -1155,6 +1208,89 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    likeComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                commentId: components["parameters"]["CommentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LikeState"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    unlikeComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                commentId: components["parameters"]["CommentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LikeState"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    listOwnLikes: {
+        parameters: {
+            query: {
+                paperId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnLikes"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             422: components["responses"]["InvalidRequest"];
             429: components["responses"]["RateLimited"];
             503: components["responses"]["Unavailable"];

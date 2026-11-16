@@ -17,6 +17,7 @@ const comment = (id: string, paperId = "niche2"): PublicComment => ({
   displayName: "Reader",
   createdAt: "2026-11-16T10:00:00Z",
   updatedAt: "2026-11-16T10:00:00Z",
+  likeCount: 0,
 });
 const owned = (
   id: string,
@@ -60,6 +61,18 @@ describe("error messages tell the reader what to do next", () => {
     [403, "delete", "只有作者可以刪除這則留言。"],
   ] as const)("%s on %s", (status, action, message) => {
     expect(errorMessage(status, action)).toBe(message);
+  });
+});
+
+describe("likes", () => {
+  it.each([
+    [null, "按讚失敗，請檢查網路後再試一次。"],
+    [403, "請先設定顯示名稱再按讚。"],
+    [404, "這則留言已不存在。"],
+    [429, "按讚太頻繁，請稍後再試。"],
+    [503, "暫時無法按讚，請稍後再試。"],
+  ] as const)("%s", (status, message) => {
+    expect(errorMessage(status, "like")).toBe(message);
   });
 });
 

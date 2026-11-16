@@ -64,6 +64,8 @@ uv run --frozen pytest
 | `GET /me/comments` | 本人 | 自己的留言與審核狀態（含 `pending`、`hidden`） |
 | `PATCH`、`DELETE /comments/{id}` | 只有作者（管理者也不行） | 修改不改變審核狀態；刪除是軟刪除，90 天後清除作者對應 |
 | `POST /comments/{id}/reports` | 已設定顯示名稱的讀者 | 只能檢舉看得到的留言，不能檢舉自己的；同一則只能檢舉一次（409） |
+| `PUT`、`DELETE /comments/{id}/likes` | 已設定顯示名稱的讀者 | 對看得到、不是自己的留言按讚或取消，重複呼叫結果相同；回傳讚數與自己是否已讚。公開留言只有 `likeCount`，不會回傳誰按讚 |
+| `GET /me/likes?paperId=` | 本人 | 自己在某篇文獻讚過哪些留言 |
 
 本文 1–2000 字元、檢舉理由 1–1000 字元，只允許換行與 tab 兩種控制字元。審核與隱藏在 D5。
 
@@ -73,6 +75,7 @@ uv run --frozen pytest
 |---|---|
 | `GUTHUB_COMMENT_BURST_LIMIT`／`GUTHUB_COMMENT_BURST_MINUTES` | 5 則／10 分鐘 |
 | `GUTHUB_COMMENT_DAILY_LIMIT` | 50 則（最近 24 小時） |
+| `GUTHUB_COMMENT_LIKE_LIMIT` | 60 次按讚或取消／`GUTHUB_COMMENT_BURST_MINUTES`（狀態沒變的重複請求不計） |
 
 CORS 會公開 `Retry-After`，讓網站告訴讀者要等多久。
 

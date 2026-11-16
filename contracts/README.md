@@ -31,6 +31,7 @@ python -m pytest tests/test_api_contract.py -q
 | `/me/comments` | 本人的留言與審核狀態，私有回應 |
 | `/comments/{commentId}` | 本人修改／刪除；以伺服器查核 ownership |
 | `/comments/{commentId}/reports` | 經驗證 session 提交檢舉 |
+| `/comments/{commentId}/likes`、`/me/likes` | 按讚與取消；公開只有讚數，誰按讚只有本人看得到自己的（H1） |
 | `/admin/comments`、`/admin/comments/{commentId}` | 具 `comments:moderate` permission 的管理流程：佇列、公開／隱藏（必填原因） |
 | `/admin/comments/{commentId}/author` | 查看作者；原因必填，每次查閱都寫入稽核紀錄 |
 
