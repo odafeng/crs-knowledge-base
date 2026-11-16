@@ -7,6 +7,8 @@ const repositoryRoot = path.resolve(
   "../..",
 );
 const nextConfig: NextConfig = {
+  // The current site's URLs end with a slash (/papers/{slug}/); keep them unchanged.
+  trailingSlash: true,
   outputFileTracingRoot: repositoryRoot,
   turbopack: { root: repositoryRoot },
 };

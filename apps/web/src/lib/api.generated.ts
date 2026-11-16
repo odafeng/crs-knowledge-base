@@ -352,7 +352,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            kind: "NumbersFigure";
+            kind: "numbers";
             stats: components["schemas"]["Stat"][];
         };
         CompareFigure: {
@@ -360,7 +360,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            kind: "CompareFigure";
+            kind: "compare";
             armA: string;
             armB: string;
             rows: components["schemas"]["CompareRow"][];
@@ -370,7 +370,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            kind: "MetersFigure";
+            kind: "meters";
             rows: components["schemas"]["Meter"][];
         };
         IntervalFigure: {
@@ -378,7 +378,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            kind: "IntervalFigure";
+            kind: "interval";
             label: string;
             point: number;
             low: number;
