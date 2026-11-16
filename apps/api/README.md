@@ -20,6 +20,7 @@ curl localhost:8000/api/v1/health
 | 變數 | 值 | 預設 |
 |---|---|---|
 | `GUTHUB_ENVIRONMENT` | `development`、`test`、`staging`、`production` | `development` |
+| `GUTHUB_DATABASE_URL` | PostgreSQL 連線字串，使用被授予 `guthub_api` 的 login role（見 [supabase/README.md](../../supabase/README.md)） | 無；`staging`、`production` 缺少時啟動失敗 |
 
 ## 檢查
 
@@ -39,5 +40,15 @@ GUTHUB_TEST_DATABASE_URL=$DB_URL GUTHUB_TEST_REST_URL=$REST_URL \
 GUTHUB_TEST_ANON_KEY=$ANON_KEY GUTHUB_TEST_SERVICE_KEY=$SERVICE_ROLE_KEY \
 uv run --frozen pytest
 ```
+
+## 讀取 API（B5）
+
+`/papers`、`/papers/{id}`、`/news`、`/news/{id}`、`/topics`、`/topics/{key}`、`/search` 依 contract 實作：
+
+- 只讀 `app.public_*` view，撤下的內容與指向它的 relation 都不會出現。
+- 所有 HTML 欄位（`detailHtml`、治療卡片 `body_html`、robotic 卡片與 timeline）以 nh3 白名單清理。白名單依現有內容實際使用的標籤訂定，`style`、`target` 會被移除。
+- 分頁用 opaque cursor（內部是 offset）。內容一週只變動幾次，翻頁期間剛好有資料變動而跳號的機率很低，換取分頁邏輯簡單一致。
+- 搜尋的欄位、標題格式與排序（news 在前）沿用網站的搜尋索引。
+- 公開回應帶 `Cache-Control: public, max-age=300`；資料庫連不上時回 503 `unavailable`，`/health` 也一樣。
 
 錯誤一律回傳 `{"error": {"code", "message", "requestId"}}`，並附 `X-Request-ID` header。request ID 一律由伺服器產生，client 傳來的值會被忽略。未預期的錯誤回 500，只寫 log，不把內部訊息回給 client。

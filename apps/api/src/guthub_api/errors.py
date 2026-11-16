@@ -7,6 +7,8 @@ from uuid import uuid4
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from psycopg import OperationalError
+from psycopg_pool import PoolTimeout
 from starlette.datastructures import MutableHeaders
 from starlette.exceptions import HTTPException
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
@@ -74,6 +76,11 @@ async def _validation_error(request: Request, exc: Exception) -> JSONResponse:
     return error_response(request, 422, "validation_error", "Invalid request parameters")
 
 
+async def _database_unavailable(request: Request, exc: Exception) -> JSONResponse:
+    logger.warning("Database unavailable: %s", type(exc).__name__, extra={"request_id": _request_id(request)})
+    return error_response(request, 503, "unavailable", "Database unavailable")
+
+
 async def _unhandled_error(request: Request, exc: Exception) -> JSONResponse:
     logger.exception("Unhandled error", extra={"request_id": _request_id(request)})
     return error_response(request, 500, "unavailable", "Internal error")
@@ -83,4 +90,7 @@ def install_error_handling(app: FastAPI) -> None:
     app.add_middleware(RequestIdMiddleware)
     app.add_exception_handler(HTTPException, _http_error)
     app.add_exception_handler(RequestValidationError, _validation_error)
+    # Connection loss or an exhausted pool is an outage, not a bug: answer 503 without leaking driver details.
+    app.add_exception_handler(OperationalError, _database_unavailable)
+    app.add_exception_handler(PoolTimeout, _database_unavailable)
     app.add_exception_handler(Exception, _unhandled_error)

@@ -47,7 +47,18 @@ def client_with_test_routes() -> TestClient:
 
 def test_settings_read_environment_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GUTHUB_ENVIRONMENT", "staging")
-    assert Settings().environment == "staging"
+    monkeypatch.setenv("GUTHUB_DATABASE_URL", "postgresql://api@db/guthub")
+    settings = Settings()
+    assert settings.environment == "staging"
+    assert settings.database_url is not None
+    assert "postgresql" not in repr(settings)  # secret stays out of logs
+
+
+@pytest.mark.parametrize("environment", ["staging", "production"])
+def test_deployed_environments_require_a_database(monkeypatch: pytest.MonkeyPatch, environment: str) -> None:
+    monkeypatch.delenv("GUTHUB_DATABASE_URL", raising=False)
+    with pytest.raises(ValidationError, match="GUTHUB_DATABASE_URL"):
+        Settings(environment=environment)  # pyright: ignore[reportArgumentType]
 
 
 def test_settings_reject_unknown_environment() -> None:

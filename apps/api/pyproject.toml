@@ -5,6 +5,9 @@ description = "GutHub FastAPI service (ADR-0016)."
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.115",
+  "nh3>=0.2",
+  "psycopg-pool>=3.2",
+  "psycopg[binary]>=3.2",
   "pydantic-settings>=2.6",
   "uvicorn>=0.32",
 ]
@@ -13,7 +16,6 @@ dependencies = [
 dev = [
   "httpx2>=2.16",
   "jsonschema>=4.23",
-  "psycopg[binary]>=3.2",
   "pyright==1.1.414",
   "pytest>=8.3",
   "pyyaml>=6.0",
