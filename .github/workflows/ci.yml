@@ -50,7 +50,7 @@ jobs:
       - name: Check generated links
         run: python tools/check_links.py site
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
@@ -81,7 +81,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
@@ -228,7 +228,7 @@ jobs:
           for i in $(seq 1 60); do curl -sf "http://127.0.0.1:$API_PORT/api/v1/health" && exit 0; sleep 1; done
           cat "$RUNNER_TEMP/api.log"; exit 1
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
