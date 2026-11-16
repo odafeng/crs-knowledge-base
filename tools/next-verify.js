@@ -8,7 +8,7 @@ const { PAGES } = require('./serve');
 const ORIGIN = (process.argv[2] || 'http://127.0.0.1:3000').replace(/\/$/, '');
 const axeSrc = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 // Pages only the Next.js site has (D1 #67), checked as a visitor sees them.
-const NEXT_ONLY = ['login/', 'account/', 'auth/callback/', 'admin/comments/'];
+const NEXT_ONLY = ['login/', 'account/', 'auth/callback/', 'admin/comments/', 'tumor-board/', 'tumor-board/ras-wt/'];
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 
 (async () => {
@@ -32,6 +32,22 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-prac
       }
     }
     if (errors.length) problems.push(`page errors @${width} ${scheme}: ${[...new Set(errors)].join(' | ')}`);
+    await context.close();
+  }
+  // Tumor board sheets (G7 #118) must print on one A4 page.
+  {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.goto(`${ORIGIN}/tumor-board/`);
+    const boards = await page.locator('.tile a').evaluateAll(links => links.map(a => a.getAttribute('href')));
+    if (boards.length === 0) problems.push('tumor board: no topic sheets listed');
+    for (const href of boards) {
+      await page.goto(`${ORIGIN}${href}`, { waitUntil: 'networkidle' });
+      const pdf = (await page.pdf({ format: 'A4' })).toString('latin1');
+      const pages = (pdf.match(/\/Type\s*\/Page[^s]/g) || []).length;
+      if (pages !== 1) problems.push(`tumor board ${href}: prints on ${pages} A4 pages`);
+    }
+    console.log('tumor board:', boards.length, 'sheets checked for one A4 page');
     await context.close();
   }
   console.log('axe runs:', runs, '| problems:', problems.length);
