@@ -131,6 +131,16 @@ for (const mode of ['start', 'dev']) {
       });
       assert.equal(font, true);
       assert.equal((await page.request.get(`${origin}/favicon.svg`)).status(), 200);
+      // Brand (C4 #66): installable with the GutHub name, and every icon or share image it names is served.
+      const manifestHref = await page.locator('link[rel="manifest"]').getAttribute('href');
+      const manifestUrl = new URL(manifestHref, origin);
+      const manifest = await (await page.request.get(manifestUrl.href)).json();
+      assert.equal(manifest.short_name, 'GutHub');
+      const assets = [
+        ...manifest.icons.map(icon => new URL(icon.src, manifestUrl).href),
+        new URL(await page.locator('link[rel="apple-touch-icon"]').getAttribute('href'), origin).href,
+      ];
+      for (const asset of assets) assert.equal((await page.request.get(asset)).status(), 200, asset);
       assert.equal((await page.goto(`${origin}/missing-page`)).status(), 404);
       await page.getByRole('link', { name: /^GutHub/ }).click();
       await page.waitForURL(origin + '/');
