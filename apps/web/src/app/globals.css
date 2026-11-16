@@ -1,0 +1,13 @@
+@import "../../../../static/styles/fonts.css";
+@import "../../../../static/styles/tokens.css";
+@import "../../../../static/styles/base.css";
+@import "../../../../static/styles/layout.css";
+@import "../../../../static/styles/components.css";
+
+.reading-intro {
+  padding-block: var(--space-10);
+  max-width: var(--measure);
+}
+.reading-intro > * + * {
+  margin-block-start: var(--space-5);
+}

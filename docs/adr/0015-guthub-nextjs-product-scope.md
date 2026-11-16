@@ -1,6 +1,6 @@
 # 0015. GutHub 名稱與 Next.js／React 遷移範圍
 
-**Status**: Accepted（產品與前端方向；程式尚未遷移）
+**Status**: Accepted（產品與前端方向；正式站尚未切換）
 
 ## Context
 
@@ -16,6 +16,7 @@
 - 產品名稱、repository 名稱與正式網域分別處理。repository 或 DNS 不因本 ADR 自動更名；範圍由 [A3 #55](https://github.com/odafeng/crs-knowledge-base/issues/55) 確認。
 - 本次 MVP 包含登入、文獻頁留言及依政策選定的匿名模式。回覆樹、投票、個人收藏、即時聊天與公開 AI 問答不預先納入。
 - 現有 v3 在新架構驗收前保留為可建置基線。現站部署缺陷另由 [A4 #56](https://github.com/odafeng/crs-knowledge-base/issues/56) 處理。
+- Next.js 專案放在 `apps/web/`，與現行 Python/Jinja2 共存。遷移期間共用 `static/styles/` 與本地字型，API types 由 `contracts/openapi.yaml` 產生並由 CI 檢查同步；前端啟動檢查不連接外部 API、Auth 或資料庫。
 - Jobs 使用 milestones、Steps 使用 issues；實作與驗收狀態不重複寫入本 ADR。供應商與資料分工見 [ADR-0016](0016-api-data-cloud-boundaries.md)，留言政策見 [ADR-0017](0017-comments-and-anonymous-identity.md)。
 
 本 ADR 在 Next.js 正式切換後取代 ADR-0014 的前端實作部分；在此之前，ADR-0014 仍描述目前可執行的網站。

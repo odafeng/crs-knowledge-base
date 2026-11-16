@@ -2,7 +2,7 @@
 
 大腸直腸外科實證知識庫，規劃加入專業討論與匿名留言。原名 **Seminar Hegemon**。
 
-GutHub 是這次改版的產品名稱。目前程式仍是 Python/Jinja2 靜態網站與 Paper Watch；Next.js、FastAPI、使用者登入及留言尚未實作。前端方向已確認為 **Next.js + TypeScript + React**，雲端供應商與匿名政策仍待決定。
+GutHub 是這次改版的產品名稱。正式站仍使用 Python/Jinja2 靜態網站與 Paper Watch；`apps/web/` 已建立 **Next.js + TypeScript + React** 基礎，尚未接入完整閱讀頁面。FastAPI、使用者登入與留言尚未實作，雲端供應商與匿名政策仍待決定。
 
 [CI](https://github.com/odafeng/crs-knowledge-base/actions/workflows/ci.yml) · [Paper Watch](https://github.com/odafeng/crs-knowledge-base/actions/workflows/paper-watch.yml) · [Jobs / milestones](https://github.com/odafeng/crs-knowledge-base/milestones) · [Issues](https://github.com/odafeng/crs-knowledge-base/issues)
 
@@ -85,7 +85,7 @@ gh issue list --repo odafeng/crs-knowledge-base --milestone 'A · GutHub 決策�
 
 ## 本機開發：目前的 v3 網站
 
-需要 Python 3.12+；browser checks 另需 Node.js 與 Chromium。以下指令操作現有程式，不是尚未建立的 Next.js／FastAPI 專案。
+需要 Python 3.12+；browser checks 另需 Node.js 與 Chromium。以下指令操作目前正式站使用的靜態網站。
 
 ```bash
 python3 -m venv .venv
@@ -113,7 +113,28 @@ npm test
 npm run verify
 ```
 
-新前端的 lint、TypeScript、unit/smoke/E2E 由 [C1 #63](https://github.com/odafeng/crs-knowledge-base/issues/63) 建立；API 的 Ruff、Pyright、pytest 與啟動 smoke 由 [B2 #59](https://github.com/odafeng/crs-knowledge-base/issues/59) 建立。正式切換前，另需權限矩陣、資料匯入與還原驗證。
+## 本機開發：Next.js 前端
+
+使用 Node.js 24 LTS。`apps/web/` 是遷移中的閱讀介面，沿用 v3 的 CSS tokens 與本地字型；首頁的「閱讀文獻」連到現行正式站。正式部署仍發布 `site/`，不會部署這個骨架。
+
+```bash
+cd apps/web
+npm ci
+npm run check       # contract 同步、TypeScript、ESLint、Prettier、Vitest
+npm run dev         # http://localhost:3000
+
+# production build 與 dev/production 瀏覽器啟動測試
+npm run build
+npm --prefix ../../tools ci
+npm --prefix ../../tools exec playwright install chromium
+npm run smoke
+```
+
+`src/lib/api.generated.ts` 由 `contracts/openapi.yaml` 產生。修改 contract 後執行 `npm run contract:generate` 並提交產物；CI 的 `contract:check` 會拒絕過期 types。`getPaper` 可指定 API origin 或注入 fixture fetcher，目前尚無 API server。`/api/health` 只供前端啟動檢查。
+
+Next.js CI 會執行 checks、runtime dependency audit、build 與 Playwright 測試。ESLint 暫用 9.x，以符合 Next.js 所帶 plugins 的 peer dependencies；開發依賴中仍有上游 `minimatch` 的 moderate advisory，runtime audit 另行檢查，不以跨 major override 掩蓋相容性問題。
+
+API 的 Ruff、Pyright、pytest 與啟動 smoke 由 [B2 #59](https://github.com/odafeng/crs-knowledge-base/issues/59) 建立。正式切換前，另需權限矩陣、資料匯入與還原驗證。
 
 ## Paper Watch 與設定
 
@@ -149,6 +170,7 @@ Web Push 的程式與 SQL 範本放在 `push/`，目前不等於已建立 Supaba
 |---|---|
 | `build.py`、`sitegen/` | 載入內容、產生頁面、Feed、metadata 與離線快取版本 |
 | `templates/`、`static/` | 現行 Jinja2 版型、CSS、瀏覽器腳本、字型與圖示 |
+| `apps/web/` | 遷移中的 Next.js App Router／TypeScript／React 前端，尚未正式部署 |
 | `data/` | 文獻、新聞及 DOI／PMID 追蹤資料 |
 | `docs/**/*.html` | 詳細證據內容來源，不作為新版的獨立公開頁面 |
 | `scripts/` | PubMed、分類、來源查核、發布／撤下及維護任務 |
