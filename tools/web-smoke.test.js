@@ -132,7 +132,7 @@ for (const mode of ['start', 'dev']) {
       assert.equal(font, true);
       assert.equal((await page.request.get(`${origin}/favicon.svg`)).status(), 200);
       assert.equal((await page.goto(`${origin}/missing-page`)).status(), 404);
-      await page.getByRole('link', { name: 'GutHub 首頁', exact: true }).click();
+      await page.getByRole('link', { name: /^GutHub/ }).click();
       await page.waitForURL(origin + '/');
       assert.match(await page.locator('main').innerText(), /新收錄文獻/);
       assert.deepEqual(errors, []);

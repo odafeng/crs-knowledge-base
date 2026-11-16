@@ -6,7 +6,7 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="container site-header__inner">
-        <Link className="brand" href="/" aria-label="GutHub 首頁">
+        <Link className="brand" href="/">
           <svg className="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
             <rect width="32" height="32" rx="8" fill="#1B3BC4" />
             <path

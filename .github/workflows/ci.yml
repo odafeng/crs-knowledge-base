@@ -168,8 +168,78 @@ jobs:
           GUTHUB_REQUIRE_DB: '1'
         run: uv run --frozen pytest -v
 
+  # The whole new stack against the current site (C2d #93): Supabase -> import -> FastAPI -> Next.js, compared
+  # with sitegen's output from the same data, then axe and the reading flow in a browser.
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      API_PORT: '8000'
+      WEB_PORT: '3000'
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install uv and site build dependencies
+        run: pip install uv==0.10.12 -r scripts/requirements.txt -r requirements-site.txt
+
+      - name: Build the current site as the reference
+        run: python build.py --out "$RUNNER_TEMP/current-site"
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.115.0
+
+      - name: Start local Supabase database
+        run: supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+      - name: Import content and start the API as guthub_api
+        run: |
+          DB_URL=$(supabase status -o env | tr -d '"' | sed -n 's/^DB_URL=//p')
+          (cd apps/api && uv sync --frozen)
+          apps/api/.venv/bin/python import_content.py --database-url "$DB_URL" > /dev/null
+          cd apps/api
+          GUTHUB_DATABASE_URL="${DB_URL}?options=-c%20role%3Dguthub_api" nohup .venv/bin/uvicorn guthub_api.main:app \
+            --port "$API_PORT" > "$RUNNER_TEMP/api.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf "http://127.0.0.1:$API_PORT/api/v1/health" && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/api.log"; exit 1
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            apps/web/package-lock.json
+            tools/package-lock.json
+
+      # Public mode so per-page noindex can be compared with the current site.
+      - name: Build and start Next.js
+        env:
+          GUTHUB_SITE_PUBLIC: '1'
+        run: |
+          cd apps/web
+          npm ci
+          npm run build
+          GUTHUB_API_URL="http://127.0.0.1:$API_PORT/api/v1" nohup npm run start -- --port "$WEB_PORT" > "$RUNNER_TEMP/web.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf "http://127.0.0.1:$WEB_PORT/api/health" && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/web.log"; exit 1
+
+      - name: Compare pages, links, feeds, sitemap and JSON-LD with the current site
+        run: python tools/check_next_parity.py "$RUNNER_TEMP/current-site" "http://127.0.0.1:$WEB_PORT"
+
+      - name: Install browser test tools
+        working-directory: tools
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Accessibility and the reading flow
+        run: node tools/next-verify.js "http://127.0.0.1:$WEB_PORT"
+
   deploy:
-    needs: [test, web, api]
+    needs: [test, web, api, e2e]
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:

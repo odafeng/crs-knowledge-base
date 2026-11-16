@@ -129,6 +129,14 @@ npm run verify
 
 Feed 的 GUID 固定用 `tag:odafeng.github.io,2026:` 開頭，不會跟著 `GUTHUB_SITE_ORIGIN` 改變，所以換網址後訂閱者不會收到重複的舊文章。
 
+和現站對照（CI 的 `e2e` job 也會跑）：用 sitegen build 現站當作基準，Next.js 以 `GUTHUB_SITE_PUBLIC=1` 啟動並接上真的 API，再執行：
+
+```bash
+python build.py --out /tmp/current-site
+python tools/check_next_parity.py /tmp/current-site http://127.0.0.1:3000   # 頁面、內部連結、feed、sitemap、JSON-LD、noindex
+node tools/next-verify.js http://127.0.0.1:3000                            # axe（WCAG 2.2 AA）、閱讀流程、鍵盤
+```
+
 ```bash
 cd apps/web
 npm ci

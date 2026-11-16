@@ -1,0 +1,66 @@
+// Accessibility (axe-core), layout and the main reading flow on the running Next.js site (C2d #93).
+// Usage: node tools/next-verify.js <Next.js origin>
+// Same axe tags and representative pages as verify.js uses for the current site.
+const { chromium } = require('playwright');
+const fs = require('fs');
+const { PAGES } = require('./serve');
+
+const ORIGIN = (process.argv[2] || 'http://127.0.0.1:3000').replace(/\/$/, '');
+const axeSrc = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
+
+(async () => {
+  const browser = await chromium.launch();
+  const problems = [];
+  let runs = 0;
+  for (const [width, scheme] of [[360, 'light'], [360, 'dark'], [1280, 'light'], [1280, 'dark']]) {
+    const context = await browser.newContext({ viewport: { width, height: 812 }, colorScheme: scheme });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    for (const path of PAGES) {
+      const response = await page.goto(`${ORIGIN}/${path}`, { waitUntil: 'load' });
+      if (response.status() !== 200) problems.push(`/${path} @${width}: HTTP ${response.status()}`);
+      await page.addScriptTag({ content: axeSrc });
+      const result = await page.evaluate(tags => axe.run(document, { runOnly: { type: 'tag', values: tags } }), TAGS);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+      runs++;
+      if (result.violations.length || overflow) {
+        problems.push(`/${path} @${width} ${scheme}: ${result.violations.map(v => `${v.id}(${v.nodes.length}) ${v.nodes[0].target.join(' ')}`).join('; ')}${overflow ? ' H-OVERFLOW' : ''}`);
+      }
+    }
+    if (errors.length) problems.push(`page errors @${width} ${scheme}: ${[...new Set(errors)].join(' | ')}`);
+    await context.close();
+  }
+  console.log('axe runs:', runs, '| problems:', problems.length);
+  problems.slice(0, 200).forEach(problem => console.log('  -', problem));
+
+  // The main reading flow, by mouse and by keyboard: home -> story -> paper -> topic.
+  const context = await browser.newContext({ viewport: { width: 375, height: 812 } });
+  const page = await context.newPage();
+  await page.goto(`${ORIGIN}/`);
+  await page.locator('.lead__headline a').click();
+  await page.waitForURL(/\/news\/[^/]+\/$/);
+  await page.getByRole('link', { name: '看文獻整理' }).click();
+  await page.waitForURL(/\/papers\/[^/]+\/$/);
+  const paperTitle = await page.locator('main h1').innerText();
+  await page.locator('.breadcrumb a').last().click();
+  await page.waitForURL(/\/mcrc\/[^/]+\/$/);
+  console.log('flow: home -> story -> paper', JSON.stringify(paperTitle.slice(0, 40)), '-> topic', new URL(page.url()).pathname);
+
+  await page.goto(`${ORIGIN}/`);
+  const reached = new Set();
+  for (let i = 0; i < 80; i++) {
+    await page.keyboard.press('Tab');
+    const href = await page.evaluate(() => document.activeElement?.getAttribute('href'));
+    if (href) reached.add(href);
+  }
+  const visible = await page.evaluate(() =>
+    [...document.querySelectorAll('a[href]')]
+      .filter(a => a.offsetParent !== null && getComputedStyle(a).visibility !== 'hidden')
+      .map(a => a.getAttribute('href')));
+  const unreachable = [...new Set(visible)].filter(href => !reached.has(href));
+  console.log('keyboard: reached', reached.size, 'links; visible but not reached in 80 Tabs:', unreachable.length ? unreachable.slice(0, 5) : 'none');
+  await browser.close();
+  if (problems.length) process.exitCode = 1;
+})();
