@@ -32,11 +32,11 @@ function handles(request) {
 }
 
 function storable(response) {
-  return (
-    response.ok &&
-    !response.redirected &&
-    !/private|no-store/i.test(response.headers.get("Cache-Control") || "")
-  );
+  if (!response.ok || response.redirected) return false;
+  // Index pages listed in next.config.ts hold no reader data but are rendered per request, and some hosts (Vercel)
+  // mark those private whatever the app says; the app names them with this header instead.
+  if (response.headers.get("X-GutHub-Public") === "1") return true;
+  return !/private|no-store/i.test(response.headers.get("Cache-Control") || "");
 }
 
 // Pages are stored by path, so ?utm=… and the like reuse the same copy.

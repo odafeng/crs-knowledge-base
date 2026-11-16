@@ -16,7 +16,7 @@ C3 #65 要保留離線閱讀與搜尋，同時符合 ADR-0017：Auth、留言 mu
 - 同步以 `/search.json` 為依據：先存下索引，再刪掉快取中已經不在索引裡的 `/papers/*`、`/news/*`，接著補存新出現的頁面，以及這些頁面引用的 `/_next/static/` 檔案。最後刪掉沒有任何已存頁面或樣式表引用的 build 檔，避免每次部署後舊檔一直累積。
 - 頁面一律 network-first：連得上網路就拿最新版並更新快取；伺服器回 404 或 410 時立即刪掉該頁的快取。`/_next/static/` 的檔名帶雜湊，採 cache-first。
 - Service Worker 只處理同源的 GET。`/api`、`/auth`、`/me`、`/account`、`/admin` 開頭的路徑、帶 `Authorization` 的請求，以及 RSC payload 一律交還瀏覽器處理。回應帶 `private` 或 `no-store` 的也不存。
-- 沒有個人資料的動態索引頁，在 `next.config.ts` 逐一列出並明確標為 `public, max-age=0, must-revalidate`。這份清單只能逐條加；帳號與管理頁面不列入，維持 Next.js 預設的 private。
+- 沒有個人資料的動態索引頁，在 `next.config.ts` 逐一列出並明確標為 `public, max-age=0, must-revalidate`。這份清單只能逐條加；帳號與管理頁面不列入，維持 Next.js 預設的 private。2026-11-17 補充（F2 #77）：Vercel 會把動態頁的 Cache-Control 改寫成 private，不理會這個設定，所以同一份清單另外加上 `X-GutHub-Public: 1`。Service Worker 看到這個標頭才存這些頁面，私人頁面不會帶這個標頭。
 - 搜尋留在瀏覽器端，比對 `/search.json`，索引內容和現站相同，離線時也能搜尋。B5 的 `GET /search` API 保留給之後的其他使用端。
 - 啟用時清掉舊版本（`guthub-*`）與現站（`seminar-hegemon-*`）的快取。網域切換到 Next.js 後，現站留在讀者裝置上的快取會在這一步清掉。
 

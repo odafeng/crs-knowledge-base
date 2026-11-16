@@ -31,6 +31,8 @@ const nextConfig: NextConfig = {
         source,
         headers: [
           { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+          // Vercel rewrites Cache-Control on dynamic pages to private; the service worker reads this instead.
+          { key: "X-GutHub-Public", value: "1" },
         ],
       })),
       // Sign-in pages hold no identity in their HTML (the session stays in the browser), but their URLs carry
