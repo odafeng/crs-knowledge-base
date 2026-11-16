@@ -79,6 +79,14 @@ export function safeNext(next: string | null | undefined): string {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
+/**
+ * The current page as a sign-in return target. Site URLs end with a slash (next.config trailingSlash), but
+ * usePathname() drops it on pages Vercel prerendered, which would cost an extra redirect after signing in.
+ */
+export function returnPath(pathname: string): string {
+  return pathname.endsWith("/") ? pathname : `${pathname}/`;
+}
+
 /** Same rules as the API's AccountUpdate (1-80 characters after trimming, no control characters). */
 export function displayNameError(name: string): string | null {
   const trimmed = name.trim();

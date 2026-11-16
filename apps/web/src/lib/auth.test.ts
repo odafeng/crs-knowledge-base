@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { displayNameError, safeNext } from "./auth";
+import { displayNameError, returnPath, safeNext } from "./auth";
 
 describe("safeNext keeps post-login redirects on this site", () => {
   it.each([
@@ -70,5 +70,13 @@ describe("apiFetch", () => {
         "Content-Type": "application/json",
       },
     });
+  });
+});
+
+describe("returnPath", () => {
+  it("adds the trailing slash site URLs use, once", () => {
+    expect(returnPath("/papers/niche2")).toBe("/papers/niche2/");
+    expect(returnPath("/papers/niche2/")).toBe("/papers/niche2/");
+    expect(returnPath("/")).toBe("/");
   });
 });
