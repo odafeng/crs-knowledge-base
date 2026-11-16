@@ -13,6 +13,7 @@ dependencies = [
 dev = [
   "httpx2>=2.16",
   "jsonschema>=4.23",
+  "psycopg[binary]>=3.2",
   "pyright==1.1.414",
   "pytest>=8.3",
   "pyyaml>=6.0",

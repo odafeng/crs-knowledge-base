@@ -128,7 +128,31 @@ jobs:
       - name: Type check
         run: uv run --frozen pyright
 
-      - name: Unit, contract, and startup smoke tests
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.115.0
+
+      - name: Start local Supabase (database, Data API, auth)
+        working-directory: .
+        run: supabase start -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+      - name: Re-run migrations on a clean database
+        working-directory: .
+        run: supabase db reset
+
+      # Local Supabase uses fixed, public demo keys; none of these are secrets.
+      - name: Export test database settings
+        working-directory: .
+        run: |
+          supabase status -o env | tr -d '"' | sed -n \
+            -e 's/^DB_URL=/GUTHUB_TEST_DATABASE_URL=/p' \
+            -e 's/^REST_URL=/GUTHUB_TEST_REST_URL=/p' \
+            -e 's/^ANON_KEY=/GUTHUB_TEST_ANON_KEY=/p' \
+            -e 's/^SERVICE_ROLE_KEY=/GUTHUB_TEST_SERVICE_KEY=/p' >> "$GITHUB_ENV"
+
+      - name: Unit, contract, smoke, and database tests
+        env:
+          GUTHUB_REQUIRE_DB: '1'
         run: uv run --frozen pytest -v
 
   deploy:

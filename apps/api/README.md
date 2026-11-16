@@ -29,6 +29,15 @@ uv run --frozen pyright
 uv run --frozen pytest
 ```
 
-測試包含三部分：unit（設定、錯誤格式）、contract（實作的路由必須寫在 `openapi.yaml`，回應要符合其 schema），以及 smoke（實際啟動 uvicorn 打 `/health`）。
+測試包含四部分：unit（設定、錯誤格式）、contract（實作的路由必須寫在 `openapi.yaml`，回應要符合其 schema）、smoke（實際啟動 uvicorn 打 `/health`），以及資料庫 integration（`tests/test_db_schema.py`）。
+
+資料庫測試需要先 `supabase start`（見 [supabase/README.md](../../supabase/README.md)），再帶入連線設定。沒有設定時會 skip；CI 設了 `GUTHUB_REQUIRE_DB=1`，缺設定會直接失敗。
+
+```sh
+eval "$(supabase status -o env --workdir ../.. | grep -E '^(DB_URL|REST_URL|ANON_KEY|SERVICE_ROLE_KEY)=')"
+GUTHUB_TEST_DATABASE_URL=$DB_URL GUTHUB_TEST_REST_URL=$REST_URL \
+GUTHUB_TEST_ANON_KEY=$ANON_KEY GUTHUB_TEST_SERVICE_KEY=$SERVICE_ROLE_KEY \
+uv run --frozen pytest
+```
 
 錯誤一律回傳 `{"error": {"code", "message", "requestId"}}`，並附 `X-Request-ID` header。request ID 一律由伺服器產生，client 傳來的值會被忽略。未預期的錯誤回 500，只寫 log，不把內部訊息回給 client。
