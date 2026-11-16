@@ -83,6 +83,8 @@ gh issue list --repo odafeng/crs-knowledge-base --milestone 'A · GutHub 決策�
 
 新聞稿另外由 `newsroom/gate.py` 比對數字是否出現在對應條目。這項檢查不保證數字的組別、指標或文字解讀正確。Paper Watch 目前尚未自動寫新聞稿，也未串接 Web Push 發送。
 
+更換儲存 adapter 或 agent framework 時，可先執行 [Paper Watch 遷移 contract v1](contracts/pipeline-migration.md)。合成 fixtures 固定發布／審核、人工接受、撤下與 tracking 結果，測試不呼叫真實模型或發送通知。
+
 ## 本機開發：目前的 v3 網站
 
 需要 Python 3.12+；browser checks 另需 Node.js 與 Chromium。以下指令操作目前正式站使用的靜態網站。
