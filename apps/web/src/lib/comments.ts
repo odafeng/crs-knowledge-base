@@ -23,8 +23,15 @@ export type Action = "load" | "post" | "edit" | "delete" | "report";
 
 const KEEP = "你寫的內容還在。";
 
-/** What went wrong, in terms of what the reader can do; `null` status means the request never got an answer. */
-export function errorMessage(status: number | null, action: Action): string {
+/**
+ * What went wrong, in terms of what the reader can do; `null` status means the request never got an answer.
+ * `retryAfter` is the API's Retry-After (seconds) on 429.
+ */
+export function errorMessage(
+  status: number | null,
+  action: Action,
+  retryAfter?: number | null,
+): string {
   if (action === "load") return "暫時無法載入留言，請稍後再試。";
   const keep = action === "post" || action === "edit" ? KEEP : "";
   switch (status) {
@@ -45,7 +52,10 @@ export function errorMessage(status: number | null, action: Action): string {
     case 422:
       return `內容不符合規定，請檢查後再送出。${keep}`;
     case 429:
-      return "留言太頻繁，請稍後再試。";
+      if (!retryAfter) return `留言太頻繁，請稍後再試。${keep}`;
+      if (retryAfter > 3600)
+        return `今天的留言已達上限，請 ${Math.ceil(retryAfter / 3600)} 小時後再試。${keep}`;
+      return `留言太頻繁，請 ${Math.ceil(retryAfter / 60)} 分鐘後再試。${keep}`;
     default:
       return `暫時無法送出，請稍後再試。${keep}`;
   }

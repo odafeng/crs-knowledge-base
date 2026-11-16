@@ -378,3 +378,97 @@ def test_hidden_or_pending_comments_cannot_be_reported(client: TestClient, world
         f"{API_PREFIX}/comments/{pending}/reports", headers=world.headers(world.other), json={"reason": "x"}
     )
     assert response.status_code == 404
+
+
+# --- limits and duplicates (D4 #70) ---------------------------------------------------------------------------------
+
+
+def backdate(user: uuid.UUID, paper: str, count: int, minutes: int, *, deleted: bool = False) -> None:
+    """Comments written `minutes` ago, straight into the table (as an older post would be)."""
+    for i in range(count):
+        sql(
+            "insert into app.comments (paper_id, author_id, body, anonymous, display_name, created_at, updated_at,"
+            " deleted_at) values (%s, %s, %s, true, null, now() - %s * interval '1 minute',"
+            " now() - %s * interval '1 minute', case when %s then now() end)",
+            (paper, user, f"old {minutes} {i}", minutes, minutes, deleted),
+        )
+
+
+def limited_client(**limits: int) -> TestClient:
+    app = create_app(Settings(environment="test", database_url=API_DB_URL, **limits))  # pyright: ignore[reportArgumentType]
+    client = TestClient(app)
+    client.__enter__()
+    app.state.verifier = TokenVerifier(ISSUER, lambda _token: KEY.public_key())
+    return client
+
+
+def test_a_burst_of_comments_is_limited_with_a_retry_time(client: TestClient, world: World) -> None:
+    for i in range(5):
+        assert post(client, world, world.author, f"burst {i}").status_code == 201
+    response = post(client, world, world.author, "one too many")
+    assert response.status_code == 429
+    schema("Error").validate(response.json())
+    assert response.json()["error"]["code"] == "rate_limited"
+    assert 0 < int(response.headers["Retry-After"]) <= 600
+    assert response.headers["Cache-Control"] == "no-store"
+    assert str(world.author) not in response.text
+    # The limit is per account.
+    assert post(client, world, world.other, "someone else").status_code == 201
+
+
+def test_older_comments_leave_the_burst_window(client: TestClient, world: World) -> None:
+    backdate(world.author, world.paper, 5, minutes=11)
+    assert post(client, world, world.author, "fresh").status_code == 201
+
+
+def test_deleting_comments_does_not_reset_the_limit(client: TestClient, world: World) -> None:
+    backdate(world.author, world.paper, 5, minutes=1, deleted=True)
+    assert post(client, world, world.author, "after deleting").status_code == 429
+
+
+def test_the_daily_limit_counts_the_last_24_hours(world: World) -> None:
+    client = limited_client(comment_daily_limit=7)
+    try:
+        backdate(world.author, world.paper, 6, minutes=120)
+        backdate(world.author, world.paper, 10, minutes=60 * 25)  # yesterday: outside the window
+        assert post(client, world, world.author, "seventh today").status_code == 201
+        response = post(client, world, world.author, "eighth today")
+        assert response.status_code == 429
+        retry = int(response.headers["Retry-After"])
+        assert 22 * 3600 - 60 < retry <= 22 * 3600  # when the oldest of today's comments turns 24 hours old
+    finally:
+        client.__exit__(None, None, None)
+
+
+def test_resending_the_same_comment_returns_the_first_one(client: TestClient, world: World) -> None:
+    first = post(client, world, world.author, "Same words")
+    again = post(client, world, world.author, "Same words")
+    assert again.status_code == 201
+    assert again.json() == first.json()
+    assert sql("select count(*) from app.comments where author_id = %s", (world.author,)) == [(1,)]
+    # Different text, identity mode or paper is a new comment; so is the same text after deleting the first.
+    assert post(client, world, world.author, "Same words", anonymous=True).json()["id"] != first.json()["id"]
+    assert post(client, world, world.author, "Other words").json()["id"] != first.json()["id"]
+    client.delete(f"{API_PREFIX}/comments/{first.json()['id']}", headers=world.headers(world.author))
+    assert post(client, world, world.author, "Same words").json()["id"] != first.json()["id"]
+
+
+def test_resends_do_not_use_up_the_limit(client: TestClient, world: World) -> None:
+    for _ in range(8):
+        assert post(client, world, world.author, "Retried after a timeout").status_code == 201
+    assert post(client, world, world.author, "A real second comment").status_code == 201
+
+
+def test_limits_hold_across_instances_and_concurrent_requests(world: World) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    instances = [limited_client(), limited_client()]
+    try:
+        jobs = [(instances[i % 2], f"concurrent {i}") for i in range(12)]
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            codes = list(pool.map(lambda job: post(job[0], world, world.author, job[1]).status_code, jobs))
+        assert sorted(codes) == [201] * 5 + [429] * 7
+        assert sql("select count(*) from app.comments where author_id = %s", (world.author,)) == [(5,)]
+    finally:
+        for instance in instances:
+            instance.__exit__(None, None, None)

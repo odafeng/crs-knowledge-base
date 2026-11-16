@@ -54,13 +54,15 @@ def _request_id(request: Request) -> str:
     return getattr(request.state, "request_id", None) or uuid4().hex
 
 
-def error_response(request: Request, status: int, code: str, message: str) -> JSONResponse:
+def error_response(
+    request: Request, status: int, code: str, message: str, headers: dict[str, str] | None = None
+) -> JSONResponse:
     request_id = _request_id(request)
     return JSONResponse(
         {"error": {"code": code, "message": message, "requestId": request_id}},
         status_code=status,
         # Set here too: unhandled errors are answered outside RequestIdMiddleware.
-        headers={"Cache-Control": "no-store", REQUEST_ID_HEADER: request_id},
+        headers={**(headers or {}), "Cache-Control": "no-store", REQUEST_ID_HEADER: request_id},
     )
 
 
@@ -69,7 +71,8 @@ async def _http_error(request: Request, exc: Exception) -> JSONResponse:
     status = exc.status_code
     code = CODES.get(status, "validation_error" if status < 500 else "unavailable")
     message = exc.detail if isinstance(exc.detail, str) else HTTPStatus(status).phrase
-    return error_response(request, status, code, message)
+    # Keeps headers such as Retry-After; Cache-Control and the request ID are always the error response's own.
+    return error_response(request, status, code, message, dict(exc.headers or {}))
 
 
 async def _validation_error(request: Request, exc: Exception) -> JSONResponse:

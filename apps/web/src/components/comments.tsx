@@ -227,9 +227,10 @@ function CommentForm({
     ).catch(() => null);
     sending.current = false;
     if (!response?.ok) {
+      const retryAfter = Number(response?.headers.get("Retry-After")) || null;
       return setState({
         kind: "error",
-        message: errorMessage(response?.status ?? null, "post"),
+        message: errorMessage(response?.status ?? null, "post", retryAfter),
       });
     }
     const receipt: CommentReceipt = await response.json();

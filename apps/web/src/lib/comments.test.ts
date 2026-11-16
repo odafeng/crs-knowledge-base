@@ -52,13 +52,23 @@ describe("error messages tell the reader what to do next", () => {
     [401, "post", "登入已過期，請重新登入後再送出。你寫的內容還在。"],
     [403, "post", "請先設定顯示名稱再留言。"],
     [404, "post", "這篇文獻已撤下，無法留言。"],
-    [429, "post", "留言太頻繁，請稍後再試。"],
+    [429, "post", "留言太頻繁，請稍後再試。你寫的內容還在。"],
     [503, "load", "暫時無法載入留言，請稍後再試。"],
     [409, "report", "你已經檢舉過這則留言。"],
     [404, "edit", "這則留言已不存在。"],
     [403, "delete", "只有作者可以刪除這則留言。"],
   ] as const)("%s on %s", (status, action, message) => {
     expect(errorMessage(status, action)).toBe(message);
+  });
+});
+
+describe("rate limits say how long to wait", () => {
+  it.each([
+    [45, "留言太頻繁，請 1 分鐘後再試。你寫的內容還在。"],
+    [540, "留言太頻繁，請 9 分鐘後再試。你寫的內容還在。"],
+    [7200, "今天的留言已達上限，請 2 小時後再試。你寫的內容還在。"],
+  ])("Retry-After %i", (seconds, message) => {
+    expect(errorMessage(429, "post", seconds)).toBe(message);
   });
 });
 
