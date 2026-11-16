@@ -24,7 +24,20 @@ jobs:
       - name: Validate data integrity
         run: python scripts/validate.py --ci
 
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.115.0
+
+      # The content import tests (import_content.py) need the app schema; only the database is required here.
+      - name: Start local Supabase database
+        run: supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+      - name: Export test database URL
+        run: supabase status -o env | tr -d '"' | sed -n 's/^DB_URL=/GUTHUB_TEST_DATABASE_URL=/p' >> "$GITHUB_ENV"
+
       - name: Run tests
+        env:
+          GUTHUB_REQUIRE_DB: '1'
         run: python -m pytest tests/ -v
 
       - name: Build replacement site

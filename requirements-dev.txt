@@ -2,3 +2,5 @@
 jsonschema==4.26.0
 openapi-spec-validator==0.9.0
 PyYAML==6.0.3
+# Content import into PostgreSQL (import_content.py, B4).
+psycopg[binary]==3.3.9
