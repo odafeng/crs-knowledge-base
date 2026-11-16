@@ -23,10 +23,17 @@ export function bodyError(body: string): string | null {
 export type Action = "load" | "post" | "edit" | "delete" | "report" | "like";
 
 const KEEP = "你寫的內容還在。";
+const PAUSED = "網站維護中，暫停留言、編輯與檢舉，閱讀不受影響。";
+
+/** Retry-After in seconds, sent with 429 (rate limits) and with 503 during planned maintenance. */
+export function retryAfterOf(response: Response | null): number | null {
+  return Number(response?.headers.get("Retry-After")) || null;
+}
 
 /**
  * What went wrong, in terms of what the reader can do; `null` status means the request never got an answer.
- * `retryAfter` is the API's Retry-After (seconds) on 429.
+ * `retryAfter` is the API's Retry-After (seconds): how long a rate limit lasts on 429, and on 503 the mark of planned
+ * maintenance (writes paused, reads working) as opposed to an outage.
  */
 export function errorMessage(
   status: number | null,
@@ -34,6 +41,12 @@ export function errorMessage(
   retryAfter?: number | null,
 ): string {
   if (action === "load") return "暫時無法載入留言，請稍後再試。";
+  if (status === 503 && retryAfter) {
+    if (action === "like") return "網站維護中，暫停按讚，請稍後再試。";
+    return action === "post" || action === "edit"
+      ? `${PAUSED}你寫的內容還在，請稍後再送出。`
+      : `${PAUSED}請稍後再試。`;
+  }
   if (action === "like") {
     switch (status) {
       case null:

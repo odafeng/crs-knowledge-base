@@ -14,6 +14,7 @@ import {
   safeNext,
   supabase,
 } from "@/lib/auth";
+import { retryAfterOf } from "@/lib/comments";
 
 function rememberNext() {
   const next = safeNext(new URLSearchParams(location.search).get("next"));
@@ -227,7 +228,9 @@ export function AccountSettings() {
         message:
           response?.status === 409
             ? "這個帳號已刪除，無法再設定名稱。"
-            : "儲存失敗，請稍後再試。",
+            : response?.status === 503 && retryAfterOf(response)
+              ? "網站維護中，暫時無法修改名稱，請稍後再試。"
+              : "儲存失敗，請稍後再試。",
       });
     }
     const saved: { displayName: string } = await response.json();

@@ -1097,7 +1097,13 @@ components:
         application/json:
           schema: {$ref: '#/components/schemas/Error'}
     Unavailable:
-      description: Service unavailable
+      description: >-
+        Service unavailable. With Retry-After, writes are paused for planned maintenance (reads keep working);
+        without it, a dependency such as the database is down.
+      headers:
+        Retry-After:
+          description: Seconds until writes are expected to reopen; only sent during planned maintenance.
+          schema: {type: integer, minimum: 1}
       content:
         application/json:
           schema: {$ref: '#/components/schemas/Error'}

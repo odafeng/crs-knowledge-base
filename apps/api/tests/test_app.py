@@ -147,3 +147,49 @@ def test_framework_docs_are_disabled_so_the_contract_is_the_only_spec() -> None:
     client = TestClient(create_app(Settings(environment="test")))
     for path in ("/openapi.json", "/docs", "/redoc"):
         assert client.get(path).status_code == 404
+
+
+# --- writes paused (F3 #78) ---------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("method", "path"),
+    [
+        ("POST", "/papers/niche2/comments"),
+        ("PUT", "/me"),
+        ("PATCH", "/comments/00000000-0000-4000-8000-000000000001"),
+        ("DELETE", "/comments/00000000-0000-4000-8000-000000000001/likes"),
+        ("POST", "/admin/comments/00000000-0000-4000-8000-000000000001/author"),
+    ],
+)
+def test_paused_writes_answer_maintenance_before_anything_else(method: str, path: str) -> None:
+    client = TestClient(
+        create_app(Settings(environment="test", writes_paused=True, cors_origins=["https://guthub.tw"]))
+    )
+    response = client.request(method, f"{API_PREFIX}{path}", headers={"Origin": "https://guthub.tw"})
+    assert response.status_code == 503
+    body = response.json()
+    schema("Error").validate(body)
+    assert body["error"]["code"] == "unavailable"
+    # Retry-After marks planned maintenance; a database outage answers 503 without it.
+    assert response.headers["retry-after"] == "600"
+    assert body["error"]["requestId"] == response.headers["x-request-id"]
+    assert response.headers["access-control-allow-origin"] == "https://guthub.tw"
+
+
+def test_paused_writes_leave_reads_and_preflight_alone() -> None:
+    client = TestClient(
+        create_app(Settings(environment="test", writes_paused=True, cors_origins=["https://guthub.tw"]))
+    )
+    assert client.get(f"{API_PREFIX}/health").status_code == 200
+    preflight = client.options(
+        f"{API_PREFIX}/me",
+        headers={"Origin": "https://guthub.tw", "Access-Control-Request-Method": "PUT"},
+    )
+    assert preflight.status_code == 200
+
+
+def test_open_writes_have_no_maintenance_answer() -> None:
+    # Without a Supabase URL a signed-in endpoint is unavailable, but that outage carries no Retry-After.
+    response = TestClient(create_app(Settings(environment="test"))).put(f"{API_PREFIX}/me")
+    assert "retry-after" not in response.headers

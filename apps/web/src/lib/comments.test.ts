@@ -3,6 +3,7 @@ import {
   BODY_MAX,
   bodyError,
   errorMessage,
+  retryAfterOf,
   ownComments,
   paperPathFromId,
   type OwnedComment,
@@ -73,6 +74,40 @@ describe("likes", () => {
     [503, "暫時無法按讚，請稍後再試。"],
   ] as const)("%s", (status, message) => {
     expect(errorMessage(status, "like")).toBe(message);
+  });
+});
+
+describe("maintenance (503 with Retry-After) is told apart from an outage", () => {
+  it.each([
+    [
+      "post",
+      "網站維護中，暫停留言、編輯與檢舉，閱讀不受影響。你寫的內容還在，請稍後再送出。",
+    ],
+    [
+      "edit",
+      "網站維護中，暫停留言、編輯與檢舉，閱讀不受影響。你寫的內容還在，請稍後再送出。",
+    ],
+    ["delete", "網站維護中，暫停留言、編輯與檢舉，閱讀不受影響。請稍後再試。"],
+    ["report", "網站維護中，暫停留言、編輯與檢舉，閱讀不受影響。請稍後再試。"],
+    ["like", "網站維護中，暫停按讚，請稍後再試。"],
+  ] as const)("%s", (action, message) => {
+    expect(errorMessage(503, action, 600)).toBe(message);
+  });
+
+  it("keeps the outage wording without Retry-After", () => {
+    expect(errorMessage(503, "post")).toBe(
+      "暫時無法送出，請稍後再試。你寫的內容還在。",
+    );
+  });
+
+  it("reads Retry-After from a response, if any", () => {
+    const headers = (value: string | null) =>
+      ({
+        headers: new Headers(value ? { "Retry-After": value } : {}),
+      }) as Response;
+    expect(retryAfterOf(headers("600"))).toBe(600);
+    expect(retryAfterOf(headers(null))).toBeNull();
+    expect(retryAfterOf(null)).toBeNull();
   });
 });
 

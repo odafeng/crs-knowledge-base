@@ -7,7 +7,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAccount, type Account } from "@/components/account";
 import { apiFetch, authEnabled } from "@/lib/auth";
-import { commentDate, errorMessage, paperPathFromId } from "@/lib/comments";
+import {
+  commentDate,
+  errorMessage,
+  paperPathFromId,
+  retryAfterOf,
+} from "@/lib/comments";
 import type { components } from "@/lib/api.generated";
 
 type Item = components["schemas"]["ModerationItem"];
@@ -106,7 +111,11 @@ function QueueItem({
       setMessage(
         response?.status === 409
           ? "這則留言已經是這個狀態。"
-          : errorMessage(response?.status ?? null, "edit"),
+          : errorMessage(
+              response?.status ?? null,
+              "edit",
+              retryAfterOf(response),
+            ),
       );
       return null;
     }
