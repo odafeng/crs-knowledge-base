@@ -11,3 +11,5 @@ apps/web/.next/
 apps/web/out/
 apps/web/*.tsbuildinfo
 apps/web/next-env.d.ts
+.vercel
+.env*
