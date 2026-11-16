@@ -63,8 +63,47 @@ jobs:
           name: built-site
           path: site
 
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            apps/web/package-lock.json
+            tools/package-lock.json
+
+      - name: Install Next.js dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Check contract, types, lint, format, and unit tests
+        working-directory: apps/web
+        run: npm run check
+
+      - name: Audit runtime dependencies
+        working-directory: apps/web
+        run: npm audit --omit=dev --audit-level=moderate
+
+      - name: Build Next.js
+        working-directory: apps/web
+        run: npm run build
+
+      - name: Install browser test tools
+        working-directory: tools
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Test Next.js startup and reader shell
+        working-directory: apps/web
+        run: npm run smoke
+
   deploy:
-    needs: test
+    needs: [test, web]
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:

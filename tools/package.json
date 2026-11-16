@@ -4,6 +4,7 @@
   "description": "Browser checks for the generated site. Not shipped to readers.",
   "scripts": {
     "test": "node --test page-errors.test.js e2e.test.js",
+    "test:web": "node --test web-smoke.test.js",
     "verify": "node verify.js",
     "measure": "node measure.js",
     "lighthouse": "node lighthouse.mjs ../site"

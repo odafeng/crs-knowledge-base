@@ -7,3 +7,7 @@ site/
 site-push/
 node_modules/
 test-results/
+apps/web/.next/
+apps/web/out/
+apps/web/*.tsbuildinfo
+apps/web/next-env.d.ts

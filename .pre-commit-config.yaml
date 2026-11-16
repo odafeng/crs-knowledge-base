@@ -8,6 +8,13 @@ repos:
 
   - repo: local
     hooks:
+      - id: web-check
+        name: Next.js contract, types, lint, format, and unit tests
+        entry: npm --prefix apps/web run check
+        language: system
+        pass_filenames: false
+        files: ^(apps/web/|contracts/openapi\.yaml$)
+
       - id: pyright
         name: pyright
         entry: pyright
