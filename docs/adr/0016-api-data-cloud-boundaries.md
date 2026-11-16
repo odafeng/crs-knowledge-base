@@ -61,7 +61,15 @@ A 的預期優點是 Auth、資料、Storage 的整合工作較少。B 適合已
 
 ### 部署與驗收
 
-- staging 與 production 使用彼此獨立的 Supabase project 與 Cloud Run service，各自設定預算與最小權限（2026-11-16 維護者於 [F1 #75](https://github.com/odafeng/crs-knowledge-base/issues/75) 確認）。帳號、區域、費用上限及祕密交付仍待 F1 提供。
+- staging 與 production 使用彼此獨立的 Supabase project 與 Cloud Run service，各自設定預算與最小權限（2026-11-16 維護者於 [F1 #75](https://github.com/odafeng/crs-knowledge-base/issues/75) 確認）。
+- 2026-11-17 維護者確認並已建立（F1 #75）：
+  - **區域**：全部放東京。Supabase `ap-northeast-1`、Cloud Run `asia-northeast1`、Vercel 函式 `hnd1`，API 與資料庫同區。
+  - **Supabase**：獨立組織 GutHub（Pro 方案，開啟 spend cap），專案 `guthub-staging` 與 `guthub-prod`。
+  - **Google Cloud**：專案 `guthub-staging` 與 `guthub-prod`。每月預算 staging 320 TWD、prod 960 TWD（約 USD 10／30），在 50%、90%、100% 寄信通知；預算只通知，不會自動停止服務。
+  - **Vercel**：專案 `guthub`，staging 用 Preview、production 用 Production 環境變數。
+- **祕密**：只放在各環境的 Secret Manager，例如資料庫密碼與 API 的連線字串，並只授權給需要的執行身分；不寫進 repo、issue 或 README。
+- **部署身分**：GitHub Actions 透過 OIDC 身分聯合取得 `deployer` 身分，不建立長期金鑰。只接受本 repo，production 只接受 `main`。`deployer` 只能部署 Cloud Run、推送映像，並以 `api-runtime`／`worker-runtime` 執行。
+- **API 連線**：API 以只繼承 `guthub_api` 的 `guthub_api_login` 角色連線，已驗證它讀不到 `content_writer`、不能寫內容表、也碰不到 `auth` schema。
 - GitHub Pages 可繼續服務現有靜態基線。完整的 Next.js server 與 FastAPI 另需選定 runtime；不把它們部署成 Pages 的靜態檔案。
 - staging 通過內容 parity、unit/smoke/E2E、權限矩陣、mobile/accessibility 及還原演練後，才由 [F4 #79](https://github.com/odafeng/crs-knowledge-base/issues/79) 核准正式切換。
 - 新依賴固定版本並提交 lockfile。前端建立 TypeScript/lint/unit/smoke/E2E，Python 維持 Ruff/Pyright/pytest。
@@ -74,6 +82,7 @@ A 的預期優點是 Auth、資料、Storage 的整合工作較少。B 適合已
 - Supabase 將部分權限與產品整合綁在其服務上；全 GCP 則需要更多 IAM、連線、Auth 整合與費用管理工作。
 - 匯入、單一 writer 切換與保留新留言的 rollback，比只搬靜態檔複雜；必須先在 staging 演練。
 - FastAPI 跑在 Cloud Run、資料在 Supabase，兩者跨供應商連線，需處理連線池、延遲與兩邊的祕密管理。
+- Google Cloud 的帳單帳戶有可連結專案數上限（預設 5 個）。GutHub 的兩個專案改掛在另一個帳單帳戶，該帳戶也因此滿額，日後新專案需要另外申請額度。
 - 網站在 Vercel、API 在 Cloud Run、資料在 Supabase，三個供應商各有帳單、權限與祕密要管理；瀏覽器呼叫 API 是跨 origin，CORS 只允許網站的 origin（ADR-0020）。
 - 身分規則只在 FastAPI 一處，維護簡單；代價是 API 若有越權漏洞（例如可改他人留言的 IDOR），資料庫不會再擋一次，所以 D2 的權限矩陣測試是主要防線。
 - 本決策尚未建立雲端資源、執行 migration 或切換 production。
