@@ -173,7 +173,8 @@ def test_anonymous_comments_reveal_nothing_about_the_author(client: TestClient, 
     published(client, world, world.author, "Anonymous again", anonymous=True)
     response = client.get(f"{API_PREFIX}/papers/{world.paper}/comments")
     items = response.json()["items"]
-    assert all(set(c) == {"id", "paperId", "body", "anonymous", "displayName", "createdAt", "updatedAt"} for c in items)
+    public = {"id", "paperId", "body", "anonymous", "displayName", "createdAt", "updatedAt", "likeCount"}
+    assert all(set(c) == public for c in items)
     assert all(c["anonymous"] is True and c["displayName"] is None for c in items)
     assert str(world.author) not in response.text
     assert "Author" not in response.text and "example.test" not in response.text
@@ -612,3 +613,81 @@ def test_moderation_never_touches_papers_or_journal_commentary(client: TestClien
     comment = published(client, world, world.author)
     moderate(client, world, world.admin, comment, "hide", "spam")
     assert client.get(f"{API_PREFIX}/papers/{world.paper}").json() == before
+
+
+# --- likes (H1 #123) ----------------------------------------------------------------------------------------------
+
+
+def like(client: TestClient, w: World, user: uuid.UUID | None, comment: str, method: str = "PUT") -> Any:
+    return client.request(method, f"{API_PREFIX}/comments/{comment}/likes", headers=w.headers(user))
+
+
+def test_readers_like_and_unlike_and_the_list_shows_counts(client: TestClient, world: World) -> None:
+    comment = published(client, world, world.author, "Worth reading")
+    first = like(client, world, world.other, comment)
+    assert first.status_code == 200
+    assert first.headers["Cache-Control"] == "private, no-store"
+    schema("LikeState").validate(first.json())
+    assert first.json() == {"likeCount": 1, "liked": True}
+    assert like(client, world, world.other, comment).json() == {"likeCount": 1, "liked": True}  # PUT is idempotent
+    assert like(client, world, world.admin, comment).json()["likeCount"] == 2
+    assert [c["likeCount"] for c in listed(client, world)["items"]] == [2]
+    assert like(client, world, world.other, comment, "DELETE").json() == {"likeCount": 1, "liked": False}
+    assert like(client, world, world.other, comment, "DELETE").json() == {"likeCount": 1, "liked": False}
+    assert [c["likeCount"] for c in listed(client, world)["items"]] == [1]
+
+
+def test_each_reader_sees_only_their_own_likes(client: TestClient, world: World) -> None:
+    a = published(client, world, world.author, "First")
+    b = published(client, world, world.author, "Second")
+    like(client, world, world.other, a)
+    like(client, world, world.admin, b)
+    mine = client.get(f"{API_PREFIX}/me/likes", params={"paperId": world.paper}, headers=world.headers(world.other))
+    assert mine.status_code == 200
+    assert mine.headers["Cache-Control"] == "private, no-store"
+    schema("OwnLikes").validate(mine.json())
+    assert mine.json() == {"commentIds": [a]}
+    assert client.get(f"{API_PREFIX}/me/likes", params={"paperId": world.paper}).status_code == 401
+    # Nothing public says who liked a comment.
+    text = client.get(f"{API_PREFIX}/papers/{world.paper}/comments").text
+    assert str(world.other) not in text and str(world.admin) not in text
+
+
+@pytest.mark.parametrize(
+    ("who", "status"), [("visitor", 401), ("newbie", 403), ("author", 403), ("other", 200), ("admin", 200)]
+)
+def test_who_can_like(client: TestClient, world: World, who: str, status: int) -> None:
+    comment = published(client, world, world.author, "Anonymous take", anonymous=True)
+    user = None if who == "visitor" else getattr(world, who)
+    assert like(client, world, user, comment).status_code == status
+    expected = 1 if status == 200 else 0
+    assert sql("select count(*) from app.comment_likes where comment_id = %s", (comment,)) == [(expected,)]
+
+
+def test_only_visible_comments_can_be_liked(client: TestClient, world: World) -> None:
+    pending = post(client, world, world.author, "Waiting").json()["id"]
+    assert like(client, world, world.other, pending).status_code == 404
+    hidden = published(client, world, world.author, "Rude")
+    sql("update app.comments set status = 'hidden' where id = %s", (hidden,))
+    assert like(client, world, world.other, hidden).status_code == 404
+    for bad in ("not-a-uuid", str(uuid.uuid4())):
+        assert like(client, world, world.other, bad).status_code == 404
+
+
+def test_likes_survive_on_other_views_and_go_with_deleted_comments(client: TestClient, world: World) -> None:
+    comment = published(client, world, world.author, "Liked")
+    like(client, world, world.other, comment)
+    mine = client.get(f"{API_PREFIX}/me/comments", headers=world.headers(world.author)).json()["items"]
+    assert [o["comment"]["likeCount"] for o in mine] == [1]
+    client.delete(f"{API_PREFIX}/comments/{comment}", headers=world.headers(world.author))
+    assert like(client, world, world.admin, comment).status_code == 404
+
+
+def test_liking_is_rate_limited(world: World) -> None:
+    client = limited_client(comment_like_limit=3)
+    try:
+        comments = [published(client, world, world.author, f"c{i}") for i in range(4)]
+        codes = [like(client, world, world.other, c).status_code for c in comments]
+        assert codes == [200, 200, 200, 429]
+    finally:
+        client.__exit__(None, None, None)

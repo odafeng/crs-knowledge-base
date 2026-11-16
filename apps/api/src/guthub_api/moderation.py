@@ -18,7 +18,17 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, StringConstraints
 
 from guthub_api.accounts import require_admin
 from guthub_api.auth import User
-from guthub_api.comments import PRIVATE, REASON_MAX, Cursor, Limit, _decode_cursor, _page, _plain_text, _public
+from guthub_api.comments import (
+    LIKE_COUNT,
+    PRIVATE,
+    REASON_MAX,
+    Cursor,
+    Limit,
+    _decode_cursor,
+    _page,
+    _plain_text,
+    _public,
+)
 from guthub_api.db import Conn, get_conn
 
 router = APIRouter()
@@ -53,7 +63,9 @@ def list_moderation_queue(admin: Admin, db: Db, response: Response, limit: Limit
     response.headers.update(PRIVATE)
     after = _decode_cursor(cursor)
     rows = db.execute(
-        "select c.id, c.paper_id, c.body, c.anonymous, c.display_name, c.status, c.created_at, c.updated_at,"
+        "select c.id, c.paper_id, c.body, c.anonymous, c.display_name, c.status, c.created_at, c.updated_at, "
+        + LIKE_COUNT
+        + ","
         " coalesce(jsonb_agg(jsonb_build_object('reason', r.reason, 'createdAt', r.created_at) order by r.created_at)"
         "   filter (where r.id is not null), '[]') as reports"
         " from app.comments c"

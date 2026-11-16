@@ -327,6 +327,71 @@ paths:
             schema: {$ref: '#/components/schemas/ReportCreate'}
       description: 'Requires a verified session. Set Cache-Control: private, no-store. Ownership and allowed identity
         modes are checked server-side.'
+  /comments/{commentId}/likes:
+    put:
+      operationId: likeComment
+      summary: Like a visible comment by someone else; repeating it changes nothing.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LikeState'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/CommentId'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Needs an account with a display
+        name; own comments cannot be liked.'
+    delete:
+      operationId: unlikeComment
+      summary: Remove the reader's like; repeating it changes nothing.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LikeState'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/CommentId'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store.'
+  /me/likes:
+    get:
+      operationId: listOwnLikes
+      summary: Visible comments on one paper that the reader has liked.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/OwnLikes'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - name: paperId
+        in: query
+        required: true
+        schema: {type: string, minLength: 1}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store.'
   /admin/comments:
     get:
       operationId: listModerationQueue
@@ -751,7 +816,7 @@ components:
     PublicComment:
       type: object
       additionalProperties: false
-      required: [id, paperId, body, anonymous, displayName, createdAt, updatedAt]
+      required: [id, paperId, body, anonymous, displayName, createdAt, updatedAt, likeCount]
       properties:
         id: {type: string}
         paperId: {type: string}
@@ -761,6 +826,7 @@ components:
           type: [string, 'null']
         createdAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
+        likeCount: {type: integer, minimum: 0, description: Number of readers who liked it; who they are is never returned.}
       allOf:
       - if:
           properties:
@@ -797,6 +863,21 @@ components:
       required: [displayName]
       properties:
         displayName: {type: string, minLength: 1, maxLength: 80, description: Leading and trailing spaces are removed.}
+    LikeState:
+      type: object
+      additionalProperties: false
+      required: [likeCount, liked]
+      properties:
+        likeCount: {type: integer, minimum: 0}
+        liked: {type: boolean}
+    OwnLikes:
+      type: object
+      additionalProperties: false
+      required: [commentIds]
+      properties:
+        commentIds:
+          type: array
+          items: {type: string}
     CommentUpdate:
       type: object
       additionalProperties: false

@@ -6,6 +6,7 @@ export type OwnedComment = components["schemas"]["OwnedComment"];
 export type CommentPage = components["schemas"]["PublicCommentPage"];
 export type OwnedCommentPage = components["schemas"]["OwnedCommentPage"];
 export type CommentReceipt = components["schemas"]["CommentReceipt"];
+export type LikeState = components["schemas"]["LikeState"];
 
 export const BODY_MAX = 2000;
 
@@ -19,7 +20,7 @@ export function bodyError(body: string): string | null {
   return null;
 }
 
-export type Action = "load" | "post" | "edit" | "delete" | "report";
+export type Action = "load" | "post" | "edit" | "delete" | "report" | "like";
 
 const KEEP = "你寫的內容還在。";
 
@@ -33,6 +34,20 @@ export function errorMessage(
   retryAfter?: number | null,
 ): string {
   if (action === "load") return "暫時無法載入留言，請稍後再試。";
+  if (action === "like") {
+    switch (status) {
+      case null:
+        return "按讚失敗，請檢查網路後再試一次。";
+      case 403:
+        return "請先設定顯示名稱再按讚。";
+      case 404:
+        return "這則留言已不存在。";
+      case 429:
+        return "按讚太頻繁，請稍後再試。";
+      default:
+        return "暫時無法按讚，請稍後再試。";
+    }
+  }
   const keep = action === "post" || action === "edit" ? KEEP : "";
   switch (status) {
     case null:

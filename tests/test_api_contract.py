@@ -117,10 +117,11 @@ def anonymous_comment():
         "displayName": None,
         "createdAt": "2026-11-16T00:00:00Z",
         "updatedAt": "2026-11-16T00:00:00Z",
+        "likeCount": 0,
     }
 
 
-@pytest.mark.parametrize("field", ["authorId", "user_id", "email", "user_metadata", "review"])
+@pytest.mark.parametrize("field", ["authorId", "user_id", "email", "user_metadata", "review", "likedBy"])
 def test_public_comment_rejects_identity_and_research_fields(anonymous_comment, field):
     validator("PublicComment").validate(anonymous_comment)
     with pytest.raises(ValidationError):
