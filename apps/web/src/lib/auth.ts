@@ -67,7 +67,13 @@ export function safeNext(next: string | null | undefined): string {
   } catch {
     return "/";
   }
-  if (url.origin !== PARSE_BASE || NO_RETURN.test(url.pathname)) return "/";
+  // Check the result too: dot segments can normalize "/.//evil" into the protocol-relative "//evil".
+  if (
+    url.origin !== PARSE_BASE ||
+    /^\/[/\\]/.test(url.pathname) ||
+    NO_RETURN.test(url.pathname)
+  )
+    return "/";
   return `${url.pathname}${url.search}${url.hash}`;
 }
 

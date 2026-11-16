@@ -19,6 +19,10 @@ describe("safeNext keeps post-login redirects on this site", () => {
     ["/\n/evil.test/", "/"],
     ["/\r\\evil.test/", "/"],
     [" //evil.test/", "/"],
+    // Dot segments that normalize into a protocol-relative path.
+    ["/.//evil.test/", "/"],
+    ["/a/..//evil.test/", "/"],
+    ["/./\\evil.test/", "/"],
     ["/%2F%2Fevil.test/", "/%2F%2Fevil.test/"],
     ["/auth%2Fcallback/", "/auth%2Fcallback/"],
   ])("%j -> %s", (input, expected) => {
