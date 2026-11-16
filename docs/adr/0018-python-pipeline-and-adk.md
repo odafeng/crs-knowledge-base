@@ -33,6 +33,7 @@
 ## References
 
 - [E1 #72：遷移 contract tests](https://github.com/odafeng/crs-knowledge-base/issues/72)
+- [Paper Watch 遷移 contract v1](../../contracts/pipeline-migration.md)：合成 fixtures、發布／審核／撤下與 tracking 的比對邊界；未改變既有 gate。
 - [E2 #73：發布／撤下 adapter](https://github.com/odafeng/crs-knowledge-base/issues/73)
 - [E3 #76：worker 部署](https://github.com/odafeng/crs-knowledge-base/issues/76)
 - [E4 #74：ADK 決策](https://github.com/odafeng/crs-knowledge-base/issues/74)

@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "today": "2026-11-16",
+  "kb": {
+    "mCRC-MSI-H": {
+      "papers": [{
+        "id": "contract-target", "year": 2026, "journal": "Test Journal",
+        "studyType": "Phase 2", "regimen": "Synthetic comparator", "endpoint": "pMR",
+        "result": "Synthetic result", "bottomLine": "Synthetic baseline",
+        "doi": "10.9999/guthub-target", "relations": [], "source": "curated", "reviewedAt": "2026-11-16"
+      }]
+    }
+  },
+  "research": {
+    "candidate": {
+      "doi": "10.9999/guthub-contract", "pmid": "99999991", "abstract_id": "test-abstract",
+      "title": "Synthetic phase 2 trial", "journal": "Test Journal", "year": "2026",
+      "topic": "mCRC-MSI-H", "source": "pubmed",
+      "publication_types": ["Clinical Trial, Phase II", "Comment"],
+      "abstract": "METHODS: In this phase 2 trial, 56 patients were treated. RESULTS: The pathological response rate was 36%. CONCLUSIONS: Further research is needed."
+    },
+    "classification": {
+      "ai_score": 4, "ai_parse_failed": false, "ai_analysis": "合成測試資料，不可作臨床使用。",
+      "ai_bottom_line": "pMR 36%", "ai_suggested_filename": "Contract_2026.html",
+      "ai_suggested_js": {
+        "id": "contract-paper", "year": 2026, "journal": "Test Journal", "studyType": "Phase 2",
+        "n": 56, "regimen": "Synthetic drug <script>alert('test')</script>", "endpoint": "pMR",
+        "result": "pMR 36%", "bottomLine": "pMR 36%",
+        "relations": [{"targetId": "contract-target", "type": "builds_on"}, {"targetId": "unknown", "type": "builds_on"}]
+      },
+      "ai_evidence": [
+        {"claim": "n=56", "source": "abstract", "quote": "56 patients were treated", "url": null},
+        {"claim": "pMR 36%", "source": "abstract", "quote": "response rate was 36%", "url": null}
+      ]
+    },
+    "expected_entry": {
+      "id": "contract-paper", "year": 2026, "journal": "Test Journal", "studyType": "Phase 2",
+      "n": 56, "regimen": "Synthetic drug &lt;script&gt;alert('test')&lt;/script&gt;", "endpoint": "pMR",
+      "result": "pMR 36%", "bottomLine": "pMR 36%", "doi": "10.9999/guthub-contract",
+      "file": "docs/mCRC-MSI-H/Contract_2026.html", "relations": [{"targetId": "contract-target", "type": "builds_on"}],
+      "source": "abstract", "reviewedAt": "2026-11-16", "review": {"status": "auto", "publishedAt": "2026-11-16"}
+    }
+  },
+  "research_cases": [
+    {"name": "valid", "outcome": "auto"},
+    {"name": "missing-abstract", "candidate": {"abstract": ""}, "outcome": "held", "reason": "摘要缺失"},
+    {"name": "truncated-abstract", "candidate": {"abstract": "METHODS: In this phase 2 trial, 56 patients were treated."}, "outcome": "held", "reason": "摘要被截斷"},
+    {"name": "invented-number", "entry": {"n": 51}, "outcome": "held", "reason": "51"},
+    {"name": "wrong-design", "entry": {"studyType": "Phase 3 RCT"}, "outcome": "held", "reason": "Phase 3"},
+    {"name": "quote-not-found", "classification": {"ai_evidence": [
+      {"claim": "n=56; pMR 36%", "source": "abstract", "quote": "56 patients were randomized with response 36%", "url": null}
+    ]}, "outcome": "held", "reason": "摘要中找不到"},
+    {"name": "web-only", "classification": {"ai_evidence": [
+      {"claim": "n=56; pMR 36%", "source": "web_fetch", "quote": null, "url": "https://example.invalid/source"}
+    ]}, "outcome": "held", "reason": "來自網頁"},
+    {"name": "parse-failed", "classification": {"ai_parse_failed": true, "ai_score": null, "ai_suggested_js": null, "ai_evidence": []}, "outcome": "held", "reason": "AI 分類失敗", "accept": false},
+    {"name": "no-doi", "candidate": {"doi": ""}, "outcome": "auto", "tracking_key": "pmid:99999991"},
+    {"name": "low-score", "classification": {"ai_score": 2}, "outcome": "filtered"},
+    {"name": "unclassified", "classification": {"ai_score": null, "ai_suggested_js": null, "ai_evidence": []}, "outcome": "held", "reason": "沒有建議的 KB 條目", "tracked": false, "accept": false},
+    {"name": "semantic-number-swap", "entry": {"result": "pMR 56%", "bottomLine": "pMR 56%"}, "outcome": "auto", "limitation": "56 is the sample size, not the response rate; the current gate checks token provenance only."}
+  ],
+  "commentary": {
+    "candidate": {
+      "doi": "10.9999/guthub-comment", "pmid": "99999992", "title": "Synthetic letter",
+      "journal": "Test Journal", "year": "2026", "topic": "mCRC-MSI-H", "source": "pubmed",
+      "publication_types": ["Letter"], "comment_on_pmids": ["99999990"],
+      "abstract": "This letter discusses the interpretation of 56 patients."
+    },
+    "model": {"target_id": null, "summary": "質疑結果的解讀", "has_substantive_critique": true, "has_new_data": false},
+    "resolved_dois": {"99999990": "10.9999/guthub-target"}
+  },
+  "commentary_cases": [
+    {"name": "pubmed-link", "outcome": "auto"},
+    {"name": "ai-mapping", "candidate": {"comment_on_pmids": []}, "model": {"target_id": "contract-target"}, "outcome": "held"},
+    {"name": "new-data", "model": {"has_new_data": true}, "outcome": "held"},
+    {"name": "invented-number", "model": {"summary": "樣本 99 人"}, "outcome": "held"},
+    {"name": "wrong-phase", "model": {"summary": "Phase 3 的結果仍需查核"}, "outcome": "held"},
+    {"name": "unmapped", "candidate": {"comment_on_pmids": []}, "outcome": "tracked-only", "target": null},
+    {"name": "refusal", "refusal": true, "outcome": "retry", "tracked": false}
+  ]
+}
