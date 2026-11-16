@@ -18,11 +18,11 @@ const run = Date.now().toString(36);
 const AXE = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 
+const psql = statement => execFileSync('psql', [process.env.DATABASE_URL, '-qtAc', statement]).toString().trim();
+const literal = text => `'${text.replace(/'/g, "''")}'`;
+
 /** Approves a pending comment, as the maintainer will in D5. */
-function approve(commentBody) {
-  execFileSync('psql', [process.env.DATABASE_URL, '-qtAc',
-    `update app.comments set status = 'published' where body = '${commentBody.replace(/'/g, "''")}'`]);
-}
+const approve = commentBody => psql(`update app.comments set status = 'published' where body = ${literal(commentBody)}`);
 
 async function signedIn(browser, name, viewport) {
   const context = await browser.newContext(viewport ? { viewport } : {});
@@ -153,8 +153,39 @@ let browser;
   await b.keyboard.press('Enter');
   await section(b).getByText(/已送出|已發布/).waitFor();
 
+  step('a lost response then a resend makes one comment (D4)');
+  const lost = `Lost response ${run}`;
+  await b.route(`${API}/papers/${PAPER_ID}/comments`, async route => {
+    if (route.request().method() !== 'POST') return route.continue();
+    await route.fetch();  // the server stores it, the browser never hears back
+    await route.abort('connectionreset');
+  });
+  await post(b, lost);
+  await section(b).getByText('送出失敗，請檢查網路後再試一次。你寫的內容還在。').waitFor();
+  await b.unroute(`${API}/papers/${PAPER_ID}/comments`);
+  await section(b).getByRole('button', { name: '送出留言' }).click();
+  await section(b).getByText(/已送出|已發布/).waitFor();
+  check(psql(`select count(*) from app.comments where body = ${literal(lost)}`) === '1', 'resend created a duplicate');
+
+  step('over the limit: the reader is told how long to wait, keeps the text, and can send later');
+  let limited = false;
+  for (let i = 0; i < 6 && !limited; i++) {
+    await post(b, `Burst ${i} ${run}`);
+    const outcome = section(b).getByText(/已送出|已發布|留言太頻繁/);
+    await outcome.first().waitFor();
+    limited = (await section(b).getByText(/留言太頻繁，請 \d+ 分鐘後再試。你寫的內容還在。/).count()) === 1;
+  }
+  check(limited, 'limit: never reached');
+  const kept = await section(b).getByLabel('你的留言').inputValue();
+  check(kept.startsWith('Burst '), 'limit: text lost');
+  psql(`update app.comments set created_at = now() - interval '11 minutes' where author_id =
+    (select author_id from app.comments where body = ${literal(lost)})`);
+  await section(b).getByRole('button', { name: '送出留言' }).click();
+  await section(b).getByText(/已送出|已發布/).waitFor();
+
   console.log('comments: visitor gate, pending first comment, single send on double click, approval, signed and anonymous,');
-  console.log('          edit, failure keeps text and retry, others cannot edit or delete, report once, delete, keyboard');
+  console.log('          edit, failure keeps text and retry, others cannot edit or delete, report once, delete, keyboard,');
+  console.log('          resend after a lost response, over the limit and recovery');
   console.log('problems:', problems.length);
   problems.forEach(problem => console.log('  -', problem));
   if (problems.length) process.exitCode = 1;

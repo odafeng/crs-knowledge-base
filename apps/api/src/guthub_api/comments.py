@@ -3,7 +3,7 @@
 Comments are plain text in their own table, apart from journal commentary and never part of a paper's evidence. The
 public list reads only app.public_comments, which has no author column; signed comments carry the name snapshot taken
 when posting. Only the author may edit or delete (soft delete); moderation (approve, hide) is D5. The first comment of
-an account waits for moderation, enforced by a database trigger whatever the API sends. Posting limits are D4.
+an account waits for moderation, enforced by a database trigger whatever the API sends. Posting limits and resend\ndetection (D4) run in the database under a per-author lock, so they hold across API instances.
 """
 
 import base64
@@ -13,15 +13,17 @@ from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, Response
 from psycopg import errors
 from pydantic import AfterValidator, BaseModel, ConfigDict, StringConstraints
 
 from guthub_api.auth import User, current_user
 from guthub_api.db import Conn, get_conn
+from guthub_api.settings import Settings
 
 BODY_MAX = 2000  # ADR-0017; the database allows up to 10000 so this can change without a migration
 REASON_MAX = 1000
+DUPLICATE_MINUTES = 10  # the same text on the same paper within this window is a resend, not a new comment
 PUBLIC_CACHE = "public, max-age=30"
 PRIVATE = {"Cache-Control": "private, no-store", "Vary": "Authorization"}
 ALLOWED_CONTROLS = {"\n", "\r", "\t"}
@@ -156,17 +158,55 @@ def list_comments(
 
 
 @router.post("/papers/{paper_id}/comments", status_code=201)
-def create_comment(paper_id: str, comment: CommentCreate, user: SignedIn, db: Db, response: Response) -> dict[str, Any]:
+def create_comment(
+    paper_id: str, comment: CommentCreate, user: SignedIn, db: Db, request: Request, response: Response
+) -> dict[str, Any]:
     response.headers.update(PRIVATE)
     _require_public_paper(db, paper_id)
     name = _display_name(db, user)
-    row = db.execute(
-        "insert into app.comments (paper_id, author_id, body, anonymous, display_name)"
-        " values (%s, %s, %s, %s, %s) returning id, paper_id, status",
-        (paper_id, user.id, comment.body, comment.anonymous, None if comment.anonymous else name),
-    ).fetchone()
+    settings: Settings = request.app.state.settings
+    with db.transaction():
+        # One writer per author at a time, on every API instance: the count below cannot race with another post.
+        db.execute("select pg_advisory_xact_lock(hashtextextended(%s, 0))", (f"comments:{user.id}",))
+        duplicate = db.execute(
+            "select id, paper_id, status from app.comments where author_id = %s and paper_id = %s and body = %s"
+            " and anonymous = %s and deleted_at is null and created_at > now() - %s * interval '1 minute'"
+            " order by created_at desc limit 1",
+            (user.id, paper_id, comment.body, comment.anonymous, DUPLICATE_MINUTES),
+        ).fetchone()
+        if duplicate is not None:  # a resend after a timeout or a double submit: answer with the first comment
+            return _receipt(duplicate)
+        _check_limits(db, user, settings)
+        row = db.execute(
+            "insert into app.comments (paper_id, author_id, body, anonymous, display_name)"
+            " values (%s, %s, %s, %s, %s) returning id, paper_id, status",
+            (paper_id, user.id, comment.body, comment.anonymous, None if comment.anonymous else name),
+        ).fetchone()
     assert row is not None
     return _receipt(row)
+
+
+def _check_limits(db: Conn, user: User, settings: Settings) -> None:
+    """ADR-0017 limits per account. Deleted comments count, so deleting cannot reset the limit."""
+    usage = db.execute(
+        "select count(*) filter (where created_at > now() - %(burst)s * interval '1 minute') as burst,"
+        " ceil(extract(epoch from min(created_at) filter (where created_at > now() - %(burst)s * interval '1 minute')"
+        "   + %(burst)s * interval '1 minute' - now())) as burst_retry,"
+        " count(*) as day, ceil(extract(epoch from min(created_at) + interval '1 day' - now())) as day_retry"
+        " from app.comments where author_id = %(author)s and created_at > now() - interval '1 day'",
+        {"burst": settings.comment_burst_minutes, "author": user.id},
+    ).fetchone()
+    assert usage is not None
+    for count, limit, retry in (
+        (usage["burst"], settings.comment_burst_limit, usage["burst_retry"]),
+        (usage["day"], settings.comment_daily_limit, usage["day_retry"]),
+    ):
+        if count >= limit:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many comments; try again later",
+                headers={"Retry-After": str(max(1, int(retry or 1)))},
+            )
 
 
 @router.get("/me/comments")

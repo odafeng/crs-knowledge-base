@@ -161,5 +161,7 @@ def test_cors_allows_only_configured_origins_without_credentials() -> None:
     assert allowed.status_code == 200
     assert allowed.headers["Access-Control-Allow-Origin"] == "https://guthub.test"
     assert "Access-Control-Allow-Credentials" not in allowed.headers
+    simple = client.get(f"{API_PREFIX}/health", headers={"Origin": "https://guthub.test"})
+    assert "retry-after" in simple.headers["Access-Control-Expose-Headers"].lower()  # rate-limit hint readable
     denied = client.options(f"{API_PREFIX}/me", headers={"Origin": "https://evil.test", **preflight})
     assert "Access-Control-Allow-Origin" not in denied.headers

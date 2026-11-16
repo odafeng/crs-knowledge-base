@@ -1,6 +1,6 @@
 from typing import Literal, Self
 
-from pydantic import SecretStr, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     supabase_url: str | None = None
     # Browser origins allowed to call the API (JSON list). Tokens travel in the Authorization header, never cookies.
     cors_origins: list[str] = []
+    # Comment posting limits per account (ADR-0017); counted in the database, so they hold across instances.
+    comment_burst_limit: int = Field(default=5, ge=1)
+    comment_burst_minutes: int = Field(default=10, ge=1)
+    comment_daily_limit: int = Field(default=50, ge=1)
 
     @model_validator(mode="after")
     def deployed_environments_need_a_database(self) -> Self:
