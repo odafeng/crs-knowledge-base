@@ -11,6 +11,7 @@ import re
 import subprocess
 import sys
 from collections.abc import Iterator
+from datetime import timedelta
 from html import unescape
 from pathlib import Path
 from typing import Any
@@ -282,3 +283,19 @@ def test_daily_pick_is_empty_on_a_day_without_new_content(client: TestClient) ->
     assert response.status_code == 200
     assert response.json() == {"date": "2001-01-01", "pick": None}
     assert client.get(f"{API_PREFIX}/daily-pick", params={"date": "yesterday"}).status_code == 422
+
+
+def test_daily_pick_can_fall_back_to_the_latest_day_with_one(client: TestClient) -> None:
+    assert DB_URL
+    with psycopg.connect(DB_URL) as conn:
+        latest = conn.execute("select max(published_at) from app.public_news").fetchone()
+    assert latest is not None and latest[0] is not None
+    later = (latest[0] + timedelta(days=400)).isoformat()
+    body = client.get(f"{API_PREFIX}/daily-pick", params={"date": later, "recent": "true"}).json()
+    schema("DailyPick").validate(body)
+    assert body["date"] == later
+    assert body["pick"] is not None and body["pick"]["date"] <= later
+    # Without recent, the same day has nothing; and nothing earlier than the first entry exists either way.
+    assert client.get(f"{API_PREFIX}/daily-pick", params={"date": later}).json()["pick"] is None
+    first = client.get(f"{API_PREFIX}/daily-pick", params={"date": "2001-01-01", "recent": "true"}).json()
+    assert first["pick"] is None

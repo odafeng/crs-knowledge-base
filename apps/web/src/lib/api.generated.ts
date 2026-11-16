@@ -1577,6 +1577,8 @@ export interface operations {
             query?: {
                 /** @description Defaults to today in Asia/Taipei. */
                 date?: string;
+                /** @description When the day has nothing new, return the latest earlier day's pick; its own date says which day. */
+                recent?: boolean;
             };
             header?: never;
             path?: never;

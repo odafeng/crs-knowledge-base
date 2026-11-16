@@ -188,6 +188,37 @@
   font-size: var(--text-sm);
 }
 
+/* Today's one thing (G4 #115): one line above the lead story, kept quiet so the lead still leads. */
+.daily {
+  border-block-end: 1px solid var(--line);
+  background: var(--surface);
+}
+.daily__inner {
+  display: grid;
+  gap: var(--space-1);
+  padding-block: var(--space-3);
+}
+.daily__label {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+.daily__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.daily__conclusion {
+  margin: 0;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
 /* Weekly activity (G10 #121): the number stays readable text; the bar only shows the trend. */
 .activity__count {
   display: inline-block;
