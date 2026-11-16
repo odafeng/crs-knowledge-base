@@ -13,7 +13,7 @@ GutHub 規劃讓讀者在文獻頁留言，並支援匿名發言。「登入後�
 ### A2 確認的政策
 
 - MVP 要求登入，發文時可選署名或對其他讀者匿名。平台保留必要作者對應，供本人管理留言及維護者處理檢舉。這不是對平台不可識別的匿名。
-- 登入方式（2026-11-16 補充確認，對應 A2 完成條件中的「登入方式」）：Google OAuth 與 Email 一次性連結，兩者都經 Supabase Auth；不提供密碼登入。Google OAuth client 與正式環境的寄信服務（SMTP）由 [F1 #75](https://github.com/odafeng/crs-knowledge-base/issues/75) 準備。2026-11-17 維護者決定：staging 先用 Supabase 內建寄信（每小時額度很少，只供測試）；正式 SMTP 需要可設定 DNS 的寄件網域，等 [F4 #79](https://github.com/odafeng/crs-knowledge-base/issues/79) 決定網域時一起設定，在那之前 production 不開放 Email 登入。
+- 登入方式（2026-11-16 補充確認，對應 A2 完成條件中的「登入方式」）：Google OAuth 與 Email 一次性連結，兩者都經 Supabase Auth；不提供密碼登入。Google OAuth client 與正式環境的寄信服務（SMTP）由 [F1 #75](https://github.com/odafeng/crs-knowledge-base/issues/75) 準備。2026-11-17 維護者決定：登入信經 Resend 以 `GutHub <no-reply@guthub.tw>` 寄出，staging 與 production 各用一把 API key，網域驗證紀錄由維護者在 Gandi DNS 新增。網域驗證完成並在 Supabase 設定 SMTP 前，staging 暫用 Supabase 內建寄信（每小時額度很少，只供測試），production 不開放 Email 登入。Google 登入的同意畫面已發布，只用 openid、email、profile，首頁與隱私權政策網址為 `guthub.tw` 與 `guthub.tw/privacy`（[C6 #110](https://github.com/odafeng/crs-knowledge-base/issues/110)）。
 - 公開顯示名稱由使用者在首次登入時自行填寫（1–80 字），之後可以修改；不自動帶入 Google 姓名或 email，避免在本人不知情時公開。署名留言保存發文當下的名稱。
 - MVP 不開放免註冊留言，也不啟用 Supabase 匿名登入。日後若要開放，需另定 CAPTCHA／Turnstile、頻率限制、清理、升級帳號及跨裝置行為，並修訂本 ADR。
 - 審核：每個帳號的第一則留言為 `pending`，經維護者核准才公開；之後的留言直接 `published`，以檢舉與事後隱藏處理。

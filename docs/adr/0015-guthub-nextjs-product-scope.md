@@ -13,7 +13,7 @@
 - 產品顯示名稱採 GutHub，服務對象仍是醫療專業人員，核心是實證閱讀與討論。前端採 Next.js + TypeScript + React。
 - 依既有 v3 視覺方向遷移，保留文獻、詳細證據、主題、機器手臂內容、治療與監管狀態、研究 commentary、新聞、來源／審核標示、Feed、SEO、搜尋、手機操作及公開內容離線閱讀。
 - 文獻 ID 與可用的公開路徑優先延續。正式入口直接呈現新版內容，不能用 redirect 包裝舊介面。
-- 產品名稱、repository 名稱與正式網域分別處理。2026-11-16 維護者於 [A3 #55](https://github.com/odafeng/crs-knowledge-base/issues/55) 確認：這一階段只把顯示名稱改為 GutHub；repository（`odafeng/crs-knowledge-base`）與現有公開網址都不變，新網域日後另行決定。既有文獻 URL 與 Feed 識別碼沿用現址，不需要轉址。
+- 產品名稱、repository 名稱與正式網域分別處理。2026-11-16 維護者於 [A3 #55](https://github.com/odafeng/crs-knowledge-base/issues/55) 確認：這一階段只把顯示名稱改為 GutHub；repository（`odafeng/crs-knowledge-base`）與現有公開網址都不變，新網域日後另行決定。既有文獻 URL 與 Feed 識別碼沿用現址，不需要轉址。2026-11-17 更新：維護者已註冊 `guthub.tw`（Gandi，維護者持有），作為正式網域。網站在 [F4 #79](https://github.com/odafeng/crs-knowledge-base/issues/79) 正式切換時才指向 Vercel，並把 canonical、feed 與 sitemap 的網址（`GUTHUB_SITE_ORIGIN`）改為 `https://guthub.tw`。Feed 識別碼（`tag:odafeng.github.io,2026`）維持不變，訂閱者不會收到重複項目。repository 名稱不變。
 - 本次 MVP 包含登入、文獻頁留言及 ADR-0017 的匿名模式（登入後可選對其他讀者匿名）。回覆樹、投票、個人收藏、即時聊天與公開 AI 問答不預先納入。
 - 現有 v3 在新架構驗收前保留為可建置基線。現站部署缺陷另由 [A4 #56](https://github.com/odafeng/crs-knowledge-base/issues/56) 處理。
 - Next.js 專案放在 `apps/web/`，與現行 Python/Jinja2 共存。遷移期間共用 `static/styles/` 與本地字型，API types 由 `contracts/openapi.yaml` 產生並由 CI 檢查同步；前端啟動檢查不連接外部 API、Auth 或資料庫。
@@ -29,7 +29,7 @@
 - Next.js 引入 Node.js runtime、TypeScript、套件升級與新的 CI 工作，維護成本高於現有靜態網站。
 - 遷移期間需維持現行與新前端兩條可驗證路徑；正式切換後才整理過渡程式。
 - ISR 讓網站在 FastAPI 或資料庫故障時仍可回傳上一次生成的頁面，但新內容最多會晚 5 分鐘出現，而且多了一個需要部署與監控的 Next.js server。
-- 大範圍更名容易連帶破壞 canonical、Feed ID、PWA scope 與 CI 設定。只改顯示名稱避開了這個風險，代價是品牌名稱與網址暫時不一致；日後若換網域，canonical、Feed ID 與 PWA scope 的遷移要另開 Step 處理。
+- 大範圍更名容易連帶破壞 canonical、Feed ID、PWA scope 與 CI 設定。只改顯示名稱避開了這個風險，代價是品牌名稱與網址暫時不一致；日後若換網域，canonical、Feed ID 與 PWA scope 的遷移要另開 Step 處理。改用 `guthub.tw` 後，舊網址 `odafeng.github.io/crs-knowledge-base` 上的連結與搜尋排名需要轉址；GitHub Pages 不支援伺服器端 301，F4 要決定用靜態轉址頁或其他方式處理。
 
 ## References
 
