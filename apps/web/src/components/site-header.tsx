@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Icon } from "@/components/reading";
+import { SiteNav } from "@/components/site-nav";
 
 export function SiteHeader() {
   return (
@@ -26,6 +28,14 @@ export function SiteHeader() {
             <span className="brand__name">GutHub</span>
             <span className="brand__desc">大腸直腸外科實證更新</span>
           </span>
+        </Link>
+        <SiteNav />
+        <Link
+          className="btn btn--quiet btn--icon"
+          href="/updates/#q"
+          aria-label="搜尋消息與文獻"
+        >
+          <Icon name="search" />
         </Link>
       </div>
     </header>
