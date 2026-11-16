@@ -502,6 +502,25 @@ paths:
           application/json:
             schema: {$ref: '#/components/schemas/PushEndpoint'}
       description: 'Set Cache-Control: no-store.'
+  /admin/stats/weekly:
+    get:
+      operationId: getWeeklyActivity
+      summary: Counts per week for the last 12 weeks; no reader is listed.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WeeklyActivity'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
+        permission. An active reader commented, liked or reported that week; weeks start on Monday, Asia/Taipei.'
+      x-required-permission: comments:moderate
 components:
   securitySchemes:
     BearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
@@ -910,6 +929,27 @@ components:
           properties:
             p256dh: {type: string, pattern: '^[A-Za-z0-9_-]{80,100}$'}
             auth: {type: string, pattern: '^[A-Za-z0-9_-]{16,32}$'}
+    WeeklyActivity:
+      type: object
+      additionalProperties: false
+      required: [timezone, weeks]
+      properties:
+        timezone: {type: string, const: Asia/Taipei}
+        weeks:
+          type: array
+          minItems: 12
+          maxItems: 12
+          description: Oldest first; the last one is the current week so far.
+          items:
+            type: object
+            additionalProperties: false
+            required: [week, activeReaders, newAccounts, comments, likes]
+            properties:
+              week: {type: string, format: date, description: The Monday the week starts on.}
+              activeReaders: {type: integer, minimum: 0}
+              newAccounts: {type: integer, minimum: 0}
+              comments: {type: integer, minimum: 0}
+              likes: {type: integer, minimum: 0, description: Likes given that week and still standing.}
     AccountUpdate:
       type: object
       additionalProperties: false

@@ -294,6 +294,8 @@ export function AccountSettings() {
       {account.isAdmin && (
         <p>
           <Link href="/admin/comments/">留言審核</Link>
+          {"　"}
+          <Link href="/admin/stats/">每週活動</Link>
         </p>
       )}
       <button className="btn btn--secondary" type="button" onClick={leave}>
