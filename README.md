@@ -40,6 +40,8 @@ repository 目前仍叫 `odafeng/crs-knowledge-base`。顯示名稱、repository
 | D | 登入、署名／匿名留言、防濫用與檢舉審核 | [身分與留言](https://github.com/odafeng/crs-knowledge-base/milestone/4) |
 | E | Paper Watch 的發布／撤下、排程與 ADK 評估 | [Paper Watch 遷移](https://github.com/odafeng/crs-knowledge-base/milestone/5) |
 | F | 雲端環境、staging、還原演練與正式切換 | [環境、驗收與正式切換](https://github.com/odafeng/crs-knowledge-base/milestone/6) |
+| G | LINE 每日推送、今天的一件事、健保／TFDA 異動監測、主題訂閱、tumor board 摘要 | [回訪與觸及](https://github.com/odafeng/crs-knowledge-base/milestone/7) |
+| H | 留言按讚、自然語言語意搜尋；自由論壇設開放門檻 | [討論與語意搜尋](https://github.com/odafeng/crs-knowledge-base/milestone/8) |
 
 開始工作前，先讀對應 milestone 的 open issues。`[me]` 是 agent 可執行的工作；`[wait]` 需先完成列出的依賴；`[you]` 是維護者需決定或提供資源的事項。新建的規劃 issues 只使用 `blocked`、`needs-decision` 等狀態 labels；既有文獻管線的分類 labels 維持原用途。
 
@@ -221,6 +223,7 @@ Web Push 的程式與 SQL 範本放在 `push/`，目前不等於已建立 Supaba
 | [0019](docs/adr/0019-nextjs-offline-sync-and-client-search.md) | Next.js 離線快取改為對照公開索引同步 |
 | [0020](docs/adr/0020-browser-session-and-bearer-api.md) | 登入 session 只存在瀏覽器，API 只收 Bearer token |
 | [0021](docs/adr/0021-single-content-writer-and-cutover.md) | 內容同一時間只有一個寫入端，切換前比對資料庫與 JSON |
+| [0022](docs/adr/0022-engagement-and-gated-forum.md) | 回訪以送到醫師手上為主，自由論壇設開放門檻 |
 
 `Accepted` 表示已採用的方向，不代表功能已完成；實作與驗收狀態以對應 issues 為準。`Proposed` 的選項需由決策 issue 確認後再實作。
 
