@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
         ],
       })),
+      // Sign-in pages hold no identity in their HTML (the session stays in the browser), but their URLs carry
+      // one-time tokens; keep them out of every shared cache (D1 #67).
+      ...["/account/", "/auth/:path*"].map((source) => ({
+        source,
+        headers: [{ key: "Cache-Control", value: "private, no-store" }],
+      })),
       {
         source: "/sw.js",
         headers: [

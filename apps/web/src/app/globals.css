@@ -13,3 +13,45 @@
 .reading-intro > * + * {
   margin-block-start: var(--space-5);
 }
+
+/* Sign-in and account settings (D1 #67) */
+.sign-in {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 28rem;
+}
+.sign-in__form {
+  display: grid;
+  gap: var(--space-2);
+}
+.sign-in__form label {
+  font-weight: 600;
+}
+.sign-in__form input {
+  min-height: 3rem;
+  padding: 0 var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+}
+.sign-in__form .btn {
+  justify-self: start;
+  margin-block-start: var(--space-2);
+}
+.sign-in__or {
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+}
+.account-link {
+  position: relative;
+}
+.account-link--signed-in::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 0.6rem;
+  inset-inline-end: 0.6rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--brand);
+}

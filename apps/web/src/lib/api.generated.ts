@@ -161,6 +161,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The signed-in reader's display name and role; displayName is null until the reader chooses one.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. The admin role is read from the database, never from token claims or user metadata.
+         */
+        get: operations["getAccount"];
+        /**
+         * Choose or change the public display name; creates the account on first use.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. 409 when the account was deleted.
+         */
+        put: operations["updateAccount"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/comments": {
         parameters: {
             query?: never;
@@ -477,6 +501,15 @@ export interface components {
             body: string;
             /** @description Server rejects unsupported modes until A2 is decided. */
             anonymous: boolean;
+        };
+        Account: {
+            /** @description Public name chosen by the reader (ADR-0017); never taken from Google or the email address. */
+            displayName: string | null;
+            isAdmin: boolean;
+        };
+        AccountUpdate: {
+            /** @description Leading and trailing spaces are removed. */
+            displayName: string;
         };
         CommentUpdate: {
             body: string;
@@ -902,6 +935,59 @@ export interface operations {
             409: components["responses"]["Conflict"];
             422: components["responses"]["InvalidRequest"];
             429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    getAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Account"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    updateAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountUpdate"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Account"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["InvalidRequest"];
             503: components["responses"]["Unavailable"];
         };
     };

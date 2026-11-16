@@ -146,7 +146,7 @@ def test_comment_requests_cannot_choose_an_author_or_moderation_state():
 def test_authentication_and_private_response_boundaries_are_explicit():
     for path, methods in SPEC["paths"].items():
         for method, operation in methods.items():
-            private = method != "get" or path.startswith(("/me/", "/admin/"))
+            private = method != "get" or path == "/me" or path.startswith(("/me/", "/admin/"))
             assert operation["security"] == ([{"BearerAuth": []}] if private else [])
             assert "503" in operation["responses"]
             if path != "/health":

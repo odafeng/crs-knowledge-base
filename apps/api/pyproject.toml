@@ -9,6 +9,7 @@ dependencies = [
   "psycopg-pool>=3.2",
   "psycopg[binary]>=3.2",
   "pydantic-settings>=2.6",
+  "pyjwt[crypto]>=2.10",
   "uvicorn>=0.32",
 ]
 

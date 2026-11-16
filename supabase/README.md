@@ -16,9 +16,11 @@ Schema 與權限設計見 [ADR-0016](../docs/adr/0016-api-data-cloud-boundaries.
 需要 Docker 與 [Supabase CLI](https://supabase.com/docs/guides/cli)。
 
 ```sh
-supabase start -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+supabase start -x realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
 supabase db reset          # 在乾淨資料庫上重新套用全部 migration
 ```
+
+本機寄出的登入信在 Mailpit（`supabase status` 的 `MAILPIT_URL`）查看。
 
 資料庫測試在 `apps/api/tests/test_db_schema.py`，指令見 [apps/api/README.md](../apps/api/README.md)。
 
@@ -57,3 +59,13 @@ python import_content.py --database-url "$URL" --manifest out.json  # 正式匯�
 ```sql
 create role guthub_api_login login password '<from secret manager>' in role guthub_api;
 ```
+
+### 登入設定（D1 #67）
+
+`config.toml` 的 Auth 設定只作用在本機。staging 與 production 要在各自的 project 設定同樣的內容：
+
+- **Site URL** 設為該環境網站的 origin；**Redirect URLs** 加入 `<origin>/auth/callback/`。
+- **Email 範本**：Magic Link 與 Confirm signup 都改用 `supabase/templates/sign-in.html` 的內容。連結指向網站的 `/auth/callback/?token_hash=…&type=email`，在任何瀏覽器或裝置開啟都能登入；預設範本的 PKCE 連結只能在送出要求的同一個瀏覽器使用。
+- **SMTP**：正式寄信服務（ADR-0017）。內建寄信每小時只有少量額度，只適合測試。
+- **Google**：建立 OAuth client 後在 Auth providers 啟用，callback 為 `https://<project>.supabase.co/auth/v1/callback`；網站 build 時設 `NEXT_PUBLIC_AUTH_GOOGLE=1`。
+- 匿名登入維持關閉。

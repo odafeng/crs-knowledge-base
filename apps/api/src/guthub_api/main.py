@@ -2,7 +2,10 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 
+from guthub_api.accounts import router as accounts_router
+from guthub_api.auth import TokenVerifier
 from guthub_api.content import router as content_router
 from guthub_api.db import open_pool
 from guthub_api.errors import install_error_handling
@@ -28,7 +31,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="GutHub API", openapi_url=None, docs_url=None, redoc_url=None, lifespan=lifespan)
     app.state.settings = settings or Settings()
     app.state.pool = None
+    supabase_url = app.state.settings.supabase_url
+    app.state.verifier = TokenVerifier.for_supabase(supabase_url) if supabase_url else None
     install_error_handling(app)
+    if app.state.settings.cors_origins:
+        # Bearer tokens, not cookies: no credentials mode, so a listed origin still cannot ride on a user's session.
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=app.state.settings.cors_origins,
+            allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+            allow_headers=["Authorization", "Content-Type"],
+            max_age=600,
+        )
 
     @app.get(f"{API_PREFIX}/health")
     def health(request: Request, response: Response) -> dict[str, str]:
@@ -44,6 +58,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"status": "ok"}
 
     app.include_router(content_router, prefix=API_PREFIX)
+    app.include_router(accounts_router, prefix=API_PREFIX)
     return app
 
 
