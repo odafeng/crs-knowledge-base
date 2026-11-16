@@ -3,6 +3,7 @@ import { pageJsonLd, pageMetadata } from "@/lib/seo";
 import { connection } from "next/server";
 import { Alerts, Breadcrumb, JsonLd } from "@/components/reading";
 import { listNews, listPapers, listTopics } from "@/lib/content";
+import { pushEnabled } from "@/lib/push";
 import { feedList, HOME } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata(
@@ -39,9 +40,10 @@ export default async function SubscribePage() {
       <Breadcrumb crumbs={[...HOME, ["訂閱", "/subscribe/"]]} />
       <header className="page-head">
         <h1>訂閱</h1>
-        {/* The push variant of this page returns with C5 (#95). */}
         <p className="page-head__lead">
-          用 RSS 訂閱全部更新，或只訂閱關心的主題。不需要留 Email。
+          {pushEnabled
+            ? "開啟推播，或用 RSS 訂閱全部更新、只訂閱關心的主題。不需要留 Email。"
+            : "用 RSS 訂閱全部更新，或只訂閱關心的主題。不需要留 Email。"}
         </p>
       </header>
       <div className="page__narrow">

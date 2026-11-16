@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     # Maintenance switch for cutover and rollback (F3 #78, docs/runbook-cutover.md): every write answers 503 with
     # Retry-After while reads keep working.
     writes_paused: bool = False
+    # Web Push sender (C5 #95): the VAPID private key (base64url, Secret Manager) and a contact the push services can
+    # reach (mailto: or https:). Only the announce-news job needs them; the public key lives in the web build.
+    vapid_private_key: SecretStr | None = None
+    vapid_subject: str | None = None
 
     @model_validator(mode="after")
     def deployed_environments_need_a_database(self) -> Self:

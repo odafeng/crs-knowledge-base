@@ -353,6 +353,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/push/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Store this browser's Web Push subscription for new stories; repeating it renews the keys.
+         * @description No sign-in: a subscription names a browser and is never linked to an account. Set Cache-Control: no-store.
+         */
+        put: operations["subscribePush"];
+        post?: never;
+        /**
+         * Forget this browser's subscription; answers the same whether or not it was stored.
+         * @description Set Cache-Control: no-store.
+         */
+        delete: operations["unsubscribePush"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -580,6 +604,17 @@ export interface components {
             /** @description Public name chosen by the reader (ADR-0017); never taken from Google or the email address. */
             displayName: string | null;
             isAdmin: boolean;
+        };
+        PushEndpoint: {
+            /** @description The browser vendor's push service URL from PushSubscription.toJSON(). */
+            endpoint: string;
+        };
+        PushSubscription: {
+            endpoint: components["schemas"]["PushEndpoint"]["endpoint"];
+            keys: {
+                p256dh: string;
+                auth: string;
+            };
         };
         AccountUpdate: {
             /** @description Leading and trailing spaces are removed. */
@@ -1388,6 +1423,54 @@ export interface operations {
             404: components["responses"]["NotFound"];
             422: components["responses"]["InvalidRequest"];
             429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    subscribePush: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushSubscription"];
+            };
+        };
+        responses: {
+            /** @description Stored */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    unsubscribePush: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushEndpoint"];
+            };
+        };
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["InvalidRequest"];
             503: components["responses"]["Unavailable"];
         };
     };

@@ -142,6 +142,7 @@ npm run verify
 | `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | 登入用的 Supabase project URL 與 publishable key（可公開）。三個 `NEXT_PUBLIC_*` 都設定時才顯示登入入口 | build 時（會寫進瀏覽器端程式） |
 | `NEXT_PUBLIC_GUTHUB_API_URL` | 瀏覽器呼叫 API 的位址；API 的 `GUTHUB_CORS_ORIGINS` 要列入網站 origin | build 時 |
 | `NEXT_PUBLIC_AUTH_GOOGLE` | 設為 `1` 才顯示 Google 登入（需要 F1 的 OAuth client） | build 時 |
+| `NEXT_PUBLIC_PUSH_PUBLIC_KEY` | VAPID 公鑰；有設定才顯示推播按鈕（ADR-0023） | build 時 |
 
 Feed 的 GUID 固定用 `tag:odafeng.github.io,2026:` 開頭，不會跟著 `GUTHUB_SITE_ORIGIN` 改變，所以換網址後訂閱者不會收到重複的舊文章。
 
@@ -199,7 +200,7 @@ python scripts/main.py --dry-run --topic mCRC-BRAF-V600E
 gh workflow run paper-watch.yml --field dry_run=true
 ```
 
-Web Push 的程式與 SQL 範本放在 `push/`，目前不等於已建立 Supabase Auth、留言資料庫或訂閱後端。尚未設定推播時，網站仍能閱讀與訂閱 Feed；實機推播驗證另待安排。
+現站的 Web Push 程式與 SQL 範本放在 `push/`，從未啟用。GutHub 改由 API 存訂閱、排程 job `announce-news` 發送（ADR-0023）；啟用方式見 `docs/runbook-cutover.md`。尚未設定推播時，網站仍能閱讀與訂閱 Feed；實機推播驗證另待安排。
 
 手動新增內容時，在 `data/papers.json` 加入文獻條目與詳細 HTML 的 `file` 路徑；新聞稿加入 `data/news.json` 並指定 `paperId`、審核狀態。執行資料驗證、建置與測試後，再依授權提交。
 

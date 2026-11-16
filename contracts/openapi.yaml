@@ -472,6 +472,36 @@ paths:
       description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
         permission; clients cannot grant themselves this permission. 404 once the mapping is purged.'
       x-required-permission: comments:moderate
+  /push/subscription:
+    put:
+      operationId: subscribePush
+      summary: Store this browser's Web Push subscription for new stories; repeating it renews the keys.
+      security: []
+      responses:
+        '204': {description: Stored}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PushSubscription'}
+      description: 'No sign-in: a subscription names a browser and is never linked to an account. Set Cache-Control:
+        no-store.'
+    delete:
+      operationId: unsubscribePush
+      summary: Forget this browser's subscription; answers the same whether or not it was stored.
+      security: []
+      responses:
+        '204': {description: Removed}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PushEndpoint'}
+      description: 'Set Cache-Control: no-store.'
 components:
   securitySchemes:
     BearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
@@ -857,6 +887,29 @@ components:
           maxLength: 80
           description: Public name chosen by the reader (ADR-0017); never taken from Google or the email address.
         isAdmin: {type: boolean}
+    PushEndpoint:
+      type: object
+      additionalProperties: false
+      required: [endpoint]
+      properties:
+        endpoint:
+          type: string
+          maxLength: 2048
+          pattern: '^https://([a-z0-9-]+\.)*(googleapis\.com|mozilla\.com|push\.apple\.com|windows\.com)/'
+          description: The browser vendor's push service URL from PushSubscription.toJSON().
+    PushSubscription:
+      type: object
+      additionalProperties: false
+      required: [endpoint, keys]
+      properties:
+        endpoint: {$ref: '#/components/schemas/PushEndpoint/properties/endpoint'}
+        keys:
+          type: object
+          additionalProperties: false
+          required: [p256dh, auth]
+          properties:
+            p256dh: {type: string, pattern: '^[A-Za-z0-9_-]{80,100}$'}
+            auth: {type: string, pattern: '^[A-Za-z0-9_-]{16,32}$'}
     AccountUpdate:
       type: object
       additionalProperties: false

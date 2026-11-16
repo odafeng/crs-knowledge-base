@@ -1,10 +1,13 @@
 """Scheduled maintenance jobs (E3 #76), run as Cloud Run jobs from the API image.
 
 python -m guthub_api.maintenance purge-deleted-authors
+python -m guthub_api.maintenance announce-news
 
 purge-deleted-authors clears the private author mapping of comments deleted more than 90 days ago and removes
 accounts deleted that long ago (app.purge_deleted_authors, ADR-0017). The privacy policy promises this, so it runs
-daily. It connects as guthub_api through GUTHUB_DATABASE_URL, like the API.
+daily. announce-news pushes stories published in the last two days to subscribed browsers, each story once
+(guthub_api.announce, C5 #95); it also needs GUTHUB_VAPID_PRIVATE_KEY and GUTHUB_VAPID_SUBJECT. Both connect as
+guthub_api through GUTHUB_DATABASE_URL, like the API.
 """
 
 import argparse
@@ -14,6 +17,7 @@ import sys
 
 import psycopg
 
+from guthub_api.announce import announce_news, web_push
 from guthub_api.settings import Settings
 
 logger = logging.getLogger("guthub_api.maintenance")
@@ -31,13 +35,20 @@ def purge_deleted_authors(url: str) -> dict[str, int]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("job", choices=["purge-deleted-authors"])
+    parser.add_argument("job", choices=["purge-deleted-authors", "announce-news"])
     args = parser.parse_args(argv)
     settings = Settings()
     if settings.database_url is None:
         print("GUTHUB_DATABASE_URL is required", file=sys.stderr)
         return 1
-    result = purge_deleted_authors(settings.database_url.get_secret_value())
+    url = settings.database_url.get_secret_value()
+    if args.job == "announce-news":
+        if settings.vapid_private_key is None or not settings.vapid_subject:
+            print("GUTHUB_VAPID_PRIVATE_KEY and GUTHUB_VAPID_SUBJECT are required", file=sys.stderr)
+            return 1
+        result = announce_news(url, web_push(settings.vapid_private_key.get_secret_value(), settings.vapid_subject))
+    else:
+        result = purge_deleted_authors(url)
     # One JSON line, so Cloud Logging can parse it; no identifiers, only counts.
     print(json.dumps({"job": args.job, **result}))
     return 0

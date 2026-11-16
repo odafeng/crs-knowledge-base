@@ -96,7 +96,7 @@ export default function PrivacyPage() {
         <h2>推播通知</h2>
         <p>
           開啟推播時，我們保存瀏覽器提供的推播位址與加密金鑰，用來傳送新消息通知。這些資料不會連到你的帳號。
-          關閉推播就會刪除。
+          關閉推播就會刪除；如果刪除當下連線失敗，下一次發送時推播服務會回報這個位址已失效，我們再刪除。
         </p>
 
         <h2>資料存放在哪裡</h2>
@@ -110,6 +110,10 @@ export default function PrivacyPage() {
           </li>
           <li>Vercel：網站頁面的主機。</li>
           <li>Resend：寄送 Email 登入連結。</li>
+          <li>
+            瀏覽器的推播服務（依你的瀏覽器，是 Google、Mozilla、Apple 或
+            Microsoft）：轉送加密過的新消息通知，只在你開啟推播時使用。
+          </li>
           <li>Google：使用 Google 登入時的身分驗證。</li>
         </ul>
 

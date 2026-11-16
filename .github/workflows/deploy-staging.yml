@@ -103,6 +103,28 @@ jobs:
             gcloud scheduler jobs create http purge-deleted-authors-daily "${ARGS[@]}"
           fi
 
+      # Web Push for new stories (C5 #95, ADR-0023): off until the maintainer stores vapid-private-key and sets the
+      # repository variable PUSH_ENABLED=true, since the extra schedule may be billed. Each story is pushed once.
+      - name: Deploy the news push job
+        if: vars.PUSH_ENABLED == 'true'
+        run: |
+          gcloud run jobs deploy announce-news --project="$PROJECT" --region="$REGION" \
+            --image="$IMAGES/api:$GITHUB_SHA" --service-account="$API_RUNTIME" \
+            --command=python --args=-m,guthub_api.maintenance,announce-news \
+            --set-secrets=GUTHUB_DATABASE_URL=guthub-api-database-url:latest,GUTHUB_VAPID_PRIVATE_KEY=vapid-private-key:latest \
+            --set-env-vars=GUTHUB_ENVIRONMENT=staging,GUTHUB_VAPID_SUBJECT=mailto:privacy@guthub.tw \
+            --max-retries=0 --task-timeout=600
+          gcloud run jobs add-iam-policy-binding announce-news --project="$PROJECT" --region="$REGION" \
+            --member="serviceAccount:$WORKER_RUNTIME" --role=roles/run.invoker --format=none
+          ARGS=(--project="$PROJECT" --location="$REGION" --schedule="*/30 * * * *" --time-zone="Asia/Taipei"
+            --uri="https://run.googleapis.com/v2/projects/$PROJECT/locations/$REGION/jobs/announce-news:run"
+            --http-method=POST --oauth-service-account-email="$WORKER_RUNTIME")
+          if gcloud scheduler jobs describe announce-news-every-30-minutes --project="$PROJECT" --location="$REGION" >/dev/null 2>&1; then
+            gcloud scheduler jobs update http announce-news-every-30-minutes "${ARGS[@]}"
+          else
+            gcloud scheduler jobs create http announce-news-every-30-minutes "${ARGS[@]}"
+          fi
+
       # Paper Watch calls a paid model and opens GitHub issues, so it stays off until the maintainer provides its
       # secrets and sets the repository variable PAPER_WATCH_ENABLED=true (E3 #76).
       - name: Deploy the Paper Watch job
