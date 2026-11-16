@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  areaOf,
   byTopic,
+  feedList,
+  updates,
+  weekStats,
   findingText,
   otherNews,
   paperTitle,
@@ -128,5 +132,102 @@ describe("presentation rules mirrored from sitegen", () => {
     expect(
       findingText("<strong>R0</strong> &amp; CRM &lt;1 mm&#x2009;&#8805;"),
     ).toBe("R0 & CRM <1 mm ≥");
+  });
+});
+
+describe("navigation, reading log and feeds mirrored from sitegen", () => {
+  it("marks the navigation area by path", () => {
+    expect(
+      [
+        "/",
+        "/news/x/",
+        "/papers/a/",
+        "/updates/",
+        "/mcrc/her2/",
+        "/robotic/tme/",
+        "/subscribe/",
+        "/about/",
+      ].map(areaOf),
+    ).toEqual([
+      "home",
+      "news",
+      "papers",
+      "papers",
+      "topics",
+      "topics",
+      "subscribe",
+      "about",
+    ]);
+  });
+
+  it("mixes papers and journal commentary, newest first", () => {
+    const withComment: Paper = {
+      ...paper("p1", "mCRC-MSI-H", 2024, "2026-01-10"),
+      commentary: [
+        {
+          doi: "10.1/c",
+          title: "Editorial",
+          journal: "NEJM",
+          year: 2026,
+          type: "Editorial",
+          summary: "A view",
+          critique: false,
+          newData: false,
+          addedAt: "2026-03-01",
+        },
+      ],
+    };
+    const rows = updates([
+      withComment,
+      paper("p2", "mCRC-HER2", 2025, "2026-02-01"),
+    ]);
+    expect(rows.map((u) => [u.kind, u.date])).toEqual([
+      ["commentary", "2026-03-01"],
+      ["paper", "2026-02-01"],
+      ["paper", "2026-01-10"],
+    ]);
+    expect(rows[0].title).toBe("NEJM 2026：Editorial");
+  });
+
+  it("counts the week ending on the newest date, seven days inclusive", () => {
+    const papers = [
+      paper("in", "mCRC-MSI-H", 2026, "2026-11-10"),
+      paper("edge", "mCRC-MSI-H", 2026, "2026-11-04"),
+      paper("out", "mCRC-MSI-H", 2026, "2026-11-03"),
+    ];
+    const news = [{ ...story("n", "in"), publishedAt: "2026-11-09" }];
+    expect(weekStats(papers, news)).toEqual({
+      lastUpdated: "2026-11-10",
+      weekPapers: 2,
+      weekNews: 1,
+    });
+  });
+
+  it("publishes feeds for all updates, news, and only topics with content", () => {
+    const topics = [
+      {
+        key: "mCRC-MSI-H",
+        slug: "msi-h",
+        label: "MSI-H / dMMR",
+        roboticSections: [],
+      },
+      { key: "mCRC-HER2", slug: "her2", label: "HER2", roboticSections: [] },
+      {
+        key: "robotic-surgery",
+        slug: "robotic",
+        label: "機器手臂手術",
+        roboticSections: [{}],
+      },
+    ] as unknown as Topic[];
+    const feeds = feedList(
+      [paper("a", "mCRC-MSI-H", 2025)],
+      [story("n", "a")],
+      topics,
+    );
+    expect(feeds.map((f) => f.path)).toEqual([
+      "/rss.xml",
+      "/feed/news.xml",
+      "/feed/msi-h.xml",
+    ]);
   });
 });

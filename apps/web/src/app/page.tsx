@@ -1,33 +1,202 @@
-export default function Home() {
+import Link from "next/link";
+import { connection } from "next/server";
+import { NewsFigure } from "@/components/news-figure";
+import {
+  AiChip,
+  Alerts,
+  Entry,
+  Icon,
+  NewsCard,
+  Phrases,
+  Status,
+} from "@/components/reading";
+import { listNews, listPapers, listTopics } from "@/lib/content";
+import {
+  byTopic,
+  isUnreviewed,
+  newsPath,
+  regulatoryRows,
+  ROBOTIC_PAGES,
+  topicPath,
+  updates,
+  weekStats,
+} from "@/lib/site";
+
+const longDate = (iso: string) => {
+  const [year, month, day] = iso.split("-").map(Number);
+  return `${year} 年 ${month} 月 ${day} 日`;
+};
+
+export default async function Home() {
+  // Rendered per request so `next build` never calls the API; API reads stay cached for 300 s (lib/content.ts).
+  await connection();
+  const [papers, news, topics] = await Promise.all([
+    listPapers(),
+    listNews(),
+    listTopics(),
+  ]);
+  const topicOf = (paperId: string) =>
+    topics.find((t) => t.key === papers.find((p) => p.id === paperId)?.topic);
+  const [lead, ...rest] = news;
+  const leadPaper = lead && papers.find((p) => p.id === lead.paperId);
+  const leadTopic = lead && topicOf(lead.paperId);
+  const stats = weekStats(papers, news);
+  const mcrc = topics.filter((t) => t.roboticSections.length === 0);
+  const sections = topics.flatMap((t) => t.roboticSections);
+
   return (
     <>
-      <section className="lead on-field" aria-labelledby="site-title">
-        <div className="container reading-intro">
-          <h1 id="site-title">
-            大腸直腸外科
-            <br />
-            實證與討論
-          </h1>
-          <p className="lead__dek">
-            從臨床試驗、治療指引到手術實證，整理研究結果，也保留資料來源與判讀限制。
-          </p>
-          <a
-            className="btn btn--primary"
-            href="https://odafeng.github.io/crs-knowledge-base/updates/"
+      <h1 className="visually-hidden">GutHub：大腸直腸外科實證更新</h1>
+      {lead && (
+        <section className="lead on-field" aria-labelledby="lead-title">
+          <svg
+            className="lead__motif"
+            viewBox="0 0 800 60"
+            preserveAspectRatio="none"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
           >
-            閱讀文獻
-          </a>
+            <path d="M0 8h120v8h90v7h140v9h110v6h150v8h190" />
+            <path d="M0 8h70v14h80v12h110v10h140v8h400" />
+          </svg>
+          <div className="container">
+            <p className="lead__dateline">
+              <time dateTime={stats.lastUpdated}>
+                {longDate(stats.lastUpdated)}
+              </time>
+              <span>
+                本週新增 {stats.weekPapers} 篇文獻、{stats.weekNews} 則消息
+              </span>
+            </p>
+            <div className="lead__grid">
+              <div>
+                <p className="eyebrow">
+                  <span className="eyebrow__flag">頭條</span>
+                  {leadTopic && (
+                    <Link
+                      className="eyebrow__topic"
+                      href={topicPath(leadTopic)}
+                    >
+                      {leadTopic.label}
+                    </Link>
+                  )}
+                  {leadPaper && (
+                    <span>
+                      {leadPaper.journal} {leadPaper.year}
+                    </span>
+                  )}
+                </p>
+                <h2 className="lead__headline" id="lead-title">
+                  <Link href={newsPath(lead)}>
+                    <Phrases item={lead} />
+                  </Link>
+                </h2>
+                <p className="lead__dek">{lead.dek}</p>
+                <div className="lead__actions">
+                  <Link className="btn btn--primary" href={newsPath(lead)}>
+                    讀這則消息
+                    <Icon name="arrow" />
+                  </Link>
+                  <AiChip label="AI 新聞稿" />
+                  {isUnreviewed(lead) && <AiChip label="AI 未審" />}
+                </div>
+              </div>
+              {lead.figures.length > 0 && <NewsFigure item={lead} />}
+            </div>
+          </div>
+        </section>
+      )}
+      <div className="container">
+        {rest.length > 0 && (
+          <section className="band" aria-labelledby="more-title">
+            <div className="section-head">
+              <h2 id="more-title">更多消息</h2>
+              <Link href="/news/">全部消息</Link>
+            </div>
+            <ul className="news-grid">
+              {rest.slice(0, 3).map((item) => (
+                <NewsCard
+                  item={item}
+                  topic={topicOf(item.paperId)}
+                  key={item.id}
+                />
+              ))}
+            </ul>
+          </section>
+        )}
+        <div className="band home-split">
+          <section aria-labelledby="log-title">
+            <div className="section-head">
+              <h2 id="log-title">新收錄文獻</h2>
+              <Link href="/updates/">全部 {papers.length} 篇</Link>
+            </div>
+            <ol className="entries">
+              {updates(papers)
+                .slice(0, 8)
+                .map((update) => (
+                  <Entry
+                    update={update}
+                    topic={topicOf(update.paper.id)}
+                    key={update.id}
+                  />
+                ))}
+            </ol>
+          </section>
+          <aside className="home-rail" aria-label="訂閱、主題與給付現況">
+            <Alerts />
+            <section aria-labelledby="topics-title">
+              <h2 className="rail-title" id="topics-title">
+                主題
+              </h2>
+              <ul className="topic-list">
+                {mcrc.map((topic) => (
+                  <li key={topic.key}>
+                    <Link href={topicPath(topic)}>{topic.label}</Link>
+                    <span>{byTopic(papers, topic.key).length} 篇</span>
+                  </li>
+                ))}
+                {sections.map((section) => (
+                  <li key={section.slug}>
+                    <Link href={`/robotic/${section.slug}/`}>
+                      {ROBOTIC_PAGES[section.slug] ?? section.slug}
+                    </Link>
+                    <span>{section.cards.length} 則</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+            <section aria-labelledby="board-title">
+              <h2 className="rail-title" id="board-title">
+                核准與給付現況
+              </h2>
+              <ul className="board">
+                {mcrc.flatMap((topic) =>
+                  regulatoryRows(topic).map((row) => (
+                    <li key={`${topic.key}/${row.regimen}`}>
+                      <Link href={topicPath(topic)}>{row.regimen}</Link>
+                      <span className="board__states">
+                        <Status regulator="fda" value={row.fda} prefix="FDA " />
+                        <Status
+                          regulator="tfda"
+                          value={row.tfda}
+                          prefix="TFDA "
+                        />
+                        <Status
+                          regulator="nhi"
+                          value={row.nhi}
+                          prefix="健保 "
+                        />
+                      </span>
+                    </li>
+                  )),
+                )}
+              </ul>
+            </section>
+          </aside>
         </div>
-      </section>
-      <section
-        className="container reading-intro"
-        aria-labelledby="evidence-title"
-      >
-        <h2 id="evidence-title">從摘要回到原始證據</h2>
-        <p>
-          每個文獻條目保留來源、關鍵結果與審核狀態，讓閱讀與討論都能回到可查核的依據。
-        </p>
-      </section>
+      </div>
     </>
   );
 }

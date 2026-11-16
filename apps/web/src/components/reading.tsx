@@ -9,7 +9,9 @@ import {
   STATUS_LABELS,
   STATUS_STYLE,
   topicPath,
+  NEWS_FEED,
   type Crumbs,
+  type Update,
   type News,
   type Paper,
   type Topic,
@@ -17,6 +19,13 @@ import {
 
 // Inline SVG paths from sitegen/icons.py (24x24, stroke); constant strings, never user content.
 const ICONS = {
+  home: '<path d="m4 11 8-7 8 7"/><path d="M6 10v9h12v-9"/>',
+  list: '<path d="M9 7h10M9 12h10M9 17h10"/><path d="M5 7h.01M5 12h.01M5 17h.01"/>',
+  grid: '<rect x="4.5" y="4.5" width="6" height="6" rx="1.5"/><rect x="13.5" y="4.5" width="6" height="6" rx="1.5"/><rect x="4.5" y="13.5" width="6" height="6" rx="1.5"/><rect x="13.5" y="13.5" width="6" height="6" rx="1.5"/>',
+  bell: '<path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  rss: '<path d="M5 11a8 8 0 0 1 8 8M5 5a14 14 0 0 1 14 14"/><circle cx="6" cy="18" r="1.25"/>',
   news: '<path d="M5 5h11v14H7a2 2 0 0 1-2-2z"/><path d="M16 9h3v8a2 2 0 0 1-2 2"/><path d="M8 9h5M8 12.5h5M8 16h3"/>',
   check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   clock: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/>',
@@ -29,7 +38,9 @@ const ICONS = {
     '<path d="M14 5h5v5M19 5l-8 8"/><path d="M11 6H6a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-5"/>',
 } as const;
 
-export function Icon({ name }: { name: keyof typeof ICONS }) {
+export type IconName = keyof typeof ICONS;
+
+export function Icon({ name }: { name: IconName }) {
   return (
     <svg
       className="icon"
@@ -93,15 +104,18 @@ export function AiChip({ label }: { label: string }) {
 export function Status({
   regulator,
   value,
+  prefix = "",
 }: {
   regulator: keyof typeof STATUS_LABELS;
   value: string;
+  prefix?: string;
 }) {
   const [style, glyph] = STATUS_STYLE[value] ?? STATUS_STYLE.unknown;
   const labels: Record<string, string> = STATUS_LABELS[regulator];
   return (
     <span className={`status status--${style}`}>
-      <Icon name={glyph as keyof typeof ICONS} />
+      <Icon name={glyph as IconName} />
+      {prefix}
       {labels[value] ?? value}
     </span>
   );
@@ -192,5 +206,71 @@ export function NewsCard({ item, topic }: { item: News; topic?: Topic }) {
       <p className="news-card__dek">{item.dek}</p>
       <KeyStat item={item} className="news-card__stat" />
     </li>
+  );
+}
+
+/** One row of the reading log: a paper or a journal commentary on it (macro `entry`). */
+export function Entry({
+  update,
+  topic,
+  level = 3,
+}: {
+  update: Update;
+  topic?: Topic;
+  level?: 2 | 3;
+}) {
+  const Heading = level === 2 ? "h2" : "h3";
+  const { paper } = update;
+  return (
+    <li className="entry">
+      {update.kind === "paper" ? (
+        <PaperMeta paper={paper} topic={topic} when={update.date} />
+      ) : (
+        <p className="eyebrow">
+          <time dateTime={update.date}>{update.date}</time>
+          {topic && (
+            <Link className="eyebrow__topic" href={topicPath(topic)}>
+              {topic.label}
+            </Link>
+          )}
+          <span>評論</span>
+        </p>
+      )}
+      <Heading className="entry__title">
+        <Link href={paperPath(paper)}>
+          {update.kind === "paper" ? paper.regimen : update.title}
+        </Link>
+      </Heading>
+      {update.kind === "paper" ? (
+        <>
+          <p className="entry__result">{paper.result}</p>
+          <p className="entry__line">{paper.bottomLine}</p>
+        </>
+      ) : (
+        <p className="entry__line">{update.summary}</p>
+      )}
+    </li>
+  );
+}
+
+/**
+ * Subscribe box (templates/_alerts.html.j2) in its RSS form. The push button comes back with C5 (#95), which
+ * migrates Web Push; until then the box offers RSS only, as the current site does without a push key.
+ */
+export function Alerts() {
+  return (
+    <section className="alerts" aria-labelledby="alerts-title">
+      <h2 id="alerts-title">訂閱新消息</h2>
+      <p>把訂閱網址加進 RSS 閱讀器，新的消息與文獻會自動出現。</p>
+      <div className="alerts__actions">
+        <a className="btn btn--secondary" href={NEWS_FEED}>
+          <Icon name="rss" />
+          RSS
+        </a>
+        <Link className="btn btn--quiet" href="/subscribe/">
+          依主題訂閱
+        </Link>
+      </div>
+    </section>
   );
 }

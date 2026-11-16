@@ -159,3 +159,129 @@ export function findingText(html: string): string {
       return String.fromCodePoint(code);
     });
 }
+
+// --- navigation (templates/base.html.j2) ------------------------------------------------------------------------
+
+export type Area =
+  "home" | "news" | "papers" | "topics" | "subscribe" | "about";
+
+export const NAV: ReadonlyArray<
+  readonly [label: string, href: string, area: Area]
+> = [
+  ["最新消息", "/news/", "news"],
+  ["文獻", "/updates/", "papers"],
+  ["主題", "/topics/", "topics"],
+  ["訂閱", "/subscribe/", "subscribe"],
+  ["關於", "/about/", "about"],
+];
+
+export const TABS: ReadonlyArray<
+  readonly [label: string, href: string, area: Area, icon: string]
+> = [
+  ["首頁", "/", "home", "home"],
+  ["消息", "/news/", "news", "news"],
+  ["文獻", "/updates/", "papers", "list"],
+  ["主題", "/topics/", "topics", "grid"],
+  ["訂閱", "/subscribe/", "subscribe", "bell"],
+];
+
+/** Which navigation entry a path belongs to (the `area` rules at the top of base.html.j2). */
+export function areaOf(path: string): Area {
+  if (path === "/") return "home";
+  if (path.startsWith("/news/")) return "news";
+  if (path.startsWith("/updates/") || path.startsWith("/papers/"))
+    return "papers";
+  if (
+    ["/topics/", "/mcrc/", "/robotic/"].some((prefix) =>
+      path.startsWith(prefix),
+    )
+  )
+    return "topics";
+  if (path.startsWith("/subscribe/")) return "subscribe";
+  return "about";
+}
+
+// --- updates and feeds (sitegen/models.py KnowledgeBase.updates, render.py _feeds) ---------------------------
+
+export type Update = {
+  id: string;
+  date: string;
+  paper: Paper;
+  title: string;
+  summary: string;
+  kind: "paper" | "commentary";
+};
+
+/** Every paper and journal commentary, newest first; ties go to the more recent trial. */
+export function updates(papers: readonly Paper[]): Update[] {
+  const rows: Update[] = papers.map((paper) => ({
+    id: `paper/${paper.slug}`,
+    date: publishedAt(paper),
+    paper,
+    title: paperTitle(paper),
+    summary: `${paper.result}。${paper.bottomLine}`,
+    kind: "paper",
+  }));
+  for (const paper of papers) {
+    for (const c of commentaryOf(paper)) {
+      rows.push({
+        id: `commentary/${paper.slug}/${c.doi ?? c.title}`,
+        date: c.addedAt,
+        paper,
+        title: `${c.journal} ${c.year ?? ""}：${c.title}`.trim(),
+        summary: c.summary,
+        kind: "commentary",
+      });
+    }
+  }
+  return rows.sort(
+    (a, b) => b.date.localeCompare(a.date) || b.paper.year - a.paper.year,
+  );
+}
+
+const daysBefore = (isoDate: string, days: number) => {
+  const day = new Date(`${isoDate}T00:00:00Z`);
+  day.setUTCDate(day.getUTCDate() - days);
+  return day.toISOString().slice(0, 10);
+};
+
+/** The home page dateline: the newest date across papers, commentary and news, and what arrived in its week. */
+export function weekStats(papers: readonly Paper[], news: readonly News[]) {
+  const rows = updates(papers);
+  const lastUpdated =
+    [...rows.map((u) => u.date), ...news.map((n) => n.publishedAt)]
+      .sort()
+      .at(-1) ?? "";
+  const since = daysBefore(lastUpdated, 6);
+  return {
+    lastUpdated,
+    weekPapers: rows.filter((u) => u.kind === "paper" && u.date >= since)
+      .length,
+    weekNews: news.filter((n) => n.publishedAt >= since).length,
+  };
+}
+
+export const NEWS_FEED = "/feed/news.xml";
+export const feedPath = (category: string) => `/feed/${category}.xml`;
+
+/** The RSS feeds the site publishes: everything, news, and each topic with content. An empty topic gets none. */
+export function feedList(
+  papers: readonly Paper[],
+  news: readonly News[],
+  topics: readonly Topic[],
+) {
+  const feeds: { label: string; path: string }[] = [
+    { label: "全部更新", path: "/rss.xml" },
+  ];
+  if (news.length) feeds.push({ label: "最新消息", path: NEWS_FEED });
+  for (const topic of topics) {
+    const has =
+      papers.some((p) => p.topic === topic.key) ||
+      news.some(
+        (n) => papers.find((p) => p.id === n.paperId)?.topic === topic.key,
+      );
+    if (has && topic.roboticSections.length === 0)
+      feeds.push({ label: topic.label, path: feedPath(topic.slug) });
+  }
+  return feeds;
+}

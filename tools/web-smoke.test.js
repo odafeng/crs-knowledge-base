@@ -17,72 +17,6 @@ async function freePort() {
   return port;
 }
 
-for (const mode of ['start', 'dev']) {
-  test(`Next.js ${mode}: startup, shared layout, navigation, and errors`, { timeout: 90000 }, async () => {
-    const port = await freePort();
-    const origin = `http://127.0.0.1:${port}`;
-    const server = spawn(process.execPath, [NEXT, mode, '--hostname', '127.0.0.1', '--port', String(port)], {
-      cwd: APP,
-      env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    let output = '';
-    let browser;
-    server.stdout.on('data', chunk => { output += chunk; });
-    server.stderr.on('data', chunk => { output += chunk; });
-    try {
-      const deadline = Date.now() + 45000;
-      let health;
-      while (Date.now() < deadline && server.exitCode === null) {
-        try {
-          health = await fetch(`${origin}/api/health`, { signal: AbortSignal.timeout(5000) });
-          if (health.ok) break;
-        } catch { /* Wait for the real Next.js process to listen. */ }
-        await delay(100);
-      }
-      assert.equal(health?.status, 200, output);
-      assert.equal(health.headers.get('cache-control'), 'no-store');
-      assert.deepEqual(await health.json(), { status: 'ok' });
-
-      browser = await chromium.launch();
-      const page = await browser.newPage({ viewport: { width: 360, height: 812 } });
-      const errors = [];
-      page.on('pageerror', error => errors.push(error.message));
-      const response = await page.goto(origin);
-      assert.equal(response.status(), 200);
-      assert.equal(await page.title(), 'GutHub｜大腸直腸外科實證更新');
-      assert.equal(await page.locator('html').getAttribute('lang'), 'zh-Hant-TW');
-      assert.equal(await page.locator('main h1').count(), 1);
-      assert.match(await page.locator('main h1').innerText(), /實證與討論/);
-      assert.equal(await page.getByRole('link', { name: '閱讀文獻', exact: true }).getAttribute('href'),
-        'https://odafeng.github.io/crs-knowledge-base/updates/');
-      assert.equal(await page.locator('meta[name="robots"]').getAttribute('content'), 'noindex, nofollow');
-      for (const width of [360, 1280]) {
-        await page.setViewportSize({ width, height: 812 });
-        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-      }
-      const font = await page.evaluate(async () => {
-        await document.fonts.load('16px Archivo', 'GutHub');
-        return document.fonts.check('16px Archivo', 'GutHub');
-      });
-      assert.equal(font, true);
-      assert.equal((await page.request.get(`${origin}/favicon.svg`)).status(), 200);
-      assert.equal((await page.goto(`${origin}/missing-page`)).status(), 404);
-      await page.getByRole('link', { name: 'GutHub 首頁', exact: true }).click();
-      await page.waitForURL(origin + '/');
-      assert.match(await page.locator('main').innerText(), /實證與討論/);
-      assert.deepEqual(errors, []);
-    } finally {
-      if (browser) await browser.close();
-      const stopped = new Promise(resolve => server.once('exit', resolve));
-      if (server.exitCode === null) {
-        server.kill('SIGTERM');
-        await stopped;
-      }
-    }
-  });
-}
-
 // Reading pages (C2a #64) against a mock of the B5 read API: one item of every page type, all four figure kinds.
 // Slugs differ from real content so a reused .next ISR cache cannot answer instead of the mock; CI builds fresh.
 const http = require('node:http');
@@ -139,14 +73,86 @@ function mockApi() {
   });
 }
 
-test('Next.js start: reading pages render from the read API', { timeout: 90000 }, async () => {
-  const api = mockApi();
+let api;
+test.before(async () => {
+  api = mockApi();
   await new Promise(resolve => api.listen(0, '127.0.0.1', resolve));
+});
+test.after(() => new Promise(resolve => api.close(resolve)));
+const apiUrl = () => `http://127.0.0.1:${api.address().port}/api/v1`;
+
+for (const mode of ['start', 'dev']) {
+  test(`Next.js ${mode}: startup, shared layout, navigation, and errors`, { timeout: 90000 }, async () => {
+    const port = await freePort();
+    const origin = `http://127.0.0.1:${port}`;
+    const server = spawn(process.execPath, [NEXT, mode, '--hostname', '127.0.0.1', '--port', String(port)], {
+      cwd: APP,
+      env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1', GUTHUB_API_URL: apiUrl() },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let output = '';
+    let browser;
+    server.stdout.on('data', chunk => { output += chunk; });
+    server.stderr.on('data', chunk => { output += chunk; });
+    try {
+      const deadline = Date.now() + 45000;
+      let health;
+      while (Date.now() < deadline && server.exitCode === null) {
+        try {
+          health = await fetch(`${origin}/api/health`, { signal: AbortSignal.timeout(5000) });
+          if (health.ok) break;
+        } catch { /* Wait for the real Next.js process to listen. */ }
+        await delay(100);
+      }
+      assert.equal(health?.status, 200, output);
+      assert.equal(health.headers.get('cache-control'), 'no-store');
+      assert.deepEqual(await health.json(), { status: 'ok' });
+
+      browser = await chromium.launch();
+      const page = await browser.newPage({ viewport: { width: 360, height: 812 } });
+      const errors = [];
+      page.on('pageerror', error => errors.push(error.message));
+      const response = await page.goto(origin);
+      assert.equal(response.status(), 200);
+      assert.equal(await page.title(), 'GutHub｜大腸直腸外科實證更新');
+      assert.equal(await page.locator('html').getAttribute('lang'), 'zh-Hant-TW');
+      assert.equal(await page.locator('main h1').count(), 1);
+      assert.equal(await page.locator('main h1').textContent(), 'GutHub：大腸直腸外科實證更新');
+      assert.equal(await page.getByRole('link', { name: '讀這則消息' }).getAttribute('href'), '/news/smoke-news/');
+      assert.equal(await page.locator('.tabbar a[aria-current="page"]').innerText(), '首頁');
+      assert.equal(await page.locator('meta[name="robots"]').getAttribute('content'), 'noindex, nofollow');
+      for (const width of [360, 1280]) {
+        await page.setViewportSize({ width, height: 812 });
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+      }
+      const font = await page.evaluate(async () => {
+        await document.fonts.load('16px Archivo', 'GutHub');
+        return document.fonts.check('16px Archivo', 'GutHub');
+      });
+      assert.equal(font, true);
+      assert.equal((await page.request.get(`${origin}/favicon.svg`)).status(), 200);
+      assert.equal((await page.goto(`${origin}/missing-page`)).status(), 404);
+      await page.getByRole('link', { name: 'GutHub 首頁', exact: true }).click();
+      await page.waitForURL(origin + '/');
+      assert.match(await page.locator('main').innerText(), /新收錄文獻/);
+      assert.deepEqual(errors, []);
+    } finally {
+      if (browser) await browser.close();
+      const stopped = new Promise(resolve => server.once('exit', resolve));
+      if (server.exitCode === null) {
+        server.kill('SIGTERM');
+        await stopped;
+      }
+    }
+  });
+}
+
+test('Next.js start: reading pages render from the read API', { timeout: 90000 }, async () => {
   const port = await freePort();
   const origin = `http://127.0.0.1:${port}`;
   const server = spawn(process.execPath, [NEXT, 'start', '--hostname', '127.0.0.1', '--port', String(port)], {
     cwd: APP,
-    env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1', GUTHUB_API_URL: `http://127.0.0.1:${api.address().port}/api/v1` },
+    env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1', GUTHUB_API_URL: apiUrl() },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let output = '';
@@ -164,11 +170,20 @@ test('Next.js start: reading pages render from the read API', { timeout: 90000 }
       '/news/smoke-news/': ['二線存活延長', 'class="figure"', 'class="compare"', 'class="meters"', 'interval__point', '看文獻整理'],
       '/mcrc/smoke-braf/': ['核准與給付現況', '有條件給付', '給付規定 9.134', 'BEACON 整理', '二線標準治療'],
       '/robotic/tme/': ['機器手臂 TME', 'ROLARR，轉換率 NS', 'TME 品質', '詳細'],
+      '/': ['二線存活延長', '本週新增', '新收錄文獻', '社論標題', '核准與給付現況', 'FDA 已核准', '機器手臂 TME'],
+      '/topics/': ['mCRC 治療', '機器手臂手術', '最新：Encorafenib + cetuximab'],
+      '/mcrc/': ['BRAF V600E', '1</span>篇文獻'],
+      '/robotic/': ['機器手臂 TME', '證據演進有 1 個時間點'],
+      '/updates/': ['共 2 則', '評論', '社論標題'],
+      '/news/': ['二線存活延長', 'AI 新聞稿', 'RSS'],
+      '/about/': ['內容怎麼產生', 'AI 新聞稿'],
+      '/subscribe/': ['/rss.xml', '/feed/news.xml', '/feed/smoke-braf.xml', '/atom.xml', '/feed.json'],
     };
     for (const [path, needles] of Object.entries(expectations)) {
       const response = await fetch(origin + path);
       assert.equal(response.status, 200, `${path}\n${output}`);
-      const html = await response.text();
+      // React separates adjacent text nodes with <!-- --> in server HTML; compare the visible text run.
+      const html = (await response.text()).replaceAll('<!-- -->', '');
       for (const needle of needles) assert.ok(html.includes(needle), `${path} lacks ${needle}`);
       assert.ok(!html.includes('href="docs/'), `${path} keeps a link into docs/`);
     }
@@ -193,6 +208,5 @@ test('Next.js start: reading pages render from the read API', { timeout: 90000 }
       server.kill('SIGTERM');
       await stopped;
     }
-    await new Promise(resolve => api.close(resolve));
   }
 });
