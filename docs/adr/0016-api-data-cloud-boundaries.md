@@ -23,6 +23,14 @@
 
 Supabase Data API 不作為留言或內容的寫入入口；寫入一律經 FastAPI，避免繞過限速與審核規則。若前端直接讀取 Supabase，僅限公開 view，並以 RLS 驗證。帳號、區域、費用上限與祕密交付仍由 F1 確認。
 
+### 資料庫存取與權限執行層（2026-11-16，B3 #60）
+
+維護者選擇由 FastAPI 執行留言的身分規則，資料庫對外封閉：
+
+- 資料表放在不對 Data API 公開的 `app` schema。`anon`、`authenticated` 對它沒有任何 grant，所有表也都開啟 RLS 且不給這兩個 role policy；即使日後誤把 `app` 加進公開 schema，仍讀不到資料。這些表也不加入 Realtime publication。
+- FastAPI 以專用的 `guthub_api` role 連線。作者只能改自己的留言、管理者審核與查閱身分等規則只寫在 FastAPI，不在 SQL policy 再寫一份。作者／他人／訪客／管理者矩陣由 D2 經 API 對真實資料庫測試。
+- 資料庫仍負責與身分無關的不變條件：foreign key、唯一鍵、狀態與欄位約束、帳號首則留言自動設為 `pending` 的 trigger，以及 `guthub_api` 只能新增、不能修改或刪除的 audit 表。
+
 ### 服務邊界
 
 - Next.js 負責公開頁面、互動 component、session 相關呈現與必要的伺服器端整合。
@@ -66,6 +74,7 @@ A 的預期優點是 Auth、資料、Storage 的整合工作較少。B 適合已
 - Supabase 將部分權限與產品整合綁在其服務上；全 GCP 則需要更多 IAM、連線、Auth 整合與費用管理工作。
 - 匯入、單一 writer 切換與保留新留言的 rollback，比只搬靜態檔複雜；必須先在 staging 演練。
 - FastAPI 跑在 Cloud Run、資料在 Supabase，兩者跨供應商連線，需處理連線池、延遲與兩邊的祕密管理。
+- 身分規則只在 FastAPI 一處，維護簡單；代價是 API 若有越權漏洞（例如可改他人留言的 IDOR），資料庫不會再擋一次，所以 D2 的權限矩陣測試是主要防線。
 - 本決策尚未建立雲端資源、執行 migration 或切換 production。
 
 ## References
