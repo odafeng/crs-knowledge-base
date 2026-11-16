@@ -102,8 +102,37 @@ jobs:
         working-directory: apps/web
         run: npm run smoke
 
+  api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        run: pip install uv==0.10.12
+
+      - name: Install locked API dependencies
+        run: uv sync --frozen
+
+      - name: Lint and format
+        run: |
+          uv run --frozen ruff check .
+          uv run --frozen ruff format --check .
+
+      - name: Type check
+        run: uv run --frozen pyright
+
+      - name: Unit, contract, and startup smoke tests
+        run: uv run --frozen pytest -v
+
   deploy:
-    needs: [test, web]
+    needs: [test, web, api]
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
