@@ -53,10 +53,22 @@ export function apiFetch(
 
 const NO_RETURN = /^\/(auth|login)(\/|$)/;
 
-/** Where to go after signing in: a path on this site, never another origin or the sign-in pages themselves. */
+const PARSE_BASE = "https://guthub.invalid";
+
+/**
+ * Where to go after signing in: a path on this site, never another origin or the sign-in pages themselves.
+ * Parsed the way the browser will parse it (which drops tabs and newlines, so "/\t/evil" means "//evil").
+ */
 export function safeNext(next: string | null | undefined): string {
-  if (!next || !next.startsWith("/") || /^\/[/\\]/.test(next)) return "/";
-  return NO_RETURN.test(next) ? "/" : next;
+  if (!next?.startsWith("/")) return "/";
+  let url: URL;
+  try {
+    url = new URL(next, PARSE_BASE);
+  } catch {
+    return "/";
+  }
+  if (url.origin !== PARSE_BASE || NO_RETURN.test(url.pathname)) return "/";
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 /** Same rules as the API's AccountUpdate (1-80 characters after trimming, no control characters). */

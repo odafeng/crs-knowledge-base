@@ -14,7 +14,14 @@ describe("safeNext keeps post-login redirects on this site", () => {
     ["javascript:alert(1)", "/"],
     ["/auth/confirm/?token_hash=x", "/"],
     ["/login/", "/"],
-  ])("%s -> %s", (input, expected) => {
+    // Browsers drop tabs and newlines while parsing URLs, turning these into //evil.test.
+    ["/\t/evil.test/", "/"],
+    ["/\n/evil.test/", "/"],
+    ["/\r\\evil.test/", "/"],
+    [" //evil.test/", "/"],
+    ["/%2F%2Fevil.test/", "/%2F%2Fevil.test/"],
+    ["/auth%2Fcallback/", "/auth%2Fcallback/"],
+  ])("%j -> %s", (input, expected) => {
     expect(safeNext(input)).toBe(expected);
   });
 });
