@@ -10,6 +10,7 @@ from guthub_api.comments import router as comments_router
 from guthub_api.content import router as content_router
 from guthub_api.db import open_pool
 from guthub_api.errors import install_error_handling
+from guthub_api.moderation import router as moderation_router
 from guthub_api.settings import Settings
 
 API_PREFIX = "/api/v1"
@@ -62,6 +63,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(content_router, prefix=API_PREFIX)
     app.include_router(accounts_router, prefix=API_PREFIX)
     app.include_router(comments_router, prefix=API_PREFIX)
+    app.include_router(moderation_router, prefix=API_PREFIX)
     return app
 
 

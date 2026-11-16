@@ -137,3 +137,8 @@
 .comment-gate {
   margin-block-start: var(--space-5);
 }
+.moderation__reports {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  font-size: var(--text-sm);
+}

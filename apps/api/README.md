@@ -76,6 +76,16 @@ uv run --frozen pytest
 
 CORS 會公開 `Retry-After`，讓網站告訴讀者要等多久。
 
+## 留言審核（D5）
+
+只有 `app.accounts.is_admin` 的帳號能用，由維護者在資料庫設定（`update app.accounts set is_admin = true where id = '<account id>'`）。網站的審核頁在 `/admin/comments/`，帳號設定頁會顯示入口。
+
+- `GET /admin/comments`：等待第一次審核（`pending`）或有未處理檢舉的留言，舊的在前。附上檢舉理由，不附檢舉人與作者。
+- `PATCH /admin/comments/{id}`：`{action, reason}`。`publish` 用於核准、復原，或保留被檢舉的留言；`hide` 對讀者隱藏留言。兩者都會結束這則留言未處理的檢舉。狀態不會改變時回 409。
+- `POST /admin/comments/{id}/author`：`{reason}`，回傳作者的帳號 ID 與顯示名稱。作者對應在刪除 90 天後清除，之後回 404。
+
+每個動作與每次查看作者都在同一個交易裡寫入 `app.moderation_events`（append-only），包含操作者與原因。審核只改讀者留言，不會改動文獻、文獻的審核狀態或期刊 commentary。公開留言列表帶 `Cache-Control: public, max-age=30`，所以隱藏後最多 30 秒內，CDN 或瀏覽器快取可能仍顯示舊列表。
+
 ## 讀取 API（B5）
 
 `/papers`、`/papers/{id}`、`/news`、`/news/{id}`、`/topics`、`/topics/{key}`、`/search` 依 contract 實作：

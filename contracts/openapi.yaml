@@ -379,6 +379,34 @@ paths:
       description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
         permission; clients cannot grant themselves this permission.'
       x-required-permission: comments:moderate
+  /admin/comments/{commentId}/author:
+    post:
+      operationId: revealCommentAuthor
+      summary: Look up who wrote a comment, with a reason that is recorded before the answer is returned.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthorIdentity'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/CommentId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AuthorRequest'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
+        permission; clients cannot grant themselves this permission. 404 once the mapping is purged.'
+      x-required-permission: comments:moderate
 components:
   securitySchemes:
     BearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
@@ -814,17 +842,43 @@ components:
         action:
           type: string
           enum: [publish, hide]
-        reason: {type: string, minLength: 1}
+          description: publish approves, restores, or keeps a reported comment; hide removes it from readers. Both close
+            the comment's open reports.
+        reason: {type: string, minLength: 1, maxLength: 1000, description: Kept in the audit record.}
+    AuthorRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: {type: string, minLength: 1, maxLength: 1000, description: Kept in the audit record.}
+    AuthorIdentity:
+      type: object
+      additionalProperties: false
+      required: [accountId, displayName]
+      properties:
+        accountId: {type: string, format: uuid}
+        displayName: {type: string, minLength: 1}
+      description: Private moderator response; every lookup is recorded with its reason (ADR-0017).
     ModerationItem:
       type: object
       additionalProperties: false
-      required: [comment, status, reportCount]
+      required: [comment, status, reportCount, reports]
       properties:
         comment: {$ref: '#/components/schemas/PublicComment'}
         status:
           type: string
           enum: [pending, published, hidden]
         reportCount: {type: integer, minimum: 0}
+        reports:
+          type: array
+          description: Open reports only, without who reported.
+          items:
+            type: object
+            additionalProperties: false
+            required: [reason, createdAt]
+            properties:
+              reason: {type: string}
+              createdAt: {type: string, format: date-time}
       description: Private moderator response. Does not include the private author mapping.
     Error:
       type: object

@@ -35,7 +35,7 @@ const nextConfig: NextConfig = {
       })),
       // Sign-in pages hold no identity in their HTML (the session stays in the browser), but their URLs carry
       // one-time tokens; keep them out of every shared cache (D1 #67).
-      ...["/account/", "/auth/:path*"].map((source) => ({
+      ...["/account/", "/auth/:path*", "/admin/:path*"].map((source) => ({
         source,
         headers: [{ key: "Cache-Control", value: "private, no-store" }],
       })),

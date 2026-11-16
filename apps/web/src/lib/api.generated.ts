@@ -289,6 +289,26 @@ export interface paths {
         patch: operations["moderateComment"];
         trace?: never;
     };
+    "/admin/comments/{commentId}/author": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Look up who wrote a comment, with a reason that is recorded before the answer is returned.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission; clients cannot grant themselves this permission. 404 once the mapping is purged.
+         */
+        post: operations["revealCommentAuthor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -534,9 +554,23 @@ export interface components {
             commentId: string;
         };
         ModerationRequest: {
-            /** @enum {string} */
+            /**
+             * @description publish approves, restores, or keeps a reported comment; hide removes it from readers. Both close the comment's open reports.
+             * @enum {string}
+             */
             action: "publish" | "hide";
+            /** @description Kept in the audit record. */
             reason: string;
+        };
+        AuthorRequest: {
+            /** @description Kept in the audit record. */
+            reason: string;
+        };
+        /** @description Private moderator response; every lookup is recorded with its reason (ADR-0017). */
+        AuthorIdentity: {
+            /** Format: uuid */
+            accountId: string;
+            displayName: string;
         };
         /** @description Private moderator response. Does not include the private author mapping. */
         ModerationItem: {
@@ -544,6 +578,12 @@ export interface components {
             /** @enum {string} */
             status: "pending" | "published" | "hidden";
             reportCount: number;
+            /** @description Open reports only, without who reported. */
+            reports: {
+                reason: string;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
         };
         Error: {
             error: {
@@ -1168,6 +1208,38 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    revealCommentAuthor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                commentId: components["parameters"]["CommentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthorRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorIdentity"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             422: components["responses"]["InvalidRequest"];
             429: components["responses"]["RateLimited"];
             503: components["responses"]["Unavailable"];
