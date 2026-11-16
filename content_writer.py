@@ -8,7 +8,8 @@ python content_writer.py export   --database-url URL --out DIR  # one-way copy i
 URL may come from GUTHUB_IMPORT_DATABASE_URL; it needs the role that owns the app tables. Before cutover, stop every
 JSON writer (the Paper Watch, accept and unpublish workflows) and import the final JSON with import_content.py.
 cutover then refuses unless the database holds exactly what the JSON holds, records that manifest as the watermark,
-and writes data/WRITER=postgres, which must be committed so the JSON writers refuse from then on.
+copies Paper Watch's tracking files into app.paper_watch_state, and writes data/WRITER=postgres, which must be
+committed so the JSON writers refuse from then on. rollback writes the tracking state back to data/ as well.
 """
 
 import argparse
@@ -22,6 +23,8 @@ from typing import Any
 from import_content import ROOT, WriterError, build_rows, check_writer, export_kb, manifest
 
 WRITER_FILE = "data/WRITER"
+# Paper Watch tracking state moves with the content (E3 #76): name in app.paper_watch_state -> file under data/.
+TRACKING = {"tracked-dois": "data/tracked-dois.json", "tracked-abstracts": "data/tracked-abstracts.json"}
 LOCK = "select pg_advisory_xact_lock(hashtext('guthub-content-writer'))"
 
 
@@ -57,6 +60,13 @@ def cutover(conn: Any, root: Path = ROOT) -> dict[str, Any]:
             raise CutoverError(
                 f"the database differs from the JSON in {', '.join(differing)}; run import_content.py, then cutover"
             )
+        for name, path in TRACKING.items():
+            if (root / path).exists():
+                conn.execute(
+                    "insert into app.paper_watch_state (name, data) values (%s, %s::jsonb)"
+                    " on conflict (name) do update set data = excluded.data, updated_at = now()",
+                    (name, (root / path).read_text(encoding="utf-8")),
+                )
         conn.execute(
             "update app.content_writer set writer = 'postgres', watermark = %s, changed_at = now()",
             (json.dumps(watermark),),
@@ -71,6 +81,8 @@ def rollback(conn: Any, root: Path = ROOT) -> None:
         conn.execute(LOCK)
         check_writer(conn, "postgres")
         export_kb(conn, root)
+        for name, data in conn.execute("select name, data from app.paper_watch_state").fetchall():
+            (root / TRACKING[name]).write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
         conn.execute("update app.content_writer set writer = 'json', watermark = null, changed_at = now()")
     _set_flag(root, "json")
 

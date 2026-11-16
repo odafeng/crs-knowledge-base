@@ -42,7 +42,7 @@ def conn() -> Iterator:
 
     with psycopg.connect(DB_URL) as connection, connection.transaction(force_rollback=True):
         connection.execute(f"truncate {CONTENT}, app.comments, app.comment_reports, app.moderation_events cascade")
-        connection.execute("truncate app.publish_events")
+        connection.execute("truncate app.publish_events, app.paper_watch_state")
         connection.execute("update app.content_writer set writer = 'json', watermark = null")
         apply(connection, build_rows(ROOT))
         yield connection
@@ -99,6 +99,9 @@ def test_cutover_hands_over_with_a_watermark(conn, tmp_path):
         apply(conn, build_rows(ROOT))
     with pytest.raises(content_writer.CutoverError):
         content_writer.cutover(conn, root)
+    # Paper Watch's tracking state moved in with the content (E3 #76).
+    stored = dict(conn.execute("select name, data from app.paper_watch_state").fetchall())
+    assert stored["tracked-dois"] == json.loads((ROOT / "data/tracked-dois.json").read_text())
 
 
 def test_the_frozen_json_writer_refuses_to_publish(tmp_path):
@@ -120,6 +123,9 @@ def test_rollback_exports_the_database_and_hands_back(db_writer, tmp_path):
     assert db_writer.execute("select writer from app.content_writer").fetchone()[0] == "json"
     papers = json.loads((root / "data/papers.json").read_text())
     assert any(p["id"] == "test-auto-2026" for block in papers.values() for p in block.get("papers", []))
+    assert json.loads((root / "data/tracked-dois.json").read_text()) == json.loads(
+        (ROOT / "data/tracked-dois.json").read_text()
+    )
 
 
 # --- publishing through the database ------------------------------------------------------------------------------
@@ -214,6 +220,7 @@ def committed_writer(tmp_path, monkeypatch):
     with psycopg.connect(DB_URL, autocommit=True) as connection:
         connection.execute("update app.content_writer set writer = 'json', watermark = null")
         connection.execute("delete from app.publish_events")
+        connection.execute("delete from app.paper_watch_state")
         connection.execute("delete from app.papers where id like 'test-auto-%'")
         apply(connection, build_rows(ROOT))
 
@@ -243,3 +250,15 @@ def test_concurrent_writers_do_not_lose_each_others_papers(committed_writer):
     with psycopg.connect(DB_URL) as connection:
         ids = {r[0] for r in connection.execute("select id from app.public_papers where id like 'test-auto-%'")}
     assert ids == {"test-auto-1", "test-auto-2", "test-auto-3"}
+
+
+def test_tracking_state_reads_and_writes_the_database_when_configured(committed_writer):
+    import config
+
+    tracked = config.load_tracked_dois()
+    assert tracked == json.loads((ROOT / "data/tracked-dois.json").read_text())
+    config.save_tracked_dois({**tracked, "10.9999/e3-tracking": {"topic": "mCRC-MSI-H", "added": TODAY}})
+    assert "10.9999/e3-tracking" in config.load_tracked_dois()
+    assert "10.9999/e3-tracking" not in json.loads((ROOT / "data/tracked-dois.json").read_text())  # repo untouched
+    config.save_tracked_abstracts({"abs-1": {"added": TODAY}})
+    assert config.load_tracked_abstracts() == {"abs-1": {"added": TODAY}}

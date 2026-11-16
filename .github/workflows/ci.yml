@@ -169,6 +169,18 @@ jobs:
           GUTHUB_REQUIRE_DB: '1'
         run: uv run --frozen pytest -v
 
+      # The images deploy-staging.yml ships (E3 #76): the API answers health, the worker starts.
+      - name: Container images build and start
+        working-directory: .
+        run: |
+          docker build -q -t guthub-api:ci apps/api
+          docker run -d --name api-ci -p 18080:8080 -e GUTHUB_ENVIRONMENT=test guthub-api:ci
+          for i in $(seq 1 20); do curl -sf http://127.0.0.1:18080/api/v1/health && break; sleep 1; done
+          curl -sf http://127.0.0.1:18080/api/v1/health
+          docker rm -f api-ci
+          docker build -q -f worker/Dockerfile -t guthub-worker:ci .
+          docker run --rm guthub-worker:ci --help | grep -q -- --dry-run
+
   # The whole new stack against the current site (C2d #93): Supabase -> import -> FastAPI -> Next.js, compared
   # with sitegen's output from the same data, then axe and the reading flow in a browser.
   e2e:

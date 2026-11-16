@@ -26,6 +26,17 @@ Pages 使用 GitHub Actions 發布通過測試的 `site/` artifact，停用 `mai
 
 目前的 `ci.yml` 設計是：驗證資料 → pytest → 建置 `site/` → 連結、E2E 與 accessibility 檢查 → 部署同一份 artifact。依 [A1 #53](https://github.com/odafeng/crs-knowledge-base/issues/53) 的決定，資料庫、Auth 與檔案採 Supabase，FastAPI 與 Python worker 部署在 Cloud Run（[ADR-0016](docs/adr/0016-api-data-cloud-boundaries.md)）；正式切換由 [F4 #79](https://github.com/odafeng/crs-knowledge-base/issues/79) 驗收。
 
+**Staging**（新架構）：每次 API、worker 或 migration 有變動並合併到 `main`，`deploy-staging.yml` 會用 GitHub OIDC 身分聯合登入 Google Cloud。它依序做這幾件事：
+1. 先套用 Supabase migration。
+2. build 並推送 API 與 worker 映像。
+3. 部署 Cloud Run 服務 `guthub-api`。
+4. 部署每天 03:30（台灣時間）清除過期作者對應的 job。
+
+Paper Watch 的 Cloud Run job 會呼叫付費模型並開 GitHub issue，所以預設關閉。維護者在 staging 的 Secret Manager 放入以下三個祕密，並把 repository 變數 `PAPER_WATCH_ENABLED` 設為 `true` 後才會部署：
+- `anthropic-api-key`
+- `paper-watch-github-token`
+- `guthub-content-database-url`（擁有內容資料表的角色）
+
 repository 目前仍叫 `odafeng/crs-knowledge-base`。顯示名稱、repository 名稱和正式網域是不同變更。依 [A3 #55](https://github.com/odafeng/crs-knowledge-base/issues/55)，這一階段只改顯示名稱，repository 與公開網址維持不變。
 
 ## 建置工作如何追蹤

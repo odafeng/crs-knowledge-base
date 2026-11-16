@@ -41,6 +41,7 @@ TABLES = [
     "comment_likes",
     "comment_like_events",
     "content_writer",
+    "paper_watch_state",
     "publish_events",
 ]
 VIEWS = ["public_papers", "public_news", "public_comments"]

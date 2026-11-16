@@ -80,16 +80,48 @@ def is_conference_season() -> tuple[bool, str | None]:
     return False, None
 
 
-def load_tracked_dois():
-    if TRACKED_DOIS_FILE.exists():
-        with open(TRACKED_DOIS_FILE) as f:
+# Tracking state lives in data/*.json until cutover; with GUTHUB_CONTENT_DATABASE_URL set (a Cloud Run job, which has
+# no persistent disk) it lives in app.paper_watch_state, moved there by content_writer.py cutover (E3 #76, ADR-0021).
+CONTENT_DATABASE_ENV = "GUTHUB_CONTENT_DATABASE_URL"
+
+
+def _load_state(name: str, path: Path) -> dict:
+    url = os.environ.get(CONTENT_DATABASE_ENV)
+    if url:
+        import psycopg
+
+        with psycopg.connect(url) as conn:
+            row = conn.execute("select data from app.paper_watch_state where name = %s", (name,)).fetchone()
+        return row[0] if row else {}
+    if path.exists():
+        with open(path) as f:
             return json.load(f)
     return {}
 
 
-def save_tracked_dois(data):
-    with open(TRACKED_DOIS_FILE, "w") as f:
+def _save_state(name: str, path: Path, data: dict) -> None:
+    url = os.environ.get(CONTENT_DATABASE_ENV)
+    if url:
+        import psycopg
+        from psycopg.types.json import Jsonb
+
+        with psycopg.connect(url) as conn:
+            conn.execute(
+                "insert into app.paper_watch_state (name, data) values (%s, %s)"
+                " on conflict (name) do update set data = excluded.data, updated_at = now()",
+                (name, Jsonb(data)),
+            )
+        return
+    with open(path, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def load_tracked_dois():
+    return _load_state("tracked-dois", TRACKED_DOIS_FILE)
+
+
+def save_tracked_dois(data):
+    _save_state("tracked-dois", TRACKED_DOIS_FILE, data)
 
 
 # A processed paper is keyed by DOI; one PubMed lists without a DOI is keyed "pmid:<PMID>".
@@ -122,12 +154,8 @@ def is_tracked(paper: dict, dois: set[str], pmids: set[str]) -> bool:
 
 
 def load_tracked_abstracts():
-    if TRACKED_ABSTRACTS_FILE.exists():
-        with open(TRACKED_ABSTRACTS_FILE) as f:
-            return json.load(f)
-    return {}
+    return _load_state("tracked-abstracts", TRACKED_ABSTRACTS_FILE)
 
 
 def save_tracked_abstracts(data):
-    with open(TRACKED_ABSTRACTS_FILE, "w") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    _save_state("tracked-abstracts", TRACKED_ABSTRACTS_FILE, data)
