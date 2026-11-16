@@ -27,27 +27,35 @@ export async function getPaper(
     },
   );
   if (!response.ok) {
-    let message = "無法載入文獻，請稍後再試。";
-    let code: string | undefined;
-    try {
-      const payload: unknown = await response.json();
-      if (payload && typeof payload === "object" && "error" in payload) {
-        const error = payload.error;
-        if (
-          error &&
-          typeof error === "object" &&
-          "message" in error &&
-          typeof error.message === "string"
-        ) {
-          message = error.message;
-          if ("code" in error && typeof error.code === "string")
-            code = error.code;
-        }
-      }
-    } catch {
-      // A proxy or unavailable server may return HTML instead of the API error envelope.
-    }
-    throw new ApiError(response.status, message, code);
+    throw await apiError(response, "無法載入文獻，請稍後再試。");
   }
   return response.json() as Promise<Paper>;
+}
+
+/** Turns a failed response into an ApiError, keeping the contract's error message when the body has one. */
+export async function apiError(
+  response: Response,
+  fallback: string,
+): Promise<ApiError> {
+  let message = fallback;
+  let code: string | undefined;
+  try {
+    const payload: unknown = await response.json();
+    if (payload && typeof payload === "object" && "error" in payload) {
+      const error = payload.error;
+      if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        typeof error.message === "string"
+      ) {
+        message = error.message;
+        if ("code" in error && typeof error.code === "string")
+          code = error.code;
+      }
+    }
+  } catch {
+    // A proxy or unavailable server may return HTML instead of the API error envelope.
+  }
+  return new ApiError(response.status, message, code);
 }

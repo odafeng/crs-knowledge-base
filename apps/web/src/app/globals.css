@@ -3,6 +3,8 @@
 @import "../../../../static/styles/base.css";
 @import "../../../../static/styles/layout.css";
 @import "../../../../static/styles/components.css";
+@import "../../../../static/styles/content.css";
+@import "../../../../static/styles/figures.css";
 
 .reading-intro {
   padding-block: var(--space-10);

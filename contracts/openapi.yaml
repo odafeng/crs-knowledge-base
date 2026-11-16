@@ -497,7 +497,14 @@ components:
       - {$ref: '#/components/schemas/CompareFigure'}
       - {$ref: '#/components/schemas/MetersFigure'}
       - {$ref: '#/components/schemas/IntervalFigure'}
-      discriminator: {propertyName: kind}
+      discriminator:
+        propertyName: kind
+        # Without a mapping, OpenAPI uses schema names ("IntervalFigure") as discriminator values; the data uses these.
+        mapping:
+          numbers: '#/components/schemas/NumbersFigure'
+          compare: '#/components/schemas/CompareFigure'
+          meters: '#/components/schemas/MetersFigure'
+          interval: '#/components/schemas/IntervalFigure'
     NumbersFigure:
       type: object
       additionalProperties: false
