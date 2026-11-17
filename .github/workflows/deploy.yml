@@ -21,6 +21,10 @@ on:
       supabase_ref:
         type: string
         required: true
+      supabase_pooler:
+        description: The Supabase connection pooler host the project lives on (projects can sit on different hosts)
+        type: string
+        required: true
       max_instances:
         type: number
         default: 2
@@ -39,7 +43,7 @@ env:
   API_RUNTIME: api-runtime@${{ inputs.project }}.iam.gserviceaccount.com
   WORKER_RUNTIME: worker-runtime@${{ inputs.project }}.iam.gserviceaccount.com
   SUPABASE_REF: ${{ inputs.supabase_ref }}
-  SUPABASE_POOLER: aws-0-ap-northeast-1.pooler.supabase.com
+  SUPABASE_POOLER: ${{ inputs.supabase_pooler }}
   MAX_INSTANCES: ${{ inputs.max_instances }}
 
 jobs:
