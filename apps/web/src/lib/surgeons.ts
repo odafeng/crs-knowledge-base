@@ -1,5 +1,6 @@
-// Colorectal surgeon membership (H5 #127, ADR-0022). The application is checked by hand against the public registers;
-// the API deletes its details once it is decided or withdrawn.
+// Colorectal surgeon membership (H5 #127, ADR-0022). The application is checked by hand against the public registers,
+// or approved at once when the society's doctor map and a hospital mailbox both match (H10 #168); the API deletes its
+// details once it is decided or withdrawn.
 import { apiFetch } from "./auth";
 import { retryAfterOf } from "./comments";
 
@@ -56,6 +57,13 @@ export function submitMessage(
   }
 }
 
+/** What a 202 means: approved on the spot, or waiting for the maintainer. */
+export function acceptedMessage(membership: Membership): string {
+  return membership.status === "verified"
+    ? "已開通：學會醫師地圖有你的資料，而且你是用醫院信箱登入。現在可以進入論壇。"
+    : submitMessage(202, null);
+}
+
 export async function loadMembership(
   token: string,
 ): Promise<Membership | null> {
@@ -77,10 +85,13 @@ export async function submitApplication(
     method: "PUT",
     body: JSON.stringify(body),
   }).catch(() => null);
+  const membership =
+    response?.status === 202 ? ((await response.json()) as Membership) : null;
   return {
-    message: submitMessage(response?.status ?? null, retryAfterOf(response)),
-    membership:
-      response?.status === 202 ? ((await response.json()) as Membership) : null,
+    message: membership
+      ? acceptedMessage(membership)
+      : submitMessage(response?.status ?? null, retryAfterOf(response)),
+    membership,
   };
 }
 

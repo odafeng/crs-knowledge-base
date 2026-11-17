@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { asciiDigits, formProblem, submitMessage } from "./surgeons";
+import {
+  acceptedMessage,
+  asciiDigits,
+  formProblem,
+  submitMessage,
+} from "./surgeons";
 
 const form = {
   realName: "王小明",
@@ -25,6 +30,12 @@ describe("surgeon application form", () => {
 
   it("explains each answer from the API", () => {
     expect(submitMessage(202, null)).toContain("已送出");
+    expect(acceptedMessage({ status: "pending", since: null })).toContain(
+      "已送出",
+    );
+    expect(
+      acceptedMessage({ status: "verified", since: "2026-11-17T00:00:00Z" }),
+    ).toContain("已開通");
     expect(submitMessage(403, null)).toBe("請先設定顯示名稱。");
     expect(submitMessage(409, null)).toContain("已經是");
     expect(submitMessage(503, 600)).toContain("維護中");

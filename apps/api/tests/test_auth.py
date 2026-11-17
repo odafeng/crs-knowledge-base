@@ -165,3 +165,19 @@ def test_cors_allows_only_configured_origins_without_credentials() -> None:
     assert "retry-after" in simple.headers["Access-Control-Expose-Headers"].lower()  # rate-limit hint readable
     denied = client.options(f"{API_PREFIX}/me", headers={"Origin": "https://evil.test", **preflight})
     assert "Access-Control-Allow-Origin" not in denied.headers
+
+
+@pytest.mark.parametrize(
+    ("amr", "mailed"),
+    [
+        ([{"method": "otp", "timestamp": 1}], "dr@cgmh.org.tw"),
+        ([{"method": "magiclink", "timestamp": 1}], "dr@cgmh.org.tw"),
+        ([{"method": "password", "timestamp": 1}], None),  # sign-up confirmations are off: no mailbox was proven
+        (None, None),
+        ("otp", None),
+    ],
+)
+def test_the_email_counts_only_for_sessions_opened_from_a_mailed_link(amr: Any, mailed: str | None) -> None:
+    verifier = TokenVerifier(ISSUER, lambda _token: KEY.public_key())
+    claims = {"email": "dr@cgmh.org.tw"} | ({"amr": amr} if amr is not None else {})
+    assert verifier.verify(token(**claims)).mailed_email == mailed

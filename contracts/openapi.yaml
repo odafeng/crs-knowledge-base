@@ -569,7 +569,8 @@ paths:
       - BearerAuth: []
       responses:
         '202':
-          description: Pending review
+          description: Accepted. Pending review, or verified at once when the society's doctor map lists the name at
+            the hospital and the session was opened from a link mailed to that hospital's domain (H10).
           content:
             application/json:
               schema: {$ref: '#/components/schemas/SurgeonMembership'}
@@ -1245,7 +1246,8 @@ components:
           items:
             type: object
             additionalProperties: false
-            required: [accountId, displayName, realName, hospital, department, certificateDigits, submittedAt]
+            required: [accountId, displayName, realName, hospital, department, certificateDigits, submittedAt,
+              hospitalEmail, roster]
             properties:
               accountId: {type: string, format: uuid}
               displayName: {type: string}
@@ -1254,6 +1256,13 @@ components:
               department: {type: string}
               certificateDigits: {type: string, pattern: '^[0-9]{3}$'}
               submittedAt: {type: string, format: date-time}
+              hospitalEmail:
+                type: boolean
+                description: The applicant signed in from a mailbox at the stated hospital's domain.
+              roster:
+                type: string
+                enum: [listed, unlisted, unavailable]
+                description: Whether the society's doctor map shows this name at this hospital.
     SurgeonDecision:
       type: object
       additionalProperties: false
