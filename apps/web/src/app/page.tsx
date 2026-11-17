@@ -44,6 +44,9 @@ export const metadata: Metadata = {
   title: `${SITE_NAME}｜${TAGLINE}`,
 };
 
+// The guideline Q&A (crs-guideline-rag): a separate site that answers from the guideline text itself.
+const GUIDELINE_QA = "https://crs.fredrichuang.com/";
+
 export default async function Home() {
   // Rendered per request so `next build` never calls the API; API reads stay cached for 300 s (lib/content.ts).
   await connection();
@@ -194,6 +197,22 @@ export default async function Home() {
           </section>
           <aside className="home-rail" aria-label="訂閱、主題與給付現況">
             <Alerts />
+            <section className="ask" aria-labelledby="ask-title">
+              <h2 className="rail-title" id="ask-title">
+                問指引
+              </h2>
+              <p>
+                用中文問
+                NCCN、ESMO、ASCRS、JSCCR、台灣共識與健保給付規定，答案附上指引原文與出處。
+              </p>
+              <a
+                className="btn btn--primary"
+                href={GUIDELINE_QA}
+                rel="noopener"
+              >
+                開啟指引問答
+              </a>
+            </section>
             <section aria-labelledby="topics-title">
               <h2 className="rail-title" id="topics-title">
                 主題

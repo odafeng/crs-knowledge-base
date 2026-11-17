@@ -54,6 +54,7 @@
 
 /* Rail lists */
 .rail-title { margin-block-end: var(--space-3); font-size: var(--text-lg); }
+.ask p { margin-block-end: var(--space-3); color: var(--ink-2); }
 .topic-list, .board { padding: 0; list-style: none; border-block-start: 1px solid var(--line); }
 .topic-list li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-height: var(--target); border-block-end: 1px solid var(--line); font-size: var(--text-sm); }
 .topic-list a { flex: 1; padding-block: var(--space-2); color: var(--ink); font-weight: 600; text-decoration: none; }

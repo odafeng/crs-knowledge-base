@@ -68,6 +68,8 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-prac
 
   // Today's one thing (G4 #115): above the lead, labelled with its freshness, and its link opens a page.
   await page.goto(`${ORIGIN}/`);
+  const ask = page.locator('section.ask a[href="https://crs.fredrichuang.com/"]');
+  if (await ask.count() !== 1) problems.push('home: no link to the guideline Q&A');
   const daily = page.locator('section.daily');
   if (await daily.count() !== 1) problems.push('home: no daily pick shown');
   else {
