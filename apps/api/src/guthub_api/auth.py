@@ -18,9 +18,16 @@ ALGORITHMS = ["ES256", "RS256"]
 type KeyLookup = Callable[[str], Any]
 
 
+# Session methods that delivered a link or code to the mailbox (Supabase auth amr). A password sign-up never did, and
+# email confirmations are off, so only these make the token's email something the user is known to receive.
+MAILED = {"otp", "magiclink"}
+
+
 @dataclass(frozen=True)
 class User:
     id: UUID
+    # The token's email, only when this session was opened from a mailed link (H10 #168); None otherwise.
+    mailed_email: str | None = None
 
 
 class TokenVerifier:
@@ -54,8 +61,11 @@ class TokenVerifier:
         # Anonymous sign-in is off (ADR-0017); checked anyway so enabling it later cannot grant account rights.
         if claims.get("is_anonymous") is True:
             raise HTTPException(status_code=403, detail="Sign in with an account to continue")
+        amr = claims.get("amr")
+        mailed = isinstance(amr, list) and any(isinstance(m, dict) and m.get("method") in MAILED for m in amr)
+        email = claims.get("email")
         try:
-            return User(UUID(claims["sub"]))
+            return User(UUID(claims["sub"]), email if mailed and isinstance(email, str) and email else None)
         except (TypeError, ValueError) as exc:
             raise HTTPException(status_code=401, detail="Invalid or expired session") from exc
 

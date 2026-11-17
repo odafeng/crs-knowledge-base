@@ -878,6 +878,13 @@ export interface components {
                 certificateDigits: string;
                 /** Format: date-time */
                 submittedAt: string;
+                /** @description The applicant signed in from a mailbox at the stated hospital's domain. */
+                hospitalEmail: boolean;
+                /**
+                 * @description Whether the society's doctor map shows this name at this hospital.
+                 * @enum {string}
+                 */
+                roster: "listed" | "unlisted" | "unavailable";
             }[];
         };
         SurgeonDecision: {
@@ -1848,7 +1855,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Pending review */
+            /** @description Accepted. Pending review, or verified at once when the society's doctor map lists the name at the hospital and the session was opened from a link mailed to that hospital's domain (H10). */
             202: {
                 headers: {
                     [name: string]: unknown;

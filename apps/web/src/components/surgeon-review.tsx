@@ -2,7 +2,8 @@
 
 // The maintainer's review of colorectal surgeon applications (H5 #127). Check each one against the society's
 // specialist list (specialists) or the health ministry's practitioner lookup (trainees), then approve or reject:
-// either way the API deletes the details. The API decides who may see this page.
+// either way the API deletes the details. Applications that matched both the doctor map and a hospital mailbox never
+// get here (H10 #168); the hints below say which half was missing. The API decides who may see this page.
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAccount, type Account } from "@/components/account";
@@ -17,6 +18,13 @@ type Application = {
   department: string;
   certificateDigits: string;
   submittedAt: string;
+  hospitalEmail: boolean;
+  roster: "listed" | "unlisted" | "unavailable";
+};
+const ROSTER: Record<Application["roster"], string> = {
+  listed: "有此人（姓名與院所相符）",
+  unlisted: "查無",
+  unavailable: "暫時讀不到醫師地圖",
 };
 type Member = { accountId: string; displayName: string; since: string };
 
@@ -103,6 +111,14 @@ function Queue({ account }: { account: SignedIn }) {
                   <dd>{a.displayName}</dd>
                   <dt>申請時間</dt>
                   <dd>{a.submittedAt.slice(0, 16).replace("T", " ")}</dd>
+                  <dt>醫師地圖</dt>
+                  <dd>{ROSTER[a.roster]}</dd>
+                  <dt>院所信箱</dt>
+                  <dd>
+                    {a.hospitalEmail
+                      ? "用該院信箱收信登入"
+                      : "不是該院信箱，或非收信登入"}
+                  </dd>
                 </dl>
                 <div className="review-actions" role="group">
                   <button

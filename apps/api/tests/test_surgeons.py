@@ -6,16 +6,18 @@ GUTHUB_REQUIRE_DB=1.
 
 import uuid
 from collections.abc import Iterator
-from typing import Annotated, Any
+from pathlib import Path
+from typing import Annotated, Any, cast
 
 import psycopg
 import pytest
-from fastapi import Depends
+from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
 from guthub_api.auth import TokenVerifier, User
 from guthub_api.main import API_PREFIX, create_app
 from guthub_api.settings import Settings
+from guthub_api.surgeon_roster import RosterSource
 from guthub_api.surgeons import require_surgeon
 from test_accounts import API_DB_URL, DB_URL, ISSUER, KEY, bearer, schema, users  # noqa: F401
 
@@ -23,11 +25,22 @@ ME = f"{API_PREFIX}/me/surgeon"
 APPLICATIONS = f"{API_PREFIX}/admin/surgeon-applications"
 MEMBERS = f"{API_PREFIX}/admin/surgeons"
 FORM = {"realName": "王小明", "hospital": "某醫學中心", "department": "大腸直腸外科", "certificateDigits": "042"}
+# The fixture lists 陳小華 at two Chang Gung hospitals (fictional people, the map page's real markup).
+LISTED = {**FORM, "realName": "陳小華", "hospital": "雲林長庚紀念醫院"}
+ROSTER_PAGE = (Path(__file__).parent / "fixtures" / "crs_roster.html").read_text(encoding="utf-8")
+
+
+def mailed(user: uuid.UUID, email: str, method: str = "otp") -> dict[str, str]:
+    """A session opened from an emailed link (or, with method="password", one that proved no mailbox)."""
+    return bearer(user, email=email, amr=[{"method": method, "timestamp": 1}])
 
 
 @pytest.fixture
 def client() -> Iterator[TestClient]:
-    app = create_app(Settings(environment="test", database_url=API_DB_URL))  # pyright: ignore[reportArgumentType]
+    app = create_app(
+        Settings(environment="test", database_url=API_DB_URL, surgeon_roster_url=None)  # pyright: ignore[reportArgumentType]
+    )
+    app.state.roster = RosterSource(lambda: ROSTER_PAGE)
 
     @app.get(f"{API_PREFIX}/_test/forum")
     def forum(user: Annotated[User, Depends(require_surgeon)]) -> dict[str, str]:
@@ -80,6 +93,8 @@ def test_apply_approve_and_revoke(client: TestClient, people: tuple[uuid.UUID, u
         "accountId": str(applicant),
         "displayName": "R2",
         "submittedAt": None,
+        "hospitalEmail": False,
+        "roster": "unlisted",
     }
 
     decided = client.post(f"{APPLICATIONS}/{applicant}", headers=bearer(admin), json={"decision": "approve"})
@@ -161,3 +176,52 @@ def test_deleting_the_account_drops_membership_and_application(
     sql("update app.accounts set deleted_at = now() where id = any(%s)", [admin, applicant])
     assert sql("select surgeon_since from app.accounts where id = %s", applicant) == [(None,)]
     assert sql("select 1 from app.surgeon_applications where account_id = %s", admin) == []
+
+
+def test_a_listed_surgeon_signed_in_from_the_hospital_mailbox_is_approved_at_once(
+    client: TestClient, people: tuple[uuid.UUID, uuid.UUID]
+) -> None:
+    _, applicant = people
+    applied = client.put(ME, headers=mailed(applicant, "chen@cgmh.org.tw"), json=LISTED)
+    assert applied.status_code == 202 and applied.json()["status"] == "verified"
+    assert client.get(f"{API_PREFIX}/_test/forum", headers=bearer(applicant)).status_code == 200
+    assert sql("select 1 from app.surgeon_applications where account_id = %s", applicant) == []
+    assert sql("select action, decided_by from app.surgeon_verification_events where account_id = %s", applicant) == [
+        ("auto_approve", None)
+    ]
+
+
+@pytest.mark.parametrize(
+    ("headers", "form", "hospital_email", "roster"),
+    [
+        # A password session never proved the mailbox, however right the address looks.
+        (lambda u: mailed(u, "chen@cgmh.org.tw", method="password"), LISTED, False, "listed"),
+        (lambda u: mailed(u, "chen@gmail.com"), LISTED, False, "listed"),
+        (lambda u: mailed(u, "someone@cgmh.org.tw"), {**LISTED, "realName": "陳大華"}, True, "unlisted"),
+    ],
+)
+def test_short_of_both_the_application_waits_with_hints_for_the_maintainer(
+    client: TestClient,
+    people: tuple[uuid.UUID, uuid.UUID],
+    headers: Any,
+    form: dict[str, str],
+    hospital_email: bool,
+    roster: str,
+) -> None:
+    admin, applicant = people
+    applied = client.put(ME, headers=headers(applicant), json=form)
+    assert applied.status_code == 202 and applied.json()["status"] == "pending"
+    queue = client.get(APPLICATIONS, headers=bearer(admin)).json()
+    schema("SurgeonApplicationList").validate(queue)
+    [entry] = [a for a in queue["applications"] if a["accountId"] == str(applicant)]
+    assert (entry["hospitalEmail"], entry["roster"]) == (hospital_email, roster)
+
+
+def test_without_the_map_everyone_waits(client: TestClient, people: tuple[uuid.UUID, uuid.UUID]) -> None:
+    admin, applicant = people
+    cast("FastAPI", client.app).state.roster = RosterSource(lambda: "<html>改版</html>")
+    applied = client.put(ME, headers=mailed(applicant, "chen@cgmh.org.tw"), json=LISTED)
+    assert applied.json()["status"] == "pending"
+    [entry] = [a for a in client.get(APPLICATIONS, headers=bearer(admin)).json()["applications"]
+               if a["accountId"] == str(applicant)]  # fmt: skip
+    assert entry["roster"] == "unavailable" and entry["hospitalEmail"] is True
