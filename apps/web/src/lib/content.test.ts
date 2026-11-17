@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "./api";
 import {
+  decodePaper,
   getNews,
   getPaperBySlug,
   listAll,
@@ -97,5 +98,23 @@ describe("server content reads", () => {
     vi.stubEnv("GUTHUB_API_URL", "");
     await expect(getNews("x")).rejects.toThrow("GUTHUB_API_URL is not set");
     vi.unstubAllEnvs();
+  });
+
+  it("decodes the escaped text fields once, as sitegen does", () => {
+    const paper = {
+      id: "fresco",
+      regimen: "A &amp; B",
+      journal: "JAMA",
+      endpoint: "OS",
+      result: "HR 0.65, p&lt;.001",
+      bottomLine: "&lt;5% 差異",
+      detailHtml: "<p>p&lt;.001</p>",
+    } as unknown as Parameters<typeof decodePaper>[0];
+    expect(decodePaper(paper)).toMatchObject({
+      regimen: "A & B",
+      result: "HR 0.65, p<.001",
+      bottomLine: "<5% 差異",
+      detailHtml: "<p>p&lt;.001</p>", // HTML stays HTML
+    });
   });
 });
