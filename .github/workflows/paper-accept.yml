@@ -11,9 +11,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  writer:
+    # Only the `accepted` label, and only on issues the pipeline opened: github-actions before cutover, the
+    # repository owner's token that Paper Watch uses on Cloud Run after it.
+    if: >-
+      github.event.label.name == 'accepted' &&
+      (github.event.issue.user.type == 'Bot' || github.event.issue.user.login == github.repository_owner)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      writer: ${{ steps.flag.outputs.writer }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          sparse-checkout: data/WRITER
+          sparse-checkout-cone-mode: false
+      - id: flag
+        run: echo "writer=$(cat data/WRITER 2>/dev/null || echo json)" >> "$GITHUB_OUTPUT"
+
+  # Before cutover: edit the JSON and commit it.
   publish:
-    # Only the `accepted` label, and only on issues the pipeline itself opened.
-    if: github.event.label.name == 'accepted' && github.event.issue.user.type == 'Bot'
+    needs: writer
+    if: needs.writer.outputs.writer == 'json'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -57,3 +78,28 @@ jobs:
       - name: Report failure on the issue
         if: failure() && steps.apply.outcome == 'failure'
         run: gh issue comment "$ISSUE" --body-file "$RUNNER_TEMP/result.md"
+
+  # After cutover the database is the only writer (ADR-0021); Cloud Run publishes, comments and closes the issue.
+  start-job:
+    needs: writer
+    if: needs.writer.outputs.writer == 'postgres'
+    runs-on: ubuntu-latest
+    environment: content
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - id: auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: projects/392767072259/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: content-trigger@guthub-prod.iam.gserviceaccount.com
+          token_format: access_token
+
+      # content-trigger may only run this job, without overrides: the job reads the request from the issue.
+      - name: Start the content requests job
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          curl -fsS -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Length: 0" \
+            https://run.googleapis.com/v2/projects/guthub-prod/locations/asia-northeast1/jobs/content-requests:run >/dev/null
