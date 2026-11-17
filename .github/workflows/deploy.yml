@@ -89,10 +89,13 @@ jobs:
           # Each environment names its own sites; production never falls back to the staging list.
           CORS_ORIGINS: ${{ inputs.environment == 'staging' && vars.STAGING_WEB_ORIGINS || vars.WEB_ORIGINS || '[]' }}
           CONTENT_REQUESTS: ${{ vars.CONTENT_REQUESTS_ENABLED }}
+          SURGEON_AUTO_APPROVE: ${{ vars.SURGEON_AUTO_APPROVE }}
         run: |
           ENV="GUTHUB_ENVIRONMENT=${GUTHUB_ENV_NAME}@GUTHUB_SUPABASE_URL=https://${SUPABASE_REF}.supabase.co@GUTHUB_CORS_ORIGINS=${CORS_ORIGINS}"
           # The admin's review buttons start this job (E6 #159); without it requests wait for the job's next run.
           [ "$CONTENT_REQUESTS" = true ] && ENV="$ENV@GUTHUB_CONTENT_REQUESTS_JOB=projects/${PROJECT}/locations/${REGION}/jobs/content-requests"
+          # Only after Supabase email confirmations are on (H11 #172): until then an unconfirmed email change would pass.
+          [ "$SURGEON_AUTO_APPROVE" = true ] && ENV="$ENV@GUTHUB_SURGEON_AUTO_APPROVE=true"
           gcloud run deploy guthub-api --project="$PROJECT" --region="$REGION" \
             --image="$IMAGES/api:$GITHUB_SHA" --service-account="$API_RUNTIME" \
             --set-secrets=GUTHUB_DATABASE_URL=guthub-api-database-url:latest \
