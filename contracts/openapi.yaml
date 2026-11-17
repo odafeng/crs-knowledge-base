@@ -144,6 +144,28 @@ paths:
         in: query
         required: true
         schema: {type: string, minLength: 2}
+  /semantic-search:
+    post:
+      operationId: semanticSearch
+      summary: Natural-language search over papers, news and treatment cards (H3); 503 when not configured or the
+        month's embedding budget is spent, so the site falls back to keyword search.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SemanticQuery'}
+      responses:
+        '200':
+          description: Success. Passages below the relevance threshold are omitted, so the list may be empty.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SemanticResults'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'The query is in the body so it stays out of request logs; it is not stored. Set Cache-Control:
+        no-store.'
   /papers/{paperId}/comments:
     get:
       operationId: listComments
@@ -1263,6 +1285,30 @@ components:
                 type: string
                 enum: [listed, unlisted, unavailable]
                 description: Whether the society's doctor map shows this name at this hospital.
+    SemanticQuery:
+      type: object
+      additionalProperties: false
+      required: [query]
+      properties:
+        query: {type: string, minLength: 2, maxLength: 200}
+    SemanticResults:
+      type: object
+      additionalProperties: false
+      required: [results]
+      properties:
+        results:
+          type: array
+          maxItems: 8
+          items:
+            type: object
+            additionalProperties: false
+            required: [kind, path, title, snippet, score]
+            properties:
+              kind: {type: string, enum: [paper, news, card]}
+              path: {type: string, pattern: '^/'}
+              title: {type: string}
+              snippet: {type: string}
+              score: {type: number, minimum: 0, maximum: 1}
     SurgeonDecision:
       type: object
       additionalProperties: false

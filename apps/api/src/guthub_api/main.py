@@ -14,6 +14,8 @@ from guthub_api.db import open_pool
 from guthub_api.errors import error_response, install_error_handling
 from guthub_api.moderation import router as moderation_router
 from guthub_api.push import router as push_router
+from guthub_api.semantic import router as semantic_router
+from guthub_api.semantic import voyage
 from guthub_api.settings import Settings
 from guthub_api.stats import router as stats_router
 from guthub_api.surgeon_roster import RosterSource, fetch_roster
@@ -45,6 +47,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.verifier = TokenVerifier.for_supabase(supabase_url) if supabase_url else None
     roster_url = app.state.settings.surgeon_roster_url
     app.state.roster = RosterSource(lambda: fetch_roster(roster_url)) if roster_url else None
+    voyage_key = app.state.settings.voyage_api_key
+    app.state.embed = voyage(voyage_key.get_secret_value()) if voyage_key else None
     if app.state.settings.writes_paused:
         # Registered first so request IDs and CORS wrap it; the check sits here, not in each route, so a new write
         # route cannot miss it. Retry-After tells the web app this is planned maintenance, not an outage.
@@ -94,6 +98,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(stats_router, prefix=API_PREFIX)
     app.include_router(content_requests_router, prefix=API_PREFIX)
     app.include_router(surgeons_router, prefix=API_PREFIX)
+    app.include_router(semantic_router, prefix=API_PREFIX)
     return app
 
 
