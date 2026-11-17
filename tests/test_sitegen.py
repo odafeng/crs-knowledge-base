@@ -36,7 +36,7 @@ def test_build_records_the_revision_and_changes_cache_when_it_changes(tmp_path, 
 
 def test_build_replaces_site_without_redirects(built_site):
     out, stats = built_site
-    assert stats["pages"] == 68
+    assert stats["pages"] == 76
     assert not (out / "docs").exists()
     for page in out.rglob("*.html"):
         text = page.read_text()
@@ -82,7 +82,7 @@ def test_all_links_search_and_metadata_are_valid(built_site):
     for path in out.rglob("*.xml"):
         ElementTree.parse(path)
     index = json.loads((out / "search.json").read_text())
-    assert len(index) == 52
+    assert len(index) == 60
     for entry in index:
         assert (out / entry["path"].lstrip("/") / "index.html").is_file()
     for page in out.rglob("*.html"):
