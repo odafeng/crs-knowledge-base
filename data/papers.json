@@ -341,12 +341,14 @@
               "tfda": "approved",
               "nhi": "conditional",
               "nhiNote": "給付規定 9.134（115/5/1）：二線，需曾接受 bevacizumab 合併 FOLFIRI／FOLFOX／5-FU/LV、未曾用 anti-EGFR、ECOG≦2、附 BRAF V600E 檢測報告；須事前審查，每次 12 週，總療程上限 24 週；用後不得再申請 anti-EGFR",
+              "nhiClause": "9.134",
               "checkedAt": "2026-11-16",
               "sources": [
                 "https://health.tvbs.com.tw/cancer/362702",
                 "https://mohw.gov.tw/cp-16-85379-1.html",
                 "https://info.nhi.gov.tw/api/INAE3000/INAE3000S01/getPDF?DurgFileName=9.134._20260501.pdf"
-              ]
+              ],
+              "nhiEffective": "2026-05-01"
             }
           ]
         },
@@ -827,6 +829,7 @@
               "tfda": "approved",
               "nhi": "conditional",
               "nhiNote": "給付規定 9.69（115/10/1 版）1.(11)：限 MSI-H／dMMR 無法切除或轉移性 CRC 成年病人第一線，114/6/1 起給付；須事前審查，每次 12 週，自初次處方起 2 年為限，ECOG≦1；每位病人每個適應症限一種免疫檢查點抑制劑",
+              "nhiClause": "9.69 1.(11)",
               "checkedAt": "2026-11-16",
               "sources": [
                 "https://www.mohw.gov.tw/cp-16-82268-1.html",
@@ -835,7 +838,8 @@
                 "https://data.fda.gov.tw/data/opendata/export/37/json",
                 "https://info.nhi.gov.tw/api/INAE3000/INAE3000S01/getPDF?DurgFileName=9.69._20261001.pdf"
               ],
-              "tfdaNote": "Keytruda（衛部菌疫輸字第001025號）適應症含 MSI-H／dMMR 大腸直腸癌第一線治療"
+              "tfdaNote": "Keytruda（衛部菌疫輸字第001025號）適應症含 MSI-H／dMMR 大腸直腸癌第一線治療",
+              "nhiEffective": "2025-06-01"
             },
             {
               "regimen": "Nivolumab + ipilimumab（一線 MSI-H/dMMR）",
@@ -1243,12 +1247,14 @@
               "tfdaNote": "爾必得舒（衛署菌疫輸字第000877號）：RAS 原生型，併用 FOLFIRI 或 FOLFOX 作為第一線",
               "nhi": "conditional",
               "nhiNote": "給付規定 9.27（115/5/1 版）：需 All-RAS 檢測報告與事前審查，每次申請 18 週，影像證實無惡化才可續用；與 panitumumab 擇一、不得併用 bevacizumab；R0 切除且無轉移病灶者不給付；條文未限制原發部位",
+              "nhiClause": "9.27 1.(1)",
               "checkedAt": "2026-11-17",
               "sources": [
                 "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=8bc6397e-4bd8-4d37-a007-a327e4da34d9",
                 "https://data.fda.gov.tw/data/opendata/export/37/json",
                 "https://info.nhi.gov.tw/api/INAE3000/INAE3000S01/getPDF?DurgFileName=9.27._20260501.pdf"
-              ]
+              ],
+              "nhiEffective": "2026-02-01"
             },
             {
               "regimen": "Panitumumab + FOLFOX／FOLFIRI（一線）",
@@ -1258,12 +1264,14 @@
               "tfdaNote": "維必施（衛署菌疫輸字第000941號）：RAS 基因正常，併用 FOLFOX 或 FOLFIRI 作為第一線",
               "nhi": "conditional",
               "nhiNote": "給付規定 9.53（115/2/1 版）：需 All-RAS 檢測報告與事前審查，每次申請 18 週，影像證實無惡化才可續用；與 cetuximab 擇一、不得併用 bevacizumab；R0 切除且無轉移病灶者不給付；條文未限制原發部位",
+              "nhiClause": "9.53 1.",
               "checkedAt": "2026-11-17",
               "sources": [
                 "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=e0fa4bca-f245-4d92-ae29-b0c630a315c2",
                 "https://data.fda.gov.tw/data/opendata/export/37/json",
                 "https://info.nhi.gov.tw/api/INAE3000/INAE3000S01/getPDF?DurgFileName=9.53._20260201.pdf"
-              ]
+              ],
+              "nhiEffective": "2026-02-01"
             }
           ]
         }
