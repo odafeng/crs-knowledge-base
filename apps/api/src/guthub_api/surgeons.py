@@ -87,7 +87,8 @@ def apply(application: Application, user: SignedIn, db: Db, request: Request, re
     hospital_email = mail_at(user.mailed_email, hospital_of(application.hospital))
     source: RosterSource | None = request.app.state.roster
     # Read before the transaction, and only when approval is possible at all: the map is someone else's server.
-    roster = source.get() if source and hospital_email else None
+    enabled = request.app.state.settings.surgeon_auto_approve
+    roster = source.get() if enabled and source and hospital_email else None
     verdict = check(roster, application.real_name, application.hospital, user.mailed_email)
     with db.transaction():
         account = db.execute(
@@ -97,7 +98,12 @@ def apply(application: Application, user: SignedIn, db: Db, request: Request, re
             raise HTTPException(status_code=403, detail="Choose a display name first")
         if account["surgeon_since"] is not None:
             raise HTTPException(status_code=409, detail="Already a verified member")
-        if verdict.approve:
+        # Someone the maintainer once rejected or revoked never gets back in without the maintainer.
+        decided_against = db.execute(
+            "select 1 from app.surgeon_verification_events where account_id = %s and action in ('reject', 'revoke')",
+            (user.id,),
+        ).fetchone()
+        if verdict.approve and decided_against is None:
             # Decided at once, so like any decision nothing of the application is kept.
             db.execute("delete from app.surgeon_applications where account_id = %s", (user.id,))
             db.execute("update app.accounts set surgeon_since = now() where id = %s", (user.id,))

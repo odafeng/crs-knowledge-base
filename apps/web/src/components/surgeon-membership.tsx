@@ -104,7 +104,7 @@ export function SurgeonMembership() {
         <form className="surgeon__form" onSubmit={send} noValidate>
           <p className="note">
             論壇只開放大腸直腸外科專科醫師與受訓中的住院醫師、fellow。管理者會對照大腸直腸外科醫學會的專科醫師名單或衛福部醫事人員查詢，核對後開通。
-            如果你在學會官網的「醫師地圖」上，而且這次是用醫院信箱收信登入，送出後會立即開通。
+            如果你在學會官網的「醫師地圖」上，而且這次是用醫院信箱收信登入，審核會比較快。
             不收身分證字號與任何文件；審核完成後，下面的資料就會刪除，只保留「已驗證」與時間。
           </p>
           {FIELDS.map(([key, label, autoComplete]) => (

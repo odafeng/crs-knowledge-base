@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     # The society's public doctor map, read to approve colorectal surgeons automatically (H10 #168). Unset: every
     # application waits for the maintainer.
     surgeon_roster_url: str | None = "https://www.crs.org.tw/zh-tw/map"
+    # Approve at once when the map and a hospital mailbox match. Off until Supabase email confirmations are on: with
+    # them off, an email change applies without confirming the new address, so the token's email proves nothing.
+    surgeon_auto_approve: bool = False
 
     @model_validator(mode="after")
     def deployed_environments_need_a_database(self) -> Self:

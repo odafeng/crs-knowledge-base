@@ -38,7 +38,7 @@ def mailed(user: uuid.UUID, email: str, method: str = "otp") -> dict[str, str]:
 @pytest.fixture
 def client() -> Iterator[TestClient]:
     app = create_app(
-        Settings(environment="test", database_url=API_DB_URL, surgeon_roster_url=None)  # pyright: ignore[reportArgumentType]
+        Settings(environment="test", database_url=API_DB_URL, surgeon_roster_url=None, surgeon_auto_approve=True)  # pyright: ignore[reportArgumentType]
     )
     app.state.roster = RosterSource(lambda: ROSTER_PAGE)
 
@@ -225,3 +225,21 @@ def test_without_the_map_everyone_waits(client: TestClient, people: tuple[uuid.U
     [entry] = [a for a in client.get(APPLICATIONS, headers=bearer(admin)).json()["applications"]
                if a["accountId"] == str(applicant)]  # fmt: skip
     assert entry["roster"] == "unavailable" and entry["hospitalEmail"] is True
+
+
+def test_someone_rejected_or_revoked_before_waits_for_the_maintainer(
+    client: TestClient, people: tuple[uuid.UUID, uuid.UUID]
+) -> None:
+    admin, applicant = people
+    client.put(ME, headers=mailed(applicant, "chen@cgmh.org.tw"), json=LISTED)
+    assert client.delete(f"{MEMBERS}/{applicant}", headers=bearer(admin)).status_code == 204
+    again = client.put(ME, headers=mailed(applicant, "chen@cgmh.org.tw"), json=LISTED)
+    assert again.json()["status"] == "pending"
+
+
+def test_automatic_approval_is_off_unless_enabled(client: TestClient, people: tuple[uuid.UUID, uuid.UUID]) -> None:
+    _, applicant = people
+    app = cast("FastAPI", client.app)
+    app.state.settings = app.state.settings.model_copy(update={"surgeon_auto_approve": False})
+    applied = client.put(ME, headers=mailed(applicant, "chen@cgmh.org.tw"), json=LISTED)
+    assert applied.json()["status"] == "pending"
