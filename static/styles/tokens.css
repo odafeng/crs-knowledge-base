@@ -39,6 +39,8 @@
   --bad: #A1261F;   --bad-bg: #FBE7E4;
 
   --focus: #1B3BC4;
+  /* The header's navy logo disc needs no edge on light ground; on dark ground it would melt into the page. */
+  --mark-ring: transparent;
   --shadow-1: 0 1px 2px rgb(11 20 51 / 0.05), 0 1px 1px rgb(11 20 51 / 0.04);
   --shadow-2: 0 2px 4px rgb(11 20 51 / 0.06), 0 12px 28px -14px rgb(11 20 51 / 0.28);
 
@@ -94,6 +96,7 @@
     --surface: #0E1530;
     --sunken: #0A1024;
     --ink: #ECEFFA;
+    --mark-ring: #5B668F;
     --ink-2: #B9C0DA;
     --ink-3: #929AB9;
     --line: #222B4E;
@@ -120,6 +123,7 @@
 }
 :root[data-theme='dark'] {
   color-scheme: dark;
+  --mark-ring: #5B668F;
   --ground: #060B1C;
   --surface: #0E1530;
   --sunken: #0A1024;
