@@ -80,6 +80,7 @@ gcloud iam workload-identity-pools providers update-oidc github-oidc --project=g
 
 - **Paper Watch**：`paper-watch` job，每天 16:00（台灣時間）執行。週二、週五做完整掃描，其他日子只在會議季掃描，和原本兩個 cron 相同。
 - **接受、撤下**：兩個 workflow 只負責啟動 `content-requests` job，不帶參數。job 自己讀 issue：開著且標了 `accepted` 的待審 issue（由 github-actions 或 repo 擁有者開的）就發布、回覆、關閉；Unpublish workflow 開的 `[撤下] <目標>` issue（標 `unpublish-request`）就撤下、回覆、關閉。
+- **網站上的審閱按鈕**（E6 #159）：管理者在「AI 未審」的頁面按「標為已審」或「撤下」，API 記下請求並啟動同一個 job。部署 workflow 會讓 `api-runtime` 可以啟動它，不需要另外設定。
 - 資料庫密碼一直留在 Secret Manager。GitHub 用 `content` environment 換到 `content-trigger@` 的身分，這個身分只能啟動 `content-requests` 這一個 job，不能帶參數，也不能部署。
 
 切換前由維護者做一次（agent 沒有權限改正式環境的 IAM 與祕密）：

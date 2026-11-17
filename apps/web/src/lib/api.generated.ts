@@ -397,6 +397,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/content-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark an auto-published paper or story reviewed, or take it down; applied by the content writer job.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission. The API never writes content itself (ADR-0021).
+         */
+        post: operations["requestContentChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/daily-pick": {
         parameters: {
             query?: never;
@@ -713,6 +733,18 @@ export interface components {
                 /** @description True for AI-written entries not yet reviewed. */
                 unreviewed: boolean;
             };
+        };
+        ContentRequest: {
+            /** @enum {string} */
+            action: "review" | "unpublish";
+            /** @enum {string} */
+            kind: "paper" | "news";
+            /** @description Paper or story id. */
+            target: string;
+        };
+        ContentRequestQueued: {
+            id: number;
+            started: boolean;
         };
         TopicSubscriptions: {
             topics: ("mCRC-BRAF-V600E" | "mCRC-KRAS-G12C" | "mCRC-MSI-H" | "mCRC-HER2" | "mCRC-RAS-wt" | "generic-CRS" | "robotic-surgery")[];
@@ -1591,6 +1623,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WeeklyActivity"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    requestContentChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentRequest"];
+            };
+        };
+        responses: {
+            /** @description Recorded; started says whether the job was started now or the request waits for its next run. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRequestQueued"];
                 };
             };
             401: components["responses"]["Unauthorized"];

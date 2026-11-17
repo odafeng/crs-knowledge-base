@@ -1,6 +1,7 @@
 import { pageMetadata, paperJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ReviewActions } from "@/components/review-actions";
 import { ReaderComments } from "@/components/comments";
 import { notFound } from "next/navigation";
 import {
@@ -88,6 +89,9 @@ export default async function PaperPage({ params }: Props) {
                 依摘要整理，尚未經人工審核。數字已逐一比對摘要原文，但解讀可能有誤，請以原文為準。
               </p>
             </div>
+          )}
+          {isUnreviewed(paper) && (
+            <ReviewActions kind="paper" target={paper.id} />
           )}
           <p className="result">
             <span className="result__label">關鍵結果</span>

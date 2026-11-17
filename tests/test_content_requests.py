@@ -14,7 +14,9 @@ import content_writer
 import pytest
 from import_content import apply, build_rows
 
+from content_store import content_session
 from create_issues import format_issue_body
+from publish import publish_paper
 from test_publish import TODAY, _paper
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -147,3 +149,72 @@ def test_an_unpublish_request_for_a_hand_curated_paper_is_refused(db_writer):
     assert content_requests.run(gh, REPO, TODAY, db_writer) == 1
     assert public(db_writer, curated)
     assert "人工整理" in gh.said(15) and gh.did("issue", "close", "15", "--repo", REPO, "--reason", "not planned")
+
+
+# --- the site's requests (E6 #159) ----------------------------------------------------------------------------------
+
+
+def site_request(conn, action: str, kind: str, target: str) -> int:
+    row = conn.execute(
+        "insert into app.content_requests (action, kind, target) values (%s, %s, %s) returning id",
+        (action, kind, target),
+    ).fetchone()
+    return row[0]
+
+
+def outcome(conn, request: int) -> tuple:
+    return conn.execute("select ok, result from app.content_requests where id = %s", (request,)).fetchone()
+
+
+def story_status(conn, story: str) -> str | None:
+    row = conn.execute("select review_status from app.public_news where id = %s", (story,)).fetchone()
+    return row and row[0]
+
+
+def test_a_reviewed_story_loses_its_unreviewed_label(db_writer):
+    request = site_request(db_writer, "review", "news", "breakwater-os")
+    assert content_requests.run(FakeGh([]), REPO, TODAY, db_writer, db_writer) == 0
+    assert story_status(db_writer, "breakwater-os") == "accepted"
+    assert outcome(db_writer, request) == (True, "review news breakwater-os")
+    # Done requests are not applied again, and the next run has nothing to do.
+    assert content_requests.run(FakeGh([]), REPO, TODAY, db_writer, db_writer) == 0
+    assert db_writer.execute("select count(*) from app.publish_events").fetchone()[0] == 1
+
+
+def test_reviewing_twice_is_reported_not_applied(db_writer):
+    site_request(db_writer, "review", "news", "breakwater-os")
+    content_requests.run(FakeGh([]), REPO, TODAY, db_writer, db_writer)
+    again = site_request(db_writer, "review", "news", "breakwater-os")
+    assert content_requests.run(FakeGh([]), REPO, TODAY, db_writer, db_writer) == 1
+    ok, result = outcome(db_writer, again)
+    assert ok is False and "已經審過" in result
+
+
+def test_a_reviewed_paper_gets_the_accepted_banner(db_writer):
+    paper = _paper()
+    with content_session("publish_paper", paper["doi"], key="k-auto", conn=db_writer) as session:
+        session.record(publish_paper(paper, "auto", TODAY, session.kb)["id"])
+    page = db_writer.execute("select detail_html from app.papers where id = 'test-auto-2026'").fetchone()[0]
+    assert "未經人工審核" in page
+    request = site_request(db_writer, "review", "paper", "test-auto-2026")
+    assert content_requests.run(FakeGh([]), REPO, TODAY, db_writer, db_writer) == 0, outcome(db_writer, request)
+    status, page = db_writer.execute(
+        "select review_status, detail_html from app.papers where id = 'test-auto-2026'"
+    ).fetchone()
+    assert status == "accepted"
+    assert "未經人工審核" not in page and "已經人工確認" in page
+
+
+def test_an_unpublished_story_leaves_its_paper(db_writer):
+    paper = db_writer.execute("select paper_id from app.news where id = 'breakwater-os'").fetchone()[0]
+    request = site_request(db_writer, "unpublish", "news", "breakwater-os")
+    assert content_requests.run(FakeGh([]), REPO, TODAY, db_writer, db_writer) == 0
+    assert story_status(db_writer, "breakwater-os") is None
+    assert public(db_writer, paper)
+    assert outcome(db_writer, request) == (True, "news breakwater-os")
+
+
+def test_an_unknown_target_is_reported(db_writer):
+    request = site_request(db_writer, "unpublish", "news", "no-such-story")
+    assert content_requests.run(FakeGh([]), REPO, TODAY, db_writer, db_writer) == 1
+    assert outcome(db_writer, request) == (False, "找不到消息 `no-such-story`")

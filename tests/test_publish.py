@@ -10,7 +10,7 @@ import pytest
 from accept_issue import accept
 from commentary import CommentaryProposal
 from create_issues import format_commentary_issue_body, format_issue_body
-from publish import KB, PublishError, publish_commentary, publish_paper, unpublish
+from publish import KB, PublishError, mark_reviewed, publish_commentary, publish_paper, unpublish, unpublish_story
 from validate import validate_data
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -313,3 +313,31 @@ class TestReviewFindings:
 
     def test_auto_published_paper_is_abstract_sourced(self, kb):
         assert publish_paper(_paper(), "auto", TODAY, kb)["source"] == "abstract"
+
+
+class TestReview:
+    """E6 #159: an admin marks an auto-published entry reviewed, or takes one story down."""
+
+    def test_auto_paper_becomes_accepted_with_its_banner(self, kb):
+        publish_paper(_paper(), "auto", TODAY, kb)
+        assert mark_reviewed("paper", "test-auto-2026", kb) == "review paper test-auto-2026"
+        entry = _entry(kb, "test-auto-2026")
+        assert entry["review"] == {"status": "accepted", "publishedAt": TODAY}
+        page = (kb.root / entry["file"]).read_text()
+        assert "未經人工審核" not in page and "已經人工確認" in page
+
+    def test_hand_curated_and_reviewed_entries_are_refused(self, kb):
+        with pytest.raises(PublishError, match="人工整理"):
+            mark_reviewed("paper", "kn177", kb)
+        publish_paper(_paper(), "accepted", TODAY, kb)
+        with pytest.raises(PublishError, match="已經審過"):
+            mark_reviewed("paper", "test-auto-2026", kb)
+
+    def test_one_story_is_unpublished_and_its_paper_stays(self, kb):
+        shutil.copy(ROOT / "data" / "news.json", kb.news_json)
+        story = json.loads(kb.news_json.read_text())[0]
+        assert unpublish_story(story["id"], kb) == f"news {story['id']}"
+        assert story["id"] not in {s["id"] for s in json.loads(kb.news_json.read_text())}
+        assert any(p["id"] == story["paperId"] for t in kb.load().values() for p in t.get("papers", []))
+        with pytest.raises(PublishError, match="找不到消息"):
+            mark_reviewed("news", story["id"], kb)
