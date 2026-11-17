@@ -208,9 +208,11 @@ export default async function Home() {
               <a
                 className="btn btn--primary"
                 href={GUIDELINE_QA}
+                target="_blank"
                 rel="noopener"
               >
                 開啟指引問答
+                <span className="visually-hidden">（另開新分頁）</span>
               </a>
             </section>
             <section aria-labelledby="topics-title">
