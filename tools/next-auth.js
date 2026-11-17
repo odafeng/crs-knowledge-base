@@ -2,6 +2,8 @@
 // Usage: node tools/next-auth.js <Next.js origin> <API base, e.g. http://127.0.0.1:8000/api/v1>
 // Env: SUPABASE_URL, SUPABASE_SERVICE_KEY (local demo key), MAILPIT_URL (optional: also sends a real email).
 const { chromium } = require('playwright');
+const AXE = require('node:fs').readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 const { signInLink: linkFor } = require('./sign-in-link');
 
 const ORIGIN = (process.argv[2] || 'http://127.0.0.1:3000').replace(/\/$/, '');
@@ -103,6 +105,29 @@ let browser;
   check((await device.request.get(`${API}/me`, { headers: { Authorization: `Bearer ${tampered}` } })).status() === 401,
     'api: tampered token accepted');
 
+  // Followed topics (G6 #117): private to A, chosen on the account page, filtered on the home page in the browser.
+  step('followed topics');
+  await device.goto(`${ORIGIN}/account/`);
+  const choice = device.locator('.topic-choices input[type="checkbox"]').first();
+  await choice.waitFor();
+  const topicLabel = (await device.locator('.topic-choices__item').first().innerText()).trim();
+  await choice.check();
+  await device.getByRole('button', { name: '儲存訂閱主題' }).click();
+  await device.getByText('已儲存。').waitFor();
+  await device.reload();
+  await device.locator('.topic-choices input[type="checkbox"]').first().waitFor();
+  check(await device.locator('.topic-choices input[type="checkbox"]').first().isChecked(), 'topics: choice not kept');
+  await device.addScriptTag({ content: AXE });
+  const topicAxe = await device.evaluate(tags => axe.run(document.querySelector('main'), { runOnly: { type: 'tag', values: tags } }), TAGS);
+  check(topicAxe.violations.length === 0, `axe account: ${topicAxe.violations.map(v => `${v.id} ${v.nodes[0].target}`).join('; ')}`);
+  await device.goto(`${ORIGIN}/`);
+  const followed = device.locator('section.followed');
+  await followed.waitFor();
+  const metas = await followed.locator('.followed__meta').allInnerTexts();
+  check(metas.length > 0 && metas.every(m => m.startsWith(topicLabel)), `topics: home shows ${metas.join(' | ')}`);
+  const shared = await (await device.request.get(`${ORIGIN}/`)).text();
+  check(!shared.includes('你訂閱的主題'), 'topics: followed topics are in the shared home page HTML');
+
   // A used link cannot sign anyone in again.
   step('used link');
   const replay = await (await context()).newPage();
@@ -126,6 +151,8 @@ let browser;
   await device.waitForURL(`${ORIGIN}/`);
   await device.locator('.site-header .account-link--signed-in').waitFor();
   check((await accountLabel(device)) === '帳號：Reader B', `switch: header shows ${await accountLabel(device)}`);
+  await device.waitForTimeout(1500);  // give the home page time to load B's (empty) topics
+  check(await device.locator('section.followed').count() === 0, 'switch: B sees A\'s followed topics');
 
   step('service worker cache');
   // Nothing about either reader reaches the service worker cache.
@@ -138,7 +165,7 @@ let browser;
   check(leaked.length === 0, `cache: ${leaked.join(', ')}`);
 
   console.log(`auth: ${MAILPIT_URL ? 'emailed' : 'generated'} link on another device, name required, sign-out clears the session,`);
-  console.log('      account switch isolated, used and tampered tokens refused, nothing private cached');
+  console.log('      account switch isolated, used and tampered tokens refused, nothing private cached,\n      followed topics private and filtered in the browser');
   console.log('problems:', problems.length);
   problems.forEach(problem => console.log('  -', problem));
   if (problems.length) process.exitCode = 1;

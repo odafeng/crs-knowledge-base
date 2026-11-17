@@ -69,6 +69,9 @@ export default function PrivacyPage() {
             Email。你可以在
             <Link href="/account/">帳號設定</Link>隨時修改。
           </li>
+          <li>
+            訂閱主題：在帳號設定勾選的主題只有你看得到，用來在首頁列出這些主題的最新文獻；刪除帳號時一併刪除。
+          </li>
         </ul>
         <p>Email 與 Google 資料不會公開，也不會顯示在任何頁面上。</p>
 

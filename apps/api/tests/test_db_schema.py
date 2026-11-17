@@ -46,6 +46,7 @@ TABLES = [
     "push_subscriptions",
     "push_announcements",
     "line_broadcasts",
+    "topic_subscriptions",
 ]
 VIEWS = ["public_papers", "public_news", "public_comments"]
 CLIENT_ROLES = ["anon", "authenticated", "service_role"]

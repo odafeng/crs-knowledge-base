@@ -219,6 +219,40 @@
   overflow-wrap: anywhere;
 }
 
+/* Followed topics (G6 #117) */
+.topic-choices fieldset {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-6) 0 var(--space-3);
+  padding: 0;
+  border: 0;
+}
+.topic-choices legend {
+  font-weight: 700;
+}
+.topic-choices__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 24px;
+}
+.followed__list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.followed__list a {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.followed__meta {
+  display: block;
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
 /* Weekly activity (G10 #121): the number stays readable text; the bar only shows the trend. */
 .activity__count {
   display: inline-block;
