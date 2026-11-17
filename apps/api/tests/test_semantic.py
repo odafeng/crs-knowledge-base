@@ -12,7 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from guthub_api.main import API_PREFIX, create_app
-from guthub_api.semantic import INDEXER_RESERVE, PerMinute, _month
+from guthub_api.semantic import DAYS, INDEXER_RESERVE, PerMinute, _month, _today
 from guthub_api.settings import Settings
 from test_accounts import API_DB_URL, DB_URL, schema
 
@@ -41,6 +41,7 @@ def sql() -> Iterator[Any]:
     with psycopg.connect(DB_URL, autocommit=True) as conn:
         conn.execute("delete from app.search_chunks where ref like 'test-%'")
         conn.execute("delete from app.embedding_usage where month = %s", (_month(),))
+        conn.execute("delete from app.query_usage where day = %s", (_today(),))
         # Cards are always public; the paper "test-gone" is in no public view, as after a withdrawal.
         chunks = [("card", "test-a", "EC + cetuximab"), ("card", "test-b", "NICHE-2"), ("paper", "test-gone", "Gone")]
         for i, (kind, ref, title) in enumerate(chunks):
@@ -52,6 +53,7 @@ def sql() -> Iterator[Any]:
         yield conn
         conn.execute("delete from app.search_chunks where ref like 'test-%'")
         conn.execute("delete from app.embedding_usage where month = %s", (_month(),))
+        conn.execute("delete from app.query_usage where day = %s", (_today(),))
 
 
 @pytest.fixture
@@ -130,3 +132,28 @@ def test_one_address_is_limited_per_minute(client: TestClient) -> None:
     forged = {"X-Forwarded-For": "192.0.2.77, 198.51.100.1"}
     assert client.post(URL, json={"query": "braf"}, headers=forged).status_code == 429
     assert client.post(URL, json={"query": "braf"}, headers={"X-Forwarded-For": "198.51.100.2"}).status_code == 200
+
+
+def test_a_day_may_spend_only_its_share_of_the_month(client: TestClient, sql: Any) -> None:
+    share = (80_000_000 - INDEXER_RESERVE) // DAYS
+    sql.execute("insert into app.query_usage (day, tokens) values (%s, %s)", (date.fromisoformat(_today()), share))
+    assert client.post(URL, json={"query": "braf"}).status_code == 503
+    # The month's reservation is handed back when the day refuses.
+    assert sql.execute("select tokens from app.embedding_usage where month = %s", (_month(),)).fetchone() == (0,)
+
+
+def test_ipv6_clients_count_per_slash_64(client: TestClient) -> None:
+    app = cast("FastAPI", client.app)
+    app.state.search_limiter = PerMinute(1)
+    one = {"X-Forwarded-For": "2001:db8:1:2::1"}
+    same_prefix = {"X-Forwarded-For": "2001:db8:1:2:ffff::9"}
+    assert client.post(URL, json={"query": "braf"}, headers=one).status_code == 200
+    assert client.post(URL, json={"query": "braf"}, headers=same_prefix).status_code == 429
+    assert client.post(URL, json={"query": "braf"}, headers={"X-Forwarded-For": "2001:db8:1:3::1"}).status_code == 200
+
+
+def test_the_limiter_forgets_the_least_recent_clients() -> None:
+    limiter = PerMinute(1, max_clients=2)
+    assert limiter.allow("a") and limiter.allow("b") and limiter.allow("c")
+    assert limiter.allow("a")  # "a" was dropped to make room, so it starts afresh
+    assert not limiter.allow("c")
