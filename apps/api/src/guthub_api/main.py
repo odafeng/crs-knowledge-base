@@ -16,6 +16,7 @@ from guthub_api.moderation import router as moderation_router
 from guthub_api.push import router as push_router
 from guthub_api.settings import Settings
 from guthub_api.stats import router as stats_router
+from guthub_api.surgeons import router as surgeons_router
 
 API_PREFIX = "/api/v1"
 WRITE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
@@ -89,6 +90,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(push_router, prefix=API_PREFIX)
     app.include_router(stats_router, prefix=API_PREFIX)
     app.include_router(content_requests_router, prefix=API_PREFIX)
+    app.include_router(surgeons_router, prefix=API_PREFIX)
     return app
 
 

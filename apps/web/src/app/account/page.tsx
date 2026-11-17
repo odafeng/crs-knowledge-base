@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { TopicChoices } from "@/components/followed-topics";
 import { AccountSettings } from "@/components/sign-in";
+import { SurgeonMembership } from "@/components/surgeon-membership";
 import { listTopics } from "@/lib/content";
 import { SITE_NAME } from "@/lib/seo";
 
@@ -25,6 +26,7 @@ export default async function AccountPage() {
       <div className="page__narrow">
         <AccountSettings />
         <TopicChoices topics={topics} />
+        <SurgeonMembership />
       </div>
     </div>
   );

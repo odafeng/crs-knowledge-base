@@ -341,3 +341,55 @@
     text-decoration: none;
   }
 }
+
+/* Colorectal surgeon membership (H5 #127) */
+.surgeon {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-start: var(--space-8);
+}
+.surgeon__form {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 28rem;
+}
+.surgeon__field {
+  display: grid;
+  gap: var(--space-1);
+  font-weight: 600;
+}
+.surgeon__field input {
+  min-height: 3rem;
+  padding: 0 var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  font-weight: 400;
+}
+.surgeon__form .btn,
+.surgeon > .btn {
+  justify-self: start;
+}
+.review-queue {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.review-queue li {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+.review-queue dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+}
+.review-queue dt {
+  color: var(--ink-3);
+}
