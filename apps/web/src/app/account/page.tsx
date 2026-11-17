@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
+import { TopicChoices } from "@/components/followed-topics";
 import { AccountSettings } from "@/components/sign-in";
+import { listTopics } from "@/lib/content";
 import { SITE_NAME } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -7,7 +10,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AccountPage() {
+export default async function AccountPage() {
+  // Rendered per request so `next build` never calls the API; the topic list is public and cached (lib/content.ts).
+  await connection();
+  const topics = (await listTopics()).map((t) => ({
+    key: t.key,
+    label: t.label,
+  }));
   return (
     <div className="container page">
       <header className="page-head">
@@ -15,6 +24,7 @@ export default function AccountPage() {
       </header>
       <div className="page__narrow">
         <AccountSettings />
+        <TopicChoices topics={topics} />
       </div>
     </div>
   );

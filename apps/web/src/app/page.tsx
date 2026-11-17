@@ -8,6 +8,7 @@ import {
 import { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
+import { FollowedUpdates } from "@/components/followed-topics";
 import { NewsFigure } from "@/components/news-figure";
 import {
   AiChip,
@@ -159,6 +160,20 @@ export default async function Home() {
             </ul>
           </section>
         )}
+        <FollowedUpdates
+          rows={updates(papers)
+            .slice(0, 60)
+            .map((update) => {
+              const topic = topicOf(update.paper.id);
+              return {
+                path: `/papers/${update.paper.slug}/`,
+                title: update.title,
+                date: update.date,
+                topic: update.paper.topic,
+                topicLabel: topic?.label ?? "",
+              };
+            })}
+        />
         <div className="band home-split">
           <section aria-labelledby="log-title">
             <div className="section-head">

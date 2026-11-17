@@ -1,4 +1,4 @@
-"""The signed-in reader's account: public display name and admin role (D1 #67).
+"""The signed-in reader's account: public display name, admin role (D1 #67) and followed topics (G6 #117).
 
 An account row is created the first time the reader chooses a display name (ADR-0017: never taken from Google or the
 email address). `is_admin` lives only in app.accounts and is set by the maintainer in the database; token claims and
@@ -9,9 +9,10 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from psycopg import errors
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
 
 from guthub_api.auth import User, current_user
+from guthub_api.content import TOPIC_ORDER, TopicKey
 from guthub_api.db import Conn, get_conn
 
 PRIVATE = {"Cache-Control": "private, no-store", "Vary": "Authorization"}
@@ -68,3 +69,56 @@ def require_admin(user: SignedIn, db: Db) -> User:
     if row is None or not row["is_admin"]:
         raise HTTPException(status_code=403, detail="Moderator access required")
     return user
+
+
+# --- followed topics (G6 #117) ----------------------------------------------------------------------------------------
+
+
+def _distinct(topics: list[str]) -> list[str]:
+    if len(set(topics)) != len(topics):
+        raise ValueError("topics must not repeat")
+    return topics
+
+
+class TopicSubscriptions(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    topics: Annotated[list[TopicKey], AfterValidator(_distinct)]
+
+
+def _topics(db: Conn, user: User) -> dict[str, list[str]]:
+    rows = db.execute("select topic_key from app.topic_subscriptions where account_id = %s", (user.id,)).fetchall()
+    chosen = {row["topic_key"] for row in rows}
+    return {"topics": [key for key in TOPIC_ORDER if key in chosen]}
+
+
+@router.get("/me/topics")
+def get_topics(user: SignedIn, db: Db, response: Response) -> dict[str, list[str]]:
+    """The topics this reader follows; private, and never part of a shared page."""
+    response.headers.update(PRIVATE)
+    return _topics(db, user)
+
+
+@router.put("/me/topics")
+def set_topics(update: TopicSubscriptions, user: SignedIn, db: Db, response: Response) -> dict[str, list[str]]:
+    """Replaces the whole set. The account must exist, i.e. the reader has chosen a display name."""
+    response.headers.update(PRIVATE)
+    with db.transaction():
+        account = db.execute(
+            "select 1 from app.accounts where id = %s and deleted_at is null for update", (user.id,)
+        ).fetchone()
+        if account is None:
+            raise HTTPException(status_code=403, detail="Choose a display name first")
+        db.execute(
+            "delete from app.topic_subscriptions where account_id = %s and not (topic_key = any(%s))",
+            (user.id, list(update.topics)),
+        )
+        try:
+            for key in update.topics:
+                db.execute(
+                    "insert into app.topic_subscriptions (account_id, topic_key) values (%s, %s)"
+                    " on conflict do nothing",
+                    (user.id, key),
+                )
+        except errors.ForeignKeyViolation as exc:  # a known key whose topic is not in the database yet
+            raise HTTPException(status_code=422, detail="Unknown topic") from exc
+    return _topics(db, user)

@@ -547,6 +547,44 @@ paths:
         '503': {$ref: '#/components/responses/Unavailable'}
       description: 'Public; Cache-Control: public, max-age=300. Order: coverage or approval changes, news, papers;
         reviewed before unreviewed. The conclusion is an existing bottom line, never new wording.'
+  /me/topics:
+    get:
+      operationId: getTopicSubscriptions
+      summary: The topics the signed-in reader follows.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TopicSubscriptions'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Pages never contain it.'
+    put:
+      operationId: setTopicSubscriptions
+      summary: Replace the set of followed topics; 403 until the reader has chosen a display name.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TopicSubscriptions'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TopicSubscriptions'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store.'
 components:
   securitySchemes:
     BearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
@@ -995,6 +1033,17 @@ components:
               url: {type: string, description: Path on the site.}
               date: {type: string, format: date}
               unreviewed: {type: boolean, description: True for AI-written entries not yet reviewed.}
+    TopicSubscriptions:
+      type: object
+      additionalProperties: false
+      required: [topics]
+      properties:
+        topics:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum: [mCRC-BRAF-V600E, mCRC-KRAS-G12C, mCRC-MSI-H, mCRC-HER2, mCRC-RAS-wt, generic-CRS, robotic-surgery]
     AccountUpdate:
       type: object
       additionalProperties: false

@@ -757,3 +757,51 @@ def test_weekly_activity_is_for_the_maintainer_only(client: TestClient, world: W
     url = f"{API_PREFIX}/admin/stats/weekly"
     assert client.get(url).status_code == 401
     assert client.get(url, headers=world.headers(world.other)).status_code == 403
+
+
+# --- topic subscriptions (G6 #117) -----------------------------------------------------------------------------------
+
+
+def test_readers_choose_their_topics_and_only_they_see_them(client: TestClient, world: World) -> None:
+    url = f"{API_PREFIX}/me/topics"
+    sql("insert into app.topics (key, slug, label, title) values ('mCRC-RAS-wt', 'ras-wt', 'RAS-wt', 'RAS-wt mCRC')"
+        " on conflict do nothing")  # fmt: skip
+    first = client.get(url, headers=world.headers(world.author))
+    assert first.status_code == 200 and first.json() == {"topics": []}
+    assert first.headers["cache-control"] == "private, no-store"
+
+    saved = client.put(url, headers=world.headers(world.author), json={"topics": ["mCRC-MSI-H", "mCRC-RAS-wt"]})
+    assert saved.status_code == 200, saved.text
+    schema("TopicSubscriptions").validate(saved.json())
+    assert saved.json() == {"topics": ["mCRC-MSI-H", "mCRC-RAS-wt"]}
+    # Replacing the set drops what is no longer chosen.
+    assert client.put(url, headers=world.headers(world.author), json={"topics": ["mCRC-RAS-wt"]}).json() == {
+        "topics": ["mCRC-RAS-wt"]
+    }
+    assert client.get(url, headers=world.headers(world.author)).json() == {"topics": ["mCRC-RAS-wt"]}
+    # Another reader has their own (empty) set; visitors get nothing.
+    assert client.get(url, headers=world.headers(world.other)).json() == {"topics": []}
+    assert client.get(url).status_code == 401
+
+
+@pytest.mark.parametrize(
+    "body", [{"topics": ["not-a-topic"]}, {"topics": ["mCRC-MSI-H", "mCRC-MSI-H"]}, {"topics": "mCRC-MSI-H"}, {}]
+)
+def test_topic_choices_must_be_known_topics(client: TestClient, world: World, body: dict[str, Any]) -> None:
+    assert client.put(f"{API_PREFIX}/me/topics", headers=world.headers(world.author), json=body).status_code == 422
+
+
+def test_a_topic_the_site_does_not_have_yet_is_refused(client: TestClient, world: World) -> None:
+    # A known key whose topic is not in the database (not imported yet) is an input error, not a server error.
+    sql("delete from app.topic_subscriptions where topic_key = 'mCRC-HER2'")
+    if sql("select 1 from app.topics where key = 'mCRC-HER2'"):
+        pytest.skip("the database already has this topic")
+    response = client.put(
+        f"{API_PREFIX}/me/topics", headers=world.headers(world.author), json={"topics": ["mCRC-HER2"]}
+    )
+    assert response.status_code == 422
+
+
+def test_topics_need_a_display_name_first(client: TestClient, world: World) -> None:
+    response = client.put(f"{API_PREFIX}/me/topics", headers=world.headers(world.newbie), json={"topics": []})
+    assert response.status_code == 403
