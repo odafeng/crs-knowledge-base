@@ -140,6 +140,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/semantic-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Natural-language search over papers, news and treatment cards (H3); 503 when not configured or the month's embedding budget is spent, so the site falls back to keyword search.
+         * @description The query is in the body so it stays out of request logs; it is not stored. Set Cache-Control: no-store.
+         */
+        post: operations["semanticSearch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/papers/{paperId}/comments": {
         parameters: {
             query?: never;
@@ -894,6 +914,19 @@ export interface components {
                 roster: "listed" | "unlisted" | "unavailable";
             }[];
         };
+        SemanticQuery: {
+            query: string;
+        };
+        SemanticResults: {
+            results: {
+                /** @enum {string} */
+                kind: "paper" | "news" | "card";
+                path: string;
+                title: string;
+                snippet: string;
+                score: number;
+            }[];
+        };
         SurgeonDecision: {
             /** @enum {string} */
             decision: "approve" | "reject";
@@ -1306,6 +1339,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchHitPage"];
+                };
+            };
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    semanticSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SemanticQuery"];
+            };
+        };
+        responses: {
+            /** @description Success. Passages below the relevance threshold are omitted, so the list may be empty. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SemanticResults"];
                 };
             };
             422: components["responses"]["InvalidRequest"];

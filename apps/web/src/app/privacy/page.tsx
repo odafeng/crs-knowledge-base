@@ -130,6 +130,11 @@ export default function PrivacyPage() {
             Microsoft）：轉送加密過的新消息通知，只在你開啟推播時使用。
           </li>
           <li>Google：使用 Google 登入時的身分驗證。</li>
+          <li>
+            Voyage AI：首頁「用一句話找證據」的語意搜尋。你輸入的問題會送到
+            Voyage
+            轉成向量再比對；網站不保存問題，也不和帳號連結。站上公開的文獻、消息與治療整理也會送去建立索引。
+          </li>
         </ul>
 
         <h2>AI 的使用</h2>

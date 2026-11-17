@@ -43,6 +43,17 @@ class Settings(BaseSettings):
     # Approve at once when the map and a hospital mailbox match. Off until Supabase email confirmations are on: with
     # them off, an email change applies without confirming the new address, so the token's email proves nothing.
     surgeon_auto_approve: bool = False
+    # Natural-language search (H3 #125): the Voyage AI key (Secret Manager voyage-api-key). Unset: the endpoint
+    # answers 503 and the site offers keyword search only.
+    voyage_api_key: SecretStr | None = None
+    # Tokens per month shared with the indexer: USD 5 at USD 0.06 per million (ADR-0022).
+    search_monthly_tokens: int = Field(default=80_000_000, ge=0)
+    # Below this cosine similarity a passage is not a result. Calibrated 2026-11-18 on voyage-4 with the real content:
+    # questions written as sentences scored 0.50-0.66 at the top, terse keyword queries 0.39-0.44, and unrelated ones
+    # (weather, restaurants, haemorrhoid care) at most 0.26; the closest wrong match seen was 0.34.
+    search_min_score: float = Field(default=0.35, ge=0, le=1)
+    # Searches per client address per minute on one instance (429 beyond).
+    search_per_minute: int = Field(default=20, ge=1)
 
     @model_validator(mode="after")
     def deployed_environments_need_a_database(self) -> Self:

@@ -8,6 +8,7 @@ import {
 import { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
+import { AskSite } from "@/components/ask-site";
 import { FollowedUpdates } from "@/components/followed-topics";
 import { NewsFigure } from "@/components/news-figure";
 import {
@@ -84,6 +85,7 @@ export default async function Home() {
           </div>
         </section>
       )}
+      <AskSite />
       {lead && (
         <section className="lead on-field" aria-labelledby="lead-title">
           <svg

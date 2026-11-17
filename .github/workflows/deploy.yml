@@ -90,15 +90,19 @@ jobs:
           CORS_ORIGINS: ${{ inputs.environment == 'staging' && vars.STAGING_WEB_ORIGINS || vars.WEB_ORIGINS || '[]' }}
           CONTENT_REQUESTS: ${{ vars.CONTENT_REQUESTS_ENABLED }}
           SURGEON_AUTO_APPROVE: ${{ vars.SURGEON_AUTO_APPROVE }}
+          SEARCH: ${{ vars.SEARCH_ENABLED }}
         run: |
           ENV="GUTHUB_ENVIRONMENT=${GUTHUB_ENV_NAME}@GUTHUB_SUPABASE_URL=https://${SUPABASE_REF}.supabase.co@GUTHUB_CORS_ORIGINS=${CORS_ORIGINS}"
           # The admin's review buttons start this job (E6 #159); without it requests wait for the job's next run.
           [ "$CONTENT_REQUESTS" = true ] && ENV="$ENV@GUTHUB_CONTENT_REQUESTS_JOB=projects/${PROJECT}/locations/${REGION}/jobs/content-requests"
           # Only after Supabase email confirmations are on (H11 #172): until then an unconfirmed email change would pass.
           [ "$SURGEON_AUTO_APPROVE" = true ] && ENV="$ENV@GUTHUB_SURGEON_AUTO_APPROVE=true"
+          # Natural-language search (H3 #125): needs voyage-api-key readable by api-runtime; SEARCH_ENABLED says so.
+          SECRETS=GUTHUB_DATABASE_URL=guthub-api-database-url:latest
+          [ "$SEARCH" = true ] && SECRETS="$SECRETS,GUTHUB_VOYAGE_API_KEY=voyage-api-key:latest"
           gcloud run deploy guthub-api --project="$PROJECT" --region="$REGION" \
             --image="$IMAGES/api:$GITHUB_SHA" --service-account="$API_RUNTIME" \
-            --set-secrets=GUTHUB_DATABASE_URL=guthub-api-database-url:latest \
+            --set-secrets="$SECRETS" \
             --set-env-vars="^@^${ENV}" \
             --allow-unauthenticated --min-instances=0 --max-instances="$MAX_INSTANCES" --cpu=1 --memory=512Mi \
             --concurrency=40 --timeout=30
@@ -220,6 +224,28 @@ jobs:
             gcloud scheduler jobs update http paper-watch-daily "${ARGS[@]}"
           else
             gcloud scheduler jobs create http paper-watch-daily "${ARGS[@]}"
+          fi
+
+      # Search index (H3 #125): embeds new or changed content daily, after Paper Watch. It writes as the content owner,
+      # so it needs guthub-content-database-url, which exists once the content writers run on Cloud Run
+      # (CONTENT_REQUESTS_ENABLED); until then the maintainer's import is followed by a manual run.
+      - name: Deploy the search index job
+        if: vars.SEARCH_ENABLED == 'true' && vars.CONTENT_REQUESTS_ENABLED == 'true'
+        run: |
+          gcloud run jobs deploy search-index --project="$PROJECT" --region="$REGION" \
+            --image="$IMAGES/worker:$GITHUB_SHA" --service-account="$WORKER_RUNTIME" \
+            --command=python --args=/app/scripts/search_index.py \
+            --set-secrets=GUTHUB_CONTENT_DATABASE_URL=guthub-content-database-url:latest,VOYAGE_API_KEY=voyage-api-key:latest \
+            --max-retries=1 --task-timeout=900 --parallelism=1
+          gcloud run jobs add-iam-policy-binding search-index --project="$PROJECT" --region="$REGION" \
+            --member="serviceAccount:$WORKER_RUNTIME" --role=roles/run.invoker --format=none
+          ARGS=(--project="$PROJECT" --location="$REGION" --schedule="30 1 * * *" --time-zone="Asia/Taipei"
+            --uri="https://run.googleapis.com/v2/projects/$PROJECT/locations/$REGION/jobs/search-index:run"
+            --http-method=POST --oauth-service-account-email="$WORKER_RUNTIME")
+          if gcloud scheduler jobs describe search-index-daily --project="$PROJECT" --location="$REGION" >/dev/null 2>&1; then
+            gcloud scheduler jobs update http search-index-daily "${ARGS[@]}"
+          else
+            gcloud scheduler jobs create http search-index-daily "${ARGS[@]}"
           fi
 
       # Accept and unpublish after cutover (ADR-0021), and the admin's buttons on the site (E6 #159, through the API):
