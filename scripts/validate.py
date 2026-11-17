@@ -91,6 +91,15 @@ def _validate_soc(topic: str, soc: dict, paper_ids: set[str]) -> list[str]:
                     errors.append(f"{label} regulatory '{row.get('regimen')}' has unknown {kind}: {row.get(kind)!r}")
             if not _DATE.match(str(row.get("checkedAt", ""))):
                 errors.append(f"{label} regulatory '{row.get('regimen')}' checkedAt must be YYYY-MM-DD")
+            # nhiEffective is read from the clause's PDF by scripts/nhi_rules.py, so the two come together (G12 #167).
+            if ("nhiClause" in row) != ("nhiEffective" in row) or (
+                "nhiEffective" in row and not _DATE.match(str(row["nhiEffective"]))
+            ):
+                errors.append(
+                    f"{label} regulatory '{row.get('regimen')}' needs both nhiClause and nhiEffective (YYYY-MM-DD)"
+                )
+            elif "nhiClause" in row and row.get("nhi") not in ("covered", "conditional"):
+                errors.append(f"{label} regulatory '{row.get('regimen')}' has nhiClause but nhi is {row.get('nhi')!r}")
     return errors
 
 

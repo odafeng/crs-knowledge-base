@@ -2,3 +2,4 @@ anthropic>=2.8.0,<3
 pytest>=8.0
 trafilatura>=2.0.0
 readability-lxml>=0.8.1
+pypdf==6.1.3
