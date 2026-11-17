@@ -9,8 +9,10 @@ Anyone may search, so spending is bounded twice: per client address per minute (
 reserve their tokens before calling Voyage and stop INDEXER_RESERVE short of the cap so the indexer always has room.
 """
 
+import ipaddress
+import threading
 import time
-from collections import defaultdict, deque
+from collections import OrderedDict, deque
 from collections.abc import Callable
 from datetime import datetime
 from typing import Annotated, Any
@@ -28,6 +30,7 @@ LIMIT = 8
 TAIPEI = ZoneInfo("Asia/Taipei")
 RESERVE = 256  # tokens held per query before the call; a 200-character question embeds to far fewer
 INDEXER_RESERVE = 1_000_000  # tokens per month queries may not touch; a full re-index takes about 50,000
+DAYS = 30  # queries may spend at most 1/DAYS of their monthly budget in one day, so abuse pauses search for a day
 
 router = APIRouter()
 type Db = Annotated[Conn, Depends(get_conn)]
@@ -49,30 +52,44 @@ class Query(BaseModel):
 
 
 class PerMinute:
-    """Queries per client address in the last minute, per instance; Cloud Run's few instances bound the total."""
+    """Queries per client in the last minute, per instance; Cloud Run's few instances bound the total.
 
-    def __init__(self, limit: int) -> None:
-        self.limit = limit
-        self._seen: defaultdict[str, deque[float]] = defaultdict(deque)
+    Endpoints run in a thread pool, hence the lock. The map keeps at most max_clients entries, dropping the least
+    recently seen, so rotating addresses costs memory nobody else pays for.
+    """
+
+    def __init__(self, limit: int, max_clients: int = 10_000) -> None:
+        self.limit, self.max_clients = limit, max_clients
+        self._seen: OrderedDict[str, deque[float]] = OrderedDict()
+        self._lock = threading.Lock()
 
     def allow(self, client: str) -> bool:
         now = time.monotonic()
-        seen = self._seen[client]
-        while seen and now - seen[0] > 60:
-            seen.popleft()
-        if len(seen) >= self.limit:
-            return False
-        seen.append(now)
-        if len(self._seen) > 10_000:  # forget idle addresses so the map cannot grow without bound
-            for key in [k for k, v in self._seen.items() if not v or now - v[-1] > 60]:
-                del self._seen[key]
-        return True
+        with self._lock:
+            seen = self._seen.setdefault(client, deque())
+            self._seen.move_to_end(client)
+            while seen and now - seen[0] > 60:
+                seen.popleft()
+            if len(seen) >= self.limit:
+                return False
+            seen.append(now)
+            while len(self._seen) > self.max_clients:
+                self._seen.popitem(last=False)
+            return True
 
 
-def client_address(request: Request) -> str:
+def client_key(request: Request) -> str:
+    """The caller, as Cloud Run saw it. IPv6 counts per /64, which one host can rotate through freely."""
     # Cloud Run appends the caller's address to X-Forwarded-For; earlier entries come from the caller and can be forged.
     forwarded = request.headers.get("x-forwarded-for", "")
-    return forwarded.rsplit(",", 1)[-1].strip() or (request.client.host if request.client else "")
+    raw = forwarded.rsplit(",", 1)[-1].strip() or (request.client.host if request.client else "")
+    try:
+        address = ipaddress.ip_address(raw)
+    except ValueError:
+        return raw
+    if address.version == 6:
+        return str(ipaddress.ip_network(f"{address}/64", strict=False))
+    return str(address)
 
 
 def voyage(key: str) -> Embed:
@@ -94,6 +111,10 @@ def _month() -> str:
     return datetime.now(TAIPEI).date().replace(day=1).isoformat()
 
 
+def _today() -> str:
+    return datetime.now(TAIPEI).date().isoformat()
+
+
 @router.post("/semantic-search")
 def semantic_search(query: Query, db: Db, request: Request, response: Response) -> dict[str, Any]:
     response.headers["Cache-Control"] = "no-store"
@@ -101,7 +122,7 @@ def semantic_search(query: Query, db: Db, request: Request, response: Response) 
     embed: Embed | None = request.app.state.embed
     if embed is None:
         raise HTTPException(status_code=503, detail="Semantic search is not configured")
-    if not request.app.state.search_limiter.allow(client_address(request)):
+    if not request.app.state.search_limiter.allow(client_key(request)):
         raise HTTPException(status_code=429, detail="Too many searches; try again in a minute")
     # Reserve before calling Voyage, atomically, so concurrent queries cannot overrun the cap together.
     reserved = db.execute(
@@ -111,6 +132,17 @@ def semantic_search(query: Query, db: Db, request: Request, response: Response) 
     ).fetchone()
     if reserved is None:
         raise HTTPException(status_code=503, detail="Semantic search is paused for the rest of the month")
+    # Today's share, counted in a separate row keyed by the day (the month rows are the first of each month).
+    daily = (settings.search_monthly_tokens - INDEXER_RESERVE) // DAYS
+    today = db.execute(
+        "insert into app.query_usage as u (day, tokens) values (%s, %s) on conflict (day) do update"
+        " set tokens = u.tokens + excluded.tokens where u.tokens + excluded.tokens <= %s returning tokens",
+        (_today(), RESERVE, daily),
+    ).fetchone()
+    if today is None:
+        db.execute("update app.embedding_usage set tokens = greatest(tokens - %s, 0) where month = %s",
+                   (RESERVE, _month()))  # fmt: skip
+        raise HTTPException(status_code=503, detail="Semantic search is paused until tomorrow")
     tokens = 0  # what the call cost; the reservation is settled to it whatever happens
     try:
         vector, tokens = embed(query.query)
@@ -120,6 +152,9 @@ def semantic_search(query: Query, db: Db, request: Request, response: Response) 
         db.execute(
             "update app.embedding_usage set tokens = greatest(tokens + %s, 0) where month = %s",
             (tokens - RESERVE, _month()),
+        )
+        db.execute(
+            "update app.query_usage set tokens = greatest(tokens + %s, 0) where day = %s", (tokens - RESERVE, _today())
         )
     literal = "[" + ",".join(repr(float(v)) for v in vector) + "]"
     rows = db.execute(
