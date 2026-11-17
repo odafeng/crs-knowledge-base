@@ -16,7 +16,38 @@ permissions:
   id-token: write
 
 jobs:
+  # ADR-0024: a migration, a Supabase setting, a change to sign-in verification or to the deployment itself must have
+  # reached staging before production. Staging deploys those paths on every push to main, so this only stops a run
+  # whose staging deploy failed or has not finished.
+  rehearsed:
+    if: github.ref == 'refs/heads/main' && inputs.confirm == 'production'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Check that staging has the risky changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LAST=$(gh run list --workflow deploy-prod.yml --branch main --status success --limit 1 --json headSha --jq '.[0].headSha // empty')
+          STAGED=$(gh run list --workflow deploy-staging.yml --branch main --status success --limit 1 --json headSha --jq '.[0].headSha // empty')
+          RISKY=$(git log -1 --format=%H "${LAST:+$LAST..}HEAD" -- supabase/migrations supabase/config.toml \
+            apps/api/src/guthub_api/auth.py .github/workflows/deploy.yml .github/workflows/deploy-staging.yml)
+          if [ -z "$RISKY" ]; then
+            echo "No schema, Supabase, sign-in or deployment change since the last production deploy."
+          elif [ -n "$STAGED" ] && git merge-base --is-ancestor "$RISKY" "$STAGED"; then
+            echo "Staging has $RISKY (staged at $STAGED)."
+          else
+            echo "::error::$RISKY changes the schema, Supabase settings, sign-in or deployment and has not been deployed to staging. Run Deploy staging first."
+            exit 1
+          fi
+
   production:
+    needs: rehearsed
     if: github.ref == 'refs/heads/main' && inputs.confirm == 'production'
     uses: ./.github/workflows/deploy.yml
     with:

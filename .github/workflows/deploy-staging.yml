@@ -1,19 +1,16 @@
 name: Deploy staging
 
-# Every change on main that touches the API, the jobs or the database goes to staging (E3 #76). The steps live in
-# deploy.yml, shared with production.
+# Staging is the rehearsal for what is hard to undo (ADR-0024): database migrations, Supabase settings, how sign-in
+# tokens are verified, and the deployment itself. Other changes go from CI straight to production, so staging need
+# not carry every feature's secrets. Deploy production refuses to run until staging has taken any such change. The
+# steps live in deploy.yml, shared with production.
 on:
   push:
     branches: [main]
     paths:
-      - 'apps/api/**'
-      - 'worker/**'
-      - 'scripts/**'
-      - 'sitegen/**'
-      - 'newsroom/**'
-      - 'import_content.py'
-      - 'content_writer.py'
       - 'supabase/migrations/**'
+      - 'supabase/config.toml'
+      - 'apps/api/src/guthub_api/auth.py'
       - '.github/workflows/deploy.yml'
       - '.github/workflows/deploy-staging.yml'
   workflow_dispatch:
