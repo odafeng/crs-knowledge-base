@@ -18,6 +18,7 @@ const OUTPUTS = [
   ['icons/icon-192.png', 192, 0.62, 'square'], // full-bleed; iOS and Android round the corners themselves
   ['icons/icon-512.png', 512, 0.62, 'square'],
   ['icons/icon-maskable-512.png', 512, 0.5, 'square'], // inside the central 80% safe zone
+  ['icons/mark-96.png', 96, 0.62, 'disc'], // the header mark, shown at 32 px: sharp up to 3x screens
   ['icons/badge-96.png', 96, 0.9, 'badge'], // Android draws only the alpha channel: white on transparent
 ];
 

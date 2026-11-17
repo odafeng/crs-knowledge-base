@@ -6,7 +6,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: var(--z-h
 .site-header__inner { display: flex; align-items: center; gap: var(--space-2); min-height: var(--header-h); }
 .brand { display: flex; align-items: center; gap: var(--space-3); margin-inline-end: auto; color: var(--ink); text-decoration: none; }
 .brand:hover { color: var(--ink); }
-.brand__mark { width: 2rem; height: 2rem; flex: none; border-radius: 8px; }
+.brand__mark { width: 2rem; height: 2rem; flex: none; border-radius: 50%; box-shadow: 0 0 0 1px var(--mark-ring); }
 .brand__text { display: grid; line-height: 1.2; }
 .brand__name { font-size: 1.0625rem; font-weight: 700; letter-spacing: -0.015em; }
 .brand__desc { color: var(--ink-3); font-size: 0.75rem; font-weight: 500; letter-spacing: 0.06em; }
