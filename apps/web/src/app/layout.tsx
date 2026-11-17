@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     },
   },
   // The manifest link comes from app/manifest.ts.
-  icons: { icon: "/favicon.svg", apple: "/icons/icon-192.png" },
+  icons: { icon: "/favicon.png", apple: "/icons/icon-192.png" },
 };
 
 export const viewport: Viewport = {
