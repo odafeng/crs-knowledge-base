@@ -224,7 +224,9 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+# On (H11 #172): an email change then needs the new address confirmed, so a session's email proves the mailbox and
+# automatic surgeon approval can rely on it. New readers get the confirmation template, the same sign-in email.
+enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
