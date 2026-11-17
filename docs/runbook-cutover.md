@@ -98,6 +98,22 @@ gcloud run services update guthub-api --project=$P --region=asia-northeast1 --re
 
 Cloud Scheduler 每個帳單帳戶有 3 個免費排程，超過後每個每月 USD 0.10；Secret Manager 超過免費版本數後，每個版本每月 USD 0.06。
 
+## 啟用 LINE 每日推送（G3 #114）
+
+方案、頻率與帳號已在 ADR-0022 決定：免費的輕用量、有新內容才推、另外建立給讀者的 GutHub 官方帳號。
+
+1. 在 LINE Official Account Manager 建立「GutHub」官方帳號，到「設定 → Messaging API」啟用，再到 LINE Developers console 的該 channel 發行 long-lived channel access token。
+2. 把 token 存進 Secret Manager，並讓 `api-runtime` 可以讀取：
+   ```sh
+   printf %s '<token>' | gcloud secrets create line-channel-access-token --project=$P --data-file=-
+   gcloud secrets add-iam-policy-binding line-channel-access-token --project=$P \
+     --member=serviceAccount:api-runtime@$P.iam.gserviceaccount.com --role=roles/secretmanager.secretAccessor
+   ```
+3. 先乾跑看訊息內容，不會發送：`gcloud run jobs execute line-daily --args=-m,guthub_api.maintenance,line-daily,--dry-run`（job 部署後）或在本機執行 `python -m guthub_api.maintenance line-daily --dry-run --date <有新內容的日期>`。
+4. 設定 repository 變數 `LINE_ENABLED=true`（連結要指向的網站另設 `LINE_SITE_ORIGIN`），再部署一次。會建立 `line-daily` job 與每天 07:00 的排程。
+
+broadcast 會送給這個帳號的**所有**追蹤者，所以只在給讀者用的帳號啟用；不要把 Paper Watch 通知維護者用的既有帳號 token 放進來。訊息按收件人計算，超過每月額度時 LINE 回 429，job 失敗告警會通知。
+
 ## 告警
 
 用 `python3 tools/setup_monitoring.py $P <API 主機名稱> [通知管道 ...]` 建立，重複執行不會重複建立。
