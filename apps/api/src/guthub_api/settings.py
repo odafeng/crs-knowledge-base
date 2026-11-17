@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     # reach (mailto: or https:). Only the announce-news job needs them; the public key lives in the web build.
     vapid_private_key: SecretStr | None = None
     vapid_subject: str | None = None
+    # LINE daily broadcast (G3 #114): the GutHub official account's Messaging API channel access token (Secret Manager),
+    # and the site origin the message links to.
+    line_channel_access_token: SecretStr | None = None
+    site_origin: str = "https://guthub.tw"
 
     @model_validator(mode="after")
     def deployed_environments_need_a_database(self) -> Self:

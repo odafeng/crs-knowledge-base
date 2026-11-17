@@ -2,22 +2,27 @@
 
 python -m guthub_api.maintenance purge-deleted-authors
 python -m guthub_api.maintenance announce-news
+python -m guthub_api.maintenance line-daily [--dry-run] [--date YYYY-MM-DD]
 
 purge-deleted-authors clears the private author mapping of comments deleted more than 90 days ago and removes
 accounts deleted that long ago (app.purge_deleted_authors, ADR-0017). The privacy policy promises this, so it runs
 daily. announce-news pushes stories published in the last two days to subscribed browsers, each story once
 (guthub_api.announce, C5 #95); it also needs GUTHUB_VAPID_PRIVATE_KEY and GUTHUB_VAPID_SUBJECT. Both connect as
-guthub_api through GUTHUB_DATABASE_URL, like the API.
+guthub_api through GUTHUB_DATABASE_URL, like the API. line-daily broadcasts the day's pick to the GutHub LINE account
+(guthub_api.line, G3 #114) with GUTHUB_LINE_CHANNEL_ACCESS_TOKEN; --dry-run prints it without sending.
 """
 
 import argparse
 import json
 import logging
 import sys
+from datetime import date, datetime
 
 import psycopg
 
 from guthub_api.announce import announce_news, web_push
+from guthub_api.daily import TAIPEI
+from guthub_api.line import broadcast_daily
 from guthub_api.settings import Settings
 
 logger = logging.getLogger("guthub_api.maintenance")
@@ -35,14 +40,27 @@ def purge_deleted_authors(url: str) -> dict[str, int]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("job", choices=["purge-deleted-authors", "announce-news"])
+    parser.add_argument("job", choices=["purge-deleted-authors", "announce-news", "line-daily"])
+    parser.add_argument("--dry-run", action="store_true", help="line-daily: print the message, send nothing")
+    parser.add_argument("--date", type=date.fromisoformat, help="line-daily: the day to send (default: today, Taiwan)")
     args = parser.parse_args(argv)
     settings = Settings()
     if settings.database_url is None:
         print("GUTHUB_DATABASE_URL is required", file=sys.stderr)
         return 1
     url = settings.database_url.get_secret_value()
-    if args.job == "announce-news":
+    if args.job == "line-daily":
+        token = settings.line_channel_access_token
+        if token is None and not args.dry_run:
+            print("GUTHUB_LINE_CHANNEL_ACCESS_TOKEN is required (or use --dry-run)", file=sys.stderr)
+            return 1
+        result = broadcast_daily(
+            url,
+            args.date or datetime.now(TAIPEI).date(),
+            settings.site_origin,
+            None if args.dry_run or token is None else token.get_secret_value(),
+        )
+    elif args.job == "announce-news":
         if settings.vapid_private_key is None or not settings.vapid_subject:
             print("GUTHUB_VAPID_PRIVATE_KEY and GUTHUB_VAPID_SUBJECT are required", file=sys.stderr)
             return 1
@@ -50,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         result = purge_deleted_authors(url)
     # One JSON line, so Cloud Logging can parse it; no identifiers, only counts.
-    print(json.dumps({"job": args.job, **result}))
+    print(json.dumps({"job": args.job, **result}, ensure_ascii=False))
     return 0
 
 
