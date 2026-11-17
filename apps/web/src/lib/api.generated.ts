@@ -417,6 +417,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/surgeon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Whether the signed-in reader is a verified colorectal surgeon member, or has applied.
+         * @description Requires a verified session. Set Cache-Control: private, no-store.
+         */
+        get: operations["getSurgeonMembership"];
+        /**
+         * Apply, or replace a pending application; 403 until a display name is chosen, 409 once verified.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. The details are deleted once the application is decided or withdrawn.
+         */
+        put: operations["applyForSurgeonMembership"];
+        post?: never;
+        /**
+         * Withdraw a pending application and delete its details; a verified membership is unaffected.
+         * @description Requires a verified session. Set Cache-Control: private, no-store.
+         */
+        delete: operations["withdrawSurgeonApplication"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/surgeon-applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pending applications, oldest first, with the details the maintainer checks.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission.
+         */
+        get: operations["listSurgeonApplications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/surgeon-applications/{accountId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve or reject; the application and its details are deleted either way.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission. Records who decided, never the details.
+         */
+        post: operations["decideSurgeonApplication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/surgeons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Verified colorectal surgeon members.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission.
+         */
+        get: operations["listSurgeonMembers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/surgeons/{accountId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke a membership; recorded in the audit trail.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission.
+         */
+        delete: operations["revokeSurgeonMembership"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/daily-pick": {
         parameters: {
             query?: never;
@@ -746,6 +854,49 @@ export interface components {
             id: number;
             started: boolean;
         };
+        SurgeonMembership: {
+            /** @enum {string} */
+            status: "none" | "pending" | "verified";
+            /** Format: date-time */
+            since: string | null;
+        };
+        SurgeonApplication: {
+            realName: string;
+            hospital: string;
+            department: string;
+            /** @description Last three digits of the certificate number. */
+            certificateDigits: string;
+        };
+        SurgeonApplicationList: {
+            applications: {
+                /** Format: uuid */
+                accountId: string;
+                displayName: string;
+                realName: string;
+                hospital: string;
+                department: string;
+                certificateDigits: string;
+                /** Format: date-time */
+                submittedAt: string;
+            }[];
+        };
+        SurgeonDecision: {
+            /** @enum {string} */
+            decision: "approve" | "reject";
+        };
+        SurgeonDecisionResult: {
+            /** @enum {string} */
+            status: "verified" | "rejected";
+        };
+        SurgeonMemberList: {
+            surgeons: {
+                /** Format: uuid */
+                accountId: string;
+                displayName: string;
+                /** Format: date-time */
+                since: string;
+            }[];
+        };
         TopicSubscriptions: {
             topics: ("mCRC-BRAF-V600E" | "mCRC-KRAS-G12C" | "mCRC-MSI-H" | "mCRC-HER2" | "mCRC-RAS-wt" | "generic-CRS" | "robotic-surgery")[];
         };
@@ -932,6 +1083,7 @@ export interface components {
         Limit: number;
         Cursor: string;
         PaperId: string;
+        AccountId: string;
         CommentId: string;
         NewsId: string;
         TopicKey: components["schemas"]["TopicKey"];
@@ -1655,6 +1807,185 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    getSurgeonMembership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurgeonMembership"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    applyForSurgeonMembership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SurgeonApplication"];
+            };
+        };
+        responses: {
+            /** @description Pending review */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurgeonMembership"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    withdrawSurgeonApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Withdrawn */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    listSurgeonApplications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurgeonApplicationList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    decideSurgeonApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SurgeonDecision"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurgeonDecisionResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    listSurgeonMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurgeonMemberList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    revokeSurgeonMembership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             422: components["responses"]["InvalidRequest"];
             503: components["responses"]["Unavailable"];
         };

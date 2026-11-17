@@ -545,6 +545,141 @@ paths:
       description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
         permission. The API never writes content itself (ADR-0021).'
       x-required-permission: comments:moderate
+  /me/surgeon:
+    get:
+      operationId: getSurgeonMembership
+      summary: Whether the signed-in reader is a verified colorectal surgeon member, or has applied.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SurgeonMembership'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store.'
+    put:
+      operationId: applyForSurgeonMembership
+      summary: Apply, or replace a pending application; 403 until a display name is chosen, 409 once verified.
+      security:
+      - BearerAuth: []
+      responses:
+        '202':
+          description: Pending review
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SurgeonMembership'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+        '409': {$ref: '#/components/responses/Conflict'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SurgeonApplication'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. The details are deleted once
+        the application is decided or withdrawn.'
+    delete:
+      operationId: withdrawSurgeonApplication
+      summary: Withdraw a pending application and delete its details; a verified membership is unaffected.
+      security:
+      - BearerAuth: []
+      responses:
+        '204': {description: Withdrawn}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store.'
+  /admin/surgeon-applications:
+    get:
+      operationId: listSurgeonApplications
+      summary: Pending applications, oldest first, with the details the maintainer checks.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SurgeonApplicationList'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
+        permission.'
+      x-required-permission: comments:moderate
+  /admin/surgeon-applications/{accountId}:
+    post:
+      operationId: decideSurgeonApplication
+      summary: Approve or reject; the application and its details are deleted either way.
+      security:
+      - BearerAuth: []
+      parameters:
+      - {$ref: '#/components/parameters/AccountId'}
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SurgeonDecisionResult'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+        '404': {$ref: '#/components/responses/NotFound'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SurgeonDecision'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
+        permission. Records who decided, never the details.'
+      x-required-permission: comments:moderate
+  /admin/surgeons:
+    get:
+      operationId: listSurgeonMembers
+      summary: Verified colorectal surgeon members.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SurgeonMemberList'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
+        permission.'
+      x-required-permission: comments:moderate
+  /admin/surgeons/{accountId}:
+    delete:
+      operationId: revokeSurgeonMembership
+      summary: Revoke a membership; recorded in the audit trail.
+      security:
+      - BearerAuth: []
+      parameters:
+      - {$ref: '#/components/parameters/AccountId'}
+      responses:
+        '204': {description: Revoked}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+        '404': {$ref: '#/components/responses/NotFound'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
+        permission.'
+      x-required-permission: comments:moderate
   /daily-pick:
     get:
       operationId: getDailyPick
@@ -626,6 +761,11 @@ components:
       in: path
       required: true
       schema: {type: string, minLength: 1}
+    AccountId:
+      name: accountId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
     CommentId:
       name: commentId
       in: path
@@ -1072,6 +1212,68 @@ components:
       properties:
         id: {type: integer}
         started: {type: boolean}
+    SurgeonMembership:
+      type: object
+      additionalProperties: false
+      required: [status, since]
+      properties:
+        status: {type: string, enum: [none, pending, verified]}
+        since: {type: [string, 'null'], format: date-time}
+    SurgeonApplication:
+      type: object
+      additionalProperties: false
+      required: [realName, hospital, department, certificateDigits]
+      properties:
+        realName: {type: string, minLength: 1, maxLength: 40}
+        hospital: {type: string, minLength: 1, maxLength: 80}
+        department: {type: string, minLength: 1, maxLength: 40}
+        certificateDigits: {type: string, pattern: '^[0-9]{3}$', description: Last three digits of the certificate number.}
+    SurgeonApplicationList:
+      type: object
+      additionalProperties: false
+      required: [applications]
+      properties:
+        applications:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [accountId, displayName, realName, hospital, department, certificateDigits, submittedAt]
+            properties:
+              accountId: {type: string, format: uuid}
+              displayName: {type: string}
+              realName: {type: string}
+              hospital: {type: string}
+              department: {type: string}
+              certificateDigits: {type: string, pattern: '^[0-9]{3}$'}
+              submittedAt: {type: string, format: date-time}
+    SurgeonDecision:
+      type: object
+      additionalProperties: false
+      required: [decision]
+      properties:
+        decision: {type: string, enum: [approve, reject]}
+    SurgeonDecisionResult:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: {type: string, enum: [verified, rejected]}
+    SurgeonMemberList:
+      type: object
+      additionalProperties: false
+      required: [surgeons]
+      properties:
+        surgeons:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [accountId, displayName, since]
+            properties:
+              accountId: {type: string, format: uuid}
+              displayName: {type: string}
+              since: {type: string, format: date-time}
     TopicSubscriptions:
       type: object
       additionalProperties: false
