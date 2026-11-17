@@ -30,3 +30,4 @@ jobs:
       project: guthub-staging
       project_number: '687867762639'
       supabase_ref: dlfhqneoqxlelczqcxif
+      supabase_pooler: aws-0-ap-northeast-1.pooler.supabase.com

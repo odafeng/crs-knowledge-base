@@ -2,11 +2,18 @@
 
 對應 F3 #78。寫給另一位維護者：照順序執行就能完成切換或退回，不需要先讀完所有 ADR。背景與取捨見 ADR-0016（環境）、ADR-0017（留言與私有資料）、ADR-0021（單一內容寫入者）。
 
-下文的 `$P` 是 Google Cloud 專案（`guthub-staging` 或 `guthub-prod`），`$REF` 是對應的 Supabase project ref，`$DB` 是擁有 `app` 表的連線字串。密碼放在 Secret Manager 的 `supabase-db-password`，不要貼進終端機歷史、issue 或 PR：
+下文的 `$P` 是 Google Cloud 專案（`guthub-staging` 或 `guthub-prod`），`$REF` 是對應的 Supabase project ref，`$POOLER` 是該專案的連線池主機，`$DB` 是擁有 `app` 表的連線字串。兩個專案在不同的連線池主機上，用錯會出現 `tenant/user ... not found`：
+
+| 環境 | `$P` | `$REF` | `$POOLER` |
+|---|---|---|---|
+| staging | `guthub-staging` | `dlfhqneoqxlelczqcxif` | `aws-0-ap-northeast-1.pooler.supabase.com` |
+| 正式 | `guthub-prod` | `pcmxouxeaoqvvegbclfg` | `aws-1-ap-northeast-1.pooler.supabase.com` |
+
+密碼放在 Secret Manager 的 `supabase-db-password`，不要貼進終端機歷史、issue 或 PR：
 
 ```sh
 PW=$(gcloud secrets versions access latest --secret=supabase-db-password --project=$P)
-DB="postgresql://postgres.$REF:${PW}@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres?sslmode=require"
+DB="postgresql://postgres.$REF:${PW}@$POOLER:5432/postgres?sslmode=require"
 unset PW
 ```
 

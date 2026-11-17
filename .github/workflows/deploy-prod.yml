@@ -24,4 +24,5 @@ jobs:
       project: guthub-prod
       project_number: '392767072259'
       supabase_ref: pcmxouxeaoqvvegbclfg
+      supabase_pooler: aws-1-ap-northeast-1.pooler.supabase.com
       max_instances: 5
