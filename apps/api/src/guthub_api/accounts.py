@@ -112,9 +112,13 @@ def set_topics(update: TopicSubscriptions, user: SignedIn, db: Db, response: Res
             "delete from app.topic_subscriptions where account_id = %s and not (topic_key = any(%s))",
             (user.id, list(update.topics)),
         )
-        for key in update.topics:
-            db.execute(
-                "insert into app.topic_subscriptions (account_id, topic_key) values (%s, %s) on conflict do nothing",
-                (user.id, key),
-            )
+        try:
+            for key in update.topics:
+                db.execute(
+                    "insert into app.topic_subscriptions (account_id, topic_key) values (%s, %s)"
+                    " on conflict do nothing",
+                    (user.id, key),
+                )
+        except errors.ForeignKeyViolation as exc:  # a known key whose topic is not in the database yet
+            raise HTTPException(status_code=422, detail="Unknown topic") from exc
     return _topics(db, user)
