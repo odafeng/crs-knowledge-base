@@ -6,7 +6,7 @@
 #
 # SOURCE_URL needs the role that owns the app tables (for staging: the supabase-db-password secret). The dump holds
 # email addresses and private author mappings: it is written to a private temp directory and deleted at the end.
-# Needs pg_dump/pg_restore/psql 17 and Docker. Exit status 1 if any table differs.
+# Needs pg_dump/pg_restore/psql 17 and Docker (pulls pgvector/pgvector:pg17). Exit status 1 if any table differs.
 set -euo pipefail
 
 : "${SOURCE_URL:?set SOURCE_URL to the source database}"
@@ -33,7 +33,8 @@ ls -l "$WORK/backup.dump" | awk '{print "    app schema: " $5 " bytes"}'
 echo "    auth users: $(wc -l < "$WORK/auth-users.csv" | tr -d ' ')"
 
 echo "2/4 start an empty Postgres 17"
-docker run -d --name "$CONTAINER" -e POSTGRES_PASSWORD="$PASSWORD" -p "127.0.0.1:${PORT}:5432" postgres:17 >/dev/null
+# pgvector's image: app.search_chunks (H3 #125) stores vectors, and its table cannot be created without the extension.
+docker run -d --name "$CONTAINER" -e POSTGRES_PASSWORD="$PASSWORD" -p "127.0.0.1:${PORT}:5432" pgvector/pgvector:pg17 >/dev/null
 for _ in $(seq 1 60); do psql "$TARGET" -qtAc "select 1" >/dev/null 2>&1 && break; sleep 1; done
 # Roles the schema's policies and grants name; Supabase creates these itself.
 psql "$TARGET" -q -v ON_ERROR_STOP=1 <<'SQL'
@@ -43,6 +44,9 @@ create role authenticated nologin;
 create role service_role nologin;
 create schema auth;
 create table auth.users (id uuid primary key, email text);
+-- Supabase keeps extensions in their own schema; the dump refers to extensions.vector.
+create schema extensions;
+create extension vector with schema extensions;
 SQL
 
 echo "3/4 restore"
