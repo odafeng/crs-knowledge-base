@@ -1,0 +1,27 @@
+name: Deploy production
+
+# Production is deployed by hand only, at the cutover and after it (F4 #79, docs/runbook-cutover.md). It applies the
+# migrations to the production database, so the run must be started from main and confirmed by typing "production".
+# Workload identity federation for guthub-prod also accepts only refs/heads/main.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type "production" to deploy main to guthub-prod
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  production:
+    if: github.ref == 'refs/heads/main' && inputs.confirm == 'production'
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: production
+      project: guthub-prod
+      project_number: '392767072259'
+      supabase_ref: pcmxouxeaoqvvegbclfg
+      max_instances: 5

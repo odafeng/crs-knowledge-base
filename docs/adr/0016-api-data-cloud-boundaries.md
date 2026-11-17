@@ -74,8 +74,14 @@ A 的預期優點是 Auth、資料、Storage 的整合工作較少。B 適合已
 - staging 通過內容 parity、unit/smoke/E2E、權限矩陣、mobile/accessibility 及還原演練後，才由 [F4 #79](https://github.com/odafeng/crs-knowledge-base/issues/79) 核准正式切換。
 - 新依賴固定版本並提交 lockfile。前端建立 TypeScript/lint/unit/smoke/E2E，Python 維持 Ruff/Pyright/pytest。
 
+### 部署流程（2026-11-17 補充；F4 #79）
+
+- staging 與正式環境共用同一份部署步驟（`.github/workflows/deploy.yml`）。staging 在 `main` 有相關變更時自動部署；正式環境只能手動觸發 `deploy-prod.yml`，必須從 `main` 執行並輸入 `production` 確認。身分聯合本身也只接受 `main`。
+- 每個環境的 job 開關（`LINE_ENABLED`、`PUSH_ENABLED`、`PAPER_WATCH_ENABLED`、`REGULATORY_WATCH_ENABLED`）與允許的網站來源（`WEB_ORIGINS`）設在對應的 GitHub environment，不用 repository 變數，開啟正式環境的功能不會影響 staging。正式環境的 CORS 名單不會沿用 staging 的設定。
+
 ## Consequences
 
+- 部署步驟的改動會先在 staging 自動跑過，正式環境要到下次手動部署才套用。代價是兩個 GitHub environment 的變數要各自維護：忘了在某個環境設定開關，該 job 在那個環境就不會部署，而且不會報錯。
 - API、長時間任務與資料寫入責任清楚，能重用現有 Python 程式。
 - PostgreSQL 的交易與關聯約束可用來保護留言、審核狀態及發布的一致性。
 - FastAPI 與 Next.js 帶來兩個 runtime，需維護 contract、部署、session 傳遞與監控。

@@ -42,9 +42,28 @@ gcloud run services update guthub-api --project=$P --region=asia-northeast1 --re
 
 暫停期間不要合併任何會觸發部署 workflow 的 PR。部署用 `--set-env-vars` 整組重設環境變數，會把暫停一起解除。
 
+## 正式環境部署（Deploy production）
+
+正式環境只能手動部署：到 GitHub Actions 選「Deploy production」，在 `main` 上執行，確認欄位輸入 `production`；或執行 `gh workflow run deploy-prod.yml --ref main -f confirm=production`。步驟和 staging 完全相同（兩邊都呼叫 `.github/workflows/deploy.yml`）：套用 migration、建置映像、部署 API、每日清除 job，以及各自開關控制的 job。
+
+各 job 的開關（`LINE_ENABLED`、`PUSH_ENABLED`、`PAPER_WATCH_ENABLED`、`REGULATORY_WATCH_ENABLED`）與 `WEB_ORIGINS` 都設在 **GitHub environment**（Settings → Environments → `production` 或 `staging`），不要設成 repository 變數，否則兩個環境會一起開。
+
+第一次部署前，維護者要先做一次（agent 沒有權限改正式環境的 IAM）：
+
+```sh
+gcloud projects add-iam-policy-binding guthub-prod --condition=None \
+  --member=serviceAccount:deployer@guthub-prod.iam.gserviceaccount.com --role=roles/cloudscheduler.admin
+gcloud secrets add-iam-policy-binding supabase-db-password --project=guthub-prod \
+  --member=serviceAccount:deployer@guthub-prod.iam.gserviceaccount.com --role=roles/secretmanager.secretAccessor
+```
+
+再到 Settings → Environments 建立 `production`，加上變數 `WEB_ORIGINS`（例如 `["https://guthub.tw"]`）。建議同時設定 required reviewers，讓每次正式部署都要人按核准。
+
 ## 切換順序
 
 每一步完成後把結果（時間、SHA、revision 名稱）記在 F4 issue，rollback 時才知道要退回到哪裡。
+
+0. **切換前先部署一次正式環境**（上一節）。這時 guthub.tw 還沒指過來，讀者看不到；目的是讓 prod 資料庫先有最新的資料表，第 5 步才能匯入，第 2 步也才有 API 可以暫停。
 
 1. **記下目前版本。** API revision：`gcloud run services describe guthub-api --project=$P --region=asia-northeast1 --format='value(status.latestReadyRevisionName)'`；網站：Vercel 專案目前的 production deployment；內容：`git rev-parse HEAD`。
 2. **暫停寫入**（上一節）。
@@ -57,7 +76,7 @@ gcloud run services update guthub-api --project=$P --region=asia-northeast1 --re
    git add data/WRITER && git commit -m "chore(data): move the content writer to PostgreSQL (#79)"
    ```
    `cutover` 只在資料庫與 JSON 的 manifest 完全相同時才會切換，並把這份 manifest 存成匯入水位。`status` 子指令可以隨時查目前的寫入者與水位。
-6. **部署 API 與工作排程**（prod 的部署 workflow，F4），記下新的 revision。
+6. **確認 API 版本**：prod 跑的應該是第 0 步部署的版本。如果 `main` 之後又有 API 變更，就在這一步重新執行 Deploy production，並記下新的 revision。注意：部署會整組重設環境變數，等於提前解除第 2 步的寫入暫停。
 7. **網站**：Vercel 的 production 環境變數換成 prod 的值，接上 `guthub.tw`，設定 `GUTHUB_SITE_PUBLIC=1` 與 `GUTHUB_SITE_ORIGIN=https://guthub.tw`，重新部署。
 8. **快取**：頁面是 ISR，最多 300 秒更新；重新部署會讓新版本立即生效。讀者瀏覽器裡的 Service Worker 快取（`guthub-public-v1`）只存公開頁面，下次連線時會改用新版內容，不需要手動清除。只有快取格式改變時才需要調高版本號。
 9. **恢復寫入**，重新啟用改為讀寫資料庫的 workflow。
@@ -93,7 +112,7 @@ gcloud run services update guthub-api --project=$P --region=asia-northeast1 --re
      --member=serviceAccount:api-runtime@$P.iam.gserviceaccount.com --role=roles/secretmanager.secretAccessor
    ```
 2. 公鑰設成 Vercel 的 `NEXT_PUBLIC_PUSH_PUBLIC_KEY`（`--no-sensitive`），重新部署網站，訂閱框就會出現推播按鈕。
-3. 設定 repository 變數 `PUSH_ENABLED=true`，再部署一次 API。部署 workflow 會建立 `announce-news` job，以及每 30 分鐘執行一次的排程。
+3. 在 GitHub environment 設定 `PUSH_ENABLED=true`，再部署一次。部署 workflow 會建立 `announce-news` job，以及每 30 分鐘執行一次的排程。
 4. 用自己的手機或電腦開啟推播，發布一則新消息，確認 30 分鐘內收到通知。
 
 Cloud Scheduler 每個帳單帳戶有 3 個免費排程，超過後每個每月 USD 0.10；Secret Manager 超過免費版本數後，每個版本每月 USD 0.06。
@@ -110,7 +129,7 @@ Cloud Scheduler 每個帳單帳戶有 3 個免費排程，超過後每個每月 
      --member=serviceAccount:api-runtime@$P.iam.gserviceaccount.com --role=roles/secretmanager.secretAccessor
    ```
 3. 先乾跑看訊息內容，不會發送：`gcloud run jobs execute line-daily --args=-m,guthub_api.maintenance,line-daily,--dry-run`（job 部署後）或在本機執行 `python -m guthub_api.maintenance line-daily --dry-run --date <有新內容的日期>`。
-4. 設定 repository 變數 `LINE_ENABLED=true`（連結要指向的網站另設 `LINE_SITE_ORIGIN`），再部署一次。會建立 `line-daily` job 與每天 07:00 的排程。
+4. **guthub.tw 上線後**，在 GitHub environment `production`（不是 repository 變數）設定 `LINE_ENABLED=true`，再執行一次 Deploy production。會建立 `line-daily` job 與每天 07:00 的排程。token 只放在 `guthub-prod`，staging 沒有，所以不要在 `staging` environment 開啟。
 
 broadcast 會送給這個帳號的**所有**追蹤者，所以只在給讀者用的帳號啟用；不要把 Paper Watch 通知維護者用的既有帳號 token 放進來。訊息按收件人計算，超過每月額度時 LINE 回 429，job 失敗告警會通知。
 
