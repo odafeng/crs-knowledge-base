@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     # and the site origin the message links to.
     line_channel_access_token: SecretStr | None = None
     site_origin: str = "https://guthub.tw"
+    # The content-requests Cloud Run job an admin's review or unpublish button starts (E6 #159), as
+    # projects/<project>/locations/<region>/jobs/content-requests. Unset: requests wait for the job's next run.
+    content_requests_job: str | None = None
 
     @model_validator(mode="after")
     def deployed_environments_need_a_database(self) -> Self:

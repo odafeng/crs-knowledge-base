@@ -1,6 +1,7 @@
 import { pageMetadata, newsJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ReviewActions } from "@/components/review-actions";
 import { notFound } from "next/navigation";
 import { NewsFigure } from "@/components/news-figure";
 import {
@@ -82,6 +83,7 @@ export default async function NewsPage({ params }: Props) {
                 依本站的文獻條目撰寫{unreviewed && "，尚未經人工審核"}
               </span>
             </p>
+            {unreviewed && <ReviewActions kind="news" target={item.id} />}
           </header>
           {item.figures.length > 0 && <NewsFigure item={item} />}
           <div className="story__body">

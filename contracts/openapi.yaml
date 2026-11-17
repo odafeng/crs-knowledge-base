@@ -521,6 +521,30 @@ paths:
       description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
         permission. An active reader commented, liked or reported that week; weeks start on Monday, Asia/Taipei.'
       x-required-permission: comments:moderate
+  /admin/content-requests:
+    post:
+      operationId: requestContentChange
+      summary: Mark an auto-published paper or story reviewed, or take it down; applied by the content writer job.
+      security:
+      - BearerAuth: []
+      responses:
+        '202':
+          description: Recorded; started says whether the job was started now or the request waits for its next run.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ContentRequestQueued'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ContentRequest'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
+        permission. The API never writes content itself (ADR-0021).'
+      x-required-permission: comments:moderate
   /daily-pick:
     get:
       operationId: getDailyPick
@@ -1033,6 +1057,21 @@ components:
               url: {type: string, description: Path on the site.}
               date: {type: string, format: date}
               unreviewed: {type: boolean, description: True for AI-written entries not yet reviewed.}
+    ContentRequest:
+      type: object
+      additionalProperties: false
+      required: [action, kind, target]
+      properties:
+        action: {type: string, enum: [review, unpublish]}
+        kind: {type: string, enum: [paper, news]}
+        target: {type: string, minLength: 1, maxLength: 200, description: Paper or story id.}
+    ContentRequestQueued:
+      type: object
+      additionalProperties: false
+      required: [id, started]
+      properties:
+        id: {type: integer}
+        started: {type: boolean}
     TopicSubscriptions:
       type: object
       additionalProperties: false

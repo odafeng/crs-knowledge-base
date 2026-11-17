@@ -10,6 +10,8 @@ no arguments and reads the requests from the open issues themselves:
   comment and loses the label, so adding the label again retries it.
 - labelled `unpublish-request`, opened by github-actions (the Unpublish workflow), titled `[撤下] <target>`:
   unpublish, comment, close.
+- rows in app.content_requests that the API recorded for an admin's button on the site (E6 #159): mark an
+  auto-published paper or story reviewed, or take it down; the outcome goes back into the row.
 
 Each request is recorded in app.publish_events under a key named after its issue, so a job that dies after the
 database write but before closing the issue only reports and closes it on the next run. The issues are listed through
@@ -35,7 +37,7 @@ for path in (ROOT, ROOT / "scripts"):
 from accept_issue import accept  # noqa: E402
 from content_store import DATABASE_ENV, content_session  # noqa: E402
 from issue_data import extract  # noqa: E402
-from publish import PublishError, unpublish  # noqa: E402
+from publish import PublishError, mark_reviewed, unpublish, unpublish_story  # noqa: E402
 
 ACCEPTED = "accepted"
 UNPUBLISH = "unpublish-request"
@@ -105,13 +107,44 @@ def unpublish_request(issue: Issue, gh: Gh, repo: str, conn: Any = None) -> bool
     return True
 
 
-def run(gh: Gh, repo: str, today: str, conn: Any = None) -> int:
+def site_request(row: dict[str, Any], conn: Any = None) -> tuple[bool, str]:
+    """An admin's button on the site (E6 #159), recorded by the API in app.content_requests."""
+    action, kind, target = row["action"], row["kind"], row["target"]
+    try:
+        with content_session(action, target, key=f"{action}:request-{row['id']}", conn=conn) as session:
+            if session.done:
+                return True, session.done
+            if action == "review":
+                return True, session.record(mark_reviewed(kind, target, session.kb))
+            remove = unpublish_story if kind == "news" else unpublish
+            return True, session.record(remove(target, session.kb))
+    except PublishError as error:
+        return False, "；".join(error.reasons)
+
+
+def site_requests(store: Any, conn: Any = None) -> list[bool]:
+    rows = store.execute(
+        "select id, action, kind, target from app.content_requests where done_at is null order by id"
+    ).fetchall()
+    results = []
+    for row in rows:
+        ok, result = site_request(dict(zip(("id", "action", "kind", "target"), row, strict=True)), conn)
+        store.execute(
+            "update app.content_requests set done_at = now(), ok = %s, result = %s where id = %s", (ok, result, row[0])
+        )
+        results.append(ok)
+    return results
+
+
+def run(gh: Gh, repo: str, today: str, conn: Any = None, store: Any = None) -> int:
+    """`store` lists and closes the site's requests; `conn`, when given, is also the content writer's connection."""
     accepts, unpublishes = pending(open_issues(gh, repo), repo.split("/")[0])
     results = [accept_request(issue, today, gh, repo, conn) for issue in accepts]
     results += [unpublish_request(issue, gh, repo, conn) for issue in unpublishes]
+    site = site_requests(store, conn) if store is not None else []
     print(json.dumps({"job": "content-requests", "accept": len(accepts), "unpublish": len(unpublishes),
-                      "failed": results.count(False)}))  # fmt: skip
-    return 0 if all(results) else 1
+                      "site": len(site), "failed": (results + site).count(False)}))  # fmt: skip
+    return 0 if all(results + site) else 1
 
 
 def main() -> int:
@@ -119,7 +152,10 @@ def main() -> int:
     if not repo or not os.environ.get(DATABASE_ENV):
         print(f"GITHUB_REPOSITORY and {DATABASE_ENV} are required", file=sys.stderr)
         return 2
-    return run(gh_cli, repo, datetime.now(TAIPEI).date().isoformat())
+    import psycopg
+
+    with psycopg.connect(os.environ[DATABASE_ENV], autocommit=True) as store:
+        return run(gh_cli, repo, datetime.now(TAIPEI).date().isoformat(), store=store)
 
 
 if __name__ == "__main__":

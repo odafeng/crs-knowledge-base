@@ -88,11 +88,15 @@ jobs:
         env:
           # Each environment names its own sites; production never falls back to the staging list.
           CORS_ORIGINS: ${{ inputs.environment == 'staging' && vars.STAGING_WEB_ORIGINS || vars.WEB_ORIGINS || '[]' }}
+          CONTENT_REQUESTS: ${{ vars.CONTENT_REQUESTS_ENABLED }}
         run: |
+          ENV="GUTHUB_ENVIRONMENT=${GUTHUB_ENV_NAME}@GUTHUB_SUPABASE_URL=https://${SUPABASE_REF}.supabase.co@GUTHUB_CORS_ORIGINS=${CORS_ORIGINS}"
+          # The admin's review buttons start this job (E6 #159); without it requests wait for the job's next run.
+          [ "$CONTENT_REQUESTS" = true ] && ENV="$ENV@GUTHUB_CONTENT_REQUESTS_JOB=projects/${PROJECT}/locations/${REGION}/jobs/content-requests"
           gcloud run deploy guthub-api --project="$PROJECT" --region="$REGION" \
             --image="$IMAGES/api:$GITHUB_SHA" --service-account="$API_RUNTIME" \
             --set-secrets=GUTHUB_DATABASE_URL=guthub-api-database-url:latest \
-            --set-env-vars="^@^GUTHUB_ENVIRONMENT=${GUTHUB_ENV_NAME}@GUTHUB_SUPABASE_URL=https://${SUPABASE_REF}.supabase.co@GUTHUB_CORS_ORIGINS=${CORS_ORIGINS}" \
+            --set-env-vars="^@^${ENV}" \
             --allow-unauthenticated --min-instances=0 --max-instances="$MAX_INSTANCES" --cpu=1 --memory=512Mi \
             --concurrency=40 --timeout=30
           URL=$(gcloud run services describe guthub-api --project="$PROJECT" --region="$REGION" --format='value(status.url)')
@@ -215,7 +219,8 @@ jobs:
             gcloud scheduler jobs create http paper-watch-daily "${ARGS[@]}"
           fi
 
-      # Accept and unpublish after cutover (ADR-0021): paper-accept.yml and unpublish.yml start this job once
+      # Accept and unpublish after cutover (ADR-0021), and the admin's buttons on the site (E6 #159, through the API):
+      # paper-accept.yml and unpublish.yml start this job once
       # data/WRITER says postgres, as content-trigger@, which may run this one job and nothing else. The job reads
       # the requests from the issues, so GitHub cannot change what it does. Production only: CONTENT_REQUESTS_ENABLED.
       - name: Deploy the content requests job
@@ -230,3 +235,6 @@ jobs:
           gcloud run jobs add-iam-policy-binding content-requests --project="$PROJECT" --region="$REGION" \
             --member="serviceAccount:content-trigger@${PROJECT}.iam.gserviceaccount.com" --role=roles/run.invoker \
             --format=none
+          # The API starts it for an admin's button on the site (E6 #159).
+          gcloud run jobs add-iam-policy-binding content-requests --project="$PROJECT" --region="$REGION" \
+            --member="serviceAccount:$API_RUNTIME" --role=roles/run.invoker --format=none

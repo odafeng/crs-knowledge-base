@@ -301,6 +301,67 @@ def unpublish(target: str, kb: KB | None = None) -> str:
     raise PublishError([f"找不到 `{target}`"])
 
 
+def _banner(status: ReviewStatus) -> str:
+    bg, fg, text = _BANNERS[status]
+    return f'<div class="banner" style="background:{bg};color:{fg}">{text}</div>'
+
+
+def _review(item: dict, label: str) -> None:
+    review = item.get("review")
+    if review is None:
+        raise PublishError([f"`{label}` 是人工整理的條目，沒有審閱狀態"])
+    if review["status"] != "auto":
+        raise PublishError([f"`{label}` 已經審過"])
+    review["status"] = "accepted"
+
+
+def mark_reviewed(kind: Literal["paper", "news"], target: str, kb: KB | None = None) -> str:
+    """A person read an auto-published paper or story and confirmed it (E6 #159): `auto` becomes `accepted`.
+
+    The paper's detail page gets the accepted banner. publishedAt keeps the day it went public.
+    """
+    kb = kb or KB()
+    if kind == "news":
+        news = json.loads(kb.news_json.read_text()) if kb.news_json.exists() else []
+        story = next((s for s in news if s["id"] == target), None)
+        if story is None:
+            raise PublishError([f"找不到消息 `{target}`"])
+        _review(story, target)
+        if not json_writer_active(kb.root):
+            raise PublishError(["內容已改由資料庫寫入（data/WRITER），JSON 檔不再接受審閱"])
+        kb.news_json.write_text(json.dumps(news, ensure_ascii=False, indent=2))
+        return f"review news {target}"
+    data = kb.load()
+    paper = next((p for t in data.values() for p in t.get("papers", []) if p["id"] == target), None)
+    if paper is None:
+        raise PublishError([f"找不到文獻 `{target}`"])
+    _review(paper, target)
+    _check(data, kb, frozenset())
+    kb.save(data)
+    page = kb.root / paper["file"] if paper.get("file") else None
+    if page and page.exists():
+        # The page as published carries the styled banner; the database keeps it without the style attribute.
+        auto, accepted = _BANNERS["auto"][2], _BANNERS["accepted"][2]
+        text = page.read_text().replace(_banner("auto"), _banner("accepted"))
+        page.write_text(text.replace(f'<div class="banner">{auto}</div>', f'<div class="banner">{accepted}</div>'))
+    return f"review paper {target}"
+
+
+def unpublish_story(target: str, kb: KB | None = None) -> str:
+    """Remove one auto-published story by id (E6 #159); its paper stays. Hand-written stories are refused."""
+    kb = kb or KB()
+    news = json.loads(kb.news_json.read_text()) if kb.news_json.exists() else []
+    story = next((s for s in news if s["id"] == target), None)
+    if story is None:
+        raise PublishError([f"找不到消息 `{target}`"])
+    if "review" not in story:
+        raise PublishError([f"`{target}` 是人工撰寫的消息，不能撤下"])
+    if not json_writer_active(kb.root):
+        raise PublishError(["內容已改由資料庫寫入（data/WRITER），JSON 檔不再接受發布或撤下"])
+    kb.news_json.write_text(json.dumps([s for s in news if s is not story], ensure_ascii=False, indent=2))
+    return f"news {target}"
+
+
 def evidence_markdown(paper: dict) -> str:
     """Provenance table for commit messages and comments."""
     return evidence_table_markdown(check_evidence(paper.get("ai_evidence") or [], paper.get("abstract", "")))

@@ -38,6 +38,7 @@ B4 的匯入工具已能把 JSON 轉成資料表列，重跑會收斂到相同�
 - **接受與撤下**：`paper-accept.yml`、`unpublish.yml` 讀到 `data/WRITER=postgres` 時，只用 `content` environment 換到 `content-trigger@` 的身分，啟動 `content-requests` job。這個身分只有該 job 的 `run.jobs.run`，沒有 `runWithOverrides`，所以 GitHub 只能叫醒 job，不能改它執行的內容。job 自己從 issue 讀取請求：接受看 `accepted` label 與開 issue 的人，撤下看 Unpublish workflow 開的 `[撤下] <目標>` issue。retry key 用 issue 編號，重跑不會重複發布。
 - issue 一律用 REST 列出，不用 search。search 的索引可能還沒收錄剛加上的 label。
 - `deployer` 改成只接受 `production` environment 的 token，所以 `content` environment 不能拿來部署。
+- **網站上的審閱按鈕**（E6 #159，維護者 2026-11-17 決定）：管理者在「AI 未審」的文獻或消息頁按「標為已審」或「撤下」。API 只在 `app.content_requests` 記下請求，再以 `api-runtime` 啟動同一個 `content-requests` job；job 經 `content_session` 套用（`auto` 改成 `accepted`，文獻頁換成已確認的橫幅；撤下消息時文獻保留），並把結果寫回那一列。API 依然沒有內容表的寫入權。
 
 ## Consequences
 
@@ -47,6 +48,7 @@ B4 的匯入工具已能把 JSON 轉成資料表列，重跑會收斂到相同�
 - `rollback` 之後，網站可能因為資料庫依年份與 ID 排序而改變同主題內文獻的檔案順序。
 - 撤下後，公開 API 立即排除該文獻；Next.js 頁面要等 ISR 重新產生（最多 5 分鐘），讀者裝置上的離線副本要等下次同步（ADR-0019）。目前沒有主動清除 CDN 快取，F2 的 staging 驗收要量測實際延遲。
 - 切換後，接受一篇文獻要多等 Cloud Run job 冷啟動，約半分鐘到一分鐘。撤下多了一張 `[撤下]` issue，但也因此留下紀錄。Paper Watch 改用維護者的 fine-grained token 開 issue，作者會是維護者本人，不再是 github-actions。接受流程因此也信任 repo 擁有者開的 issue。
+- 審閱按鈕送出後約一分鐘才生效，頁面再等 ISR（最多 5 分鐘）。job 無法啟動時請求會留著，等下一次有人觸發 job 才處理；目前沒有定時補跑。
 - 兩個旗標（`app.content_writer` 與 `data/WRITER`）要一致。切換時若只完成一半，例如資料庫已切換但 `data/WRITER` 尚未 commit，GitHub 上的 JSON workflow 仍可能寫入 git，而這些寫入不會進資料庫。所以第一步必須先停掉 workflows。
 - Paper Watch 的追蹤紀錄（哪些 DOI 已處理）仍是 repository 裡的檔案，不在這次切換範圍。worker 部署（E3）時要一併決定放哪裡。
 - 寫入端需要擁有內容資料表的資料庫角色（與匯入相同），`guthub_api` 不能寫內容。
