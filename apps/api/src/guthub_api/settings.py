@@ -52,6 +52,8 @@ class Settings(BaseSettings):
     # questions written as sentences scored 0.50-0.66 at the top, terse keyword queries 0.39-0.44, and unrelated ones
     # (weather, restaurants, haemorrhoid care) at most 0.26; the closest wrong match seen was 0.34.
     search_min_score: float = Field(default=0.35, ge=0, le=1)
+    # Searches per client address per minute on one instance (429 beyond).
+    search_per_minute: int = Field(default=20, ge=1)
 
     @model_validator(mode="after")
     def deployed_environments_need_a_database(self) -> Self:
