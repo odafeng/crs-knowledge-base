@@ -19,7 +19,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  writer:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      writer: ${{ steps.flag.outputs.writer }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          sparse-checkout: data/WRITER
+          sparse-checkout-cone-mode: false
+      - id: flag
+        run: echo "writer=$(cat data/WRITER 2>/dev/null || echo json)" >> "$GITHUB_OUTPUT"
+
+  # Before cutover: edit the JSON and commit it.
   unpublish:
+    needs: writer
+    if: needs.writer.outputs.writer == 'json'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -54,3 +72,42 @@ jobs:
           git pull --rebase
           git push
           gh workflow run ci.yml --ref main
+
+  # After cutover the request becomes an issue that Cloud Run reads, carries out, answers and closes (ADR-0021).
+  start-job:
+    needs: writer
+    if: needs.writer.outputs.writer == 'postgres'
+    runs-on: ubuntu-latest
+    environment: content
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TARGET: ${{ inputs.target }}
+      REASON: ${{ inputs.reason }}
+    steps:
+      - name: Open the request issue
+        run: |
+          gh label create unpublish-request --repo "$GITHUB_REPOSITORY" --color B60205 \
+            --description "Unpublish workflow 的撤下請求，由 content-requests job 處理" --force
+          printf '撤下原因：%s\n\n由 %s 透過 Unpublish workflow 提出。content-requests job 處理後會回覆並關閉。\n' \
+            "$REASON" "$GITHUB_ACTOR" > "$RUNNER_TEMP/body.md"
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "[撤下] $TARGET" --label unpublish-request \
+            --body-file "$RUNNER_TEMP/body.md"
+
+      - id: auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: projects/392767072259/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: content-trigger@guthub-prod.iam.gserviceaccount.com
+          token_format: access_token
+
+      # content-trigger may only run this job, without overrides: the job reads the request from the issue.
+      - name: Start the content requests job
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          curl -fsS -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Length: 0" \
+            https://run.googleapis.com/v2/projects/guthub-prod/locations/asia-northeast1/jobs/content-requests:run >/dev/null

@@ -74,6 +74,49 @@ gcloud iam workload-identity-pools providers update-oidc github-oidc --project=g
   --attribute-condition="assertion.repository=='odafeng/crs-knowledge-base' && assertion.ref=='refs/heads/main' && assertion.environment=='production'"
 ```
 
+## 切換後的內容寫入（Paper Watch、接受、撤下）
+
+切換後只有資料庫能寫內容，GitHub Actions 上的 `paper-watch.yml` 會拒絕寫入，`paper-accept.yml` 與 `unpublish.yml` 也不能再 commit JSON。三件事改在 guthub-prod 的 Cloud Run 執行：
+
+- **Paper Watch**：`paper-watch` job，每天 16:00（台灣時間）執行。週二、週五做完整掃描，其他日子只在會議季掃描，和原本兩個 cron 相同。
+- **接受、撤下**：兩個 workflow 只負責啟動 `content-requests` job，不帶參數。job 自己讀 issue：開著且標了 `accepted` 的待審 issue（由 github-actions 或 repo 擁有者開的）就發布、回覆、關閉；Unpublish workflow 開的 `[撤下] <目標>` issue（標 `unpublish-request`）就撤下、回覆、關閉。
+- 資料庫密碼一直留在 Secret Manager。GitHub 用 `content` environment 換到 `content-trigger@` 的身分，這個身分只能啟動 `content-requests` 這一個 job，不能帶參數，也不能部署。
+
+切換前由維護者做一次（agent 沒有權限改正式環境的 IAM 與祕密）：
+
+1. **祕密**，都存在 guthub-prod，並讓 `worker-runtime` 可以讀：
+   - `guthub-content-database-url`：用 prod 的 `supabase-db-password` 組成，主機是 aws-1（見最上面的表）。
+   - `anthropic-api-key`。
+   - `paper-watch-github-token`：只授權本 repo、Issues 可讀寫的 fine-grained token，**由 repo 擁有者建立**。接受流程只信任 github-actions 或 repo 擁有者開的 issue，token 換成別人的，它開的待審 issue 就無法接受。
+   - 選用：給維護者自己的 LINE 通知（不是 GutHub 讀者帳號）放 `paper-watch-line-token` 與 `paper-watch-line-user-id`，再在 `production` environment 設 `PAPER_WATCH_LINE_NOTIFY=true`。
+   ```sh
+   for s in guthub-content-database-url anthropic-api-key paper-watch-github-token; do
+     gcloud secrets add-iam-policy-binding $s --project=guthub-prod \
+       --member=serviceAccount:worker-runtime@guthub-prod.iam.gserviceaccount.com --role=roles/secretmanager.secretAccessor
+   done
+   ```
+2. **身分**，順序不能換：先把 `deployer` 限定在 `production` environment，再放寬身分聯合的條件。反過來做的話，`content` environment 的 token 也能部署，等於繞過部署核准。
+   ```sh
+   POOL=projects/392767072259/locations/global/workloadIdentityPools/github
+   gcloud iam workload-identity-pools providers update-oidc github-oidc --project=guthub-prod \
+     --location=global --workload-identity-pool=github \
+     --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref,attribute.environment=assertion.environment"
+   gcloud iam service-accounts add-iam-policy-binding deployer@guthub-prod.iam.gserviceaccount.com --project=guthub-prod \
+     --role=roles/iam.workloadIdentityUser --member="principalSet://iam.googleapis.com/$POOL/attribute.environment/production"
+   gcloud iam service-accounts remove-iam-policy-binding deployer@guthub-prod.iam.gserviceaccount.com --project=guthub-prod \
+     --role=roles/iam.workloadIdentityUser --member="principalSet://iam.googleapis.com/$POOL/attribute.repository/odafeng/crs-knowledge-base"
+   gcloud iam service-accounts create content-trigger --project=guthub-prod \
+     --display-name="GitHub: start the content-requests job"
+   gcloud iam service-accounts add-iam-policy-binding content-trigger@guthub-prod.iam.gserviceaccount.com --project=guthub-prod \
+     --role=roles/iam.workloadIdentityUser --member="principalSet://iam.googleapis.com/$POOL/attribute.environment/content"
+   gcloud iam workload-identity-pools providers update-oidc github-oidc --project=guthub-prod \
+     --location=global --workload-identity-pool=github \
+     --attribute-condition="assertion.repository=='odafeng/crs-knowledge-base' && assertion.ref=='refs/heads/main' && assertion.environment in ['production', 'content']"
+   ```
+   `content-trigger` 不在專案層級拿任何角色；部署 workflow 只在 `content-requests` 這個 job 上給它 `run.invoker`。
+3. GitHub `content` environment（只允許 `main`、不需核准）已由 agent 建立。在 `production` environment 設 `CONTENT_REQUESTS_ENABLED=true`，執行一次 Deploy production，建立 `content-requests` job。
+4. **`PAPER_WATCH_ENABLED` 等到切換第 6 步才設。** 切換前就開的話，Cloud Run 和 GitHub Actions 會同時跑 Paper Watch，重複開 issue，模型也會付兩次費。
+
 ## 切換順序
 
 每一步完成後把結果（時間、SHA、revision 名稱）記在 F4 issue，rollback 時才知道要退回到哪裡。
@@ -82,7 +125,7 @@ gcloud iam workload-identity-pools providers update-oidc github-oidc --project=g
 
 1. **記下目前版本。** API revision：`gcloud run services describe guthub-api --project=$P --region=asia-northeast1 --format='value(status.latestReadyRevisionName)'`；網站：Vercel 專案目前的 production deployment；內容：`git rev-parse HEAD`。
 2. **暫停寫入**（上一節）。
-3. **停掉所有 JSON 寫入者**：`gh workflow disable paper-watch.yml`、`paper-accept.yml`、`unpublish.yml`。確認沒有還在跑的：`gh run list --status in_progress`。
+3. **停掉所有 JSON 寫入者**：`gh workflow disable paper-watch.yml`、`paper-accept.yml`、`unpublish.yml`。確認沒有還在跑的：`gh run list --status in_progress`。`paper-watch.yml` 從此不再啟用，由 Cloud Run 的 `paper-watch` job 取代。
 4. **備份**：確認今天的 Supabase 備份已完成，並跑一次 `tools/restore-drill.sh`。
 5. **匯入最終 JSON 並切換寫入者**：
    ```sh
@@ -91,10 +134,10 @@ gcloud iam workload-identity-pools providers update-oidc github-oidc --project=g
    git add data/WRITER && git commit -m "chore(data): move the content writer to PostgreSQL (#79)"
    ```
    `cutover` 只在資料庫與 JSON 的 manifest 完全相同時才會切換，並把這份 manifest 存成匯入水位。`status` 子指令可以隨時查目前的寫入者與水位。
-6. **確認 API 版本**：prod 跑的應該是第 0 步部署的版本。如果 `main` 之後又有 API 變更，就在這一步重新執行 Deploy production，並記下新的 revision。注意：部署會整組重設環境變數，等於提前解除第 2 步的寫入暫停。
+6. **啟用 Paper Watch 並部署**：在 `production` environment 設 `PAPER_WATCH_ENABLED=true`，執行 Deploy production，確認 `paper-watch` job 與 `paper-watch-daily` 排程已建立，並記下新的 API revision。注意：部署會整組重設環境變數，等於提前解除第 2 步的寫入暫停。
 7. **網站**：Vercel 的 production 環境變數換成 prod 的值，接上 `guthub.tw`，設定 `GUTHUB_SITE_PUBLIC=1` 與 `GUTHUB_SITE_ORIGIN=https://guthub.tw`，重新部署。
 8. **快取**：頁面是 ISR，最多 300 秒更新；重新部署會讓新版本立即生效。讀者瀏覽器裡的 Service Worker 快取（`guthub-public-v1`）只存公開頁面，下次連線時會改用新版內容，不需要手動清除。只有快取格式改變時才需要調高版本號。
-9. **恢復寫入**，重新啟用改為讀寫資料庫的 workflow。
+9. **恢復寫入**，重新啟用 `paper-accept.yml` 與 `unpublish.yml`。它們讀到 `data/WRITER=postgres` 後只會啟動 `content-requests` job。
 10. **驗收**：對正式網址跑 `tools/next-verify.js`、`tools/next-offline.js`、`tools/check_next_parity.py`，以及 `tools/next-auth.js`、`tools/next-comments.js`（這兩支會建立測試帳號，跑完照 F2 #77 的方式清掉）。
 
 ## Rollback
@@ -112,7 +155,7 @@ gcloud iam workload-identity-pools providers update-oidc github-oidc --project=g
    python content_writer.py rollback --database-url "$DB"
    git add data/ docs/ && git commit -m "chore(data): return the content writer to JSON (#79)"
    ```
-   `rollback` 會先把資料庫的內容與 Paper Watch 追蹤狀態匯出回 `data/`，再把 `data/WRITER` 改回 `json`，所以切換後發布的文獻不會遺失。之後重新啟用第 3 步停掉的 workflow。
+   `rollback` 會先把資料庫的內容與 Paper Watch 追蹤狀態匯出回 `data/`，再把 `data/WRITER` 改回 `json`，所以切換後發布的文獻不會遺失。接著暫停 Cloud Run 的 Paper Watch（`gcloud scheduler jobs pause paper-watch-daily --project=$P --location=asia-northeast1`），並刪掉 `production` environment 的 `PAPER_WATCH_ENABLED`，再重新啟用第 3 步停掉的 workflow，避免兩邊同時跑。
 5. **資料本身損壞**（最後手段）：用 Supabase dashboard 的備份還原。這會蓋掉備份時間之後的所有留言與帳號變更，執行前先用 `tools/restore-drill.sh` 的方式匯出一份目前的資料留存。
 6. API 正常後**恢復寫入**，在 F4 issue 記錄原因與時間。
 
