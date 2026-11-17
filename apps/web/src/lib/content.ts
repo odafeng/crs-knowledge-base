@@ -1,7 +1,7 @@
 // Server-side reads for the public pages: ISR fetches against the FastAPI read API (ADR-0015, B5).
 import { apiError } from "./api";
 import type { DailyPick } from "./daily";
-import type { News, Paper, Topic } from "./site";
+import { decodeEntities, type News, type Paper, type Topic } from "./site";
 
 /** Matches the API's `Cache-Control: public, max-age=300`. Pages export the same value as `revalidate`. */
 export const REVALIDATE_SECONDS = 300;
@@ -58,8 +58,27 @@ export async function listAll<T>(
   return items;
 }
 
-export const listPapers = (options?: Options) =>
-  listAll<Paper>("/papers", options);
+// The pipeline stores these fields HTML-escaped (scripts/publish.py), so "p<0.001" arrives as "p&lt;0.001". React
+// escapes text again, so they are decoded here once for every page, feed and the search index, as sitegen's loader
+// does with html.unescape.
+const ESCAPED = [
+  "journal",
+  "regimen",
+  "endpoint",
+  "result",
+  "bottomLine",
+] as const;
+
+export function decodePaper(paper: Paper): Paper {
+  const decoded = { ...paper };
+  for (const field of ESCAPED)
+    if (typeof paper[field] === "string")
+      decoded[field] = decodeEntities(paper[field]);
+  return decoded;
+}
+
+export const listPapers = async (options?: Options) =>
+  (await listAll<Paper>("/papers", options)).map(decodePaper);
 export const listNews = (options?: Options) => listAll<News>("/news", options);
 export const listTopics = (options?: Options) =>
   listAll<Topic>("/topics", options);
