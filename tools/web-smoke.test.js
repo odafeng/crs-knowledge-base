@@ -27,7 +27,8 @@ const topic = {
     title: '第二線以上治療', icon: '', reviewedAt: '2026-11-16', refs: [],
     body_html: '<p>見 <a href="docs/beacon.html">BEACON 整理</a></p><table><tr><th></th><th>方案</th></tr></table>',
     regulatory: [{ regimen: 'Encorafenib + cetuximab', fda: 'approved', tfda: 'approved', nhi: 'conditional',
-      nhiNote: '給付規定 9.134', checkedAt: '2026-11-16' }],
+      nhiNote: '給付規定 9.134', nhiClause: '9.134', nhiEffective: '2026-05-01', checkedAt: '2026-11-16',
+      sources: ['https://info.nhi.gov.tw/api/INAE3000/INAE3000S01/getPDF?DurgFileName=9.134._20260501.pdf'] }],
   }],
   roboticSections: [],
 };
@@ -185,7 +186,7 @@ test('Next.js start: reading pages render from the read API', { timeout: 90000 }
       '/news/smoke-news/': ['二線存活延長', 'class="figure"', 'class="compare"', 'class="meters"', 'interval__point', '看文獻整理'],
       '/mcrc/smoke-braf/': ['核准與給付現況', '有條件給付', '給付規定 9.134', 'BEACON 整理', '二線標準治療'],
       '/robotic/tme/': ['機器手臂 TME', 'ROLARR，轉換率 NS', 'TME 品質', '詳細'],
-      '/': ['二線存活延長', '本週新增', '新收錄文獻', '社論標題', '核准與給付現況', 'FDA 已核准', '機器手臂 TME'],
+      '/': ['二線存活延長', '本週新增', '新收錄文獻', '社論標題', '最新核准給付資訊', '2026 年 5 月 1 日', 'DurgFileName=9.134._20260501.pdf', '機器手臂 TME'],
       '/topics/': ['mCRC 治療', '機器手臂手術', '最新：Encorafenib + cetuximab'],
       '/mcrc/': ['BRAF V600E', '1</span>篇文獻'],
       '/robotic/': ['機器手臂 TME', '證據演進有 1 個時間點'],

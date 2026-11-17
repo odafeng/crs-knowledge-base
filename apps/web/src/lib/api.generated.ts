@@ -721,6 +721,13 @@ export interface components {
             fdaNote?: string;
             tfdaNote?: string;
             nhiNote?: string;
+            /** @description The NHI rule item, e.g. "9.69 1.(11)" or "9.134" for a whole chapter. */
+            nhiClause?: string;
+            /**
+             * Format: date
+             * @description When the rule as it stands took effect, read from the clause's amendment dates.
+             */
+            nhiEffective?: string;
             /** Format: date */
             checkedAt: string;
             sources?: string[];

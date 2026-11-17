@@ -25,8 +25,8 @@ import { dailyLabel } from "@/lib/daily";
 import {
   byTopic,
   isUnreviewed,
+  latestCoverage,
   newsPath,
-  regulatoryRows,
   ROBOTIC_PAGES,
   topicPath,
   updates,
@@ -195,7 +195,7 @@ export default async function Home() {
                 ))}
             </ol>
           </section>
-          <aside className="home-rail" aria-label="訂閱、主題與給付現況">
+          <aside className="home-rail" aria-label="訂閱、主題與最新給付">
             <Alerts />
             <section className="ask" aria-labelledby="ask-title">
               <h2 className="rail-title" id="ask-title">
@@ -208,9 +208,11 @@ export default async function Home() {
               <a
                 className="btn btn--primary"
                 href={GUIDELINE_QA}
+                target="_blank"
                 rel="noopener"
               >
                 開啟指引問答
+                <span className="visually-hidden">（另開新分頁）</span>
               </a>
             </section>
             <section aria-labelledby="topics-title">
@@ -236,30 +238,34 @@ export default async function Home() {
             </section>
             <section aria-labelledby="board-title">
               <h2 className="rail-title" id="board-title">
-                核准與給付現況
+                最新核准給付資訊
               </h2>
               <ul className="board">
-                {mcrc.flatMap((topic) =>
-                  regulatoryRows(topic).map((row) => (
-                    <li key={`${topic.key}/${row.regimen}`}>
-                      <Link href={topicPath(topic)}>{row.regimen}</Link>
-                      <span className="board__states">
-                        <Status regulator="fda" value={row.fda} prefix="FDA " />
-                        <Status
-                          regulator="tfda"
-                          value={row.tfda}
-                          prefix="TFDA "
-                        />
-                        <Status
-                          regulator="nhi"
-                          value={row.nhi}
-                          prefix="健保 "
-                        />
+                {latestCoverage(mcrc).map((row) => (
+                  <li key={`${row.topic.key}/${row.regimen}`}>
+                    <Link href={topicPath(row.topic)}>{row.regimen}</Link>
+                    <span className="board__states">
+                      <Status regulator="nhi" value={row.nhi} prefix="健保 " />
+                      <span>
+                        <time dateTime={row.effective}>
+                          {longDate(row.effective)}
+                        </time>
+                        生效
                       </span>
-                    </li>
-                  )),
-                )}
+                    </span>
+                    {row.rule ? (
+                      <a className="board__rule" href={row.rule} rel="noopener">
+                        給付規定 {row.clause}
+                      </a>
+                    ) : (
+                      <span className="board__rule">給付規定 {row.clause}</span>
+                    )}
+                  </li>
+                ))}
               </ul>
+              <p className="board__note">
+                日期取自健保署藥品給付規定的條文，是現行規定的生效日。
+              </p>
             </section>
           </aside>
         </div>

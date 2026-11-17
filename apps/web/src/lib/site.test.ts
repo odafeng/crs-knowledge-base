@@ -9,6 +9,7 @@ import {
   otherNews,
   paperTitle,
   publishedAt,
+  latestCoverage,
   regulatoryRows,
   repairCardHtml,
   type News,
@@ -140,6 +141,46 @@ describe("presentation rules mirrored from sitegen", () => {
       ],
     } as unknown as Topic;
     expect(regulatoryRows(topic)[0].note).toBe("TFDA note；NHI note");
+  });
+
+  it("lists covered rules that name a clause, newest first", () => {
+    const row = (regimen: string, extra: object) => ({
+      regimen,
+      fda: "approved",
+      tfda: "approved",
+      nhi: "conditional",
+      checkedAt: "2026-11-16",
+      ...extra,
+    });
+    const topic = (key: string, rows: object[]) =>
+      ({
+        key,
+        standardOfCare: [{ title: "", regulatory: rows }],
+      }) as unknown as Topic;
+    const pdf =
+      "https://info.nhi.gov.tw/api/INAE3000/INAE3000S01/getPDF?DurgFileName=9.134._20260501.pdf";
+    const list = latestCoverage([
+      topic("msi", [
+        row("Pembrolizumab", {
+          nhiClause: "9.69 1.(11)",
+          nhiEffective: "2025-06-01",
+        }),
+        row("Nivolumab", { nhi: "none" }),
+      ]),
+      topic("braf", [
+        row("Encorafenib", {
+          nhiClause: "9.134",
+          nhiEffective: "2026-05-01",
+          sources: ["https://data.fda.gov.tw/x", pdf],
+        }),
+      ]),
+    ]);
+    expect(list.map((r) => [r.regimen, r.effective, r.topic.key])).toEqual([
+      ["Encorafenib", "2026-05-01", "braf"],
+      ["Pembrolizumab", "2025-06-01", "msi"],
+    ]);
+    expect(list[0].rule).toBe(pdf);
+    expect(list[1].rule).toBeUndefined();
   });
 
   it("turns a timeline finding into plain text", () => {

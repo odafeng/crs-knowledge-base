@@ -31,6 +31,8 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+import nhi_rules
+
 NHI_LIST = "https://info.nhi.gov.tw/api/iode0000s01/Dataset?rId=A21030000I-E41001-001"
 TFDA_LICENCES = "https://data.fda.gov.tw/data/opendata/export/37/json"
 TITLE = "[G5 監測]"
@@ -118,7 +120,33 @@ def _cards_list(cards: Iterable[Card]) -> str:
     return "\n".join(f"- {topic}：{row['regimen']}（卡片查核日 {row['checkedAt']}）" for topic, row in cards)
 
 
-def nhi_findings(cards: list[Card], versions: dict[str, tuple[str, str]]) -> list[Finding]:
+def _clause_report(affected: list[Card], text: str) -> str:
+    """The new version's date for every affected row that names its clause (G12 #167)."""
+    lines, changed = [], False
+    for _, row in affected:
+        if "nhiClause" not in row:
+            continue
+        try:
+            latest = nhi_rules.clause_dates(text, row["nhiClause"])[-1].isoformat()
+        except nhi_rules.RuleError as error:
+            lines.append(f"- {row['regimen']}：{row['nhiClause']} 在新版找不到（{error}），請人工對照")
+            changed = True
+            continue
+        if latest != row.get("nhiEffective"):
+            changed = True
+        lines.append(
+            f"- {row['regimen']}：{row['nhiClause']} 新版最新日期 {latest}（卡片記錄 {row.get('nhiEffective')}）"
+        )
+    if not lines:
+        return ""
+    verdict = "" if changed else "\n\n這些條次的日期都沒有變，這次改版可能與大腸直腸癌無關。"
+    return "\n\n新版條次日期（自動擷取）：\n" + "\n".join(lines) + verdict
+
+
+def nhi_findings(
+    cards: list[Card], versions: dict[str, tuple[str, str]], read: Callable[[str], str] | None = None
+) -> list[Finding]:
+    """`read` turns a rule PDF link into its text; with it, a new version's finding reports each clause's date."""
     by_chapter: dict[tuple[str, str], list[Card]] = defaultdict(list)
     for card in cards:
         for source in card[1].get("sources", []):
@@ -135,12 +163,19 @@ def nhi_findings(cards: list[Card], versions: dict[str, tuple[str, str]]) -> lis
                 )
             )
         elif (current := versions[chapter])[0] > checked:
+            report = ""
+            if read and any("nhiClause" in row for _, row in affected):
+                try:
+                    report = _clause_report(affected, read(current[1]))
+                except (OSError, nhi_rules.RuleError, SourceUnavailableError) as error:
+                    report = f"\n\n無法讀取新版 PDF 擷取條次日期（{error}），請人工對照。"
             findings.append(
                 Finding(
                     f"{TITLE} 健保給付規定 {chapter} 有新版 {current[0]}",
                     f"卡片依據 {checked} 版，健保用藥品項現在連到 {current[0]} 版：\n{current[1]}\n\n"
-                    f"受影響的卡片：\n{_cards_list(affected)}\n\n請對照新舊條文，更新卡片的 nhiNote、來源連結與查核日後關閉。"
-                    "卡片不會自動修改。",
+                    f"受影響的卡片：\n{_cards_list(affected)}{report}\n\n"
+                    "請對照新舊條文，更新卡片的 nhiNote、來源連結與查核日後關閉；"
+                    "nhiEffective 用 `python scripts/nhi_rules.py --write` 重新擷取。卡片不會自動修改。",
                 )
             )
     return findings
@@ -184,7 +219,7 @@ def run(cards: list[Card], get: Callable[[str], bytes], issues: Issues) -> int:
     findings: list[Finding] = []
     failed: list[str] = []
     for url, check in (
-        (NHI_LIST, lambda data: nhi_findings(cards, rule_versions(data))),
+        (NHI_LIST, lambda data: nhi_findings(cards, rule_versions(data), lambda link: nhi_rules.pdf_text(get(link)))),
         (TFDA_LICENCES, lambda data: tfda_findings(cards, licences(data))),
     ):
         try:

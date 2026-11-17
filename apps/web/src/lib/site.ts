@@ -137,6 +137,36 @@ export function regulatoryRows(topic: Topic) {
   );
 }
 
+/** NHI-covered rows that name their rule clause, newest effective date first (G12 #167). */
+export function latestCoverage(topics: Topic[]) {
+  return topics
+    .flatMap((topic) =>
+      topic.standardOfCare.flatMap((card) =>
+        (card.regulatory ?? []).flatMap((row) =>
+          row.nhiEffective && row.nhiClause
+            ? [
+                {
+                  topic,
+                  regimen: row.regimen,
+                  nhi: row.nhi,
+                  clause: row.nhiClause,
+                  effective: row.nhiEffective,
+                  rule: (row.sources ?? []).find((s) =>
+                    s.includes("DurgFileName="),
+                  ),
+                },
+              ]
+            : [],
+        ),
+      ),
+    )
+    .sort(
+      (a, b) =>
+        b.effective.localeCompare(a.effective) ||
+        a.regimen.localeCompare(b.regimen),
+    );
+}
+
 /** A timeline finding as plain text: line breaks become "，" and tags are dropped (templates/robotic.html.j2). */
 const ENTITIES: Record<string, string> = {
   amp: "&",
