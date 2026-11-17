@@ -26,13 +26,13 @@ Pages 使用 GitHub Actions 發布通過測試的 `site/` artifact，停用 `mai
 
 目前的 `ci.yml` 設計是：驗證資料 → pytest → 建置 `site/` → 連結、E2E 與 accessibility 檢查 → 部署同一份 artifact。依 [A1 #53](https://github.com/odafeng/crs-knowledge-base/issues/53) 的決定，資料庫、Auth 與檔案採 Supabase，FastAPI 與 Python worker 部署在 Cloud Run（[ADR-0016](docs/adr/0016-api-data-cloud-boundaries.md)）；正式切換由 [F4 #79](https://github.com/odafeng/crs-knowledge-base/issues/79) 驗收。
 
-**Staging**（新架構）：每次 API、worker 或 migration 有變動並合併到 `main`，`deploy-staging.yml` 會用 GitHub OIDC 身分聯合登入 Google Cloud。它依序做這幾件事：
+**Staging 與正式環境**（新架構）：部署步驟寫在 `deploy.yml`，兩個環境共用。每次 API、worker 或 migration 有變動並合併到 `main`，`deploy-staging.yml` 會部署 staging；正式環境只能手動執行 `deploy-prod.yml`（見 `docs/runbook-cutover.md`）。兩者都用 GitHub OIDC 身分聯合登入 Google Cloud，依序做這幾件事：
 1. 先套用 Supabase migration。
 2. build 並推送 API 與 worker 映像。
 3. 部署 Cloud Run 服務 `guthub-api`。
 4. 部署每天 03:30（台灣時間）清除過期作者對應的 job。
 
-Paper Watch 的 Cloud Run job 會呼叫付費模型並開 GitHub issue，所以預設關閉。維護者在 staging 的 Secret Manager 放入以下三個祕密，並把 repository 變數 `PAPER_WATCH_ENABLED` 設為 `true` 後才會部署：
+Paper Watch 的 Cloud Run job 會呼叫付費模型並開 GitHub issue，所以預設關閉。維護者在該環境的 Secret Manager 放入以下三個祕密，並在 GitHub environment（`staging` 或 `production`）把變數 `PAPER_WATCH_ENABLED` 設為 `true` 後才會部署（staging 以 dry run 執行）：
 - `anthropic-api-key`
 - `paper-watch-github-token`
 - `guthub-content-database-url`（擁有內容資料表的角色）

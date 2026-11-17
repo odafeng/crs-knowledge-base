@@ -1,0 +1,196 @@
+name: Deploy
+
+# The deploy steps for one Google Cloud project, called by deploy-staging.yml (every change on main) and
+# deploy-prod.yml (by hand, F4 #79), so both environments always run the same steps (E3 #76, ADR-0016). GitHub Actions
+# signs in through workload identity federation as the project's deployer; there is no long-lived key. The job runs in
+# the GitHub environment of the same name, so switches such as LINE_ENABLED or PAPER_WATCH_ENABLED are set per
+# environment and turning one on for production never touches staging.
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: staging or production; also the GitHub environment and GUTHUB_ENVIRONMENT
+        type: string
+        required: true
+      project:
+        type: string
+        required: true
+      project_number:
+        type: string
+        required: true
+      supabase_ref:
+        type: string
+        required: true
+      max_instances:
+        type: number
+        default: 2
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GUTHUB_ENV_NAME: ${{ inputs.environment }}
+  PROJECT: ${{ inputs.project }}
+  REGION: asia-northeast1
+  IMAGES: asia-northeast1-docker.pkg.dev/${{ inputs.project }}/guthub
+  WIF_PROVIDER: projects/${{ inputs.project_number }}/locations/global/workloadIdentityPools/github/providers/github-oidc
+  DEPLOYER: deployer@${{ inputs.project }}.iam.gserviceaccount.com
+  API_RUNTIME: api-runtime@${{ inputs.project }}.iam.gserviceaccount.com
+  WORKER_RUNTIME: worker-runtime@${{ inputs.project }}.iam.gserviceaccount.com
+  SUPABASE_REF: ${{ inputs.supabase_ref }}
+  SUPABASE_POOLER: aws-0-ap-northeast-1.pooler.supabase.com
+  MAX_INSTANCES: ${{ inputs.max_instances }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOYER }}
+
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
+
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 2.115.0
+
+      # Before the new code: the API reads the tables these migrations create.
+      - name: Apply database migrations
+        run: |
+          PASSWORD=$(gcloud secrets versions access latest --secret=supabase-db-password --project="$PROJECT")
+          echo "::add-mask::$PASSWORD"
+          supabase db push --include-all \
+            --db-url "postgresql://postgres.${SUPABASE_REF}:${PASSWORD}@${SUPABASE_POOLER}:5432/postgres?sslmode=require"
+
+      - name: Build and push images
+        run: |
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          docker build -t "$IMAGES/api:$GITHUB_SHA" apps/api
+          docker build -f worker/Dockerfile -t "$IMAGES/worker:$GITHUB_SHA" .
+          docker push "$IMAGES/api:$GITHUB_SHA"
+          docker push "$IMAGES/worker:$GITHUB_SHA"
+
+      # Public read API; writes need a Supabase session. Small instance limits keep each project inside its budget.
+      - name: Deploy the API
+        env:
+          # Each environment names its own sites; production never falls back to the staging list.
+          CORS_ORIGINS: ${{ inputs.environment == 'staging' && vars.STAGING_WEB_ORIGINS || vars.WEB_ORIGINS || '[]' }}
+        run: |
+          gcloud run deploy guthub-api --project="$PROJECT" --region="$REGION" \
+            --image="$IMAGES/api:$GITHUB_SHA" --service-account="$API_RUNTIME" \
+            --set-secrets=GUTHUB_DATABASE_URL=guthub-api-database-url:latest \
+            --set-env-vars="^@^GUTHUB_ENVIRONMENT=${GUTHUB_ENV_NAME}@GUTHUB_SUPABASE_URL=https://${SUPABASE_REF}.supabase.co@GUTHUB_CORS_ORIGINS=${CORS_ORIGINS}" \
+            --allow-unauthenticated --min-instances=0 --max-instances="$MAX_INSTANCES" --cpu=1 --memory=512Mi \
+            --concurrency=40 --timeout=30
+          URL=$(gcloud run services describe guthub-api --project="$PROJECT" --region="$REGION" --format='value(status.url)')
+          for _ in $(seq 1 10); do curl -sf "$URL/api/v1/health" && exit 0; sleep 3; done
+          exit 1
+
+      # The privacy policy promises that deleted comments lose their author mapping after 90 days (ADR-0017).
+      - name: Deploy the daily purge job
+        run: |
+          gcloud run jobs deploy purge-deleted-authors --project="$PROJECT" --region="$REGION" \
+            --image="$IMAGES/api:$GITHUB_SHA" --service-account="$API_RUNTIME" \
+            --command=python --args=-m,guthub_api.maintenance,purge-deleted-authors \
+            --set-secrets=GUTHUB_DATABASE_URL=guthub-api-database-url:latest \
+            --set-env-vars="GUTHUB_ENVIRONMENT=${GUTHUB_ENV_NAME}" --max-retries=1 --task-timeout=300
+          gcloud run jobs add-iam-policy-binding purge-deleted-authors --project="$PROJECT" --region="$REGION" \
+            --member="serviceAccount:$WORKER_RUNTIME" --role=roles/run.invoker --format=none
+          ARGS=(--project="$PROJECT" --location="$REGION" --schedule="30 3 * * *" --time-zone="Asia/Taipei"
+            --uri="https://run.googleapis.com/v2/projects/$PROJECT/locations/$REGION/jobs/purge-deleted-authors:run"
+            --http-method=POST --oauth-service-account-email="$WORKER_RUNTIME")
+          if gcloud scheduler jobs describe purge-deleted-authors-daily --project="$PROJECT" --location="$REGION" >/dev/null 2>&1; then
+            gcloud scheduler jobs update http purge-deleted-authors-daily "${ARGS[@]}"
+          else
+            gcloud scheduler jobs create http purge-deleted-authors-daily "${ARGS[@]}"
+          fi
+
+      # Web Push for new stories (C5 #95, ADR-0023): off until the maintainer stores vapid-private-key and sets the
+      # variable PUSH_ENABLED=true in the GitHub environment, since the extra schedule may be billed. Each story is pushed once.
+      - name: Deploy the news push job
+        if: vars.PUSH_ENABLED == 'true'
+        run: |
+          gcloud run jobs deploy announce-news --project="$PROJECT" --region="$REGION" \
+            --image="$IMAGES/api:$GITHUB_SHA" --service-account="$API_RUNTIME" \
+            --command=python --args=-m,guthub_api.maintenance,announce-news \
+            --set-secrets=GUTHUB_DATABASE_URL=guthub-api-database-url:latest,GUTHUB_VAPID_PRIVATE_KEY=vapid-private-key:latest \
+            --set-env-vars="GUTHUB_ENVIRONMENT=${GUTHUB_ENV_NAME},GUTHUB_VAPID_SUBJECT=mailto:privacy@guthub.tw" \
+            --max-retries=0 --task-timeout=600
+          gcloud run jobs add-iam-policy-binding announce-news --project="$PROJECT" --region="$REGION" \
+            --member="serviceAccount:$WORKER_RUNTIME" --role=roles/run.invoker --format=none
+          ARGS=(--project="$PROJECT" --location="$REGION" --schedule="*/30 * * * *" --time-zone="Asia/Taipei"
+            --uri="https://run.googleapis.com/v2/projects/$PROJECT/locations/$REGION/jobs/announce-news:run"
+            --http-method=POST --oauth-service-account-email="$WORKER_RUNTIME")
+          if gcloud scheduler jobs describe announce-news-every-30-minutes --project="$PROJECT" --location="$REGION" >/dev/null 2>&1; then
+            gcloud scheduler jobs update http announce-news-every-30-minutes "${ARGS[@]}"
+          else
+            gcloud scheduler jobs create http announce-news-every-30-minutes "${ARGS[@]}"
+          fi
+
+      # LINE daily broadcast (G3 #114, ADR-0022): 07:00 Taiwan time, only on days with something new, at most once.
+      # It reaches every follower of the account behind the token, so enable it only in the environment whose site
+      # readers use (LINE_ENABLED=true there) and point LINE_SITE_ORIGIN at the site those readers should open.
+      - name: Deploy the LINE daily job
+        if: vars.LINE_ENABLED == 'true'
+        env:
+          SITE_ORIGIN: ${{ vars.LINE_SITE_ORIGIN || 'https://guthub.tw' }}
+        run: |
+          gcloud run jobs deploy line-daily --project="$PROJECT" --region="$REGION" \
+            --image="$IMAGES/api:$GITHUB_SHA" --service-account="$API_RUNTIME" \
+            --command=python --args=-m,guthub_api.maintenance,line-daily \
+            --set-secrets=GUTHUB_DATABASE_URL=guthub-api-database-url:latest,GUTHUB_LINE_CHANNEL_ACCESS_TOKEN=line-channel-access-token:latest \
+            --set-env-vars="GUTHUB_ENVIRONMENT=${GUTHUB_ENV_NAME},GUTHUB_SITE_ORIGIN=$SITE_ORIGIN" \
+            --max-retries=2 --task-timeout=300
+          gcloud run jobs add-iam-policy-binding line-daily --project="$PROJECT" --region="$REGION" \
+            --member="serviceAccount:$WORKER_RUNTIME" --role=roles/run.invoker --format=none
+          ARGS=(--project="$PROJECT" --location="$REGION" --schedule="0 7 * * *" --time-zone="Asia/Taipei"
+            --uri="https://run.googleapis.com/v2/projects/$PROJECT/locations/$REGION/jobs/line-daily:run"
+            --http-method=POST --oauth-service-account-email="$WORKER_RUNTIME")
+          if gcloud scheduler jobs describe line-daily-0700 --project="$PROJECT" --location="$REGION" >/dev/null 2>&1; then
+            gcloud scheduler jobs update http line-daily-0700 "${ARGS[@]}"
+          else
+            gcloud scheduler jobs create http line-daily-0700 "${ARGS[@]}"
+          fi
+
+      # Coverage and approval watch (G5 #116): weekly, opens review issues and never edits a card. Needs the same
+      # secrets as Paper Watch (content database, GitHub token), so it stays off until REGULATORY_WATCH_ENABLED=true.
+      - name: Deploy the coverage watch job
+        if: vars.REGULATORY_WATCH_ENABLED == 'true'
+        run: |
+          gcloud run jobs deploy regulatory-watch --project="$PROJECT" --region="$REGION" \
+            --image="$IMAGES/worker:$GITHUB_SHA" --service-account="$WORKER_RUNTIME" \
+            --command=python --args=scripts/regulatory_watch.py \
+            --set-secrets=GUTHUB_CONTENT_DATABASE_URL=guthub-content-database-url:latest,GH_TOKEN=paper-watch-github-token:latest \
+            --set-env-vars=GITHUB_REPOSITORY="$GITHUB_REPOSITORY" \
+            --memory=1Gi --max-retries=0 --task-timeout=1800
+          gcloud run jobs add-iam-policy-binding regulatory-watch --project="$PROJECT" --region="$REGION" \
+            --member="serviceAccount:$WORKER_RUNTIME" --role=roles/run.invoker --format=none
+          ARGS=(--project="$PROJECT" --location="$REGION" --schedule="0 9 * * 1" --time-zone="Asia/Taipei"
+            --uri="https://run.googleapis.com/v2/projects/$PROJECT/locations/$REGION/jobs/regulatory-watch:run"
+            --http-method=POST --oauth-service-account-email="$WORKER_RUNTIME")
+          if gcloud scheduler jobs describe regulatory-watch-weekly --project="$PROJECT" --location="$REGION" >/dev/null 2>&1; then
+            gcloud scheduler jobs update http regulatory-watch-weekly "${ARGS[@]}"
+          else
+            gcloud scheduler jobs create http regulatory-watch-weekly "${ARGS[@]}"
+          fi
+
+      # Paper Watch calls a paid model and opens GitHub issues, so it stays off until the maintainer provides its
+      # secrets and sets PAPER_WATCH_ENABLED=true in the GitHub environment (E3 #76). Staging runs it as a dry run.
+      - name: Deploy the Paper Watch job
+        if: vars.PAPER_WATCH_ENABLED == 'true'
+        run: |
+          DRY_RUN=(); [ "$GUTHUB_ENV_NAME" = staging ] && DRY_RUN=(--args=--dry-run)
+          gcloud run jobs deploy paper-watch --project="$PROJECT" --region="$REGION" \
+            --image="$IMAGES/worker:$GITHUB_SHA" --service-account="$WORKER_RUNTIME" \
+            --set-secrets=GUTHUB_CONTENT_DATABASE_URL=guthub-content-database-url:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,GH_TOKEN=paper-watch-github-token:latest \
+            --set-env-vars=GITHUB_REPOSITORY="$GITHUB_REPOSITORY" "${DRY_RUN[@]}" \
+            --max-retries=0 --task-timeout=3600 --parallelism=1

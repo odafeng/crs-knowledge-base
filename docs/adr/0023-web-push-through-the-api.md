@@ -17,7 +17,7 @@
 - 發送由 `python -m guthub_api.maintenance announce-news` 負責，以 Cloud Run job 定時執行。每則消息在 `app.push_announcements` **先佔位再發送**，所以重跑 job、頁面重新產生或重新部署都不會重送；代價是發送中途當機時，那一則不會補送。只推最近 2 天發布的消息；migration 把既有消息標成已推過，第一次啟用時不會一次推出一整批舊消息。
 - API 存訂閱前會把 `p256dh` 實際解析成 P-256 公鑰，並確認 `auth` 是 16 bytes。發送時，單一瀏覽器的失敗不會中斷其他人：推播服務回 404／410 的刪除；網路錯誤只計為失敗並保留；還沒送到推播服務就失敗的（例如金鑰無法加密）永遠不會成功，直接刪除。每個推播請求最多等 10 秒。
 - 推播服務回 404／410 的訂閱直接刪除。讀者關閉推播時，瀏覽器端先取消訂閱，再呼叫 API 刪除；API 刪除失敗時，下次發送會收到 410，到時再刪。
-- 網站在 build 時有 `NEXT_PUBLIC_PUSH_PUBLIC_KEY` 才顯示推播按鈕；發送 job 只在 repository 變數 `PUSH_ENABLED=true` 時部署。VAPID 私鑰放 Secret Manager（`vapid-private-key`），不進前端。
+- 網站在 build 時有 `NEXT_PUBLIC_PUSH_PUBLIC_KEY` 才顯示推播按鈕；發送 job 只在 GitHub environment 變數 `PUSH_ENABLED=true` 時部署。VAPID 私鑰放 Secret Manager（`vapid-private-key`），不進前端。
 
 ## Consequences
 
