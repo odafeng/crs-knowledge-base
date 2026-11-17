@@ -130,7 +130,7 @@ for (const mode of ['start', 'dev']) {
         return document.fonts.check('16px Archivo', 'GutHub');
       });
       assert.equal(font, true);
-      assert.equal((await page.request.get(`${origin}/favicon.svg`)).status(), 200);
+      assert.equal((await page.request.get(`${origin}/favicon.png`)).status(), 200);
       // Brand (C4 #66): installable with the GutHub name, and every icon or share image it names is served.
       const manifestHref = await page.locator('link[rel="manifest"]').getAttribute('href');
       const manifestUrl = new URL(manifestHref, origin);
