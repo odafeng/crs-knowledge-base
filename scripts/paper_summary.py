@@ -126,6 +126,55 @@ def papers(conn: Any) -> list[dict[str, Any]]:
     return [{names.get(str(k), str(k)): v for k, v in row.items()} for row in rows]
 
 
+def run(url: str, only: list[str] | None = None, dry_run: bool = False, redo: bool = False) -> dict[str, Any]:
+    """Summarise the papers that lack one (or `only` these); returns what was written and why others were not."""
+    import psycopg
+    from psycopg.rows import dict_row
+
+    client = Anthropic(api_key=ANTHROPIC_API_KEY)
+    report: dict[str, Any] = {"written": [], "skipped": {}}
+    # Reads use dict rows; the content writer gets its own plain connection, as Paper Watch's does.
+    with (
+        psycopg.connect(url, row_factory=dict_row, autocommit=True) as conn,
+        psycopg.connect(url, autocommit=True) as writer,
+    ):
+        for paper in papers(conn):
+            if only is not None and paper["id"] not in only:
+                continue
+            if paper["summary"] and not redo:
+                continue
+            if not paper["doi"]:
+                report["skipped"][paper["id"]] = "no DOI"
+                continue
+            abstract = abstract_for(paper["doi"])
+            if not abstract:
+                report["skipped"][paper["id"]] = "no abstract on PubMed"
+                continue
+            summary = write(client, paper, abstract)
+            found = problems(summary, abstract + "\n" + entry_text(paper))
+            if dry_run:  # every summary, kept or not, so the wording can be judged
+                print(json.dumps({"id": paper["id"], "problems": found, **summary}, ensure_ascii=False, indent=2))
+            if found:
+                report["skipped"][paper["id"]] = "; ".join(found)
+                continue
+            if not dry_run:
+                save(paper["id"], summary, writer)
+            report["written"].append(paper["id"])
+    return report | {"at": datetime.now(UTC).isoformat(timespec="seconds"), "dryRun": dry_run}
+
+
+def summarize_new(paper_ids: list[str]) -> None:
+    """Paper Watch, after publishing: summarise the new papers. A failure is reported, never fatal to the run."""
+    url = os.environ.get(DATABASE_ENV)
+    if not paper_ids or not url or not ANTHROPIC_API_KEY:
+        return
+    try:
+        report = run(url, only=paper_ids)
+        print(f"  [Summary] {json.dumps(report, ensure_ascii=False)}")
+    except Exception as exc:  # a summary is optional; the papers are already published
+        print(f"  [Summary] not written: {exc}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--database-url", default=os.environ.get(DATABASE_ENV))
@@ -137,40 +186,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(f"--database-url (or {DATABASE_ENV}) is required")
     if not ANTHROPIC_API_KEY:
         parser.error("ANTHROPIC_API_KEY is required")
-    import psycopg
-    from psycopg.rows import dict_row
-
-    client = Anthropic(api_key=ANTHROPIC_API_KEY)
-    report: dict[str, Any] = {"written": [], "skipped": {}}
-    # Reads use dict rows; the content writer gets its own plain connection, as Paper Watch's does.
-    with (
-        psycopg.connect(args.database_url, row_factory=dict_row, autocommit=True) as conn,
-        psycopg.connect(args.database_url, autocommit=True) as writer,
-    ):
-        for paper in papers(conn):
-            if args.only and paper["id"] not in args.only:
-                continue
-            if paper["summary"] and not args.redo:
-                continue
-            if not paper["doi"]:
-                report["skipped"][paper["id"]] = "no DOI"
-                continue
-            abstract = abstract_for(paper["doi"])
-            if not abstract:
-                report["skipped"][paper["id"]] = "no abstract on PubMed"
-                continue
-            summary = write(client, paper, abstract)
-            found = problems(summary, abstract + "\n" + entry_text(paper))
-            if args.dry_run:  # every summary, kept or not, so the wording can be judged
-                print(json.dumps({"id": paper["id"], "problems": found, **summary}, ensure_ascii=False, indent=2))
-            if found:
-                report["skipped"][paper["id"]] = "; ".join(found)
-                continue
-            if not args.dry_run:
-                save(paper["id"], summary, writer)
-            report["written"].append(paper["id"])
-    print(json.dumps({"job": "paper-summary", **report, "at": datetime.now(UTC).isoformat(timespec="seconds"),
-                      "dryRun": args.dry_run}, ensure_ascii=False))  # fmt: skip
+    report = run(args.database_url, args.only or None, args.dry_run, args.redo)
+    print(json.dumps({"job": "paper-summary", **report}, ensure_ascii=False))
     return 0
 
 
