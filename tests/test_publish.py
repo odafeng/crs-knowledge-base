@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
+import content_store
 from accept_issue import accept
 from commentary import CommentaryProposal
 from create_issues import format_commentary_issue_body, format_issue_body
@@ -190,6 +191,11 @@ class TestAccept:
 
 class TestPipelineGate:
     """The pipeline publishes only gate-passing papers; everything else becomes an issue."""
+
+    @pytest.fixture(autouse=True)
+    def json_writer(self, monkeypatch):
+        # The pipeline's JSON path, whichever writer the repository itself has now (postgres since cutover, #79).
+        monkeypatch.setattr(content_store, "json_writer_active", lambda: True)
 
     def test_publish_or_hold(self):
         from main import publish_or_hold

@@ -31,6 +31,8 @@ CONTENT = "app.topics, app.papers, app.paper_relations, app.research_commentary,
 def copy_repo(tmp_path: Path) -> Path:
     for name in ("data", "docs"):
         shutil.copytree(ROOT / name, tmp_path / name)
+    # The copy stands for the repository before cutover, whichever writer the real one has now.
+    (tmp_path / "data/WRITER").write_text("json\n")
     return tmp_path
 
 
