@@ -99,3 +99,24 @@ export function displayNameError(name: string): string | null {
 
 /** Remembers where the reader was, for the email link that may open in a new tab or on another device. */
 export const AFTER_LOGIN_KEY = "guthub:after-login";
+
+/**
+ * What went wrong when Supabase sent the reader back with an error instead of a code (H12 #185), or null when it did
+ * not. Linking a Google account reports its errors this way, in the query or, for some flows, the fragment.
+ */
+export function callbackError(search: string, hash: string): string | null {
+  const query = new URLSearchParams(search);
+  const fragment = new URLSearchParams(hash.replace(/^#/, ""));
+  const code =
+    query.get("error_code") ??
+    fragment.get("error_code") ??
+    query.get("error") ??
+    fragment.get("error");
+  if (!code) return null;
+  if (code === "identity_already_exists")
+    return "這個 Google 帳號已經是另一個 GutHub 帳號，不能再連結。請來信請我們刪除那個帳號後再連結一次。";
+  if (code === "manual_linking_disabled")
+    return "目前還不能連結 Google 帳號，請稍後再試。";
+  if (code === "access_denied") return "你取消了 Google 授權，沒有做任何變更。";
+  return "沒有完成，請再試一次。";
+}
