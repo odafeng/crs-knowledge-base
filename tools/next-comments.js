@@ -267,10 +267,23 @@ let browser;
   await a.goto(`${ORIGIN}/admin/stats/`);
   await a.getByText('需要管理者權限').waitFor();
 
+  // Review queue (E7 #188): every AI-unreviewed paper and story on one page, each with its buttons, for admins only.
+  await m.goto(`${ORIGIN}/admin/review/`);
+  await m.getByRole('heading', { name: '待審內容', level: 1 }).waitFor();
+  await m.locator('.page__narrow ul.entries, .page__narrow p:has-text("目前沒有待審的內容")').first().waitFor();
+  const queued = await m.locator('.page__narrow li.entry').count();
+  check(await m.getByRole('button', { name: '標為已審' }).count() === queued, 'review queue: not one button per item');
+  await m.addScriptTag({ content: AXE });
+  const reviewAxe = await m.evaluate(tags => axe.run(document.querySelector('main'), { runOnly: { type: 'tag', values: tags } }), TAGS);
+  check(reviewAxe.violations.length === 0, `axe review queue: ${reviewAxe.violations.map(v => `${v.id} ${v.nodes[0].target}`).join('; ')}`);
+  await a.goto(`${ORIGIN}/admin/review/`);
+  await a.getByText('只有管理者可以使用這一頁。').waitFor();
+  check(await a.getByRole('button', { name: '標為已審' }).count() === 0, 'review queue: buttons shown to a reader');
+
   console.log('comments: visitor gate, pending first comment, single send on double click, approval, signed and anonymous,');
   console.log('          edit, failure keeps text and retry, others cannot edit or delete, report once, delete, keyboard,');
   console.log('          resend after a lost response, over the limit and recovery, likes, moderation with audit,');
-  console.log('          weekly activity counts for the maintainer only');
+  console.log('          weekly activity counts for the maintainer only, review queue for admins only');
   console.log('problems:', problems.length);
   problems.forEach(problem => console.log('  -', problem));
   if (problems.length) process.exitCode = 1;

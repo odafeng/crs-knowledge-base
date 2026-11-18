@@ -1,5 +1,16 @@
 // What an admin sees after pressing a review or unpublish button (E6 #159). The API only records the request; the
 // content-requests job applies it about a minute later, and pages follow within the 5-minute ISR window.
+import {
+  headline,
+  isUnreviewed,
+  newsPath,
+  paperPath,
+  paperTitle,
+  publishedAt,
+  type News,
+  type Paper,
+} from "./site";
+
 export type ReviewAction = "review" | "unpublish";
 
 export function reviewMessage(
@@ -39,4 +50,37 @@ export function reviewMessage(
     default:
       return { ok: false, message: "暫時無法送出，請稍後再試。" };
   }
+}
+
+/** One AI-unreviewed paper or story in the admin's review queue (E7 #188). */
+export type Pending = {
+  kind: "paper" | "news";
+  target: string;
+  title: string;
+  href: string;
+  date: string;
+};
+
+/** Everything still marked "AI 未審", newest first, papers and stories together. */
+export function pendingReview(
+  papers: readonly Paper[],
+  news: readonly News[],
+): Pending[] {
+  const items: Pending[] = [
+    ...papers.filter(isUnreviewed).map((paper) => ({
+      kind: "paper" as const,
+      target: paper.id,
+      title: paperTitle(paper),
+      href: paperPath(paper),
+      date: publishedAt(paper),
+    })),
+    ...news.filter(isUnreviewed).map((item) => ({
+      kind: "news" as const,
+      target: item.id,
+      title: headline(item),
+      href: newsPath(item),
+      date: item.publishedAt,
+    })),
+  ];
+  return items.sort((a, b) => b.date.localeCompare(a.date));
 }
