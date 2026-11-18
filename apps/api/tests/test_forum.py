@@ -427,3 +427,39 @@ def test_looking_up_an_anonymous_author_is_recorded(client: TestClient, forum: F
     ) == [("reveal_author", "Possible patient details")]
     unknown = client.post(f"{QUEUE}/{uuid.uuid4()}/author", headers=f.headers(f.admin), json={"reason": "x"})
     assert unknown.status_code == 404
+
+
+# --- H9: threads opened by GutHub AI ------------------------------------------------------------------------------
+
+
+def test_ai_threads_are_labelled_and_belong_to_no_one(client: TestClient, forum: Forum) -> None:
+    f = forum
+    [(thread,)] = sql(
+        "insert into app.forum_posts (title, body, anonymous, display_name, ai)"
+        " values ('AI opened this', 'Sources on the site.', false, 'GutHub AI', true) returning id"
+    )
+    thread = str(thread)
+    try:
+        listed = next(t for t in thread_list(client, f, f.peer) if t["id"] == thread)
+        assert listed["ai"] is True and listed["displayName"] == "GutHub AI"
+        detail = thread_of(client, f, f.peer, thread)["thread"]
+        assert detail["ai"] is True and detail["mine"] is False  # published at once, after the maintainer's review
+        own = reply(client, f, f.surgeon, thread).json()["id"]
+        assert moderate(client, f, own).status_code == 200  # 王醫師's first post waits, like any other
+        assert thread_of(client, f, f.peer, thread)["replies"][0]["ai"] is False
+        # Nobody can edit or delete it through the API, and there is no author to look up; likes work as usual.
+        assert client.patch(f"{POSTS}/{thread}", headers=f.headers(f.surgeon), json={"body": "x"}).status_code == 403
+        assert (
+            client.post(f"{QUEUE}/{thread}/author", headers=f.headers(f.admin), json={"reason": "r"}).status_code == 404
+        )
+        assert client.put(f"{POSTS}/{thread}/likes", headers=f.headers(f.peer)).json()["likeCount"] == 1
+    finally:
+        sql("delete from app.forum_post_likes where post_id = %s", (thread,))
+        sql(
+            "delete from app.forum_moderation_events where post_id in"
+            " (select id from app.forum_posts where id = %s or thread_id = %s)",
+            (thread, thread),
+        )
+        sql("delete from app.forum_posts where thread_id = %s", (thread,))
+        sql("delete from app.forum_posts where id = %s", (thread,))
+    assert own

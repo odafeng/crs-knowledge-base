@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAccount, type Account } from "@/components/account";
+import { AiChip } from "@/components/reading";
 import { apiFetch, authEnabled } from "@/lib/auth";
 import { retryAfterOf } from "@/lib/comments";
 import { authorName, errorMessage, postDate } from "@/lib/forum";
@@ -205,6 +206,7 @@ function Moderated({
         <span className="chip">{STATUS[status]}</span>
         {pinned && <span className="chip">置頂</span>}
         <span className="comment__author">{authorName(post)}</span>
+        {post.ai && <AiChip label="AI" />}
         <time dateTime={post.createdAt}>{postDate(post.createdAt)}</time>
         <span>{context}</span>
       </p>

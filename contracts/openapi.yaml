@@ -1817,7 +1817,7 @@ components:
     ForumPost:
       type: object
       additionalProperties: false
-      required: [id, threadId, body, anonymous, displayName, createdAt, updatedAt, likeCount, liked, mine]
+      required: [id, threadId, body, anonymous, displayName, createdAt, updatedAt, likeCount, liked, mine, ai]
       properties:
         id: {type: string, format: uuid}
         body: {type: string, minLength: 1}
@@ -1830,6 +1830,7 @@ components:
         liked: {type: boolean, description: Whether the member making the request liked it.}
         mine: {type: boolean, description: Whether the member making the request wrote it. Shown only to that member.}
         threadId: {type: string, format: uuid}
+        ai: {type: boolean, description: Written by the site's AI (H9); it belongs to no account and is labelled AI.}
       allOf:
       - if:
           properties:
@@ -1845,7 +1846,7 @@ components:
       type: object
       additionalProperties: false
       required: [id, threadId, title, topicKey, paperId, body, anonymous, displayName, createdAt, updatedAt, likeCount,
-        liked, mine, pinned]
+        liked, mine, pinned, ai]
       properties:
         id: {type: string, format: uuid}
         body: {type: string, minLength: 1}
@@ -1867,6 +1868,7 @@ components:
           type: [string, 'null']
           description: The linked paper while it is public; null once it is withdrawn.
         pinned: {type: boolean}
+        ai: {type: boolean, description: Opened by the site's AI (H9); it belongs to no account and is labelled AI.}
       allOf:
       - if:
           properties:
@@ -1881,7 +1883,7 @@ components:
       type: object
       additionalProperties: false
       required: [id, title, topicKey, paperId, anonymous, displayName, createdAt, replyCount, lastReplyAt, likeCount,
-        pinned]
+        pinned, ai]
       properties:
         id: {type: string, format: uuid}
         title: {type: string, minLength: 1}
@@ -1901,6 +1903,7 @@ components:
           format: date-time
         likeCount: {type: integer, minimum: 0}
         pinned: {type: boolean}
+        ai: {type: boolean}
       allOf:
       - if:
           properties:
@@ -1992,7 +1995,7 @@ components:
     ForumPostRecord:
       type: object
       additionalProperties: false
-      required: [id, threadId, title, body, anonymous, displayName, createdAt, updatedAt]
+      required: [id, threadId, title, body, anonymous, displayName, createdAt, updatedAt, ai]
       properties:
         id: {type: string, format: uuid}
         threadId:
@@ -2006,6 +2009,7 @@ components:
           type: [string, 'null']
         createdAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
+        ai: {type: boolean}
       description: A post outside its thread, as its author or the maintainer sees it. Never carries the account.
     ForumOwnPostPage:
       type: object

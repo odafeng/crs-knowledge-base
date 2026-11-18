@@ -1,7 +1,7 @@
 // The colorectal surgeon forum, end to end (H7 #129): visitors and unverified members see only how to join; a
 // verified member's first thread waits for moderation; the de-identification check is required; signed and anonymous
 // posts; likes, reports, edit and delete; the maintainer approves, looks up an anonymous author, and pins a thread;
-// keyboard and 360px phone use; axe on every forum page; noindex everywhere.
+// keyboard and 360px phone use; AI-opened threads labelled; axe on every forum page; noindex everywhere.
 // Usage: node tools/next-forum.js <Next.js origin> <API base>
 // Env: SUPABASE_URL, SUPABASE_SERVICE_KEY (local demo key), DATABASE_URL (local; grants membership and admin).
 const { execFileSync } = require('node:child_process');
@@ -216,6 +216,15 @@ let browser;
   await edited.getByRole('button', { name: '刪除' }).click();
   await edited.getByRole('button', { name: '確定刪除' }).click();
   await edited.waitFor({ state: 'detached' });
+
+  step('a thread opened by GutHub AI is labelled AI (H9)');
+  const aiTitle = `AI opened ${run}`;
+  psql(`insert into app.forum_posts (title, body, anonymous, display_name, ai)
+    values (${literal(aiTitle)}, 'From the site''s evidence.', false, 'GutHub AI', true)`);
+  await b.goto(`${ORIGIN}/forum/`);
+  const aiRow = b.locator('.comment', { hasText: aiTitle });
+  await aiRow.getByText('GutHub AI').waitFor();
+  await aiRow.locator('.chip--ai').waitFor();
 
   step('accessibility of the forum pages, light and dark');
   for (const colorScheme of ['light', 'dark']) {
