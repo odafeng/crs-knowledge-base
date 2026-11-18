@@ -1,17 +1,36 @@
 "use client";
 
 // The home page's natural-language search (H3 #125): one question in, the closest papers, news and treatment
-// summaries out. Searches on submit, not on every keystroke, because each query is a paid embedding.
+// summaries out, and for verified members the closest forum threads in their own list (H8 #130). Searches on submit,
+// not on every keystroke, because each query is a paid embedding.
 import Link from "next/link";
 import { useState } from "react";
+import { useAccount } from "@/components/account";
 import { Icon } from "@/components/reading";
 import {
   KIND_LABEL,
+  grouped,
   semanticSearch,
+  type SemanticHit,
   type SemanticOutcome,
 } from "@/lib/semantic";
 
+function Hits({ hits, label }: { hits: SemanticHit[]; label: string }) {
+  return (
+    <ol aria-label={label}>
+      {hits.map((hit) => (
+        <li key={`${hit.kind}:${hit.path}:${hit.title}`}>
+          <span className="ask-site__kind">{KIND_LABEL[hit.kind]}</span>
+          <Link href={hit.path}>{hit.title}</Link>
+          <p>{hit.snippet}</p>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 export function AskSite() {
+  const account = useAccount();
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState<SemanticOutcome | null>(null);
@@ -20,7 +39,8 @@ export function AskSite() {
     event.preventDefault();
     if (query.trim().length < 2) return;
     setBusy(true);
-    setOutcome(await semanticSearch(query));
+    const token = account.status === "signed-in" ? account.token : undefined;
+    setOutcome(await semanticSearch(query, token));
     setBusy(false);
   }
 
@@ -51,27 +71,38 @@ export function AskSite() {
         </p>
         <div className="ask-site__results" aria-live="polite">
           {outcome?.kind === "error" && <p>{outcome.message}</p>}
-          {outcome?.kind === "done" &&
-            (outcome.hits.length === 0 ? (
-              <p>
-                站上沒有和這個問題夠相關的內容。可以換個說法，或到
-                <Link href="/updates/#q">關鍵字搜尋</Link>。
-              </p>
-            ) : (
-              <ol>
-                {outcome.hits.map((hit) => (
-                  <li key={`${hit.kind}:${hit.path}:${hit.title}`}>
-                    <span className="ask-site__kind">
-                      {KIND_LABEL[hit.kind]}
-                    </span>
-                    <Link href={hit.path}>{hit.title}</Link>
-                    <p>{hit.snippet}</p>
-                  </li>
-                ))}
-              </ol>
-            ))}
+          {outcome?.kind === "done" && <Results hits={outcome.hits} />}
         </div>
       </div>
     </section>
+  );
+}
+
+function Results({ hits }: { hits: SemanticHit[] }) {
+  const { evidence, forum } = grouped(hits);
+  if (hits.length === 0) {
+    return (
+      <p>
+        站上沒有和這個問題夠相關的內容。可以換個說法，或到
+        <Link href="/updates/#q">關鍵字搜尋</Link>。
+      </p>
+    );
+  }
+  return (
+    <>
+      {evidence.length > 0 && (
+        <>
+          <h3 className="ask-site__group">證據</h3>
+          <Hits hits={evidence} label="證據" />
+        </>
+      )}
+      {forum.length > 0 && (
+        <>
+          <h3 className="ask-site__group">論壇討論</h3>
+          <p className="ask-site__note">會員的個人意見，不是本站的證據整理。</p>
+          <Hits hits={forum} label="論壇討論" />
+        </>
+      )}
+    </>
   );
 }

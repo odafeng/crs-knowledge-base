@@ -82,3 +82,50 @@ def test_the_monthly_cap_stops_before_sending_more(conn, rows) -> None:  # noqa:
     with pytest.raises(RuntimeError, match="cap"):
         si.run(conn, embed, cap=100)
     assert embed.texts == []
+
+
+# --- forum posts (H8 #130) -----------------------------------------------------------------------------------------
+
+OPENER = {"id": "11111111-1111-1111-1111-111111111111", "thread": "11111111-1111-1111-1111-111111111111",
+          "title": "側方淋巴結", "body": "化放療後還在的側方淋巴結，你們會清嗎？"}  # fmt: skip
+REPLY = {"id": "22222222-2222-2222-2222-222222222222", "thread": OPENER["id"], "title": "側方淋巴結",
+         "body": "大於 7 mm 會清。"}  # fmt: skip
+
+
+def test_forum_posts_carry_their_thread_and_no_author() -> None:
+    opener, reply = si.items([], [], [], [OPENER, REPLY])
+    assert (opener.kind, opener.ref, opener.path, opener.title) == ("forum", OPENER["id"], f"/forum/{OPENER['id']}/",
+                                                                  "側方淋巴結")  # fmt: skip
+    assert reply.path == opener.path and reply.text == "側方淋巴結\n大於 7 mm 會清。"
+    assert reply.snippet == "大於 7 mm 會清。"
+
+
+@needs_db
+def test_published_forum_posts_are_indexed_and_hidden_ones_removed(conn, rows) -> None:  # noqa: F811
+    apply(conn, rows)
+    conn.execute("truncate app.search_chunks")
+    author = conn.execute(
+        "insert into auth.users (id, email) values (gen_random_uuid(), 'h8-index@example.test') returning id"
+    ).fetchone()[0]
+    conn.execute("insert into app.accounts (id, display_name, surgeon_since) values (%s, '王醫師', now())", (author,))
+
+    def post(**fields) -> str:
+        columns = {"author_id": author, "anonymous": True, **fields}
+        names = ", ".join(columns)
+        marks = ", ".join(["%s"] * len(columns))
+        return str(conn.execute(f"insert into app.forum_posts ({names}) values ({marks}) returning id",
+                                list(columns.values())).fetchone()[0])  # fmt: skip
+
+    thread = post(title="側方淋巴結", body="化放療後還在的側方淋巴結，你們會清嗎？")
+    conn.execute("update app.forum_posts set status = 'published' where id = %s", (thread,))  # the maintainer
+    answer = post(thread_id=thread, body="大於 7 mm 會清。")  # trusted now: published at once
+    waiting = post(title="Still pending", body="x")
+    conn.execute("update app.forum_posts set status = 'pending' where id = %s", (waiting,))
+    embed = FakeVoyage()
+    si.run(conn, embed)
+    indexed = dict(conn.execute("select ref, path from app.search_chunks where kind = 'forum'").fetchall())
+    assert indexed == {thread: f"/forum/{thread}/", answer: f"/forum/{thread}/"}
+    assert not any("王醫師" in text for text in embed.texts)
+
+    conn.execute("update app.forum_posts set status = 'hidden' where id = %s", (thread,))
+    assert si.run(conn, embed)["removed"] == 2  # the thread takes its replies with it

@@ -426,3 +426,9 @@
 .forum-deidentify input {
   margin-block-start: 0.35em;
 }
+
+/* Natural-language search groups (H8 #130): evidence and forum discussion are listed apart */
+.ask-site__group {
+  margin-block: var(--space-4) var(--space-2);
+  font-size: var(--text-sm);
+}

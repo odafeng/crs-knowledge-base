@@ -147,9 +147,12 @@ paths:
   /semantic-search:
     post:
       operationId: semanticSearch
-      summary: Natural-language search over papers, news and treatment cards (H3); 503 when not configured or the
-        month's embedding budget is spent, so the site falls back to keyword search.
-      security: []
+      summary: Natural-language search over papers, news and treatment cards (H3), plus forum threads for verified
+        members (H8); 503 when not configured or the month's embedding budget is spent, so the site falls back to
+        keyword search.
+      security:
+      - {}
+      - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -164,8 +167,9 @@ paths:
         '422': {$ref: '#/components/responses/InvalidRequest'}
         '429': {$ref: '#/components/responses/RateLimited'}
         '503': {$ref: '#/components/responses/Unavailable'}
-      description: 'The query is in the body so it stays out of request logs; it is not stored. Set Cache-Control:
-        no-store.'
+      description: 'The query is in the body so it stays out of request logs; it is not stored. The session is optional:
+        forum results (kind forum) come back only for a verified colorectal surgeon, and a missing or invalid session
+        just means public results. Set Cache-Control: no-store.'
   /papers/{paperId}/comments:
     get:
       operationId: listComments
@@ -1654,13 +1658,14 @@ components:
       properties:
         results:
           type: array
-          maxItems: 8
+          maxItems: 12
+          description: Up to 8 public passages, then up to 4 forum threads (members only), each group best first.
           items:
             type: object
             additionalProperties: false
             required: [kind, path, title, snippet, score]
             properties:
-              kind: {type: string, enum: [paper, news, card]}
+              kind: {type: string, enum: [paper, news, card, forum]}
               path: {type: string, pattern: '^/'}
               title: {type: string}
               snippet: {type: string}

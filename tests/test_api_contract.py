@@ -147,6 +147,8 @@ def test_comment_requests_cannot_choose_an_author_or_moderation_state():
 # Writes that need no sign-in, each on purpose: a push subscription names a browser, never an account (C5 #95).
 # POSTs that need no session: a browser push subscription, and a search whose query belongs in the body (H3).
 ANONYMOUS_WRITES = {"/push/subscription", "/semantic-search"}
+# Public, but a session adds to the answer: semantic search returns forum threads to verified members (H8).
+OPTIONAL_SESSION = {"/semantic-search"}
 
 
 def test_authentication_and_private_response_boundaries_are_explicit():
@@ -157,7 +159,8 @@ def test_authentication_and_private_response_boundaries_are_explicit():
                 or path == "/me"
                 or path.startswith(("/me/", "/admin/", "/forum/"))  # the forum is members only, reads included
             )
-            assert operation["security"] == ([{"BearerAuth": []}] if private else [])
+            public = [{}, {"BearerAuth": []}] if path in OPTIONAL_SESSION else []
+            assert operation["security"] == ([{"BearerAuth": []}] if private else public)
             assert "503" in operation["responses"]
             if path != "/health":
                 assert "422" in operation["responses"]

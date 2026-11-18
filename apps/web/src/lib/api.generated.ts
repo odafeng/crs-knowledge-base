@@ -150,8 +150,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Natural-language search over papers, news and treatment cards (H3); 503 when not configured or the month's embedding budget is spent, so the site falls back to keyword search.
-         * @description The query is in the body so it stays out of request logs; it is not stored. Set Cache-Control: no-store.
+         * Natural-language search over papers, news and treatment cards (H3), plus forum threads for verified members (H8); 503 when not configured or the month's embedding budget is spent, so the site falls back to keyword search.
+         * @description The query is in the body so it stays out of request logs; it is not stored. The session is optional: forum results (kind forum) come back only for a verified colorectal surgeon, and a missing or invalid session just means public results. Set Cache-Control: no-store.
          */
         post: operations["semanticSearch"];
         delete?: never;
@@ -1168,9 +1168,10 @@ export interface components {
             query: string;
         };
         SemanticResults: {
+            /** @description Up to 8 public passages, then up to 4 forum threads (members only), each group best first. */
             results: {
                 /** @enum {string} */
-                kind: "paper" | "news" | "card";
+                kind: "paper" | "news" | "card" | "forum";
                 path: string;
                 title: string;
                 snippet: string;
