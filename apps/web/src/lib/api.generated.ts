@@ -589,6 +589,178 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/forum/threads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Visible threads, newest first.
+         * @description Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.
+         */
+        get: operations["listForumThreads"];
+        put?: never;
+        /**
+         * Open a thread; the first post of an account waits for moderation.
+         * @description Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.
+         */
+        post: operations["createForumThread"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/forum/threads/{threadId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The opening post and one page of replies, oldest first.
+         * @description Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.
+         */
+        get: operations["getForumThread"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/forum/threads/{threadId}/posts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reply to a visible thread.
+         * @description Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.
+         */
+        post: operations["createForumReply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/forum/posts/{postId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Soft-delete an own post; deleting the opening post hides the thread.
+         * @description Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.
+         */
+        delete: operations["deleteOwnForumPost"];
+        options?: never;
+        head?: never;
+        /**
+         * Edit an own post; only the opening post has a title.
+         * @description Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.
+         */
+        patch: operations["updateOwnForumPost"];
+        trace?: never;
+    };
+    "/forum/posts/{postId}/likes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Like a visible post by someone else; repeating it changes nothing.
+         * @description Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.
+         */
+        put: operations["likeForumPost"];
+        post?: never;
+        /**
+         * Remove the member's like; repeating it changes nothing.
+         * @description Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.
+         */
+        delete: operations["unlikeForumPost"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/forum/posts/{postId}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report a visible post by someone else, once.
+         * @description Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.
+         */
+        post: operations["reportForumPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/forum-posts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Forum posts waiting for a first approval or with open reports.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission; clients cannot grant themselves this permission.
+         */
+        get: operations["listForumModerationQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/forum-posts/{postId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Publish or hide a forum post; both close its open reports.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission; clients cannot grant themselves this permission.
+         */
+        patch: operations["moderateForumPost"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1010,6 +1182,138 @@ export interface components {
                 createdAt: string;
             }[];
         };
+        /** @description A reply. Never carries the account behind it; anonymous replies carry no name either. */
+        ForumPost: {
+            /** Format: uuid */
+            id: string;
+            body: string;
+            anonymous: boolean;
+            displayName: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** @description Number of members who liked it; who they are is never returned. */
+            likeCount: number;
+            /** @description Whether the member making the request liked it. */
+            liked: boolean;
+            /** @description Whether the member making the request wrote it. Shown only to that member. */
+            mine: boolean;
+            /** Format: uuid */
+            threadId: string;
+        } & unknown;
+        ForumOpeningPost: {
+            /** Format: uuid */
+            id: string;
+            body: string;
+            anonymous: boolean;
+            displayName: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** @description Number of members who liked it; who they are is never returned. */
+            likeCount: number;
+            /** @description Whether the member making the request liked it. */
+            liked: boolean;
+            /** @description Whether the member making the request wrote it. Shown only to that member. */
+            mine: boolean;
+            threadId: null;
+            title: string;
+            topicKey: components["schemas"]["TopicKey"] | null;
+            /** @description The linked paper while it is public; null once it is withdrawn. */
+            paperId: string | null;
+        } & unknown;
+        ForumThreadSummary: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            topicKey: components["schemas"]["TopicKey"] | null;
+            paperId: string | null;
+            anonymous: boolean;
+            displayName: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            replyCount: number;
+            /** Format: date-time */
+            lastReplyAt: string | null;
+            likeCount: number;
+        } & unknown;
+        ForumThreadPage: {
+            items: components["schemas"]["ForumThreadSummary"][];
+            nextCursor: string | null;
+        };
+        ForumThreadDetail: {
+            thread: components["schemas"]["ForumOpeningPost"];
+            replies: components["schemas"]["ForumPost"][];
+            nextCursor: string | null;
+        };
+        ForumThreadCreate: {
+            title: string;
+            /** @description Plain text, not HTML; newlines and tabs are the only control characters allowed. No information that could identify a patient (ADR-0022). */
+            body: string;
+            /** @description true hides the name from other members; the platform keeps the author mapping for the author and moderators (ADR-0017). */
+            anonymous: boolean;
+            topicKey?: components["schemas"]["TopicKey"] | null;
+            /** @description A public paper; anything else is 422. */
+            paperId?: string | null;
+        };
+        ForumReplyCreate: {
+            body: string;
+            anonymous: boolean;
+        };
+        ForumPostUpdate: {
+            body: string;
+            /** @description Opening posts only; 422 on a reply. */
+            title?: string;
+        };
+        ForumPostReceipt: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description The thread; equal to id for an opening post.
+             */
+            threadId: string;
+            /** @enum {string} */
+            status: "pending" | "published" | "hidden";
+        };
+        ForumReportReceipt: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            postId: string;
+        };
+        /** @description Private moderator response. Does not include the private author mapping. */
+        ForumModerationItem: {
+            post: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                threadId: string | null;
+                title: string | null;
+                body: string;
+                anonymous: boolean;
+                displayName: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            };
+            /** @enum {string} */
+            status: "pending" | "published" | "hidden";
+            reportCount: number;
+            /** @description Open reports only, without who reported. */
+            reports: {
+                reason: string;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        ForumModerationItemPage: {
+            items: components["schemas"]["ForumModerationItem"][];
+            nextCursor: string | null;
+        };
         Error: {
             error: {
                 /** @enum {string} */
@@ -1130,6 +1434,8 @@ export interface components {
         PaperId: string;
         AccountId: string;
         CommentId: string;
+        ThreadId: string;
+        PostId: string;
         NewsId: string;
         TopicKey: components["schemas"]["TopicKey"];
     };
@@ -2138,6 +2444,333 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    listForumThreads: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+                topic?: components["schemas"]["TopicKey"];
+                paperId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForumThreadPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    createForumThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForumThreadCreate"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForumPostReceipt"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    getForumThread: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path: {
+                threadId: components["parameters"]["ThreadId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForumThreadDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    createForumReply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                threadId: components["parameters"]["ThreadId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForumReplyCreate"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForumPostReceipt"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    deleteOwnForumPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: components["parameters"]["PostId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    updateOwnForumPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: components["parameters"]["PostId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForumPostUpdate"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForumPostReceipt"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    likeForumPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: components["parameters"]["PostId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LikeState"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    unlikeForumPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: components["parameters"]["PostId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LikeState"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    reportForumPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: components["parameters"]["PostId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportCreate"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForumReportReceipt"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    listForumModerationQueue: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForumModerationItemPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    moderateForumPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: components["parameters"]["PostId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModerationRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForumPostReceipt"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
             503: components["responses"]["Unavailable"];
         };
     };

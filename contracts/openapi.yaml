@@ -767,6 +767,257 @@ paths:
           application/json:
             schema: {$ref: '#/components/schemas/TopicSubscriptions'}
       description: 'Requires a verified session. Set Cache-Control: private, no-store.'
+  /forum/threads:
+    get:
+      operationId: listForumThreads
+      summary: Visible threads, newest first.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ForumThreadPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/Limit'}
+      - {$ref: '#/components/parameters/Cursor'}
+      - {name: topic, in: query, schema: {$ref: '#/components/schemas/TopicKey'}}
+      - {name: paperId, in: query, schema: {type: string, minLength: 1}}
+      description: 'Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.'
+    post:
+      operationId: createForumThread
+      summary: Open a thread; the first post of an account waits for moderation.
+      security:
+      - BearerAuth: []
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ForumPostReceipt'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ForumThreadCreate'}
+      description: 'Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.'
+  /forum/threads/{threadId}:
+    get:
+      operationId: getForumThread
+      summary: The opening post and one page of replies, oldest first.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ForumThreadDetail'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/ThreadId'}
+      - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
+      - {$ref: '#/components/parameters/Cursor'}
+      description: 'Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.'
+  /forum/threads/{threadId}/posts:
+    post:
+      operationId: createForumReply
+      summary: Reply to a visible thread.
+      security:
+      - BearerAuth: []
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ForumPostReceipt'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/ThreadId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ForumReplyCreate'}
+      description: 'Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.'
+  /forum/posts/{postId}:
+    patch:
+      operationId: updateOwnForumPost
+      summary: Edit an own post; only the opening post has a title.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ForumPostReceipt'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/PostId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ForumPostUpdate'}
+      description: 'Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.'
+    delete:
+      operationId: deleteOwnForumPost
+      summary: Soft-delete an own post; deleting the opening post hides the thread.
+      security:
+      - BearerAuth: []
+      responses:
+        '204': {description: Deleted}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/PostId'}
+      description: 'Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.'
+  /forum/posts/{postId}/likes:
+    put:
+      operationId: likeForumPost
+      summary: Like a visible post by someone else; repeating it changes nothing.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LikeState'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/PostId'}
+      description: 'Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.'
+    delete:
+      operationId: unlikeForumPost
+      summary: Remove the member's like; repeating it changes nothing.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LikeState'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/PostId'}
+      description: 'Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.'
+  /forum/posts/{postId}/reports:
+    post:
+      operationId: reportForumPost
+      summary: Report a visible post by someone else, once.
+      security:
+      - BearerAuth: []
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ForumReportReceipt'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/PostId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReportCreate'}
+      description: 'Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.'
+  /admin/forum-posts:
+    get:
+      operationId: listForumModerationQueue
+      summary: Forum posts waiting for a first approval or with open reports.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ForumModerationItemPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/Limit'}
+      - {$ref: '#/components/parameters/Cursor'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission; clients cannot grant themselves this permission.'
+      x-required-permission: comments:moderate
+  /admin/forum-posts/{postId}:
+    patch:
+      operationId: moderateForumPost
+      summary: Publish or hide a forum post; both close its open reports.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ForumPostReceipt'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/PostId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ModerationRequest'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission; clients cannot grant themselves this permission.'
+      x-required-permission: comments:moderate
 components:
   securitySchemes:
     BearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
@@ -791,6 +1042,16 @@ components:
       schema: {type: string, format: uuid}
     CommentId:
       name: commentId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    ThreadId:
+      name: threadId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    PostId:
+      name: postId
       in: path
       required: true
       schema: {type: string, minLength: 1}
@@ -1451,6 +1712,221 @@ components:
               reason: {type: string}
               createdAt: {type: string, format: date-time}
       description: Private moderator response. Does not include the private author mapping.
+    ForumPost:
+      type: object
+      additionalProperties: false
+      required: [id, threadId, body, anonymous, displayName, createdAt, updatedAt, likeCount, liked, mine]
+      properties:
+        id: {type: string, format: uuid}
+        body: {type: string, minLength: 1}
+        anonymous: {type: boolean}
+        displayName:
+          type: [string, 'null']
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        likeCount: {type: integer, minimum: 0, description: Number of members who liked it; who they are is never returned.}
+        liked: {type: boolean, description: Whether the member making the request liked it.}
+        mine: {type: boolean, description: Whether the member making the request wrote it. Shown only to that member.}
+        threadId: {type: string, format: uuid}
+      allOf:
+      - if:
+          properties:
+            anonymous: {const: true}
+        then:
+          properties:
+            displayName: {type: 'null'}
+        else:
+          properties:
+            displayName: {type: string, minLength: 1}
+      description: A reply. Never carries the account behind it; anonymous replies carry no name either.
+    ForumOpeningPost:
+      type: object
+      additionalProperties: false
+      required: [id, threadId, title, topicKey, paperId, body, anonymous, displayName, createdAt, updatedAt, likeCount,
+        liked, mine]
+      properties:
+        id: {type: string, format: uuid}
+        body: {type: string, minLength: 1}
+        anonymous: {type: boolean}
+        displayName:
+          type: [string, 'null']
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        likeCount: {type: integer, minimum: 0, description: Number of members who liked it; who they are is never returned.}
+        liked: {type: boolean, description: Whether the member making the request liked it.}
+        mine: {type: boolean, description: Whether the member making the request wrote it. Shown only to that member.}
+        threadId: {type: 'null'}
+        title: {type: string, minLength: 1}
+        topicKey:
+          oneOf:
+          - {$ref: '#/components/schemas/TopicKey'}
+          - {type: 'null'}
+        paperId:
+          type: [string, 'null']
+          description: The linked paper while it is public; null once it is withdrawn.
+      allOf:
+      - if:
+          properties:
+            anonymous: {const: true}
+        then:
+          properties:
+            displayName: {type: 'null'}
+        else:
+          properties:
+            displayName: {type: string, minLength: 1}
+    ForumThreadSummary:
+      type: object
+      additionalProperties: false
+      required: [id, title, topicKey, paperId, anonymous, displayName, createdAt, replyCount, lastReplyAt, likeCount]
+      properties:
+        id: {type: string, format: uuid}
+        title: {type: string, minLength: 1}
+        topicKey:
+          oneOf:
+          - {$ref: '#/components/schemas/TopicKey'}
+          - {type: 'null'}
+        paperId:
+          type: [string, 'null']
+        anonymous: {type: boolean}
+        displayName:
+          type: [string, 'null']
+        createdAt: {type: string, format: date-time}
+        replyCount: {type: integer, minimum: 0}
+        lastReplyAt:
+          type: [string, 'null']
+          format: date-time
+        likeCount: {type: integer, minimum: 0}
+      allOf:
+      - if:
+          properties:
+            anonymous: {const: true}
+        then:
+          properties:
+            displayName: {type: 'null'}
+        else:
+          properties:
+            displayName: {type: string, minLength: 1}
+    ForumThreadPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ForumThreadSummary'}
+        nextCursor:
+          type: [string, 'null']
+    ForumThreadDetail:
+      type: object
+      additionalProperties: false
+      required: [thread, replies, nextCursor]
+      properties:
+        thread: {$ref: '#/components/schemas/ForumOpeningPost'}
+        replies:
+          type: array
+          items: {$ref: '#/components/schemas/ForumPost'}
+        nextCursor:
+          type: [string, 'null']
+    ForumThreadCreate:
+      type: object
+      additionalProperties: false
+      required: [title, body, anonymous]
+      properties:
+        title: {type: string, minLength: 1, maxLength: 120}
+        body: {type: string, minLength: 1, maxLength: 5000, description: 'Plain text, not HTML; newlines and tabs are
+            the only control characters allowed. No information that could identify a patient (ADR-0022).'}
+        anonymous: {type: boolean, description: 'true hides the name from other members; the platform keeps the author
+            mapping for the author and moderators (ADR-0017).'}
+        topicKey:
+          oneOf:
+          - {$ref: '#/components/schemas/TopicKey'}
+          - {type: 'null'}
+        paperId:
+          type: [string, 'null']
+          minLength: 1
+          description: A public paper; anything else is 422.
+    ForumReplyCreate:
+      type: object
+      additionalProperties: false
+      required: [body, anonymous]
+      properties:
+        body: {type: string, minLength: 1, maxLength: 5000}
+        anonymous: {type: boolean}
+    ForumPostUpdate:
+      type: object
+      additionalProperties: false
+      required: [body]
+      properties:
+        body: {type: string, minLength: 1, maxLength: 5000}
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+          description: Opening posts only; 422 on a reply.
+    ForumPostReceipt:
+      type: object
+      additionalProperties: false
+      required: [id, threadId, status]
+      properties:
+        id: {type: string, format: uuid}
+        threadId: {type: string, format: uuid, description: The thread; equal to id for an opening post.}
+        status:
+          type: string
+          enum: [pending, published, hidden]
+    ForumReportReceipt:
+      type: object
+      additionalProperties: false
+      required: [id, postId]
+      properties:
+        id: {type: string, format: uuid}
+        postId: {type: string, format: uuid}
+    ForumModerationItem:
+      type: object
+      additionalProperties: false
+      required: [post, status, reportCount, reports]
+      properties:
+        post:
+          type: object
+          additionalProperties: false
+          required: [id, threadId, title, body, anonymous, displayName, createdAt, updatedAt]
+          properties:
+            id: {type: string, format: uuid}
+            threadId:
+              type: [string, 'null']
+              format: uuid
+            title:
+              type: [string, 'null']
+            body: {type: string}
+            anonymous: {type: boolean}
+            displayName:
+              type: [string, 'null']
+            createdAt: {type: string, format: date-time}
+            updatedAt: {type: string, format: date-time}
+        status:
+          type: string
+          enum: [pending, published, hidden]
+        reportCount: {type: integer, minimum: 0}
+        reports:
+          type: array
+          description: Open reports only, without who reported.
+          items:
+            type: object
+            additionalProperties: false
+            required: [reason, createdAt]
+            properties:
+              reason: {type: string}
+              createdAt: {type: string, format: date-time}
+      description: Private moderator response. Does not include the private author mapping.
+    ForumModerationItemPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ForumModerationItem'}
+        nextCursor:
+          type: [string, 'null']
     Error:
       type: object
       additionalProperties: false

@@ -47,8 +47,12 @@ TABLES = [
     "push_announcements",
     "line_broadcasts",
     "topic_subscriptions",
+    "forum_posts",
+    "forum_post_likes",
+    "forum_reports",
+    "forum_moderation_events",
 ]
-VIEWS = ["public_papers", "public_news", "public_comments"]
+VIEWS = ["public_papers", "public_news", "public_comments", "visible_forum_posts"]
 CLIENT_ROLES = ["anon", "authenticated", "service_role"]
 
 
@@ -340,3 +344,43 @@ def test_deleting_an_auth_user_directly_still_succeeds(cur: psycopg.Cursor) -> N
     cur.execute("delete from auth.users where id = %s", (account_id("author"),))
     cur.execute("select author_id, deleted_at is not null from app.comments where id = %s", (live,))
     assert cur.fetchone() == (None, True)
+
+
+def add_forum_post(cur: psycopg.Cursor, author: str = "author", thread: uuid.UUID | None = None) -> uuid.UUID:
+    cur.execute(
+        "insert into app.forum_posts (thread_id, title, author_id, body, anonymous) values (%s, %s, %s, 'b', true)"
+        " returning id",
+        (thread, None if thread else "t", account_id(author)),
+    )
+    row = cur.fetchone()
+    assert row
+    return row[0]
+
+
+def test_forum_posts_follow_the_comment_retention_rules(cur: psycopg.Cursor) -> None:
+    old = add_forum_post(cur)
+    recent = add_forum_post(cur, thread=old)
+    live = add_forum_post(cur, "other")
+    cur.execute("update app.forum_posts set deleted_at = now() - interval '91 days' where id = %s", (old,))
+    cur.execute("update app.forum_posts set deleted_at = now() - interval '30 days' where id = %s", (recent,))
+    cur.execute("update app.accounts set deleted_at = now() - interval '91 days' where id = %s", (account_id("other"),))
+
+    as_role(cur, "guthub_api")
+    cur.execute("select app.purge_deleted_authors()")
+    cur.execute("select id, author_id is null, deleted_at is not null from app.forum_posts")
+    assert {row[0]: row[1:] for row in cur.fetchall()} == {old: (True, True), recent: (False, True), live: (True, True)}
+
+
+def test_first_forum_post_waits_and_visible_posts_hide_the_author(cur: psycopg.Cursor) -> None:
+    first = add_forum_post(cur)
+    cur.execute("select status from app.forum_posts where id = %s", (first,))
+    assert cur.fetchone() == ("pending",)
+    cur.execute("update app.forum_posts set status = 'published' where id = %s", (first,))
+    reply = add_forum_post(cur, thread=first)
+    cur.execute("select status from app.forum_posts where id = %s", (reply,))
+    assert cur.fetchone() == ("published",)
+
+    as_role(cur, "guthub_api")
+    cur.execute("select * from app.visible_forum_posts")
+    columns = {c.name for c in cur.description or ()}
+    assert "author_id" not in columns and len(cur.fetchall()) == 2

@@ -155,7 +155,7 @@ def test_authentication_and_private_response_boundaries_are_explicit():
             private = (
                 (method != "get" and path not in ANONYMOUS_WRITES)
                 or path == "/me"
-                or path.startswith(("/me/", "/admin/"))
+                or path.startswith(("/me/", "/admin/", "/forum/"))  # the forum is members only, reads included
             )
             assert operation["security"] == ([{"BearerAuth": []}] if private else [])
             assert "503" in operation["responses"]
