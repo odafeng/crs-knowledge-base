@@ -15,7 +15,8 @@ export default function ModerationPage() {
         <h1>留言審核</h1>
         <p className="page-head__lead">
           等待第一次審核或被檢舉的留言。每個處理動作與查看作者都會連同原因記錄。
-          論壇貼文在<Link href="/admin/forum/">論壇審核</Link>。
+          論壇貼文在<Link href="/admin/forum/">論壇審核</Link>。 AI
+          未審的文獻與消息在<Link href="/admin/review/">待審內容</Link>。
         </p>
       </header>
       <div className="page__narrow">

@@ -309,6 +309,8 @@ export function AccountSettings() {
       {googleEnabled && <GoogleLink />}
       {account.isAdmin && (
         <p>
+          <Link href="/admin/review/">待審內容</Link>
+          {"　"}
           <Link href="/admin/comments/">留言審核</Link>
           {"　"}
           <Link href="/admin/stats/">每週活動</Link>
