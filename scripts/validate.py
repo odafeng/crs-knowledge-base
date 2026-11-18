@@ -60,6 +60,7 @@ KNOWN_STUDY_TYPES = {
 REQUIRED_FIELDS = ["id", "year", "journal", "studyType", "regimen", "endpoint", "result", "bottomLine"]
 COMMENTARY_FIELDS = ["title", "journal", "type", "summary", "addedAt"]
 _DATE = re.compile(r"\d{4}-\d{2}-\d{2}$")
+_TAG = re.compile(r"<[A-Za-z/!]")
 # "auto": published by the gate without a human; "accepted": a reviewer approved it (ADR-0013)
 REVIEW_STATUSES = ("auto", "accepted")
 # How the numbers were checked: full text, PubMed abstract only, secondary coverage (news,
@@ -150,7 +151,8 @@ def validate_summary(label: str, summary: Any) -> list[str]:
     if summary.get("reviewedAt") is not None and not _DATE.match(str(summary["reviewedAt"])):
         errors.append(f"{label} summary.reviewedAt must be YYYY-MM-DD or null")
     texts = [summary.get(k) for k in SUMMARY_TEXT] + [i for k in SUMMARY_LISTS for i in summary.get(k) or []]
-    if any(isinstance(t, str) and "<" in t for t in texts):
+    # A tag, not a bare "<": statistics such as "P<0.001" are ordinary text, and the site renders summaries as text.
+    if any(isinstance(t, str) and _TAG.search(t) for t in texts):
         errors.append(f"{label} summary contains raw HTML")
     return errors
 

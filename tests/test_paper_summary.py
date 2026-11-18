@@ -58,6 +58,11 @@ def test_a_malformed_summary_is_refused(change: dict, message: str) -> None:
     assert any(message in e for e in validate_summary("p", {**SUMMARY, **change}))
 
 
+def test_statistics_with_a_less_than_sign_are_not_html() -> None:
+    kept = {**SUMMARY, "findings": ["mOS 30.3 vs 15.1 個月，HR 0.49（P<0.001）"]}
+    assert validate_summary("p", kept) == []
+
+
 def test_a_number_in_neither_source_is_refused() -> None:
     made_up = {**SUMMARY, "findings": ["mOS 30.3 vs 15.1 個月，HR 0.51"]}
     assert paper_summary.problems(made_up, SOURCES) == ["numbers not in the sources: 0.51"]
