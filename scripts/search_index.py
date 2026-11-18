@@ -2,7 +2,8 @@
 
 python scripts/search_index.py --database-url URL [--dry-run]
 
-One passage per paper, news story and treatment card, built from what the site shows. Only items whose text changed
+One passage per paper, news story and treatment card, built from what the site shows, and one per published forum
+post (H8 #130): the thread title and the post body, never the author, anonymous or not. Only items whose text changed
 since the last run are sent to Voyage AI (VOYAGE_API_KEY); items that left the public views are removed. Tokens are
 added to app.embedding_usage for the month, and the run stops before a batch once the month's cap is reached, so the
 search API and this job share one budget. Runs as the content owner, after every content import or publish.
@@ -55,7 +56,9 @@ def plain(html: str) -> str:
     return re.sub(r"[ \t]+", " ", re.sub(r"\s*\n\s*", "\n", text)).strip()
 
 
-def items(papers: Iterable[dict], news: Iterable[dict], topics: Iterable[dict]) -> list[Item]:
+def items(
+    papers: Iterable[dict], news: Iterable[dict], topics: Iterable[dict], forum: Iterable[dict] = ()
+) -> list[Item]:
     labels = {t["key"]: t["label"] for t in topics}
     found: list[Item] = []
     for p in papers:
@@ -93,6 +96,12 @@ def items(papers: Iterable[dict], news: Iterable[dict], topics: Iterable[dict]) 
                     Item("card", f"{t['key']}/{section['slug']}#{index}", f"/robotic/{section['slug']}/", title,
                          body[:160], "\n".join([title, card.get("tag", ""), body]))
                 )  # fmt: skip
+    # Members only: the API returns these to verified members alone. A reply carries its thread's title for context.
+    for post in forum:
+        found.append(
+            Item("forum", str(post["id"]), f"/forum/{post['thread']}/", post["title"], post["body"][:160],
+                 "\n".join([post["title"], post["body"]]))
+        )  # fmt: skip
     return found
 
 
@@ -153,6 +162,10 @@ def load(conn: Any) -> list[Item]:
         ),
         rows("select id, headline, dek, body from app.public_news order by id"),
         rows("select key, slug, label, standard_of_care, robotic_sections from app.topics order by key"),
+        rows(
+            "select v.id, coalesce(v.thread_id, v.id) as thread, coalesce(v.title, t.title) as title, v.body"
+            " from app.visible_forum_posts v left join app.forum_posts t on t.id = v.thread_id order by v.id"
+        ),
     )
 
 

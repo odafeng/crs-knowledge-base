@@ -1,9 +1,12 @@
-"""Natural-language search over papers, news and cards (H3 #125, ADR-0022).
+"""Natural-language search over papers, news and cards (H3 #125), and forum threads for members (H8 #130, ADR-0022).
 
 The query is embedded with Voyage AI and compared with the passages scripts/search_index.py stored. It arrives in a
 POST body so it stays out of request logs, and it is never stored or tied to an account. Results below the minimum
 score are dropped: a question the site has nothing on gets an empty list, not the least-bad passages. Passages are
 checked against the public views on every query, so withdrawn content disappears at once, not at the next index run.
+Forum posts come back only when the request carries the session of a verified colorectal surgeon, as a separate group
+of at most FORUM_LIMIT threads, and are checked against app.visible_forum_posts the same way; title and snippet are
+read live from that view, which has no author column.
 
 Anyone may search, so spending is bounded twice: per client address per minute (429), and per month, where queries
 reserve their tokens before calling Voyage and stop INDEXER_RESERVE short of the cap so the indexer always has room.
@@ -22,11 +25,13 @@ import requests
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import AfterValidator, BaseModel, ConfigDict, StringConstraints
 
+from guthub_api.auth import current_user
 from guthub_api.db import Conn, get_conn
 
 VOYAGE_URL = "https://api.voyageai.com/v1/embeddings"
 MODEL = "voyage-4"  # must match scripts/search_index.py: vectors of different models are not comparable
 LIMIT = 8
+FORUM_LIMIT = 4
 TAIPEI = ZoneInfo("Asia/Taipei")
 RESERVE = 256  # tokens held per query before the call; a 200-character question embeds to far fewer
 INDEXER_RESERVE = 1_000_000  # tokens per month queries may not touch; a full re-index takes about 50,000
@@ -92,6 +97,20 @@ def client_key(request: Request) -> str:
     return str(address)
 
 
+def _member(request: Request, db: Conn) -> bool:
+    """Whether the caller is a verified colorectal surgeon. Search stays public: no or a bad session just means no."""
+    if not request.headers.get("Authorization"):
+        return False
+    try:
+        user = current_user(request)
+    except HTTPException:
+        return False
+    row = db.execute(
+        "select 1 from app.accounts where id = %s and deleted_at is null and surgeon_since is not null", (user.id,)
+    ).fetchone()
+    return row is not None
+
+
 def voyage(key: str) -> Embed:
     def embed(text: str) -> tuple[list[float], int]:
         response = requests.post(
@@ -122,6 +141,7 @@ def semantic_search(query: Query, db: Db, request: Request, response: Response) 
     embed: Embed | None = request.app.state.embed
     if embed is None:
         raise HTTPException(status_code=503, detail="Semantic search is not configured")
+    member = _member(request, db)
     if not request.app.state.search_limiter.allow(client_key(request)):
         raise HTTPException(status_code=429, detail="Too many searches; try again in a minute")
     # Reserve before calling Voyage, atomically, so concurrent queries cannot overrun the cap together.
@@ -165,6 +185,21 @@ def semantic_search(query: Query, db: Db, request: Request, response: Response) 
         " order by embedding operator(extensions.<=>) %s::extensions.vector limit %s",
         (literal, literal, LIMIT),
     ).fetchall()
+    if member:
+        # Several posts of one thread can match; the thread is listed once, at its best passage.
+        forum = db.execute(
+            "select 'forum' as kind, c.path, coalesce(v.title, t.title) as title, left(v.body, 160) as snippet,"
+            " 1 - (c.embedding operator(extensions.<=>) %s::extensions.vector) as score"
+            " from app.search_chunks c join app.visible_forum_posts v on v.id::text = c.ref"
+            " left join app.visible_forum_posts t on t.id = v.thread_id where c.kind = 'forum'"
+            " order by c.embedding operator(extensions.<=>) %s::extensions.vector limit %s",
+            (literal, literal, FORUM_LIMIT * 4),
+        ).fetchall()
+        seen: set[str] = set()
+        for r in forum:
+            if r["path"] not in seen and len(seen) < FORUM_LIMIT:
+                seen.add(r["path"])
+                rows.append(r)
     return {
         "results": [
             {

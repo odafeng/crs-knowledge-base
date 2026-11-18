@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { outcomeOf, semanticSearch } from "./semantic";
+import { grouped, outcomeOf, semanticSearch } from "./semantic";
 
 const hit = {
   kind: "paper" as const,
@@ -28,6 +28,25 @@ describe("semantic search", () => {
       query: "regorafenib 先用嗎",
     });
     expect(init?.headers).not.toHaveProperty("Authorization");
+  });
+
+  it("sends a signed-in reader's session so members also get forum threads", async () => {
+    const fetcher = vi.fn<typeof fetch>(async () =>
+      Response.json({ results: [] }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    await semanticSearch("側方淋巴結", "t0ken");
+    expect(fetcher.mock.calls[0][1]?.headers).toMatchObject({
+      Authorization: "Bearer t0ken",
+    });
+  });
+
+  it("keeps forum threads apart from the evidence", () => {
+    const thread = { ...hit, kind: "forum" as const, path: "/forum/x/" };
+    expect(grouped([hit, thread])).toEqual({
+      evidence: [hit],
+      forum: [thread],
+    });
   });
 
   it("explains failures in words a reader can act on", async () => {
