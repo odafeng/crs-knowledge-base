@@ -201,7 +201,7 @@ export function findingText(html: string): string {
 // --- navigation (templates/base.html.j2) ------------------------------------------------------------------------
 
 export type Area =
-  "home" | "news" | "papers" | "topics" | "subscribe" | "about";
+  "home" | "news" | "papers" | "topics" | "subscribe" | "forum" | "about";
 
 export const NAV: ReadonlyArray<
   readonly [label: string, href: string, area: Area]
@@ -210,6 +210,8 @@ export const NAV: ReadonlyArray<
   ["文獻", "/updates/", "papers"],
   ["主題", "/topics/", "topics"],
   ["訂閱", "/subscribe/", "subscribe"],
+  // Members only (ADR-0022); everyone else sees how to join.
+  ["論壇", "/forum/", "forum"],
   ["關於", "/about/", "about"],
 ];
 
@@ -236,6 +238,7 @@ export function areaOf(path: string): Area {
   )
     return "topics";
   if (path.startsWith("/subscribe/")) return "subscribe";
+  if (path.startsWith("/forum/")) return "forum";
   return "about";
 }
 

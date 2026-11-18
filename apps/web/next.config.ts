@@ -41,6 +41,14 @@ const nextConfig: NextConfig = {
         source,
         headers: [{ key: "Cache-Control", value: "private, no-store" }],
       })),
+      // The forum is members only (ADR-0022): no shared caching, and no indexing even if a crawler finds a link.
+      ...["/forum/", "/forum/:path*"].map((source) => ({
+        source,
+        headers: [
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      })),
       {
         source: "/sw.js",
         headers: [

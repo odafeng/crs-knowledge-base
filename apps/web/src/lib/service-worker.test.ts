@@ -242,6 +242,8 @@ describe("service worker", () => {
     ["/me/", {}],
     ["/account/", {}],
     ["/admin/comments/", {}],
+    ["/forum/", {}],
+    ["/forum/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/", {}],
     ["/papers/niche2/", { headers: { Authorization: "Bearer t" } }],
     ["/papers/niche2/", { headers: { RSC: "1" } }],
     ["/papers/niche2/?_rsc=abc", {}],

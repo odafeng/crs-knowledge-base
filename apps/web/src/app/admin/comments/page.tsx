@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ModerationQueue } from "@/components/moderation";
 import { SITE_NAME } from "@/lib/seo";
 
@@ -14,6 +15,7 @@ export default function ModerationPage() {
         <h1>留言審核</h1>
         <p className="page-head__lead">
           等待第一次審核或被檢舉的留言。每個處理動作與查看作者都會連同原因記錄。
+          論壇貼文在<Link href="/admin/forum/">論壇審核</Link>。
         </p>
       </header>
       <div className="page__narrow">

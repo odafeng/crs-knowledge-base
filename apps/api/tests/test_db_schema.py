@@ -383,4 +383,4 @@ def test_first_forum_post_waits_and_visible_posts_hide_the_author(cur: psycopg.C
     as_role(cur, "guthub_api")
     cur.execute("select * from app.visible_forum_posts")
     columns = {c.name for c in cur.description or ()}
-    assert "author_id" not in columns and len(cur.fetchall()) == 2
+    assert "author_id" not in columns and "pinned_at" in columns and len(cur.fetchall()) == 2

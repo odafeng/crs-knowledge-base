@@ -597,7 +597,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Visible threads, newest first.
+         * Visible threads, newest first; pinned threads come separately on the first page.
          * @description Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.
          */
         get: operations["listForumThreads"];
@@ -647,6 +647,26 @@ export interface paths {
          * @description Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.
          */
         post: operations["createForumReply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/forum/me/posts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The member's own posts that other members cannot see (waiting for moderation, or hidden), oldest first.
+         * @description Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.
+         */
+        get: operations["listOwnUnpublishedForumPosts"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -759,6 +779,66 @@ export interface paths {
          * @description Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission; clients cannot grant themselves this permission.
          */
         patch: operations["moderateForumPost"];
+        trace?: never;
+    };
+    "/admin/forum-posts/{postId}/author": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Look up who wrote a forum post, with a reason that is recorded before the answer is returned.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission; clients cannot grant themselves this permission.
+         */
+        post: operations["revealForumPostAuthor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/forum-threads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every thread that is not deleted, whatever its status, newest first.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission; clients cannot grant themselves this permission.
+         */
+        get: operations["listForumThreadsForModeration"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/forum-threads/{threadId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Pin or unpin a thread; a request that changes nothing is 409.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission; clients cannot grant themselves this permission.
+         */
+        patch: operations["pinForumThread"];
         trace?: never;
     };
 }
@@ -1223,6 +1303,7 @@ export interface components {
             topicKey: components["schemas"]["TopicKey"] | null;
             /** @description The linked paper while it is public; null once it is withdrawn. */
             paperId: string | null;
+            pinned: boolean;
         } & unknown;
         ForumThreadSummary: {
             /** Format: uuid */
@@ -1238,8 +1319,11 @@ export interface components {
             /** Format: date-time */
             lastReplyAt: string | null;
             likeCount: number;
+            pinned: boolean;
         } & unknown;
         ForumThreadPage: {
+            /** @description Pinned threads, newest pin first, on the first page only (empty when a cursor is given). */
+            pinned: components["schemas"]["ForumThreadSummary"][];
             items: components["schemas"]["ForumThreadSummary"][];
             nextCursor: string | null;
         };
@@ -1284,22 +1368,56 @@ export interface components {
             /** Format: uuid */
             postId: string;
         };
+        /** @description A post outside its thread, as its author or the maintainer sees it. Never carries the account. */
+        ForumPostRecord: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            threadId: string | null;
+            title: string | null;
+            body: string;
+            anonymous: boolean;
+            displayName: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ForumOwnPostPage: {
+            items: {
+                post: components["schemas"]["ForumPostRecord"];
+                /** @enum {string} */
+                status: "pending" | "hidden";
+            }[];
+            nextCursor: string | null;
+        };
+        /** @description Private moderator response. Does not include the private author mapping. */
+        ForumAdminThreadPage: {
+            items: {
+                post: components["schemas"]["ForumPostRecord"];
+                /** @enum {string} */
+                status: "pending" | "published" | "hidden";
+                pinned: boolean;
+                /** @description Replies members can see. */
+                replyCount: number;
+            }[];
+            nextCursor: string | null;
+        };
+        ForumPinRequest: {
+            pinned: boolean;
+            /** @description Recorded in the moderation audit trail. */
+            reason: string;
+        };
+        ForumPinState: {
+            /** Format: uuid */
+            id: string;
+            pinned: boolean;
+        };
         /** @description Private moderator response. Does not include the private author mapping. */
         ForumModerationItem: {
-            post: {
-                /** Format: uuid */
-                id: string;
-                /** Format: uuid */
-                threadId: string | null;
-                title: string | null;
-                body: string;
-                anonymous: boolean;
-                displayName: string | null;
-                /** Format: date-time */
-                createdAt: string;
-                /** Format: date-time */
-                updatedAt: string;
-            };
+            post: components["schemas"]["ForumPostRecord"];
+            /** @description The title of the thread a reply belongs to; null for an opening post. */
+            threadTitle: string | null;
             /** @enum {string} */
             status: "pending" | "published" | "hidden";
             reportCount: number;
@@ -2567,6 +2685,33 @@ export interface operations {
             503: components["responses"]["Unavailable"];
         };
     };
+    listOwnUnpublishedForumPosts: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForumOwnPostPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
     deleteOwnForumPost: {
         parameters: {
             query?: never;
@@ -2763,6 +2908,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ForumPostReceipt"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    revealForumPostAuthor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: components["parameters"]["PostId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthorRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorIdentity"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    listForumThreadsForModeration: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForumAdminThreadPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    pinForumThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                threadId: components["parameters"]["ThreadId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForumPinRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForumPinState"];
                 };
             };
             401: components["responses"]["Unauthorized"];
