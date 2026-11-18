@@ -72,7 +72,7 @@
 
   /* Layout */
   --gutter: 1.25rem;       /* 20px at phone width */
-  --container: 72rem;      /* 1152px */
+  --container: 80rem;      /* 1280px: room for two reading columns on a desktop (I4 #193) */
   --header-h: 3.5rem;      /* 56px */
   --tabbar-h: 3.75rem;     /* 60px, phones and tablets only */
   --target: 2.75rem;       /* 44px touch target */

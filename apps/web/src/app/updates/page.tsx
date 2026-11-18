@@ -35,7 +35,7 @@ export default async function UpdatesPage() {
         </p>
       </header>
       <SearchBox />
-      <ol className="entries page__section page__narrow">
+      <ol className="entries entries--grid page__section">
         {rows.map((update) => (
           <Entry
             update={update}
