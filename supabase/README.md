@@ -89,3 +89,27 @@ create role guthub_api_login login password '<from secret manager>' in role guth
 - **SMTP**：正式寄信服務（ADR-0017）。內建寄信每小時只有少量額度，只適合測試。
 - **Google**：建立 OAuth client 後在 Auth providers 啟用，callback 為 `https://<project>.supabase.co/auth/v1/callback`；網站 build 時設 `NEXT_PUBLIC_AUTH_GOOGLE=1`。
 - 匿名登入維持關閉。
+- **Allow manual linking**：在 Authentication → Sign In / Providers 打開，讀者才能在帳號設定把 Google 連到既有帳號（H12 #185）。沒有打開的話，用 Email 連結登入的人改用 Google 登入，會變成另一個空帳號。
+
+### 管理者帳號
+
+留言審核、論壇審核、待審內容與醫師審核頁都只開放給 `app.accounts.is_admin` 為 true 的帳號。API 每次請求都會讀資料庫判斷，不看 token，網站上也沒有授予這個權限的地方，所以每個環境都要在 SQL Editor 手動設定。帳號要先登入過一次，並設好顯示名稱，`app.accounts` 才會有這一列。
+
+先看目前有哪些帳號，以及誰是管理者：
+
+```sql
+select u.email, a.display_name, a.is_admin, a.surgeon_since is not null as surgeon
+from app.accounts a join auth.users u on u.id = a.id
+where a.deleted_at is null
+order by a.is_admin desc, a.created_at;
+```
+
+授予（或把 `true` 改成 `false` 撤銷）。要用登入時的那個 Email；用 Google 登入時，就是 Google 帳號的信箱。應該回傳一列：
+
+```sql
+update app.accounts set is_admin = true
+where id = (select id from auth.users where email = '<email>')
+returning display_name, is_admin;
+```
+
+一個 Email 就是一個帳號。用不同信箱開過帳號的人會有好幾個帳號，權限只在設定的那一個上生效。改完不必重新登入，重新整理頁面就會生效。
