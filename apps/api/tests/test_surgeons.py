@@ -24,7 +24,7 @@ from test_accounts import API_DB_URL, DB_URL, ISSUER, KEY, bearer, schema, users
 ME = f"{API_PREFIX}/me/surgeon"
 APPLICATIONS = f"{API_PREFIX}/admin/surgeon-applications"
 MEMBERS = f"{API_PREFIX}/admin/surgeons"
-FORM = {"realName": "王小明", "hospital": "某醫學中心", "department": "大腸直腸外科", "certificateDigits": "042"}
+FORM = {"realName": "王小明", "hospital": "某醫學中心", "certificateDigits": "042"}
 # The fixture lists 陳小華 at two Chang Gung hospitals (fictional people, the map page's real markup).
 LISTED = {**FORM, "realName": "陳小華", "hospital": "雲林長庚紀念醫院"}
 ROSTER_PAGE = (Path(__file__).parent / "fixtures" / "crs_roster.html").read_text(encoding="utf-8")

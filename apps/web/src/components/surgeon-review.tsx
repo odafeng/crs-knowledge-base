@@ -15,7 +15,6 @@ type Application = {
   displayName: string;
   realName: string;
   hospital: string;
-  department: string;
   certificateDigits: string;
   submittedAt: string;
   hospitalEmail: boolean;
@@ -103,8 +102,6 @@ function Queue({ account }: { account: SignedIn }) {
                   <dd>{a.realName}</dd>
                   <dt>執業院所</dt>
                   <dd>{a.hospital}</dd>
-                  <dt>科別</dt>
-                  <dd>{a.department}</dd>
                   <dt>證書後三碼</dt>
                   <dd>{a.certificateDigits}</dd>
                   <dt>顯示名稱</dt>

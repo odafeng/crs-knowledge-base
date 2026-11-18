@@ -9,7 +9,6 @@ import {
 const form = {
   realName: "王小明",
   hospital: "某醫學中心",
-  department: "大腸直腸外科",
   certificateDigits: "042",
 };
 
