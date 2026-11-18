@@ -13,6 +13,7 @@ import pytest
 
 import classify
 import config
+import content_store
 import main as pipeline
 from accept_issue import accept
 from create_issues import format_commentary_issue_body, format_issue_body
@@ -32,6 +33,8 @@ class FixtureDate(date):
 @pytest.fixture
 def harness(tmp_path, monkeypatch):
     """Keep orchestration, triage, gates, writers, issue payloads and tracking real."""
+    # The pipeline's JSON path, whichever writer the repository itself has now (postgres since cutover, #79).
+    monkeypatch.setattr(content_store, "json_writer_active", lambda: True)
     kb = KB(tmp_path)
     kb.papers_json.parent.mkdir()
     kb.save(deepcopy(FIXTURE["kb"]))

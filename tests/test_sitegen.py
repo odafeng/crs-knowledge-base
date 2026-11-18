@@ -144,6 +144,7 @@ def test_pipeline_publish_build_and_unpublish(tmp_path):
 
     shutil.copytree(ROOT / "data", tmp_path / "data")
     shutil.copytree(ROOT / "docs", tmp_path / "docs")
+    (tmp_path / "data/WRITER").write_text("json\n")  # a JSON-writer copy, whichever writer the repository has now
     kb = KB(tmp_path)
     publish_paper(_paper(), "auto", "2026-11-16", kb)
     out = tmp_path / "site"
@@ -163,6 +164,7 @@ def test_unpublish_also_removes_news_about_the_paper(tmp_path):
 
     shutil.copytree(ROOT / "data", tmp_path / "data")
     shutil.copytree(ROOT / "docs", tmp_path / "docs")
+    (tmp_path / "data/WRITER").write_text("json\n")  # a JSON-writer copy, whichever writer the repository has now
     kb = KB(tmp_path)
     publish_paper(_paper(), "auto", "2026-11-16", kb)
     stories = json.loads(kb.news_json.read_text())
