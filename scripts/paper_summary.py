@@ -81,8 +81,12 @@ def entry_text(paper: dict[str, Any]) -> str:
     return "\n".join(f"{k}: {paper[k]}" for k in keys if paper.get(k) is not None)
 
 
-def write(client: Anthropic, paper: dict[str, Any], abstract: str) -> dict[str, Any]:
+def write(client: Anthropic, paper: dict[str, Any], abstract: str, refused: list[str] | None = None) -> dict[str, Any]:
     prompt = f"<abstract>\n{abstract}\n</abstract>\n\n<entry>\n{entry_text(paper)}\n</entry>\n\n請寫這篇的中文速覽。"
+    if refused:
+        # The second try is told exactly what the checks refused; the checks themselves never loosen.
+        prompt += "\n\n上一版沒有通過檢查，請修正後重寫：\n" + "\n".join(f"- {r}" for r in refused)
+        prompt += "\n數字只能用摘要或既有條目裡出現過的寫法；找不到出處的數字就刪掉。每個欄位都要在長度限制內。"
     response = client.beta.messages.create(
         model=CLASSIFY_MODEL,
         max_tokens=16000,
@@ -99,6 +103,17 @@ def write(client: Anthropic, paper: dict[str, Any], abstract: str) -> dict[str, 
     clean = {k: _MIDDLE_DOT.sub(".", v.strip()) for k, v in raw.items() if k in SUMMARY_TEXT}
     clean |= {k: [_MIDDLE_DOT.sub(".", i.strip()) for i in raw[k]] for k in SUMMARY_LISTS}
     return clean | {"model": response.model, "writtenAt": date.today().isoformat(), "reviewedAt": None}
+
+
+def draft(client: Anthropic, paper: dict[str, Any], abstract: str) -> tuple[dict[str, Any], list[str]]:
+    """A summary and what keeps it from being saved; a refused first try is rewritten once, told the reasons."""
+    sources = abstract + "\n" + entry_text(paper)
+    summary = write(client, paper, abstract)
+    found = problems(summary, sources)
+    if found:
+        summary = write(client, paper, abstract, found)
+        found = problems(summary, sources)
+    return summary, found
 
 
 def save(paper_id: str, summary: dict[str, Any], conn: Any = None) -> None:
@@ -155,8 +170,7 @@ def run(url: str, only: list[str] | None = None, dry_run: bool = False, redo: bo
             if not abstract:
                 report["skipped"][paper["id"]] = "no abstract on PubMed"
                 continue
-            summary = write(client, paper, abstract)
-            found = problems(summary, abstract + "\n" + entry_text(paper))
+            summary, found = draft(client, paper, abstract)
             if dry_run:  # every summary, kept or not, so the wording can be judged
                 print(json.dumps({"id": paper["id"], "problems": found, **summary}, ensure_ascii=False, indent=2))
             if found:
