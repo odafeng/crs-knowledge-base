@@ -7,6 +7,8 @@ while the platform keeps the author mapping, the first post of an account waits 
 see the migration), authors edit and soft-delete only their own posts, and posting limits and resend detection run in
 the database under a per-author lock. A thread is its opening post: hiding or deleting that post hides the thread.
 The maintainer pins threads and looks up anonymous authors here too (H7 #129), each action audited with its reason.
+Posts marked `ai` were opened by the site's AI (H9 #161): they belong to no account, and only the content owner can
+insert them (see the migration).
 """
 
 from typing import Annotated, Any, Literal
@@ -38,7 +40,7 @@ TITLE_MAX = 120
 NOT_FOUND = HTTPException(status_code=404, detail="Not found")
 #: Columns of a post aliased `v` in app.visible_forum_posts, as the member `%(me)s` sees it.
 POST_COLUMNS = (
-    "v.id, v.thread_id, v.body, v.anonymous, v.display_name, v.created_at, v.updated_at,"
+    "v.id, v.thread_id, v.body, v.anonymous, v.display_name, v.created_at, v.updated_at, v.ai,"
     " (select count(*) from app.forum_post_likes l where l.post_id = v.id) as like_count,"
     " exists (select 1 from app.forum_post_likes l where l.post_id = v.id and l.account_id = %(me)s) as liked,"
     # The private author column is compared with the reader's own ID and never returned.
@@ -48,7 +50,9 @@ POST_COLUMNS = (
 PAPER_LINK = "(select pp.id from app.public_papers pp where pp.id = v.paper_id) as paper_id"
 #: Visible threads with their counts, filtered by `%(topic)s` and `%(paper)s`; callers add order and paging.
 THREAD_SUMMARY = (
-    "select v.id, v.title, v.topic_key, " + PAPER_LINK + ", v.anonymous, v.display_name, v.created_at, v.pinned_at,"
+    "select v.id, v.title, v.topic_key, "
+    + PAPER_LINK
+    + ", v.anonymous, v.display_name, v.created_at, v.pinned_at, v.ai,"
     " (select count(*) from app.visible_forum_posts r where r.thread_id = v.id) as reply_count,"
     " (select max(r.created_at) from app.visible_forum_posts r where r.thread_id = v.id) as last_reply_at,"
     " (select count(*) from app.forum_post_likes l where l.post_id = v.id) as like_count"
@@ -154,6 +158,7 @@ def _post(row: dict[str, Any]) -> dict[str, Any]:
         "likeCount": row["like_count"],
         "liked": row["liked"],
         "mine": row["mine"],
+        "ai": row["ai"],
     }
 
 
@@ -180,6 +185,7 @@ def _summary(row: dict[str, Any]) -> dict[str, Any]:
         "lastReplyAt": _iso(row["last_reply_at"]) if row["last_reply_at"] else None,
         "likeCount": row["like_count"],
         "pinned": row["pinned_at"] is not None,
+        "ai": row["ai"],
     }
 
 
@@ -194,6 +200,7 @@ def _own_post(row: dict[str, Any]) -> dict[str, Any]:
         "displayName": row["display_name"],
         "createdAt": _iso(row["created_at"]),
         "updatedAt": _iso(row["updated_at"]),
+        "ai": row["ai"],
     }
 
 
@@ -384,8 +391,8 @@ def list_own_unpublished(
     response.headers.update(PRIVATE)
     after = _decode_cursor(cursor)
     rows = db.execute(
-        "select p.id, p.thread_id, p.title, p.body, p.anonymous, p.display_name, p.status, p.created_at, p.updated_at"
-        " from app.forum_posts p where p.author_id = %(me)s and p.deleted_at is null and p.status <> 'published'"
+        "select p.id, p.thread_id, p.title, p.body, p.anonymous, p.display_name, p.status, p.created_at, p.updated_at,"
+        " p.ai from app.forum_posts p where p.author_id = %(me)s and p.deleted_at is null and p.status <> 'published'"
         " and (%(t)s::timestamptz is null or (p.created_at, p.id) > (%(t)s::timestamptz, %(i)s::uuid))"
         " order by p.created_at, p.id limit %(n)s",
         {"me": member.id, "t": after and after[0], "i": after and after[1], "n": limit + 1},
@@ -507,7 +514,7 @@ def list_forum_queue(admin: Admin, db: Db, response: Response, limit: Limit = 20
     after = _decode_cursor(cursor)
     rows = db.execute(
         "select p.id, p.thread_id, p.title, p.body, p.anonymous, p.display_name, p.status, p.created_at,"
-        " p.updated_at, (select t.title from app.forum_posts t where t.id = p.thread_id) as thread_title,"
+        " p.updated_at, p.ai, (select t.title from app.forum_posts t where t.id = p.thread_id) as thread_title,"
         " coalesce(jsonb_agg(jsonb_build_object('reason', r.reason, 'createdAt', r.created_at)"
         "   order by r.created_at) filter (where r.id is not null), '[]') as reports"
         " from app.forum_posts p"
@@ -601,7 +608,7 @@ def list_all_threads(admin: Admin, db: Db, response: Response, limit: Limit = 20
     after = _decode_cursor(cursor)
     rows = db.execute(
         "select p.id, p.thread_id, p.title, p.body, p.anonymous, p.display_name, p.status, p.created_at, p.updated_at,"
-        " p.pinned_at, (select count(*) from app.visible_forum_posts r where r.thread_id = p.id) as reply_count"
+        " p.pinned_at, p.ai, (select count(*) from app.visible_forum_posts r where r.thread_id = p.id) as reply_count"
         " from app.forum_posts p where p.thread_id is null and p.deleted_at is null"
         " and (%(t)s::timestamptz is null or (p.created_at, p.id) < (%(t)s::timestamptz, %(i)s::uuid))"
         " order by p.created_at desc, p.id desc limit %(n)s",

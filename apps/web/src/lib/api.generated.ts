@@ -1282,6 +1282,8 @@ export interface components {
             mine: boolean;
             /** Format: uuid */
             threadId: string;
+            /** @description Written by the site's AI (H9); it belongs to no account and is labelled AI. */
+            ai: boolean;
         } & unknown;
         ForumOpeningPost: {
             /** Format: uuid */
@@ -1305,6 +1307,8 @@ export interface components {
             /** @description The linked paper while it is public; null once it is withdrawn. */
             paperId: string | null;
             pinned: boolean;
+            /** @description Opened by the site's AI (H9); it belongs to no account and is labelled AI. */
+            ai: boolean;
         } & unknown;
         ForumThreadSummary: {
             /** Format: uuid */
@@ -1321,6 +1325,7 @@ export interface components {
             lastReplyAt: string | null;
             likeCount: number;
             pinned: boolean;
+            ai: boolean;
         } & unknown;
         ForumThreadPage: {
             /** @description Pinned threads, newest pin first, on the first page only (empty when a cursor is given). */
@@ -1383,6 +1388,7 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            ai: boolean;
         };
         ForumOwnPostPage: {
             items: {

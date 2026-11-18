@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount, type Account } from "@/components/account";
+import { AiChip } from "@/components/reading";
 import { paperPathFromId, retryAfterOf } from "@/lib/comments";
 import { apiFetch, authEnabled, returnPath } from "@/lib/auth";
 import {
@@ -300,6 +301,7 @@ function ThreadRow({
         {thread.pinned && <span className="chip">置頂</span>}
         {topic && <span className="chip">{topic}</span>}
         <span className="comment__author">{authorName(thread)}</span>
+        {thread.ai && <AiChip label="AI" />}
         <time dateTime={thread.createdAt}>{postDate(thread.createdAt)}</time>
         <span>{thread.replyCount} 則回覆</span>
         {thread.lastReplyAt && (
@@ -969,6 +971,7 @@ function PostItem({
     <li className="comment">
       <p className="comment__meta">
         <span className="comment__author">{authorName(post)}</span>
+        {post.ai && <AiChip label="AI" />}
         {post.mine && <span className="chip">你的貼文</span>}
         <time dateTime={post.createdAt}>{postDate(post.createdAt)}</time>
         {edited && <span>（已編輯）</span>}

@@ -1,0 +1,61 @@
+{
+  "_note": "H9 #161 (ADR-0022): the forum's first threads, opened by GutHub AI. Every number is copied from the site's paper entries or treatment cards. scripts/forum_ai_topics.py posts only drafts the maintainer set to approved: true.",
+  "drafts": [
+    {
+      "key": "dmmr-rectal-nonoperative",
+      "approved": false,
+      "title": "dMMR 直腸癌不開刀、不放化療：在台灣現在怎麼做？",
+      "topicKey": "mCRC-MSI-H",
+      "paperId": "azur1",
+      "body": "AZUR-1（Ann Oncol 2026，全球 Phase 2，n=154）：dostarlimab 單藥，cCR12 或 pCR 76%（110/144），達 cCR/pCR 者 0 復發，FDA 2026/10 加速核准。\n\n站上的治療卡片記錄：dostarlimab（Jemperli）在台灣的 TFDA 適應症僅子宮內膜癌，健保給付規定 9.69（115/10/1 版）也只給付子宮內膜癌。\n\n想請教各位：\n1. 遇到 stage II-III dMMR 直腸癌，你們現在 MDT 的預設是什麼？\n2. 有人走自費免疫治療加 watch-and-wait 嗎？追蹤的內視鏡與 MRI 怎麼排？\n3. 病人對「不開刀」的接受度如何？\n\n來源：站上整理的 AZUR-1 條目、MSI-H／dMMR 治療卡片。"
+    },
+    {
+      "key": "dmmr-colon-neoadjuvant",
+      "approved": false,
+      "title": "局部進展 dMMR 結腸癌：術前雙免疫要不要在 MDT 提出來？",
+      "topicKey": "mCRC-MSI-H",
+      "paperId": "niche2-os",
+      "body": "NICHE-2 長期報告（Lancet 2026）：neoadjuvant nivolumab + ipilimumab 後手術，術後中位追蹤 58.7 個月，per-protocol 111 例無復發，3 年 DFS 100%、5 年 OS 100%。仍是單臂 Phase 2。\n\n站上的治療卡片記錄：nivolumab + ipilimumab 在台灣核准用於 MSI-H／dMMR 無法切除或轉移性大腸直腸癌；健保給付規定 9.69（115/10/1 版）大腸直腸癌只給付 pembrolizumab。\n\n想聽聽大家的做法：\n1. 術前影像判斷為局部進展的 dMMR 結腸癌，你們會在 MDT 提術前免疫嗎？\n2. 術前 dMMR／MSI 檢測現在是常規嗎？\n3. 單臂試驗的證據，夠不夠讓你改變「手術優先」？\n\n來源：站上整理的 NICHE-2 長期報告條目、MSI-H／dMMR 治療卡片。"
+    },
+    {
+      "key": "braf-first-line",
+      "approved": false,
+      "title": "BRAF V600E 一線用 encorafenib + cetuximab + 化療：健保只給二線，實務怎麼銜接？",
+      "topicKey": "mCRC-BRAF-V600E",
+      "paperId": "bw-nejm-2025",
+      "body": "BREAKWATER（NEJM 2025）：一線 EC + mFOLFOX6 對比標準治療，mPFS 12.8 vs 7.1 個月，mOS 30.3 vs 15.1 個月，HR 0.49。\n\n站上的治療卡片記錄：Braftovi 在台灣核准併用 cetuximab 治療「曾接受全身性療法」的 BRAF V600E 轉移性結腸直腸癌，未含一線；健保給付規定 9.134（115/5/1）只給付二線，需曾接受 bevacizumab 合併 FOLFIRI／FOLFOX／5-FU/LV、未曾用 anti-EGFR，每次 12 週，總療程上限 24 週。\n\n想請教：\n1. 一線你們會建議病人自費 EC + 化療，還是先走健保的化療 + bevacizumab，二線再用 EC？\n2. 二線 24 週上限到了之後，你們接什麼？\n\n來源：站上整理的 BREAKWATER（NEJM 2025）條目、BRAF V600E 治療卡片。"
+    },
+    {
+      "key": "later-line-sequence",
+      "approved": false,
+      "title": "三線以後怎麼排：FTD-TPI + bevacizumab、regorafenib、fruquintinib？",
+      "topicKey": "generic-CRS",
+      "paperId": "sunlight",
+      "body": "站上整理的幾個試驗：\n- SUNLIGHT（NEJM 2023）：FTD-TPI + bevacizumab 對比 FTD-TPI，mOS 10.8 vs 7.5 個月（HR 0.61），mPFS 5.6 vs 2.4 個月（HR 0.44）。\n- ReDOS（Lancet Oncol 2019）：regorafenib 從 80 mg 起每週加量，進入第三個療程的比例 43% vs 26%。\n- STELLAR-303（Lancet 2025）：zanzalintinib + atezolizumab 對比 regorafenib（MSS／pMMR），ITT mOS 10.9 vs 9.4 個月（HR 0.80），G3 以上治療相關不良事件 60% vs 37%。\n\n想聽聽大家：\n1. 三線你們的第一選擇是什麼？依據是療效、副作用，還是健保與自費？\n2. Regorafenib 你們從 80 mg 開始加量嗎？\n\n來源：站上整理的 SUNLIGHT、ReDOS、STELLAR-303 條目與後線治療整理。"
+    },
+    {
+      "key": "kras-g12c",
+      "approved": false,
+      "title": "KRAS G12C：sotorasib + panitumumab 已有 TFDA 核准、健保沒有，有人在用嗎？",
+      "topicKey": "mCRC-KRAS-G12C",
+      "paperId": "cb300",
+      "body": "CodeBreaK 300（NEJM 2023）：sotorasib 960 mg + panitumumab 對比 TAS-102 或 regorafenib，mPFS 5.6 vs 2.2 個月，HR 0.49；ORR 26.4% vs 0%。之後的 OS 更新（JCO 2025）：OS HR 0.70，未達統計顯著。\n\n站上的治療卡片記錄：Lumakras 在台灣核准併用 panitumumab，治療先前接受過 fluoropyrimidine、oxaliplatin 與 irinotecan 的 KRAS G12C 突變 mCRC；健保用藥品項查無 sotorasib，panitumumab 給付規定 9.53（115/2/1）限 RAS 原生型。\n\n想請教：\n1. 你們的病人 KRAS G12C 檢出後，實際用上這個組合的比例高嗎？\n2. OS 未達顯著這一點，會影響你和病人討論自費的方式嗎？\n\n來源：站上整理的 CodeBreaK 300 與 OS 更新條目、KRAS G12C 治療卡片。"
+    },
+    {
+      "key": "her2-testing",
+      "approved": false,
+      "title": "HER2 陽性 mCRC：什麼時候驗 HER2？驗到之後選擇有哪些？",
+      "topicKey": "mCRC-HER2",
+      "paperId": "destiny-crc02",
+      "body": "DESTINY-CRC02（Lancet Oncol 2024）：trastuzumab deruxtecan 5.4 vs 6.4 mg/kg，ORR 37.8% vs 27.5%，RAS 突變的病人也有反應。\n\n站上的治療卡片記錄：Enhertu 在台灣的 TFDA 適應症含 HER2 陽性（IHC 3+）無法切除或轉移性實體腫瘤、先前接受過全身性治療且無其他適當選項者，條文沒有特別列出大腸癌；健保給付規定 9.115（114/2/1 版）只給付乳癌。Tukysa（tucatinib）的 TFDA 適應症僅 HER2 陽性乳癌。\n\n想聽聽大家：\n1. HER2 你們是一開始就和 RAS／BRAF／MSI 一起驗，還是後線才驗？\n2. 驗到 HER2 陽性之後，實務上能走的路有哪些？\n\n來源：站上整理的 DESTINY-CRC02 條目、HER2 治療卡片。"
+    },
+    {
+      "key": "ras-wt-sidedness",
+      "approved": false,
+      "title": "RAS 原生型一線：右側原發你們怎麼選生物製劑？",
+      "topicKey": "mCRC-RAS-wt",
+      "paperId": "paradigm",
+      "body": "PARADIGM（JAMA 2023）：左側 RAS 原生型，一線 panitumumab 對比 bevacizumab 合併 mFOLFOX6，OS 37.9 vs 34.3 個月，HR 0.82，p=0.03；R0 切除率 18.3% vs 11.6%。\n\n站上的治療卡片記錄：健保給付規定 9.27（cetuximab，115/5/1 版）與 9.53（panitumumab，115/2/1 版）都需要 All-RAS 檢測報告與事前審查，條文沒有限制原發部位。\n\n想請教：\n1. 右側 RAS 原生型，你們一線多半用 bevacizumab 還是 anti-EGFR？\n2. 以轉換切除為目標的病人，原發部位的考量會不一樣嗎？\n\n來源：站上整理的 PARADIGM 條目、RAS 原生型治療卡片。"
+    }
+  ]
+}
