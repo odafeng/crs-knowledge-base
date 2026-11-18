@@ -138,6 +138,11 @@ def run(url: str, only: list[str] | None = None, dry_run: bool = False, redo: bo
         psycopg.connect(url, row_factory=dict_row, autocommit=True) as conn,
         psycopg.connect(url, autocommit=True) as writer,
     ):
+        # Refuse before paying for any summary that could not be saved (the database must be the content writer).
+        row = writer.execute("select writer from app.content_writer").fetchone()
+        mode = row[0] if row else None
+        if not dry_run and mode != "postgres":
+            raise ValueError(f"content writer is {mode!r}, not 'postgres'; nothing was written")
         for paper in papers(conn):
             if only is not None and paper["id"] not in only:
                 continue

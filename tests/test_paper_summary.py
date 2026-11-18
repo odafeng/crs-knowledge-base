@@ -111,3 +111,22 @@ def test_a_failed_summary_never_fails_paper_watch(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setenv(paper_summary.DATABASE_ENV, "postgresql://db")
     paper_summary.summarize_new(["new-2026"])
     assert "not written: PubMed is down" in capsys.readouterr().out
+
+
+def test_nothing_is_paid_for_when_the_database_is_not_the_writer(db_writer, monkeypatch) -> None:  # noqa: F811
+    db_writer.execute("update app.content_writer set writer = 'json'")
+    monkeypatch.setattr(paper_summary, "write", lambda *a: pytest.fail("called Claude"))
+
+    class Same:  # run() opens its own connections; hand it the test transaction instead
+        def __init__(self, *a, **k) -> None:
+            pass
+
+        def __enter__(self):
+            return db_writer
+
+        def __exit__(self, *exc) -> None:
+            return None
+
+    monkeypatch.setattr("psycopg.connect", Same)
+    with pytest.raises(ValueError, match="content writer is 'json'"):
+        paper_summary.run("postgresql://unused")
