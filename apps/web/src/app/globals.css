@@ -393,3 +393,36 @@
 .review-queue dt {
   color: var(--ink-3);
 }
+
+/* Colorectal surgeon forum (H7 #129) */
+.forum-gate {
+  display: grid;
+  gap: var(--space-3);
+}
+.forum-thread__title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.forum-input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0 var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  color: inherit;
+  font: inherit;
+}
+.forum-deidentify {
+  display: grid;
+  gap: var(--space-2);
+}
+.forum-deidentify label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.forum-deidentify input {
+  margin-block-start: 0.35em;
+}

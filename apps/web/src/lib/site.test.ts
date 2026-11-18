@@ -204,6 +204,7 @@ describe("navigation, reading log and feeds mirrored from sitegen", () => {
         "/mcrc/her2/",
         "/robotic/tme/",
         "/subscribe/",
+        "/forum/x/",
         "/about/",
       ].map(areaOf),
     ).toEqual([
@@ -214,6 +215,7 @@ describe("navigation, reading log and feeds mirrored from sitegen", () => {
       "topics",
       "topics",
       "subscribe",
+      "forum",
       "about",
     ]);
   });

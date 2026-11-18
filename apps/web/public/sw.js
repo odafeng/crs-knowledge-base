@@ -14,7 +14,8 @@ const SHELL = [
   "/subscribe/",
 ];
 const INDEX = "/search.json";
-const PRIVATE_PATH = /^\/(api|auth|me|account|admin)(\/|$)/;
+// The forum is members only (ADR-0022): never stored, even though its HTML holds no posts.
+const PRIVATE_PATH = /^\/(api|auth|me|account|admin|forum)(\/|$)/;
 const WITHDRAWABLE = /^\/(papers|news)\/[^/]+\/$/;
 const ASSET = /\/_next\/static\/[^"'\s)\\]+/g;
 const CSS_URL = /url\(\s*["']?([^"')]+)["']?\s*\)/g;

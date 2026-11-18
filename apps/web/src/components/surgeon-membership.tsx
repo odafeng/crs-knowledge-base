@@ -86,9 +86,14 @@ export function SurgeonMembership() {
             {membership.since && `（${membership.since.slice(0, 10)} 起）`}
             ，可以進入論壇。
           </p>
-          <Link className="btn btn--primary" href="/">
-            回首頁
-          </Link>
+          <div className="comment__actions">
+            <Link className="btn btn--primary" href="/forum/">
+              進入論壇
+            </Link>
+            <Link className="btn btn--secondary" href="/">
+              回首頁
+            </Link>
+          </div>
         </>
       )}
       {membership?.status === "pending" && (
