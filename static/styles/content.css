@@ -45,6 +45,11 @@
 /* Evidence log: one row per paper or commentary */
 .entries { padding: 0; list-style: none; border-block-start: 1px solid var(--line); }
 .entry { display: grid; gap: var(--space-1); padding-block: var(--space-5); border-block-end: 1px solid var(--line); }
+/* Long lists on a desktop: two columns of entries, each still capped at --measure (I4 #193). */
+@media (min-width: 1024px) {
+  .entries--grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--space-12); border-block-start: 0; }
+  .entries--grid > .entry { border-block-start: 1px solid var(--line); border-block-end: 0; }
+}
 .entry__title { font-size: var(--text-lg); line-height: 1.45; }
 .entry__title a { color: var(--ink); text-decoration: none; }
 .entry__title a:hover { color: var(--brand); text-decoration: underline; }
