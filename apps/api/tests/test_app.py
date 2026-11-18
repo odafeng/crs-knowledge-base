@@ -1,11 +1,12 @@
 """Unit and contract tests for the API foundation (B2 #59)."""
 
+import re
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
 from fastapi import HTTPException
-from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from jsonschema import Draft202012Validator
 from pydantic import ValidationError
@@ -127,19 +128,29 @@ def test_request_ids_are_unique_and_ignore_client_value() -> None:
 # --- contract ---------------------------------------------------------------
 
 
+def _shape(path: str) -> str:
+    """The path with parameter names erased: the contract says {commentId} where FastAPI says {comment_id}."""
+    return re.sub(r"\{[^}]+\}", "{}", path)
+
+
 def test_every_route_is_declared_in_the_contract() -> None:
     server = SPEC["servers"][0]["url"]
     assert server == API_PREFIX
-    declared = {(f"{server}{path}", method.upper()) for path, ops in SPEC["paths"].items() for method in ops}
+    declared = {(_shape(f"{server}{path}"), method.upper()) for path, ops in SPEC["paths"].items() for method in ops}
     app = create_app(Settings(environment="test"))
-    served = {
-        (route.path, method)
+    # FastAPI includes routers lazily: their routes are only reachable through effective_route_contexts().
+    routes: list[Any] = [
+        context
         for route in app.routes
-        if isinstance(route, APIRoute)
-        for method in route.methods or ()
+        for context in getattr(route, "effective_route_contexts", lambda route=route: [route])()
+    ]
+    served = {
+        (_shape(route.path), method)
+        for route in routes
+        for method in getattr(route, "methods", None) or ()
         if method != "HEAD"
     }
-    assert served
+    assert len(served) > 40  # every router, not just /health
     assert served <= declared, served - declared
 
 

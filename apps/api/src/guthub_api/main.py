@@ -12,6 +12,7 @@ from guthub_api.content_requests import router as content_requests_router
 from guthub_api.daily import router as daily_router
 from guthub_api.db import open_pool
 from guthub_api.errors import error_response, install_error_handling
+from guthub_api.forum import router as forum_router
 from guthub_api.moderation import router as moderation_router
 from guthub_api.push import router as push_router
 from guthub_api.semantic import PerMinute, voyage
@@ -100,6 +101,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(content_requests_router, prefix=API_PREFIX)
     app.include_router(surgeons_router, prefix=API_PREFIX)
     app.include_router(semantic_router, prefix=API_PREFIX)
+    app.include_router(forum_router, prefix=API_PREFIX)
     return app
 
 

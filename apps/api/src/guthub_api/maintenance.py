@@ -4,7 +4,7 @@ python -m guthub_api.maintenance purge-deleted-authors
 python -m guthub_api.maintenance announce-news
 python -m guthub_api.maintenance line-daily [--dry-run] [--date YYYY-MM-DD]
 
-purge-deleted-authors clears the private author mapping of comments deleted more than 90 days ago and removes
+purge-deleted-authors clears the private author mapping of comments and forum posts deleted more than 90 days ago and removes
 accounts deleted that long ago (app.purge_deleted_authors, ADR-0017). The privacy policy promises this, so it runs
 daily. announce-news pushes stories published in the last two days to subscribed browsers, each story once
 (guthub_api.announce, C5 #95); it also needs GUTHUB_VAPID_PRIVATE_KEY and GUTHUB_VAPID_SUBJECT. Both connect as
@@ -33,9 +33,14 @@ DUE = "deleted_at < now() - interval '90 days'"
 def purge_deleted_authors(url: str) -> dict[str, int]:
     with psycopg.connect(url, autocommit=True) as conn, conn.transaction():
         comments = conn.execute(f"select count(*) from app.comments where author_id is not null and {DUE}").fetchone()
+        posts = conn.execute(f"select count(*) from app.forum_posts where author_id is not null and {DUE}").fetchone()
         accounts = conn.execute(f"select count(*) from app.accounts where {DUE}").fetchone()
         conn.execute("select app.purge_deleted_authors()")
-    return {"clearedCommentAuthors": comments[0] if comments else 0, "removedAccounts": accounts[0] if accounts else 0}
+    return {
+        "clearedCommentAuthors": comments[0] if comments else 0,
+        "clearedForumAuthors": posts[0] if posts else 0,
+        "removedAccounts": accounts[0] if accounts else 0,
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
