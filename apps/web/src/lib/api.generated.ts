@@ -890,7 +890,6 @@ export interface components {
         SurgeonApplication: {
             realName: string;
             hospital: string;
-            department: string;
             /** @description Last three digits of the certificate number. */
             certificateDigits: string;
         };
@@ -901,7 +900,6 @@ export interface components {
                 displayName: string;
                 realName: string;
                 hospital: string;
-                department: string;
                 certificateDigits: string;
                 /** Format: date-time */
                 submittedAt: string;

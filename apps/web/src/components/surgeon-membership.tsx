@@ -2,6 +2,7 @@
 
 // The account page's colorectal surgeon membership section (H5 #127). Membership opens the forum; the API decides
 // who has it, this section only shows the state and the application form.
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAccount } from "@/components/account";
 import {
@@ -16,14 +17,12 @@ import {
 const EMPTY: ApplicationForm = {
   realName: "",
   hospital: "",
-  department: "",
   certificateDigits: "",
 };
 
 const FIELDS: [keyof ApplicationForm, string, string][] = [
   ["realName", "真實姓名", "name"],
   ["hospital", "執業院所", "organization"],
-  ["department", "科別", "off"],
   ["certificateDigits", "證書字號後三碼", "off"],
 ];
 
@@ -81,11 +80,16 @@ export function SurgeonMembership() {
     <section className="surgeon" aria-labelledby="surgeon-title">
       <h2 id="surgeon-title">大腸直腸外科會員</h2>
       {membership?.status === "verified" && (
-        <p>
-          你是大腸直腸外科會員
-          {membership.since && `（${membership.since.slice(0, 10)} 起）`}
-          ，可以進入論壇。
-        </p>
+        <>
+          <p>
+            你是大腸直腸外科會員
+            {membership.since && `（${membership.since.slice(0, 10)} 起）`}
+            ，可以進入論壇。
+          </p>
+          <Link className="btn btn--primary" href="/">
+            回首頁
+          </Link>
+        </>
       )}
       {membership?.status === "pending" && (
         <>

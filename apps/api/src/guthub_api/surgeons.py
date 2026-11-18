@@ -1,8 +1,9 @@
 """Colorectal surgeon membership (H5 #127, ADR-0022): the third tier, which alone may enter the forum.
 
-A signed-in reader applies with their real name, hospital, department and the last three digits of their certificate
-number. The maintainer checks these against the public registers (the society's specialist list, or the health
-ministry's practitioner lookup for trainees) and approves or rejects; some are approved at once instead
+A signed-in reader applies with their real name, hospital and the last three digits of their certificate number
+(no department: only colorectal surgeons apply). The maintainer checks these against the public registers (the
+society's specialist list, or the health ministry's practitioner lookup for trainees) and approves or rejects; some are
+approved at once instead
 (surgeon_roster.py, H10 #168). Deciding deletes the application: what remains is
 app.accounts.surgeon_since and an audit row naming who decided, never the details. Membership is read from the
 database on every request; token claims cannot grant it.
@@ -46,7 +47,6 @@ class Application(BaseModel):
 
     real_name: Name = Field(alias="realName")
     hospital: Hospital
-    department: Name
     # The last three digits of the specialist or physician certificate, ASCII digits only.
     certificate_digits: str = Field(alias="certificateDigits", pattern=r"^[0-9]{3}$")
 
@@ -113,13 +113,12 @@ def apply(application: Application, user: SignedIn, db: Db, request: Request, re
             )
         else:
             db.execute(
-                "insert into app.surgeon_applications (account_id, real_name, hospital, department,"
-                " certificate_digits, hospital_email) values (%s, %s, %s, %s, %s, %s) on conflict (account_id)"
+                "insert into app.surgeon_applications (account_id, real_name, hospital, certificate_digits,"
+                " hospital_email) values (%s, %s, %s, %s, %s) on conflict (account_id)"
                 " do update set real_name = excluded.real_name, hospital = excluded.hospital,"
-                " department = excluded.department, certificate_digits = excluded.certificate_digits,"
+                " certificate_digits = excluded.certificate_digits,"
                 " hospital_email = excluded.hospital_email, submitted_at = now()",
-                (user.id, application.real_name, application.hospital, application.department,
-                 application.certificate_digits, hospital_email),
+                (user.id, application.real_name, application.hospital, application.certificate_digits, hospital_email),
             )  # fmt: skip
     return _status(db, user)
 
@@ -138,7 +137,7 @@ def withdraw(user: SignedIn, db: Db, response: Response) -> None:
 def list_applications(admin: Admin, db: Db, request: Request, response: Response) -> dict[str, Any]:
     response.headers.update(PRIVATE)
     rows = db.execute(
-        "select s.account_id, a.display_name, s.real_name, s.hospital, s.department, s.certificate_digits,"
+        "select s.account_id, a.display_name, s.real_name, s.hospital, s.certificate_digits,"
         " s.submitted_at, s.hospital_email from app.surgeon_applications s join app.accounts a on a.id = s.account_id"
         " where a.deleted_at is null order by s.submitted_at"
     ).fetchall()
@@ -156,7 +155,6 @@ def list_applications(admin: Admin, db: Db, request: Request, response: Response
                 "displayName": r["display_name"],
                 "realName": r["real_name"],
                 "hospital": r["hospital"],
-                "department": r["department"],
                 "certificateDigits": r["certificate_digits"],
                 "submittedAt": _iso(r["submitted_at"]),
                 "hospitalEmail": r["hospital_email"],

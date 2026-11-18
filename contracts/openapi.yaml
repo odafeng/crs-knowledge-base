@@ -1252,11 +1252,10 @@ components:
     SurgeonApplication:
       type: object
       additionalProperties: false
-      required: [realName, hospital, department, certificateDigits]
+      required: [realName, hospital, certificateDigits]
       properties:
         realName: {type: string, minLength: 1, maxLength: 40}
         hospital: {type: string, minLength: 1, maxLength: 80}
-        department: {type: string, minLength: 1, maxLength: 40}
         certificateDigits: {type: string, pattern: '^[0-9]{3}$', description: Last three digits of the certificate number.}
     SurgeonApplicationList:
       type: object
@@ -1268,14 +1267,13 @@ components:
           items:
             type: object
             additionalProperties: false
-            required: [accountId, displayName, realName, hospital, department, certificateDigits, submittedAt,
+            required: [accountId, displayName, realName, hospital, certificateDigits, submittedAt,
               hospitalEmail, roster]
             properties:
               accountId: {type: string, format: uuid}
               displayName: {type: string}
               realName: {type: string}
               hospital: {type: string}
-              department: {type: string}
               certificateDigits: {type: string, pattern: '^[0-9]{3}$'}
               submittedAt: {type: string, format: date-time}
               hospitalEmail:

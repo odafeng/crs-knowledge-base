@@ -12,7 +12,6 @@ export type Membership = {
 export type ApplicationForm = {
   realName: string;
   hospital: string;
-  department: string;
   certificateDigits: string;
 };
 
@@ -27,7 +26,6 @@ export function asciiDigits(value: string): string {
 export function formProblem(form: ApplicationForm): string | null {
   if (!form.realName.trim()) return "請填寫真實姓名。";
   if (!form.hospital.trim()) return "請填寫執業院所。";
-  if (!form.department.trim()) return "請填寫科別。";
   if (!/^[0-9]{3}$/.test(asciiDigits(form.certificateDigits.trim())))
     return "證書字號後三碼請填三個數字。";
   return null;
@@ -78,7 +76,6 @@ export async function submitApplication(
   const body = {
     realName: form.realName.trim(),
     hospital: form.hospital.trim(),
-    department: form.department.trim(),
     certificateDigits: asciiDigits(form.certificateDigits.trim()),
   };
   const response = await apiFetch("/me/surgeon", token, {
