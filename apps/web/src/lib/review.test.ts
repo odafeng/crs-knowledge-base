@@ -87,6 +87,20 @@ describe("pendingReview lists what still carries the AI 未審 chip", () => {
     ]);
   });
 
+  it("lists a reviewed paper whose AI summary is not yet reviewed", () => {
+    const curated = {
+      ...paper("D", "accepted", "2026-11-19"),
+      summary: { reviewedAt: null },
+    } as unknown as Paper;
+    const confirmed = {
+      ...paper("E", "accepted", "2026-11-19"),
+      summary: { reviewedAt: "2026-11-19" },
+    } as unknown as Paper;
+    expect(
+      pendingReview([curated, confirmed], []).map((i) => i.target),
+    ).toEqual(["D"]);
+  });
+
   it("is empty when everything was reviewed", () => {
     expect(pendingReview([paper("B", "accepted", "2026-11-17")], [])).toEqual(
       [],

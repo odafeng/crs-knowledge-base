@@ -22,6 +22,7 @@ import pytest
 import yaml
 from fastapi.testclient import TestClient
 from jsonschema import Draft202012Validator
+from psycopg.types.json import Jsonb
 
 from guthub_api.content import TOPIC_ORDER, clean
 from guthub_api.main import API_PREFIX, create_app
@@ -212,6 +213,26 @@ def test_withdrawn_paper_disappears_everywhere(client: TestClient) -> None:
             assert all(h["id"] != target for h in all_pages(client, "/search", q=target))
         finally:
             conn.execute("update app.papers set withdrawn_at = null where id = %s", (target,))
+
+
+def test_a_paper_summary_is_returned_as_written(client: TestClient) -> None:
+    """I1 #190: the at-a-glance summary is plain data from papers.summary, checked against the contract."""
+    target = next(iter(RAW_PAPERS))
+    summary = {
+        "title": "標題", "takeaway": "一句話", "question": "問題", "population": "病人", "comparison": "比較",
+        "findings": ["結果"], "meaning": "意義", "limits": ["限制"], "model": "claude-fable-5-2",
+        "writtenAt": "2026-11-19", "reviewedAt": None,
+    }  # fmt: skip
+    assert DB_URL
+    with psycopg.connect(DB_URL, autocommit=True) as conn:
+        conn.execute("update app.papers set summary = %s where id = %s", (Jsonb(summary), target))
+        try:
+            paper = get(client, f"/papers/{target}")
+            schema("Paper").validate(paper)
+            assert paper["summary"] == summary
+        finally:
+            conn.execute("update app.papers set summary = null where id = %s", (target,))
+    assert "summary" not in get(client, f"/papers/{target}")
 
 
 # --- errors --------------------------------------------------------------------------------------------------------

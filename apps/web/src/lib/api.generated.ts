@@ -909,6 +909,24 @@ export interface components {
             commentary?: components["schemas"]["ResearchCommentary"][];
             /** @description Detailed evidence retained from the source document; the API must sanitize HTML before returning it. */
             detailHtml: string;
+            summary?: components["schemas"]["PaperSummary"];
+        };
+        /** @description At-a-glance Traditional Chinese summary (I1 #190, ADR-0025). AI-written from the abstract with every number traced to the sources; reviewedAt is null until the maintainer reviews it. Plain text, never HTML. */
+        PaperSummary: {
+            title: string;
+            /** @description The finding in one plain sentence. */
+            takeaway: string;
+            question: string;
+            population: string;
+            comparison: string;
+            findings: string[];
+            meaning: string;
+            limits: string[];
+            model: string;
+            /** Format: date */
+            writtenAt: string;
+            /** Format: date */
+            reviewedAt: string | null;
         };
         Stat: {
             label: string;

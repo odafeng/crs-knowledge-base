@@ -135,6 +135,7 @@ def _papers(db: Conn, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             **_review(row),
             "commentary": commentary.get(row["id"], []),
             "detailHtml": clean(row["detail_html"]),
+            **({"summary": row["summary"]} if row["summary"] else {}),
         }
         for row in rows
     ]
