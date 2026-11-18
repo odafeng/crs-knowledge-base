@@ -158,9 +158,12 @@ export function PaperCard({ paper }: { paper: Paper }) {
     <li className="paper">
       <PaperMeta paper={paper} />
       <h3 className="paper__title">
-        <Link href={paperPath(paper)}>{paper.regimen}</Link>
+        <Link href={paperPath(paper)}>
+          {paper.summary?.title ?? paper.regimen}
+        </Link>
       </h3>
-      <p className="paper__result">{paper.result}</p>
+      {/* With a summary (I3 #192) the card leads with its plain-language finding. */}
+      <p className="paper__result">{paper.summary?.takeaway ?? paper.result}</p>
       <p className="paper__bottom">{paper.bottomLine}</p>
     </li>
   );
