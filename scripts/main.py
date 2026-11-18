@@ -24,6 +24,7 @@ from create_issues import create_commentary_review_issue, create_issues
 from fetch_pubmed import fetch_pubmed, resolve_dois
 from fetch_rss import AllFeedsFailedError, fetch_rss
 from notify_line import notify_papers
+from paper_summary import summarize_new
 from provenance import abstract_status, evaluate_commentary_gate, evaluate_paper_gate
 from publish import AUTO_PUBLISH_TOPICS, PublishError, publish_commentary, publish_paper
 from usage import USAGE
@@ -76,6 +77,7 @@ def publish_or_hold(classified: list[dict], today: str, dry_run: bool) -> tuple[
                     if session.done is None:
                         entry = publish_paper(paper, "auto", today, **session.kb_args)
                         session.record(f"publish {entry['id']} ({entry['file']})")
+                        paper["kb_id"] = entry["id"]
                 print(f"  [Publish] {session.done or session.summary}")
             except PublishError as e:
                 reasons = e.reasons
@@ -228,6 +230,8 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
         published, held = publish_or_hold(classified, today_str, dry_run)
         print(f"\n[Pipeline] {len(published)} published, {len(held)} held for review")
         create_issues(held, dry_run=dry_run)
+        if not dry_run:  # the at-a-glance summary of each new paper (I2 #191)
+            summarize_new([p["kb_id"] for p in published if p.get("kb_id")])
 
         # LINE notification for all high-relevance papers
         print()

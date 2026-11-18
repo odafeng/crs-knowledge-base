@@ -90,3 +90,24 @@ def test_a_curated_paper_without_a_pending_summary_is_still_refused(kb: KB) -> N
     kb.save(data)
     with pytest.raises(PublishError, match="人工整理"):
         mark_reviewed("paper", "kn177", kb)
+
+
+def test_paper_watch_summarises_only_the_new_papers(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[list[str]] = []
+    monkeypatch.setattr(paper_summary, "run", lambda url, only: calls.append(only) or {"written": only})
+    monkeypatch.setattr(paper_summary, "ANTHROPIC_API_KEY", "key")
+    monkeypatch.setenv(paper_summary.DATABASE_ENV, "postgresql://db")
+    paper_summary.summarize_new([])
+    paper_summary.summarize_new(["new-2026"])
+    assert calls == [["new-2026"]]
+
+
+def test_a_failed_summary_never_fails_paper_watch(monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+    def broken(url: str, only: list[str]) -> dict:
+        raise RuntimeError("PubMed is down")
+
+    monkeypatch.setattr(paper_summary, "run", broken)
+    monkeypatch.setattr(paper_summary, "ANTHROPIC_API_KEY", "key")
+    monkeypatch.setenv(paper_summary.DATABASE_ENV, "postgresql://db")
+    paper_summary.summarize_new(["new-2026"])
+    assert "not written: PubMed is down" in capsys.readouterr().out

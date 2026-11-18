@@ -1,7 +1,9 @@
 import { pageMetadata, paperJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PaperGlance } from "@/components/paper-summary";
 import { ReviewActions } from "@/components/review-actions";
+import { needsReview } from "@/lib/review";
 import { ReaderComments } from "@/components/comments";
 import { notFound } from "next/navigation";
 import {
@@ -65,6 +67,8 @@ export default async function PaperPage({ params }: Props) {
     .slice(0, 4);
   const stories = news.filter((item) => item.paperId === paper.id);
   const commentary = commentaryOf(paper);
+  const summary = paper.summary;
+  const summaryPending = summary?.reviewedAt === null;
   const crumbs = [
     ...MCRC,
     ...(topic ? ([[topic.label, topicPath(topic)]] as const) : []),
@@ -79,33 +83,55 @@ export default async function PaperPage({ params }: Props) {
         <div>
           <header className="story__head">
             <PaperMeta paper={paper} topic={topic} />
-            <h1>{paper.regimen}</h1>
+            <h1>{summary?.title ?? paper.regimen}</h1>
+            {summary && <p className="glance__takeaway">{summary.takeaway}</p>}
           </header>
-          {isUnreviewed(paper) && (
+          {(isUnreviewed(paper) || summaryPending) && (
             <div className="callout callout--ai" role="note">
               <Icon name="spark" />
               <p>
-                這一頁由 AI
-                依摘要整理，尚未經人工審核。數字已逐一比對摘要原文，但解讀可能有誤，請以原文為準。
+                {isUnreviewed(paper)
+                  ? "這一頁由 AI 依摘要整理，尚未經人工審核。"
+                  : "上面的速覽由 AI 依摘要整理，尚未經人工審核。"}
+                數字已逐一比對摘要原文，但解讀可能有誤，請以原文為準。
               </p>
             </div>
           )}
-          {isUnreviewed(paper) && (
+          {needsReview(paper) && (
             <ReviewActions kind="paper" target={paper.id} />
           )}
-          <p className="result">
-            <span className="result__label">關鍵結果</span>
-            {paper.result}
-          </p>
-          <p className="bottom-line">{paper.bottomLine}</p>
-          {paper.detailHtml && (
-            <section className="page__section" aria-labelledby="detail">
-              <h2 id="detail">詳細證據整理</h2>
-              <RichHtml
-                html={paper.detailHtml}
-                label="詳細證據整理，可左右捲動"
-              />
-            </section>
+          {summary ? (
+            <PaperGlance summary={summary} topic={topic} />
+          ) : (
+            <>
+              <p className="result">
+                <span className="result__label">關鍵結果</span>
+                {paper.result}
+              </p>
+              <p className="bottom-line">{paper.bottomLine}</p>
+            </>
+          )}
+          {(summary || paper.detailHtml) && (
+            <details className="page__section source-details" open={!summary}>
+              <summary>
+                <h2>{summary ? "原始條目與原文摘要" : "詳細證據整理"}</h2>
+              </summary>
+              {summary && (
+                <>
+                  <p className="result">
+                    <span className="result__label">關鍵結果（原始條目）</span>
+                    {paper.result}
+                  </p>
+                  <p className="bottom-line">{paper.bottomLine}</p>
+                </>
+              )}
+              {paper.detailHtml && (
+                <RichHtml
+                  html={paper.detailHtml}
+                  label="詳細證據整理，可左右捲動"
+                />
+              )}
+            </details>
           )}
           {commentary.length > 0 && (
             <section className="page__section" aria-labelledby="commentary">
