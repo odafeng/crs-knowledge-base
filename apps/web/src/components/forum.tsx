@@ -207,80 +207,100 @@ function Threads({
 
   const labels = new Map(topics.map((t) => [t.key, t.label]));
   return (
-    <>
-      <p>
-        <Link className="btn btn--primary" href="/forum/new/">
+    <div className="forum-layout">
+      <aside className="forum-layout__rail" aria-label="發文">
+        <Link className="btn btn--primary forum-layout__cta" href="/forum/new/">
           開新話題
         </Link>
-      </p>
-      {own.length > 0 && (
-        <section aria-labelledby="forum-own">
-          <h2 id="forum-own">只有你看得到的話題</h2>
-          <ul className="comment-list">
-            {own.map((item) => (
-              <li className="comment" key={item.post.id}>
-                <p className="comment__meta">
-                  <span className="chip">
-                    {item.status === "pending" ? "等待審核" : "已被維護者隱藏"}
-                  </span>
-                  <time dateTime={item.post.createdAt}>
-                    {postDate(item.post.createdAt)}
-                  </time>
-                </p>
-                <p className="forum-thread__title">{item.post.title}</p>
-                <p className="comment__body">{item.post.body}</p>
-                <DeleteButton
-                  postId={item.post.id}
-                  token={token}
-                  onDeleted={() => setVersion((v) => v + 1)}
-                />
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-      {list.kind === "loading" && <p aria-live="polite">載入話題中…</p>}
-      {list.kind === "error" && (
-        <p role="alert">
-          {errorMessage(null, "load")}{" "}
-          <button
-            className="btn btn--secondary"
-            type="button"
-            onClick={() => {
-              setList({ kind: "loading" });
-              setVersion((v) => v + 1);
-            }}
-          >
-            重新載入
-          </button>
-        </p>
-      )}
-      {list.kind === "ready" && (
-        <>
-          {list.pinned.length > 0 && (
-            <ul className="comment-list" aria-label="置頂話題">
-              {list.pinned.map((thread) => (
-                <ThreadRow key={thread.id} thread={thread} labels={labels} />
+        <ForumRules />
+        {own.length > 0 && (
+          <section aria-labelledby="forum-own">
+            <h2 id="forum-own">只有你看得到的話題</h2>
+            <ul className="comment-list">
+              {own.map((item) => (
+                <li className="comment" key={item.post.id}>
+                  <p className="comment__meta">
+                    <span className="chip">
+                      {item.status === "pending"
+                        ? "等待審核"
+                        : "已被維護者隱藏"}
+                    </span>
+                    <time dateTime={item.post.createdAt}>
+                      {postDate(item.post.createdAt)}
+                    </time>
+                  </p>
+                  <p className="forum-thread__title">{item.post.title}</p>
+                  <p className="comment__body">{item.post.body}</p>
+                  <DeleteButton
+                    postId={item.post.id}
+                    token={token}
+                    onDeleted={() => setVersion((v) => v + 1)}
+                  />
+                </li>
               ))}
             </ul>
-          )}
-          {list.items.length === 0 && list.pinned.length === 0 ? (
-            <p>還沒有話題，來開第一個吧。</p>
-          ) : (
-            <ul className="comment-list" aria-label="話題">
-              {list.items.map((thread) => (
-                <ThreadRow key={thread.id} thread={thread} labels={labels} />
-              ))}
-            </ul>
-          )}
-          {list.next && (
-            <button className="btn btn--secondary" type="button" onClick={more}>
-              載入更多話題
+          </section>
+        )}
+      </aside>
+      <div className="forum-layout__main">
+        {list.kind === "loading" && <p aria-live="polite">載入話題中…</p>}
+        {list.kind === "error" && (
+          <p role="alert">
+            {errorMessage(null, "load")}{" "}
+            <button
+              className="btn btn--secondary"
+              type="button"
+              onClick={() => {
+                setList({ kind: "loading" });
+                setVersion((v) => v + 1);
+              }}
+            >
+              重新載入
             </button>
-          )}
-        </>
-      )}
-    </>
+          </p>
+        )}
+        {list.kind === "ready" && (
+          <>
+            {list.pinned.length > 0 && (
+              <ul className="forum-rows" aria-label="置頂話題">
+                {list.pinned.map((thread) => (
+                  <ThreadRow key={thread.id} thread={thread} labels={labels} />
+                ))}
+              </ul>
+            )}
+            {list.items.length === 0 && list.pinned.length === 0 ? (
+              <p>還沒有話題，來開第一個吧。</p>
+            ) : (
+              <ul className="forum-rows" aria-label="話題">
+                {list.items.map((thread) => (
+                  <ThreadRow key={thread.id} thread={thread} labels={labels} />
+                ))}
+              </ul>
+            )}
+            {list.next && (
+              <button
+                className="btn btn--secondary"
+                type="button"
+                onClick={more}
+              >
+                載入更多話題
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** What may not be posted, beside the list and the thread (ADR-0022). */
+function ForumRules() {
+  return (
+    <section className="forum-rules" aria-labelledby="forum-rules">
+      <h2 id="forum-rules">發文須知</h2>
+      <p>{DEIDENTIFY}</p>
+      <p>貼文是個人意見，不是本站的文獻整理。</p>
+    </section>
   );
 }
 
@@ -293,26 +313,34 @@ function ThreadRow({
 }) {
   const topic = thread.topicKey ? labels.get(thread.topicKey) : undefined;
   return (
-    <li className="comment">
-      <Link className="forum-thread__title" href={threadPath(thread.id)}>
-        {thread.title}
-      </Link>
-      <p className="comment__meta">
-        {thread.pinned && <span className="chip">置頂</span>}
-        {topic && <span className="chip">{topic}</span>}
-        <span className="comment__author">{authorName(thread)}</span>
-        {thread.ai && <AiChip label="AI" />}
-        <time dateTime={thread.createdAt}>{postDate(thread.createdAt)}</time>
-        <span>{thread.replyCount} 則回覆</span>
-        {thread.lastReplyAt && (
-          <span>
+    <li className="forum-row">
+      <div className="forum-row__main">
+        <Link className="forum-thread__title" href={threadPath(thread.id)}>
+          {thread.title}
+        </Link>
+        <p className="comment__meta">
+          {thread.pinned && <span className="chip">置頂</span>}
+          {topic && <span className="chip">{topic}</span>}
+          <span className="comment__author">{authorName(thread)}</span>
+          {thread.ai && <AiChip label="AI" />}
+          <time dateTime={thread.createdAt}>{postDate(thread.createdAt)}</time>
+          {thread.likeCount > 0 && <span>{thread.likeCount} 個讚</span>}
+        </p>
+      </div>
+      <p className="forum-row__stat">
+        <span className="forum-row__count">{thread.replyCount}</span> 則回覆
+      </p>
+      <p className="forum-row__stat">
+        {thread.lastReplyAt ? (
+          <>
             最新回覆{" "}
             <time dateTime={thread.lastReplyAt}>
               {postDate(thread.lastReplyAt)}
             </time>
-          </span>
+          </>
+        ) : (
+          "還沒有回覆"
         )}
-        {thread.likeCount > 0 && <span>{thread.likeCount} 個讚</span>}
       </p>
     </li>
   );
@@ -716,66 +744,104 @@ function Thread({
         </p>
         <h1>{thread.title}</h1>
       </header>
-      <div className="page__narrow">
-        <ul className="comment-list" aria-label="話題內容">
-          <PostItem
-            post={thread}
-            title={thread.title}
-            account={account}
-            onChanged={refresh}
-            onDeleted={() => router.push("/forum/")}
-          />
-        </ul>
-        <section aria-labelledby="forum-replies">
-          <h2 id="forum-replies">回覆</h2>
-          {detail.replies.length > 0 && (
-            <ul className="comment-list" aria-label="回覆">
-              {detail.replies.map((reply) => (
-                <PostItem
-                  key={reply.id}
-                  post={reply}
-                  account={account}
-                  onChanged={refresh}
-                  onDeleted={refresh}
-                />
-              ))}
-            </ul>
-          )}
-          {detail.next && (
-            <button className="btn btn--secondary" type="button" onClick={more}>
-              載入更多回覆
-            </button>
-          )}
-          {own.length > 0 && (
-            <ul className="comment-list" aria-label="只有你看得到的回覆">
-              {own.map((item) => (
-                <li className="comment" key={item.post.id}>
-                  <p className="comment__meta">
-                    <span className="comment__author">
-                      {authorName(item.post)}
-                    </span>
-                    <span className="chip">
-                      {item.status === "pending"
-                        ? "等待審核，只有你看得到"
-                        : "已被維護者隱藏，只有你看得到"}
-                    </span>
-                  </p>
-                  <p className="comment__body">{item.post.body}</p>
-                  <DeleteButton
-                    postId={item.post.id}
-                    token={token}
+      <div className="split">
+        <div>
+          <ul className="comment-list" aria-label="話題內容">
+            <PostItem
+              post={thread}
+              title={thread.title}
+              account={account}
+              onChanged={refresh}
+              onDeleted={() => router.push("/forum/")}
+            />
+          </ul>
+          <section aria-labelledby="forum-replies">
+            <h2 id="forum-replies">回覆</h2>
+            {detail.replies.length > 0 && (
+              <ul className="comment-list" aria-label="回覆">
+                {detail.replies.map((reply) => (
+                  <PostItem
+                    key={reply.id}
+                    post={reply}
+                    account={account}
+                    onChanged={refresh}
                     onDeleted={refresh}
                   />
-                </li>
-              ))}
-            </ul>
-          )}
-          <ReplyForm
-            threadId={thread.id}
-            account={account}
-            onPosted={refresh}
-          />
-        </section>
+                ))}
+              </ul>
+            )}
+            {detail.next && (
+              <button
+                className="btn btn--secondary"
+                type="button"
+                onClick={more}
+              >
+                載入更多回覆
+              </button>
+            )}
+            {own.length > 0 && (
+              <ul className="comment-list" aria-label="只有你看得到的回覆">
+                {own.map((item) => (
+                  <li className="comment" key={item.post.id}>
+                    <p className="comment__meta">
+                      <span className="comment__author">
+                        {authorName(item.post)}
+                      </span>
+                      <span className="chip">
+                        {item.status === "pending"
+                          ? "等待審核，只有你看得到"
+                          : "已被維護者隱藏，只有你看得到"}
+                      </span>
+                    </p>
+                    <p className="comment__body">{item.post.body}</p>
+                    <DeleteButton
+                      postId={item.post.id}
+                      token={token}
+                      onDeleted={refresh}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+            <ReplyForm
+              threadId={thread.id}
+              account={account}
+              onPosted={refresh}
+            />
+          </section>
+        </div>
+        <aside className="split__rail" aria-label="話題資訊">
+          <dl className="facts">
+            {topic && (
+              <>
+                <dt>主題</dt>
+                <dd>{topic}</dd>
+              </>
+            )}
+            <dt>開始於</dt>
+            <dd>
+              <time dateTime={thread.createdAt}>
+                {postDate(thread.createdAt)}
+              </time>
+            </dd>
+            <dt>回覆</dt>
+            <dd>{detail.replies.length + (detail.next ? "+" : "")} 則</dd>
+          </dl>
+          <div className="actions actions--rail">
+            <a className="btn btn--primary" href="#forum-replies">
+              回覆這個話題
+            </a>
+            {thread.paperId && (
+              <Link
+                className="btn btn--secondary"
+                href={paperPathFromId(thread.paperId)}
+              >
+                看相關文獻
+              </Link>
+            )}
+          </div>
+          <ForumRules />
+        </aside>
       </div>
     </>
   );
