@@ -6,6 +6,7 @@ never shared-cached. The rules are those of reader comments (ADR-0017): a post i
 while the platform keeps the author mapping, the first post of an account waits for the maintainer (a database trigger,
 see the migration), authors edit and soft-delete only their own posts, and posting limits and resend detection run in
 the database under a per-author lock. A thread is its opening post: hiding or deleting that post hides the thread.
+The maintainer pins threads and looks up anonymous authors here too (H7 #129), each action audited with its reason.
 """
 
 from typing import Annotated, Any, Literal
@@ -45,6 +46,16 @@ POST_COLUMNS = (
 )
 #: The linked paper, only while it is public: a withdrawn paper is no longer linked.
 PAPER_LINK = "(select pp.id from app.public_papers pp where pp.id = v.paper_id) as paper_id"
+#: Visible threads with their counts, filtered by `%(topic)s` and `%(paper)s`; callers add order and paging.
+THREAD_SUMMARY = (
+    "select v.id, v.title, v.topic_key, " + PAPER_LINK + ", v.anonymous, v.display_name, v.created_at, v.pinned_at,"
+    " (select count(*) from app.visible_forum_posts r where r.thread_id = v.id) as reply_count,"
+    " (select max(r.created_at) from app.visible_forum_posts r where r.thread_id = v.id) as last_reply_at,"
+    " (select count(*) from app.forum_post_likes l where l.post_id = v.id) as like_count"
+    " from app.visible_forum_posts v where v.thread_id is null"
+    " and (%(topic)s::text is null or v.topic_key = %(topic)s)"
+    " and (%(paper)s::text is null or v.paper_id = %(paper)s)"
+)
 
 router = APIRouter()
 type Db = Annotated[Conn, Depends(get_conn)]
@@ -110,6 +121,17 @@ class ModerationRequest(BaseModel):
     reason: Reason
 
 
+class PinRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    pinned: bool
+    reason: Reason
+
+
+class AuthorRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    reason: Reason
+
+
 # --- helpers ------------------------------------------------------------------------------------------------------
 
 
@@ -136,7 +158,13 @@ def _post(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def _opening(row: dict[str, Any]) -> dict[str, Any]:
-    return {**_post(row), "title": row["title"], "topicKey": row["topic_key"], "paperId": row["paper_id"]}
+    return {
+        **_post(row),
+        "title": row["title"],
+        "topicKey": row["topic_key"],
+        "paperId": row["paper_id"],
+        "pinned": row["pinned_at"] is not None,
+    }
 
 
 def _summary(row: dict[str, Any]) -> dict[str, Any]:
@@ -151,6 +179,21 @@ def _summary(row: dict[str, Any]) -> dict[str, Any]:
         "replyCount": row["reply_count"],
         "lastReplyAt": _iso(row["last_reply_at"]) if row["last_reply_at"] else None,
         "likeCount": row["like_count"],
+        "pinned": row["pinned_at"] is not None,
+    }
+
+
+def _own_post(row: dict[str, Any]) -> dict[str, Any]:
+    """A post as its author or the maintainer sees it outside the thread: with its title, without likes."""
+    return {
+        "id": str(row["id"]),
+        "threadId": str(row["thread_id"]) if row["thread_id"] else None,
+        "title": row["title"],
+        "body": row["body"],
+        "anonymous": row["anonymous"],
+        "displayName": row["display_name"],
+        "createdAt": _iso(row["created_at"]),
+        "updatedAt": _iso(row["updated_at"]),
     }
 
 
@@ -251,28 +294,20 @@ def list_threads(
     topic: TopicKey | None = None,
     paper_id: Annotated[str | None, Query(alias="paperId", min_length=1)] = None,
 ) -> dict[str, Any]:
-    """Visible threads, newest first."""
+    """Visible threads, newest first. Pinned threads come apart, on the first page only, so paging stays stable."""
     response.headers.update(PRIVATE)
     after = _decode_cursor(cursor)
+    params = {"topic": topic, "paper": paper_id, "t": after and after[0], "i": after and after[1], "n": limit + 1}
     rows = db.execute(
-        "select v.id, v.title, v.topic_key, " + PAPER_LINK + ", v.anonymous, v.display_name, v.created_at,"
-        " (select count(*) from app.visible_forum_posts r where r.thread_id = v.id) as reply_count,"
-        " (select max(r.created_at) from app.visible_forum_posts r where r.thread_id = v.id) as last_reply_at,"
-        " (select count(*) from app.forum_post_likes l where l.post_id = v.id) as like_count"
-        " from app.visible_forum_posts v where v.thread_id is null"
-        " and (%(topic)s::text is null or v.topic_key = %(topic)s)"
-        " and (%(paper)s::text is null or v.paper_id = %(paper)s)"
+        THREAD_SUMMARY + " and v.pinned_at is null"
         " and (%(t)s::timestamptz is null or (v.created_at, v.id) < (%(t)s::timestamptz, %(i)s::uuid))"
         " order by v.created_at desc, v.id desc limit %(n)s",
-        {
-            "topic": topic,
-            "paper": paper_id,
-            "t": after and after[0],
-            "i": after and after[1],
-            "n": limit + 1,
-        },
+        params,
     ).fetchall()
-    return _page(rows, limit, _summary)
+    pinned = (
+        [] if after else db.execute(THREAD_SUMMARY + " and v.pinned_at is not null order by v.pinned_at desc", params)
+    )
+    return {"pinned": [_summary(row) for row in pinned], **_page(rows, limit, _summary)}
 
 
 @router.post("/forum/threads", status_code=201)
@@ -305,7 +340,11 @@ def get_thread(
     uuid = _uuid(thread_id)
     after = _decode_cursor(cursor)
     opening = db.execute(
-        "select " + POST_COLUMNS + ", v.title, v.topic_key, " + PAPER_LINK + " from app.visible_forum_posts v"
+        "select "
+        + POST_COLUMNS
+        + ", v.title, v.topic_key, v.pinned_at, "
+        + PAPER_LINK
+        + " from app.visible_forum_posts v"
         " where v.id = %(id)s and v.thread_id is null",
         {"me": member.id, "id": uuid},
     ).fetchone()
@@ -335,6 +374,23 @@ def create_reply(
     fields = {"thread_id": uuid, "title": None, "topic_key": None, "paper_id": None, "body": reply.body,
               "anonymous": reply.anonymous}  # fmt: skip
     return _create(db, member, request.app.state.settings, fields)
+
+
+@router.get("/forum/me/posts")
+def list_own_unpublished(
+    member: Member, db: Db, response: Response, limit: Limit = 20, cursor: Cursor = None
+) -> dict[str, Any]:
+    """The member's own posts other members cannot see: waiting for moderation, or hidden. Oldest first."""
+    response.headers.update(PRIVATE)
+    after = _decode_cursor(cursor)
+    rows = db.execute(
+        "select p.id, p.thread_id, p.title, p.body, p.anonymous, p.display_name, p.status, p.created_at, p.updated_at"
+        " from app.forum_posts p where p.author_id = %(me)s and p.deleted_at is null and p.status <> 'published'"
+        " and (%(t)s::timestamptz is null or (p.created_at, p.id) > (%(t)s::timestamptz, %(i)s::uuid))"
+        " order by p.created_at, p.id limit %(n)s",
+        {"me": member.id, "t": after and after[0], "i": after and after[1], "n": limit + 1},
+    ).fetchall()
+    return _page(rows, limit, lambda row: {"post": _own_post(row), "status": row["status"]})
 
 
 @router.patch("/forum/posts/{post_id}")
@@ -451,7 +507,8 @@ def list_forum_queue(admin: Admin, db: Db, response: Response, limit: Limit = 20
     after = _decode_cursor(cursor)
     rows = db.execute(
         "select p.id, p.thread_id, p.title, p.body, p.anonymous, p.display_name, p.status, p.created_at,"
-        " p.updated_at, coalesce(jsonb_agg(jsonb_build_object('reason', r.reason, 'createdAt', r.created_at)"
+        " p.updated_at, (select t.title from app.forum_posts t where t.id = p.thread_id) as thread_title,"
+        " coalesce(jsonb_agg(jsonb_build_object('reason', r.reason, 'createdAt', r.created_at)"
         "   order by r.created_at) filter (where r.id is not null), '[]') as reports"
         " from app.forum_posts p"
         " left join app.forum_reports r on r.post_id = p.id and r.resolved_at is null"
@@ -465,16 +522,8 @@ def list_forum_queue(admin: Admin, db: Db, response: Response, limit: Limit = 20
     def item(row: dict[str, Any]) -> dict[str, Any]:
         reports = [{"reason": r["reason"], "createdAt": r["createdAt"].replace("+00:00", "Z")} for r in row["reports"]]
         return {
-            "post": {
-                "id": str(row["id"]),
-                "threadId": str(row["thread_id"]) if row["thread_id"] else None,
-                "title": row["title"],
-                "body": row["body"],
-                "anonymous": row["anonymous"],
-                "displayName": row["display_name"],
-                "createdAt": _iso(row["created_at"]),
-                "updatedAt": _iso(row["updated_at"]),
-            },
+            "post": _own_post(row),
+            "threadTitle": row["thread_title"],
             "status": row["status"],
             "reportCount": len(reports),
             "reports": reports,
@@ -520,3 +569,77 @@ def moderate_post(
             )
     assert updated is not None
     return _receipt(updated)
+
+
+@router.post("/admin/forum-posts/{post_id}/author")
+def reveal_post_author(
+    post_id: PostId, request: AuthorRequest, admin: Admin, db: Db, response: Response
+) -> dict[str, Any]:
+    """Who wrote a post, for handling abuse. Recorded with the reason before anything is returned."""
+    response.headers.update(PRIVATE)
+    uuid = _uuid(post_id)
+    with db.transaction():
+        row = db.execute(
+            "select a.id, a.display_name from app.forum_posts p join app.accounts a on a.id = p.author_id"
+            " where p.id = %s",
+            (uuid,),
+        ).fetchone()
+        if row is None:  # unknown post, or the mapping was purged 90 days after deletion
+            raise HTTPException(status_code=404, detail="No author mapping is kept for this post")
+        db.execute(
+            "insert into app.forum_moderation_events (post_id, actor_id, action, reason)"
+            " values (%s, %s, 'reveal_author', %s)",
+            (uuid, admin.id, request.reason),
+        )
+    return {"accountId": str(row["id"]), "displayName": row["display_name"]}
+
+
+@router.get("/admin/forum-threads")
+def list_all_threads(admin: Admin, db: Db, response: Response, limit: Limit = 20, cursor: Cursor = None) -> Any:
+    """Every thread that is not deleted, whatever its status, newest first: what the maintainer pins or hides."""
+    response.headers.update(PRIVATE)
+    after = _decode_cursor(cursor)
+    rows = db.execute(
+        "select p.id, p.thread_id, p.title, p.body, p.anonymous, p.display_name, p.status, p.created_at, p.updated_at,"
+        " p.pinned_at, (select count(*) from app.visible_forum_posts r where r.thread_id = p.id) as reply_count"
+        " from app.forum_posts p where p.thread_id is null and p.deleted_at is null"
+        " and (%(t)s::timestamptz is null or (p.created_at, p.id) < (%(t)s::timestamptz, %(i)s::uuid))"
+        " order by p.created_at desc, p.id desc limit %(n)s",
+        {"t": after and after[0], "i": after and after[1], "n": limit + 1},
+    ).fetchall()
+    return _page(
+        rows,
+        limit,
+        lambda row: {
+            "post": _own_post(row),
+            "status": row["status"],
+            "pinned": row["pinned_at"] is not None,
+            "replyCount": row["reply_count"],
+        },
+    )
+
+
+@router.patch("/admin/forum-threads/{thread_id}")
+def pin_thread(thread_id: PostId, request: PinRequest, admin: Admin, db: Db, response: Response) -> dict[str, Any]:
+    """Pin or unpin a thread, with a recorded reason. A request that changes nothing is a 409."""
+    response.headers.update(PRIVATE)
+    uuid = _uuid(thread_id)
+    with db.transaction():
+        row = db.execute(
+            "select pinned_at from app.forum_posts where id = %s and thread_id is null and deleted_at is null for update",
+            (uuid,),
+        ).fetchone()
+        if row is None:
+            raise NOT_FOUND
+        if (row["pinned_at"] is not None) == request.pinned:
+            raise HTTPException(
+                status_code=409, detail=f"Thread is already {'pinned' if request.pinned else 'unpinned'}"
+            )
+        db.execute(
+            "update app.forum_posts set pinned_at = case when %s then now() end where id = %s", (request.pinned, uuid)
+        )
+        db.execute(
+            "insert into app.forum_moderation_events (post_id, actor_id, action, reason) values (%s, %s, %s, %s)",
+            (uuid, admin.id, "pin" if request.pinned else "unpin", request.reason),
+        )
+    return {"id": str(uuid), "pinned": request.pinned}

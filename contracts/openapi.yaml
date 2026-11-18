@@ -770,7 +770,7 @@ paths:
   /forum/threads:
     get:
       operationId: listForumThreads
-      summary: Visible threads, newest first.
+      summary: Visible threads, newest first; pinned threads come separately on the first page.
       security:
       - BearerAuth: []
       responses:
@@ -858,6 +858,26 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/ForumReplyCreate'}
+      description: 'Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.'
+  /forum/me/posts:
+    get:
+      operationId: listOwnUnpublishedForumPosts
+      summary: The member's own posts that other members cannot see (waiting for moderation, or hidden), oldest first.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ForumOwnPostPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/Limit'}
+      - {$ref: '#/components/parameters/Cursor'}
       description: 'Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.'
   /forum/posts/{postId}:
     patch:
@@ -1016,6 +1036,83 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/ModerationRequest'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission; clients cannot grant themselves this permission.'
+      x-required-permission: comments:moderate
+  /admin/forum-posts/{postId}/author:
+    post:
+      operationId: revealForumPostAuthor
+      summary: Look up who wrote a forum post, with a reason that is recorded before the answer is returned.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthorIdentity'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/PostId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AuthorRequest'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission; clients cannot grant themselves this permission.'
+      x-required-permission: comments:moderate
+  /admin/forum-threads:
+    get:
+      operationId: listForumThreadsForModeration
+      summary: Every thread that is not deleted, whatever its status, newest first.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ForumAdminThreadPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/Limit'}
+      - {$ref: '#/components/parameters/Cursor'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission; clients cannot grant themselves this permission.'
+      x-required-permission: comments:moderate
+  /admin/forum-threads/{threadId}:
+    patch:
+      operationId: pinForumThread
+      summary: Pin or unpin a thread; a request that changes nothing is 409.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ForumPinState'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/ThreadId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ForumPinRequest'}
       description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate permission; clients cannot grant themselves this permission.'
       x-required-permission: comments:moderate
 components:
@@ -1743,7 +1840,7 @@ components:
       type: object
       additionalProperties: false
       required: [id, threadId, title, topicKey, paperId, body, anonymous, displayName, createdAt, updatedAt, likeCount,
-        liked, mine]
+        liked, mine, pinned]
       properties:
         id: {type: string, format: uuid}
         body: {type: string, minLength: 1}
@@ -1764,6 +1861,7 @@ components:
         paperId:
           type: [string, 'null']
           description: The linked paper while it is public; null once it is withdrawn.
+        pinned: {type: boolean}
       allOf:
       - if:
           properties:
@@ -1777,7 +1875,8 @@ components:
     ForumThreadSummary:
       type: object
       additionalProperties: false
-      required: [id, title, topicKey, paperId, anonymous, displayName, createdAt, replyCount, lastReplyAt, likeCount]
+      required: [id, title, topicKey, paperId, anonymous, displayName, createdAt, replyCount, lastReplyAt, likeCount,
+        pinned]
       properties:
         id: {type: string, format: uuid}
         title: {type: string, minLength: 1}
@@ -1796,6 +1895,7 @@ components:
           type: [string, 'null']
           format: date-time
         likeCount: {type: integer, minimum: 0}
+        pinned: {type: boolean}
       allOf:
       - if:
           properties:
@@ -1809,8 +1909,12 @@ components:
     ForumThreadPage:
       type: object
       additionalProperties: false
-      required: [items, nextCursor]
+      required: [pinned, items, nextCursor]
       properties:
+        pinned:
+          type: array
+          description: Pinned threads, newest pin first, on the first page only (empty when a cursor is given).
+          items: {$ref: '#/components/schemas/ForumThreadSummary'}
         items:
           type: array
           items: {$ref: '#/components/schemas/ForumThreadSummary'}
@@ -1880,28 +1984,86 @@ components:
       properties:
         id: {type: string, format: uuid}
         postId: {type: string, format: uuid}
+    ForumPostRecord:
+      type: object
+      additionalProperties: false
+      required: [id, threadId, title, body, anonymous, displayName, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        threadId:
+          type: [string, 'null']
+          format: uuid
+        title:
+          type: [string, 'null']
+        body: {type: string}
+        anonymous: {type: boolean}
+        displayName:
+          type: [string, 'null']
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+      description: A post outside its thread, as its author or the maintainer sees it. Never carries the account.
+    ForumOwnPostPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [post, status]
+            properties:
+              post: {$ref: '#/components/schemas/ForumPostRecord'}
+              status:
+                type: string
+                enum: [pending, hidden]
+        nextCursor:
+          type: [string, 'null']
+    ForumAdminThreadPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [post, status, pinned, replyCount]
+            properties:
+              post: {$ref: '#/components/schemas/ForumPostRecord'}
+              status:
+                type: string
+                enum: [pending, published, hidden]
+              pinned: {type: boolean}
+              replyCount: {type: integer, minimum: 0, description: Replies members can see.}
+        nextCursor:
+          type: [string, 'null']
+      description: Private moderator response. Does not include the private author mapping.
+    ForumPinRequest:
+      type: object
+      additionalProperties: false
+      required: [pinned, reason]
+      properties:
+        pinned: {type: boolean}
+        reason: {type: string, minLength: 1, maxLength: 1000, description: Recorded in the moderation audit trail.}
+    ForumPinState:
+      type: object
+      additionalProperties: false
+      required: [id, pinned]
+      properties:
+        id: {type: string, format: uuid}
+        pinned: {type: boolean}
     ForumModerationItem:
       type: object
       additionalProperties: false
-      required: [post, status, reportCount, reports]
+      required: [post, threadTitle, status, reportCount, reports]
       properties:
-        post:
-          type: object
-          additionalProperties: false
-          required: [id, threadId, title, body, anonymous, displayName, createdAt, updatedAt]
-          properties:
-            id: {type: string, format: uuid}
-            threadId:
-              type: [string, 'null']
-              format: uuid
-            title:
-              type: [string, 'null']
-            body: {type: string}
-            anonymous: {type: boolean}
-            displayName:
-              type: [string, 'null']
-            createdAt: {type: string, format: date-time}
-            updatedAt: {type: string, format: date-time}
+        post: {$ref: '#/components/schemas/ForumPostRecord'}
+        threadTitle:
+          type: [string, 'null']
+          description: The title of the thread a reply belongs to; null for an opening post.
         status:
           type: string
           enum: [pending, published, hidden]

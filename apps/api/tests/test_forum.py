@@ -21,6 +21,8 @@ from test_comments import API_DB_URL, ISSUER, KEY, World, schema, sql
 THREADS = f"{API_PREFIX}/forum/threads"
 POSTS = f"{API_PREFIX}/forum/posts"
 QUEUE = f"{API_PREFIX}/admin/forum-posts"
+ADMIN_THREADS = f"{API_PREFIX}/admin/forum-threads"
+MINE = f"{API_PREFIX}/forum/me/posts"
 
 
 @dataclass
@@ -143,6 +145,7 @@ def test_everyone_but_verified_surgeons_gets_404_on_every_route(client: TestClie
         ("put", f"{POSTS}/{thread}/likes", None),
         ("delete", f"{POSTS}/{thread}/likes", None),
         ("post", f"{POSTS}/{thread}/reports", {"reason": "r"}),
+        ("get", MINE, None),
     ]
     for user in (None, f.newbie, f.member, f.admin):
         for method, path, body in routes:
@@ -162,8 +165,14 @@ def test_everyone_but_verified_surgeons_gets_404_on_every_route(client: TestClie
 
 def test_the_queue_is_for_the_maintainer_only(client: TestClient, forum: Forum) -> None:
     f = forum
+    thread = published_thread(client, f, f.surgeon)
     for user in (f.surgeon, f.member):
         assert client.get(QUEUE, headers=f.headers(user)).status_code == 403
+        assert client.get(ADMIN_THREADS, headers=f.headers(user)).status_code == 403
+        pin = {"pinned": True, "reason": "r"}
+        assert client.patch(f"{ADMIN_THREADS}/{thread}", headers=f.headers(user), json=pin).status_code == 403
+        reveal = client.post(f"{QUEUE}/{thread}/author", headers=f.headers(user), json={"reason": "r"})
+        assert reveal.status_code == 403
     queue = client.get(QUEUE, headers=f.headers(f.admin))
     assert queue.status_code == 200 and queue.headers["Cache-Control"] == "private, no-store"
     schema("ForumModerationItemPage").validate(queue.json())
@@ -332,3 +341,89 @@ def test_likes_and_reports(client: TestClient, forum: Forum) -> None:
     assert sql("select resolved_at is not null from app.forum_reports where post_id = %s", (thread,)) == [(True,)]
     actions = sql("select action from app.forum_moderation_events where post_id = %s order by id", (thread,))
     assert [a for (a,) in actions] == ["publish", "hide", "resolve_report"]
+
+
+# --- H7: pinning, own unpublished posts, author lookup -----------------------------------------------------------------
+
+
+def test_the_maintainer_pins_threads_to_the_top(client: TestClient, forum: Forum) -> None:
+    f = forum
+    older = published_thread(client, f, f.surgeon, title="Older")
+    published_thread(client, f, f.surgeon, title="Middle")
+    newer = published_thread(client, f, f.surgeon, title="Newer")
+    pin = client.patch(f"{ADMIN_THREADS}/{older}", headers=f.headers(f.admin), json={"pinned": True, "reason": "FAQ"})
+    assert pin.status_code == 200 and pin.headers["Cache-Control"] == "private, no-store"
+    schema("ForumPinState").validate(pin.json())
+    again = client.patch(f"{ADMIN_THREADS}/{older}", headers=f.headers(f.admin), json={"pinned": True, "reason": "x"})
+    assert again.status_code == 409
+
+    page = client.get(THREADS, headers=f.headers(f.peer)).json()
+    assert older in [t["id"] for t in page["pinned"]] and older not in [t["id"] for t in page["items"]]
+    assert newer in [t["id"] for t in page["items"]]
+    assert all(t["pinned"] for t in page["pinned"]) and not any(t["pinned"] for t in page["items"])
+    assert thread_of(client, f, f.peer, older)["thread"]["pinned"] is True
+    # Pinned threads come on the first page only, so paging neither repeats nor loses them.
+    first = client.get(THREADS, headers=f.headers(f.peer), params={"limit": 1}).json()
+    assert first["pinned"] and first["nextCursor"]
+    later = client.get(THREADS, headers=f.headers(f.peer), params={"cursor": first["nextCursor"]}).json()
+    assert later["pinned"] == []
+
+    # A reply cannot be pinned; the admin list shows every thread with its state.
+    answer = reply(client, f, f.surgeon, older).json()["id"]
+    assert (
+        client.patch(
+            f"{ADMIN_THREADS}/{answer}", headers=f.headers(f.admin), json={"pinned": True, "reason": "x"}
+        ).status_code
+        == 404
+    )
+    listing = client.get(ADMIN_THREADS, headers=f.headers(f.admin))
+    schema("ForumAdminThreadPage").validate(listing.json())
+    [row] = [i for i in listing.json()["items"] if i["post"]["id"] == older]
+    assert row["pinned"] is True and row["replyCount"] == 1 and row["status"] == "published"
+    assert str(f.surgeon) not in str(listing.json())
+
+    unpin = client.patch(
+        f"{ADMIN_THREADS}/{older}", headers=f.headers(f.admin), json={"pinned": False, "reason": "Old"}
+    )
+    assert unpin.json() == {"id": older, "pinned": False}
+    actions = sql("select action, reason from app.forum_moderation_events where post_id = %s order by id", (older,))
+    assert [a for a in actions if a[0] in ("pin", "unpin")] == [("pin", "FAQ"), ("unpin", "Old")]
+
+
+def test_authors_see_their_own_unpublished_posts(client: TestClient, forum: Forum) -> None:
+    f = forum
+    waiting = open_thread(client, f, f.surgeon, anonymous=True)["id"]
+    page = client.get(MINE, headers=f.headers(f.surgeon))
+    assert page.status_code == 200 and page.headers["Cache-Control"] == "private, no-store"
+    schema("ForumOwnPostPage").validate(page.json())
+    assert [(i["post"]["id"], i["status"]) for i in page.json()["items"]] == [(waiting, "pending")]
+    assert client.get(MINE, headers=f.headers(f.peer)).json()["items"] == []  # nobody else's
+
+    assert moderate(client, f, waiting).status_code == 200
+    assert client.get(MINE, headers=f.headers(f.surgeon)).json()["items"] == []
+    late = reply(client, f, f.peer, waiting, "My first reply").json()["id"]
+    [own] = client.get(MINE, headers=f.headers(f.peer)).json()["items"]
+    assert own["post"]["id"] == late and own["post"]["threadId"] == waiting and own["status"] == "pending"
+    assert moderate(client, f, late, "hide").status_code == 200
+    assert client.get(MINE, headers=f.headers(f.peer)).json()["items"][0]["status"] == "hidden"
+
+
+def test_looking_up_an_anonymous_author_is_recorded(client: TestClient, forum: Forum) -> None:
+    f = forum
+    thread = published_thread(client, f, f.surgeon, anonymous=True)
+    answer = reply(client, f, f.peer, thread, "Reply").json()["id"]
+    [item] = [i for i in client.get(QUEUE, headers=f.headers(f.admin)).json()["items"] if i["post"]["id"] == answer]
+    assert item["threadTitle"] == "Watch and wait after TNT?"
+
+    path = f"{QUEUE}/{thread}/author"
+    assert client.post(path, headers=f.headers(f.admin), json={"reason": " "}).status_code == 422
+    found = client.post(path, headers=f.headers(f.admin), json={"reason": "Possible patient details"})
+    assert found.status_code == 200 and found.headers["Cache-Control"] == "private, no-store"
+    schema("AuthorIdentity").validate(found.json())
+    assert found.json() == {"accountId": str(f.surgeon), "displayName": "王醫師"}
+    assert sql(
+        "select action, reason from app.forum_moderation_events where post_id = %s and action = 'reveal_author'",
+        (thread,),
+    ) == [("reveal_author", "Possible patient details")]
+    unknown = client.post(f"{QUEUE}/{uuid.uuid4()}/author", headers=f.headers(f.admin), json={"reason": "x"})
+    assert unknown.status_code == 404
