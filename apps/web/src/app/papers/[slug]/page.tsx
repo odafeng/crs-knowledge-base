@@ -1,7 +1,7 @@
 import { pageMetadata, paperJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PaperGlance } from "@/components/paper-summary";
+import { GlanceFinding, PaperGlance } from "@/components/paper-summary";
 import { ReviewActions } from "@/components/review-actions";
 import { needsReview } from "@/lib/review";
 import { ReaderComments } from "@/components/comments";
@@ -81,11 +81,15 @@ export default async function PaperPage({ params }: Props) {
       <Breadcrumb crumbs={crumbs} />
       <article className="split">
         <div>
-          <header className="story__head">
+          <header
+            className={
+              summary ? "story__head story__head--glance" : "story__head"
+            }
+          >
             <PaperMeta paper={paper} topic={topic} />
             <h1>{summary?.title ?? paper.regimen}</h1>
-            {summary && <p className="glance__takeaway">{summary.takeaway}</p>}
           </header>
+          {summary && <GlanceFinding summary={summary} />}
           {(isUnreviewed(paper) || summaryPending) && (
             <div className="callout callout--ai" role="note">
               <Icon name="spark" />
