@@ -25,9 +25,7 @@ export default async function ForumPage() {
           驗證過的大腸直腸外科醫師之間的討論。貼文是個人意見，不是本站的文獻整理。
         </p>
       </header>
-      <div className="page__narrow">
-        <ForumHome topics={topics} />
-      </div>
+      <ForumHome topics={topics} />
     </div>
   );
 }

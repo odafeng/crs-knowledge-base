@@ -600,3 +600,97 @@ mark.hl {
 .source-details[open] > summary {
   margin-block-end: var(--space-5);
 }
+
+/* Forum on a desktop (H7 #129): the list beside a rail with the call to post and the rules, and each thread
+   row with its reply count and latest activity in their own columns, as forums are read. Phones stay one column,
+   the call to post first. */
+.forum-layout {
+  display: grid;
+  gap: var(--space-8);
+}
+.forum-layout__rail {
+  display: grid;
+  gap: var(--space-5);
+  align-content: start;
+}
+.forum-layout__cta {
+  justify-self: start;
+}
+@media (min-width: 1024px) {
+  .forum-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+    grid-template-areas: "main rail";
+    column-gap: var(--space-12);
+  }
+  .forum-layout__main {
+    grid-area: main;
+  }
+  .forum-layout__rail {
+    grid-area: rail;
+    position: sticky;
+    inset-block-start: calc(var(--header-h) + var(--space-6));
+  }
+  .forum-layout__cta {
+    justify-self: stretch;
+  }
+}
+.forum-rules {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  background: var(--sunken);
+  border-radius: var(--radius-card);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  line-height: 1.75;
+}
+.forum-rules h2 {
+  color: var(--ink);
+  font-size: var(--text-base, 1rem);
+}
+.forum-rows {
+  margin: var(--space-5) 0;
+  padding: 0;
+  list-style: none;
+  border-block-start: 1px solid var(--line);
+}
+.forum-row {
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-4);
+  border-block-end: 1px solid var(--line);
+}
+.forum-row__main {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.forum-row__stat {
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+}
+.forum-row__count {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 768px) {
+  .forum-row {
+    grid-template-columns: minmax(0, 1fr) 6rem 9rem;
+    align-items: center;
+    column-gap: var(--space-6);
+  }
+  .forum-row__stat {
+    text-align: end;
+  }
+  .forum-row__count {
+    display: block;
+    font-size: var(--text-xl);
+    line-height: 1.2;
+  }
+}
+/* Pinned threads, then the rest: one list to the eye. */
+.forum-rows + .forum-rows {
+  margin-block-start: calc(-1 * var(--space-5));
+  border-block-start: 0;
+}

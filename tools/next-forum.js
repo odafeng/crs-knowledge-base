@@ -222,9 +222,20 @@ let browser;
   psql(`insert into app.forum_posts (title, body, anonymous, display_name, ai)
     values (${literal(aiTitle)}, 'From the site''s evidence.', false, 'GutHub AI', true)`);
   await b.goto(`${ORIGIN}/forum/`);
-  const aiRow = b.locator('.comment', { hasText: aiTitle });
+  const aiRow = b.locator('.forum-row', { hasText: aiTitle });
   await aiRow.getByText('GutHub AI').waitFor();
   await aiRow.locator('.chip--ai').waitFor();
+
+  step('on a desktop the list and each thread sit beside a rail');
+  await b.setViewportSize({ width: 1440, height: 900 });
+  const beside = async (main, rail) => (await b.locator(rail).boundingBox()).x > (await b.locator(main).boundingBox()).x;
+  check(await beside('.forum-layout__main', '.forum-layout__rail'), 'forum list has no rail beside it at 1440px');
+  await b.goto(`${ORIGIN}${secondPath}`);
+  await b.getByRole('heading', { name: secondTitle }).waitFor();
+  check(await beside('.split > div', '.split__rail'), 'thread has no rail beside it at 1440px');
+  check(!(await b.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)),
+    'thread overflows at 1440px');
+  await b.goto(`${ORIGIN}/forum/`);
 
   step('accessibility of the forum pages, light and dark');
   for (const colorScheme of ['light', 'dark']) {
