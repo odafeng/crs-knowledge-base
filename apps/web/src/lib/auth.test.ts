@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { displayNameError, returnPath, safeNext } from "./auth";
+import { callbackError, displayNameError, returnPath, safeNext } from "./auth";
 
 describe("safeNext keeps post-login redirects on this site", () => {
   it.each([
@@ -78,5 +78,31 @@ describe("returnPath", () => {
     expect(returnPath("/papers/niche2")).toBe("/papers/niche2/");
     expect(returnPath("/papers/niche2/")).toBe("/papers/niche2/");
     expect(returnPath("/")).toBe("/");
+  });
+});
+
+describe("callbackError explains a failed sign-in or Google link", () => {
+  it.each([
+    ["", "", null],
+    ["?code=abc", "", null],
+    [
+      "?error=server_error&error_code=identity_already_exists&error_description=Identity+is+already+linked",
+      "",
+      "這個 Google 帳號已經是另一個 GutHub 帳號，不能再連結。請來信請我們刪除那個帳號後再連結一次。",
+    ],
+    [
+      "",
+      "#error=server_error&error_code=identity_already_exists",
+      "這個 Google 帳號已經是另一個 GutHub 帳號，不能再連結。請來信請我們刪除那個帳號後再連結一次。",
+    ],
+    [
+      "?error=bad&error_code=manual_linking_disabled",
+      "",
+      "目前還不能連結 Google 帳號，請稍後再試。",
+    ],
+    ["?error=access_denied", "", "你取消了 Google 授權，沒有做任何變更。"],
+    ["?error=server_error", "", "沒有完成，請再試一次。"],
+  ])("%s %s", (search, hash, expected) => {
+    expect(callbackError(search, hash)).toBe(expected);
   });
 });

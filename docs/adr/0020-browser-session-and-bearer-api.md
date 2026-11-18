@@ -31,6 +31,7 @@ Supabase 官方的 Next.js 做法（`@supabase/ssr`）把 session 放在 cookie�
 - 跨 origin 的 PUT／POST 需要 CORS preflight，多一次往返（瀏覽器快取 10 分鐘）。
 - 正式環境的 Auth 設定（Site URL、Redirect URLs、信件範本、SMTP、Google provider）要在 Supabase 後台手動設定，清單在 `supabase/README.md`。這些設定和 `config.toml` 是兩份，可能不同步；F2 的 staging 驗收要逐項確認。
 - E2E 以 Mailpit 實際寄出並開啟 Email 連結，也測換帳號與登出；Google 登入要等 F1 提供 OAuth client，目前沒有自動測試。
+- 一個 Email 就是一個帳號。用 Email 連結登入、和 Google 信箱不同的人，第一次用 Google 登入時會另外開一個沒有任何資料的新帳號（2026-11-18，H12 #185）。所以帳號頁提供「連結 Google 帳號」（Supabase `linkIdentity`，需要開啟 manual linking）。連結後兩種登入都進同一個 user，API 看到的 `sub` 不變。如果那個 Google 帳號已經開過帳號，連結會失敗（`identity_already_exists`），要先刪掉那個帳號；目前沒有自助刪除，只能來信請維護者處理。醫師自動審核仍然只看寄到信箱的連結（ADR-0022）：已連結的 Google 帳號不能證明收得到醫院信箱的信。目前還沒有取消連結的功能。
 
 ## References
 
