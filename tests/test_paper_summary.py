@@ -135,3 +135,23 @@ def test_nothing_is_paid_for_when_the_database_is_not_the_writer(db_writer, monk
     monkeypatch.setattr("psycopg.connect", Same)
     with pytest.raises(ValueError, match="content writer is 'json'"):
         paper_summary.run("postgresql://unused")
+
+
+def test_a_refused_summary_is_rewritten_once_with_the_reasons(monkeypatch: pytest.MonkeyPatch) -> None:
+    good = copy.deepcopy(SUMMARY)
+    bad = {**good, "findings": ["mOS 30.3 vs 15.1 個月，HR 0.51"]}
+    told: list[list[str] | None] = []
+
+    def fake_write(client, paper, abstract, refused=None):
+        told.append(refused)
+        return bad if refused is None else good
+
+    monkeypatch.setattr(paper_summary, "write", fake_write)
+    assert paper_summary.draft(None, {}, SOURCES) == (good, [])
+    assert told == [None, ["numbers not in the sources: 0.51"]]
+
+
+def test_a_summary_refused_twice_is_not_kept(monkeypatch: pytest.MonkeyPatch) -> None:
+    bad = {**SUMMARY, "findings": ["HR 0.51"]}
+    monkeypatch.setattr(paper_summary, "write", lambda client, paper, abstract, refused=None: bad)
+    assert paper_summary.draft(None, {}, SOURCES)[1] == ["numbers not in the sources: 0.51"]
