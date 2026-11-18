@@ -89,6 +89,7 @@ def db_writer(tmp_path) -> Iterator:
 
     for name in ("data", "docs"):
         shutil.copytree(ROOT / name, tmp_path / name)
+    (tmp_path / "data/WRITER").write_text("json\n")  # the repository before cutover; cutover below sets postgres
     with psycopg.connect(DB_URL) as conn, conn.transaction(force_rollback=True):
         conn.execute(f"truncate {CONTENT}, app.comments, app.comment_reports, app.moderation_events cascade")
         conn.execute("truncate app.publish_events, app.paper_watch_state")
