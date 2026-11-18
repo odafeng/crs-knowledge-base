@@ -50,6 +50,7 @@ COLUMNS: dict[str, tuple[str, ...]] = {
         "detail_html",
         "source_file",
         "added_at",
+        "summary",
     ),  # fmt: skip
     "paper_relations": ("paper_id", "target_id", "type"),
     "research_commentary": (
@@ -84,7 +85,7 @@ COLUMNS: dict[str, tuple[str, ...]] = {
 # Per table: news.key is jsonb but topics.key is the text primary key, so one global set would corrupt topic keys.
 JSON_COLUMNS: dict[str, set[str]] = {
     "topics": {"standard_of_care", "robotic_sections", "metrics"},
-    "papers": {"n"},
+    "papers": {"n", "summary"},
     "paper_relations": set(),
     "research_commentary": set(),
     "news": {"headline", "key", "figures", "body"},
@@ -219,6 +220,7 @@ def _paper_rows(rows: Rows, root: Path, topic_key: str, p: dict, loaded: Any) ->
             "detail_html": loaded.detail_html,
             "source_file": file or None,
             "added_at": p.get("addedAt"),
+            "summary": p.get("summary"),
         }
     )
     rows.tables["paper_relations"] += [
@@ -437,6 +439,8 @@ def export_kb(conn: Any, root: Path) -> None:
             document(p["source_file"], p["detail_html"])
         if p["id"] in commentary:
             entry["commentary"] = commentary[p["id"]]
+        if p["summary"]:
+            entry["summary"] = p["summary"]
         entry |= review(p["review_status"], p["review_published_at"])
         raw[p["topic_key"]]["papers"].append(entry)
 

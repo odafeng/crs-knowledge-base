@@ -27,6 +27,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 from commentary import COMMENTARY_TYPES
 
@@ -119,6 +120,41 @@ def _validate_review(label: str, item: dict) -> list[str]:
     return errors
 
 
+# The at-a-glance summary of a paper (I1 #190, ADR-0025): text fields with a length cap, lists with a count cap.
+SUMMARY_TEXT = {"title": 80, "takeaway": 80, "question": 160, "population": 200, "comparison": 200, "meaning": 240}
+SUMMARY_LISTS = {"findings": (4, 160), "limits": (3, 160)}  # most items, longest item
+
+
+def validate_summary(label: str, summary: Any) -> list[str]:
+    if not isinstance(summary, dict):
+        return [f"{label} summary must be an object"]
+    errors = []
+    known = {*SUMMARY_TEXT, *SUMMARY_LISTS, "model", "writtenAt", "reviewedAt"}
+    errors += [f"{label} summary has unknown field: {key}" for key in summary if key not in known]
+    for key, cap in SUMMARY_TEXT.items():
+        value = summary.get(key)
+        if not isinstance(value, str) or not value.strip() or len(value) > cap:
+            errors.append(f"{label} summary.{key} must be 1-{cap} characters")
+    for key, (most, cap) in SUMMARY_LISTS.items():
+        items = summary.get(key)
+        if (
+            not isinstance(items, list)
+            or not 1 <= len(items) <= most
+            or not all(isinstance(i, str) and i.strip() and len(i) <= cap for i in items)
+        ):
+            errors.append(f"{label} summary.{key} must be 1-{most} items of 1-{cap} characters")
+    if not isinstance(summary.get("model"), str) or not summary.get("model"):
+        errors.append(f"{label} summary.model is required")
+    if not _DATE.match(str(summary.get("writtenAt", ""))):
+        errors.append(f"{label} summary.writtenAt must be YYYY-MM-DD")
+    if summary.get("reviewedAt") is not None and not _DATE.match(str(summary["reviewedAt"])):
+        errors.append(f"{label} summary.reviewedAt must be YYYY-MM-DD or null")
+    texts = [summary.get(k) for k in SUMMARY_TEXT] + [i for k in SUMMARY_LISTS for i in summary.get(k) or []]
+    if any(isinstance(t, str) and "<" in t for t in texts):
+        errors.append(f"{label} summary contains raw HTML")
+    return errors
+
+
 def _validate_commentary(topic: str, pid: str, items: list[dict], seen: dict[str, str]) -> list[str]:
     errors = []
     for c in items:
@@ -191,6 +227,8 @@ def validate_data(data: dict, root: Path = PROJECT_ROOT, pending_files: frozense
                     errors.append(f"[{topic}] Paper '{pid}' has empty required field: {field}")
 
             errors += _validate_review(f"[{topic}] Paper '{pid}'", p)
+            if "summary" in p:
+                errors += validate_summary(f"[{topic}] Paper '{pid}'", p["summary"])
             if p.get("source") not in SOURCES:
                 errors.append(f"[{topic}] Paper '{pid}' has unknown source: {p.get('source')!r}")
             if not _DATE.match(str(p.get("reviewedAt", ""))):

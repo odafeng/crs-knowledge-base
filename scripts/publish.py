@@ -10,6 +10,7 @@ import html
 import json
 import re
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Literal
 
@@ -335,7 +336,13 @@ def mark_reviewed(kind: Literal["paper", "news"], target: str, kb: KB | None = N
     paper = next((p for t in data.values() for p in t.get("papers", []) if p["id"] == target), None)
     if paper is None:
         raise PublishError([f"找不到文獻 `{target}`"])
-    _review(paper, target)
+    # The AI summary (I1 #190) is confirmed with its paper; a hand-curated paper may have nothing else to review.
+    summary = paper.get("summary")
+    summary_pending = bool(summary) and summary.get("reviewedAt") is None
+    if not summary_pending or (paper.get("review") or {}).get("status") == "auto":
+        _review(paper, target)  # refuses a paper with nothing left to review
+    if summary_pending:
+        summary["reviewedAt"] = date.today().isoformat()
     _check(data, kb, frozenset())
     kb.save(data)
     page = kb.root / paper["file"] if paper.get("file") else None

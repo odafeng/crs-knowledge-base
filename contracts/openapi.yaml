@@ -1256,6 +1256,37 @@ components:
           items: {$ref: '#/components/schemas/ResearchCommentary'}
         detailHtml: {type: string, description: Detailed evidence retained from the source document; the API must
             sanitize HTML before returning it.}
+        summary: {$ref: '#/components/schemas/PaperSummary'}
+    PaperSummary:
+      type: object
+      additionalProperties: false
+      description: 'At-a-glance Traditional Chinese summary (I1 #190, ADR-0025). AI-written from the abstract with
+        every number traced to the sources; reviewedAt is null until the maintainer reviews it. Plain text, never
+        HTML.'
+      required: [title, takeaway, question, population, comparison, findings, meaning, limits, model, writtenAt,
+        reviewedAt]
+      properties:
+        title: {type: string, minLength: 1, maxLength: 80}
+        takeaway: {type: string, minLength: 1, maxLength: 80, description: The finding in one plain sentence.}
+        question: {type: string, minLength: 1, maxLength: 160}
+        population: {type: string, minLength: 1, maxLength: 200}
+        comparison: {type: string, minLength: 1, maxLength: 200}
+        findings:
+          type: array
+          minItems: 1
+          maxItems: 4
+          items: {type: string, minLength: 1, maxLength: 160}
+        meaning: {type: string, minLength: 1, maxLength: 240}
+        limits:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items: {type: string, minLength: 1, maxLength: 160}
+        model: {type: string, minLength: 1}
+        writtenAt: {type: string, format: date}
+        reviewedAt:
+          type: [string, 'null']
+          format: date
     Stat:
       type: object
       additionalProperties: false

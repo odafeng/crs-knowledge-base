@@ -61,13 +61,17 @@ export type Pending = {
   date: string;
 };
 
+/** A paper waits for the admin while it or its AI summary (I1 #190) is unreviewed. */
+export const needsReview = (paper: Paper) =>
+  isUnreviewed(paper) || paper.summary?.reviewedAt === null;
+
 /** Everything still marked "AI 未審", newest first, papers and stories together. */
 export function pendingReview(
   papers: readonly Paper[],
   news: readonly News[],
 ): Pending[] {
   const items: Pending[] = [
-    ...papers.filter(isUnreviewed).map((paper) => ({
+    ...papers.filter(needsReview).map((paper) => ({
       kind: "paper" as const,
       target: paper.id,
       title: paperTitle(paper),
