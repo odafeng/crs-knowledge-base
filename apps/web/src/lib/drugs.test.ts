@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   DRUG_GROUPS,
   DRUGS,
+  drugByBrand,
   drugBySlug,
   drugCounts,
   drugPath,
   drugsOf,
+  evidenceOrder,
   papersOf,
 } from "./drugs";
 import type { Paper } from "./site";
@@ -93,5 +95,26 @@ describe("drugs", () => {
     const groups = new Set(DRUG_GROUPS.map(([g]) => g));
     expect(DRUGS.every((d) => groups.has(d.group))).toBe(true);
     expect(drugPath({ slug: "regorafenib" })).toBe("/drugs/regorafenib/");
+  });
+
+  it("finds a drug by its brand, whatever the case", () => {
+    expect(drugByBrand("stivarga")?.slug).toBe("regorafenib");
+    expect(drugByBrand("LONSURF")?.slug).toBe("trifluridine-tipiracil");
+    expect(drugByBrand("regorafenib")).toBeUndefined();
+  });
+
+  it("orders a drug's evidence oldest first, same-year papers as the site had them", () => {
+    const papers = [
+      { id: "stellar", year: 2025 },
+      { id: "correct", year: 2013 },
+      { id: "liu", year: 2025 },
+      { id: "concur", year: 2015 },
+    ];
+    expect(evidenceOrder(papers).map((p) => p.id)).toEqual([
+      "correct",
+      "concur",
+      "stellar",
+      "liu",
+    ]);
   });
 });

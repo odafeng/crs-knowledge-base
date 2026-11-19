@@ -107,6 +107,15 @@ export const drugCounts = (papers: readonly Named[]) =>
 
 export const drugBySlug = (slug: string) => DRUGS.find((d) => d.slug === slug);
 
+/** A drug by its brand as typed in a URL (/drugs/stivarga/), so the page can redirect to the generic name. */
+export const drugByBrand = (slug: string) =>
+  DRUGS.find((d) => d.brand?.toLowerCase() === slug.toLowerCase());
+
+/** A drug's evidence as a history: oldest publication first, then the order the site took them in. */
+export const evidenceOrder = <P extends Pick<Paper, "year">>(
+  papers: readonly P[],
+) => [...papers].sort((a, b) => a.year - b.year); // sort is stable: same-year papers keep the site's order
+
 export const drugPath = (drug: Pick<Drug, "slug">) => `/drugs/${drug.slug}/`;
 
 export const DRUG_CRUMBS: Crumbs = [...HOME, ["藥物", "/drugs/"]];

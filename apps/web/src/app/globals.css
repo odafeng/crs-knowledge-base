@@ -700,3 +700,151 @@ mark.hl {
   margin-block-start: var(--space-2);
   font-size: var(--text-sm);
 }
+
+/* A drug's evidence as a history (J2): oldest study first. On desktop the year column carries a spine with a dot
+   per study, since the list is a real sequence; on a phone each study stacks under its year. */
+.evidence {
+  --highlight: var(--mark-track);
+  margin-block-start: var(--space-6);
+  padding: 0;
+  list-style: none;
+}
+.evidence__study {
+  display: grid;
+  gap: var(--space-3);
+  padding-block: var(--space-6);
+  border-block-start: 1px solid var(--line);
+}
+.evidence__when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+.evidence__when a {
+  color: var(--brand);
+}
+.evidence__year {
+  color: var(--ink);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.evidence__body {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.evidence__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  font-size: var(--text-xl);
+  line-height: 1.45;
+}
+.evidence__title a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.evidence__title a:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
+.evidence__takeaway {
+  max-width: var(--measure);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+}
+.evidence__facts {
+  display: grid;
+  gap: var(--space-3);
+}
+.evidence__facts > div {
+  display: grid;
+  gap: var(--space-1);
+}
+.evidence__facts dt {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+.evidence__facts dd {
+  max-width: var(--measure);
+  margin: 0;
+  line-height: 1.75;
+}
+.evidence__facts ul {
+  display: grid;
+  gap: var(--space-1);
+  padding-inline-start: 1.1em;
+}
+.evidence__results dd {
+  font-variant-numeric: tabular-nums;
+}
+.evidence__results li:first-child {
+  font-weight: 600;
+}
+.evidence__limits dt {
+  color: var(--warn);
+}
+.evidence__limits dd {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+.evidence__line {
+  max-width: var(--measure);
+  color: var(--ink-2);
+  line-height: 1.75;
+}
+.evidence__note {
+  max-width: var(--measure);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+@media (min-width: 768px) {
+  .evidence__facts > div {
+    grid-template-columns: 5rem minmax(0, 1fr);
+    column-gap: var(--space-4);
+  }
+}
+@media (min-width: 1024px) {
+  .evidence__study {
+    grid-template-columns: 10rem minmax(0, 1fr);
+    column-gap: var(--space-10);
+    padding-block: 0;
+    border-block-start: 0;
+  }
+  .evidence__when {
+    position: relative;
+    flex-direction: column;
+    align-items: flex-end;
+    padding-block: var(--space-8);
+    padding-inline-end: var(--space-6);
+    border-inline-end: 2px solid var(--line);
+    text-align: end;
+  }
+  .evidence__year::after {
+    content: "";
+    position: absolute;
+    inset-block-start: calc(var(--space-8) + 0.5rem);
+    inset-inline-end: -7px;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--brand);
+    border-radius: 50%;
+    background: var(--ground);
+  }
+  .evidence__body {
+    padding-block: var(--space-8);
+  }
+  .evidence__study + .evidence__study .evidence__body {
+    border-block-start: 1px solid var(--line);
+  }
+}
