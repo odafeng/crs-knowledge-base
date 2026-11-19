@@ -3,8 +3,16 @@
 import subprocess
 import sys
 
-from config import GITHUB_TOKEN
+from config import GITHUB_REPO, GITHUB_TOKEN
 from topics import LABEL_COLORS
+
+
+def _env() -> dict[str, str]:
+    env = {"GH_TOKEN": GITHUB_TOKEN, "PATH": "/usr/bin:/usr/local/bin:/opt/homebrew/bin"}
+    # Without GH_REPO, gh reads the repo from the git remote; the Cloud Run worker has no git checkout (#212).
+    if GITHUB_REPO:
+        env["GH_REPO"] = GITHUB_REPO
+    return env
 
 
 def run_gh(args, input_text=None):
@@ -17,9 +25,7 @@ def run_gh(args, input_text=None):
             text=True,
             timeout=30,
             input=input_text,
-            env={"GH_TOKEN": GITHUB_TOKEN, "PATH": "/usr/bin:/usr/local/bin:/opt/homebrew/bin"}
-            if GITHUB_TOKEN
-            else None,
+            env=_env() if GITHUB_TOKEN else None,
         )
         if result.returncode != 0:
             print(f"  [WARN] gh command failed: {result.stderr.strip()}", file=sys.stderr)
