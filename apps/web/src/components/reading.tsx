@@ -6,6 +6,7 @@ import {
   headline,
   isUnreviewed,
   newsPath,
+  paperLead,
   paperPath,
   SOURCE_LABELS,
   STATUS_LABELS,
@@ -158,12 +159,9 @@ export function PaperCard({ paper }: { paper: Paper }) {
     <li className="paper">
       <PaperMeta paper={paper} />
       <h3 className="paper__title">
-        <Link href={paperPath(paper)}>
-          {paper.summary?.title ?? paper.regimen}
-        </Link>
+        <Link href={paperPath(paper)}>{paperLead(paper).title}</Link>
       </h3>
-      {/* With a summary (I3 #192) the card leads with its plain-language finding. */}
-      <p className="paper__result">{paper.summary?.takeaway ?? paper.result}</p>
+      <p className="paper__result">{paperLead(paper).result}</p>
       <p className="paper__bottom">{paper.bottomLine}</p>
     </li>
   );
@@ -245,12 +243,12 @@ export function Entry({
       )}
       <Heading className="entry__title">
         <Link href={paperPath(paper)}>
-          {update.kind === "paper" ? paper.regimen : update.title}
+          {update.kind === "paper" ? paperLead(paper).title : update.title}
         </Link>
       </Heading>
       {update.kind === "paper" ? (
         <>
-          <p className="entry__result">{paper.result}</p>
+          <p className="entry__result">{paperLead(paper).result}</p>
           <p className="entry__line">{paper.bottomLine}</p>
         </>
       ) : (
