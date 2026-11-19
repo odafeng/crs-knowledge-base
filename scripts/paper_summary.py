@@ -55,6 +55,22 @@ def numbers(text: str) -> set[str]:
     return set(re.findall(r"\d+(?:\.\d+)?", _MIDDLE_DOT.sub(".", text)))
 
 
+_UNITS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"]  # fmt: skip
+_TENS = ["twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
+_SPELLED = re.compile(rf"\b(?:({'|'.join(_TENS)})(?:-({'|'.join(_UNITS[1:10])}))?|({'|'.join(_UNITS)}))\b", re.I)
+
+
+def spelled(text: str) -> set[str]:
+    """Numbers an English abstract spells out, as a sentence must when it opens with one ("Twenty-eight patients")."""
+    found = set()
+    for tens, unit, small in _SPELLED.findall(text):
+        if small:
+            found.add(str(_UNITS.index(small.lower())))
+        else:
+            found.add(str(20 + 10 * _TENS.index(tens.lower()) + (_UNITS.index(unit.lower()) if unit else 0)))
+    return found
+
+
 def texts(summary: dict[str, Any]) -> list[str]:
     return [summary[k] for k in SUMMARY_TEXT] + [item for k in SUMMARY_LISTS for item in summary[k]]
 
@@ -64,7 +80,7 @@ def problems(summary: dict[str, Any], sources: str) -> list[str]:
     found = validate_summary("summary", summary)
     if found:
         return found
-    allowed = numbers(sources)
+    allowed = numbers(sources) | spelled(sources)
     if missing := sorted({n for t in texts(summary) for n in numbers(t)} - allowed):
         found.append(f"numbers not in the sources: {', '.join(missing)}")
     return found

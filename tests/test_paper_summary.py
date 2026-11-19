@@ -72,6 +72,18 @@ def test_lancet_middle_dots_are_read_as_decimals() -> None:
     assert paper_summary.numbers("中位追蹤 58·7 個月") == {"58.7"}
 
 
+def test_numbers_an_abstract_spells_out_are_in_the_sources() -> None:
+    # UNICORN (Nat Med 2026): a sentence cannot open with a digit, so the abstract writes the counts out.
+    abstract = "Twenty-eight patients with pMMR CC were enrolled. Eight (29%) and 15 (54%) patients had irAEs."
+    assert paper_summary.spelled(abstract) == {"28", "8"}
+    kept = {**SUMMARY, "findings": ["pMMR 28 位；irAE 8 位（29%）與 15 位（54%）"]}
+    assert paper_summary.problems(kept, abstract + SOURCES) == []
+    # A word that only contains a number ("weight", "often") is not one.
+    assert paper_summary.spelled("weight gain often seen") == set()
+    made_up = {**SUMMARY, "findings": ["pMMR 27 位"]}
+    assert paper_summary.problems(made_up, abstract + SOURCES) == ["numbers not in the sources: 27"]
+
+
 def test_a_summary_is_stored_kept_by_later_writes_and_reviewed_with_its_paper(db_writer) -> None:  # noqa: F811
     paper_summary.save("bw-nejm-2025", SUMMARY, db_writer)
     stored = db_writer.execute("select summary from app.papers where id = 'bw-nejm-2025'").fetchone()[0]

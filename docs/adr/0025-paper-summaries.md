@@ -15,7 +15,7 @@
 每篇文獻加一份中文速覽，存在 `papers.json` 條目的 `summary`（資料庫 `app.papers.summary`，jsonb）：標題（試驗＋族群＋比較）、一句話結論、臨床問題、病人、比較、2–4 點主要結果、臨床意義、1–3 點限制，加上產生的模型、日期與 `reviewedAt`。
 
 - **由 AI 寫**：`scripts/paper_summary.py` 依 DOI 取 PubMed 摘要，請 Claude（與 Paper Watch 同一個模型）依摘要與既有條目寫成 JSON。
-- **數字必須追得到原文**：速覽裡的每個數字都要出現在摘要或已有的條目欄位，否則不寫入。規則與自動發布的 provenance gate（ADR-0013）相同：模型自己報告的出處不算數。形狀與長度由 `scripts/validate.py` 檢查。
+- **數字必須追得到原文**：速覽裡的每個數字都要出現在摘要或已有的條目欄位，否則不寫入（英文摘要句首會把數字拼成英文字，例如「Twenty-eight patients」，這些也算出現在原文）。規則與自動發布的 provenance gate（ADR-0013）相同：模型自己報告的出處不算數。形狀與長度由 `scripts/validate.py` 檢查。
 - **標 AI 未審**：寫入時 `reviewedAt` 為 null。管理者在待審清單按「標為已審」時，文獻與速覽一起確認；人工整理的文獻若只有速覽待審，按鈕只確認速覽。
 - **台灣核准與給付不交給 AI**：頁面直接引用主題的治療卡片，那些資料已逐條查核過健保與 TFDA 原文。
 - **經由唯一的內容寫入者寫入**（ADR-0021）：和 Paper Watch 走同一個 `content_session`，拿同一把鎖、在交易裡寫入、記一筆 `summarize` 事件。因為每次寫入都會匯出再匯入整個知識庫，速覽必須是 `papers.json` 的正式欄位，否則下一次 Paper Watch 寫入就會把它蓋掉。
