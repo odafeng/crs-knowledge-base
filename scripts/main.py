@@ -21,7 +21,7 @@ from config import (
 )
 from content_store import content_session
 from create_issues import create_commentary_review_issue, create_issues
-from fetch_pubmed import fetch_pubmed, resolve_dois
+from fetch_pubmed import efetch, fetch_pubmed, resolve_dois
 from fetch_rss import AllFeedsFailedError, fetch_rss
 from notify_line import notify_papers
 from paper_summary import summarize_new
@@ -152,6 +152,34 @@ def update_tracking(research: list[dict], triaged: list[tuple[dict, CommentaryPr
     print("\n[Pipeline] Updated tracking files.")
 
 
+def review_requested(pmids: list[str], topic: str, dry_run: bool = False) -> None:
+    """Classify papers the maintainer names and open a review issue for each, whatever the score (#214).
+
+    The scan never revisits a tracked paper, so this is the way back for one whose review
+    issue failed to open, or one that scored under the threshold but belongs on the site.
+    Nothing is published without review.
+    """
+    papers = efetch(pmids)
+    missing = set(pmids) - {p["pmid"] for p in papers}
+    if missing:
+        print(f"[Review] Not found on PubMed: {', '.join(sorted(missing))}", file=sys.stderr)
+    for p in papers:
+        p.update(topic=topic, source="pubmed", maintainer_requested=True)
+        p["abstract_status"] = abstract_status(p.get("abstract", ""))
+
+    classify_all(papers, dry_run=dry_run)  # fills in each paper's score and entry in place
+    for p in papers:
+        score = p.get("ai_score")
+        p["gate_reasons"] = [
+            f"維護者指定送審（AI 評分 {score if score is not None else '—'}/5）",
+            *evaluate_paper_gate(p, AUTO_PUBLISH_TOPICS).reasons,
+        ]
+    create_issues(papers, dry_run=dry_run)
+    if not dry_run:
+        update_tracking(papers, [], date.today().isoformat())
+    USAGE.report()
+
+
 def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False, reldate=None):
     """Run the full paper-watch pipeline.
 
@@ -260,6 +288,7 @@ Examples:
   python main.py --daily                              # Conference-season aware daily scan
   python main.py --bootstrap --topic generic-CRS      # Seed new topic with 2-year history
   python main.py --reldate 60 --topic generic-CRS     # One-off catch-up over the last 60 days
+  python main.py --review 42811047 --topic generic-CRS  # Send a tracked paper to review again
         """,
     )
     parser.add_argument("--topic", help="Single topic to process (default: all)")
@@ -267,7 +296,16 @@ Examples:
     parser.add_argument("--daily", action="store_true", help="Daily mode: only run during conference season")
     parser.add_argument("--bootstrap", action="store_true", help="Seed a new topic with 2-year PubMed history")
     parser.add_argument("--reldate", type=int, help="PubMed window in days for a one-off catch-up scan")
+    parser.add_argument(
+        "--review", nargs="+", metavar="PMID", help="Classify these papers and open a review issue for each"
+    )
     args = parser.parse_args()
+
+    if args.review:
+        if not args.topic:
+            parser.error("--review needs --topic")
+        review_requested(args.review, args.topic, dry_run=args.dry_run)
+        return
 
     journal_outage = run_pipeline(
         topic=args.topic,
