@@ -1,7 +1,6 @@
 // Canonical URLs, robots, JSON-LD, feeds and the sitemap, ported from sitegen/urls.py, schema.py, feeds.py and
 // sitemap.py. Feed IDs must never change: readers would see every old item as new.
 import type { Metadata } from "next";
-import { drugCounts, drugPath } from "./drugs";
 import {
   decodeEntities,
   isUnreviewed,
@@ -426,7 +425,6 @@ export function sitemapPages(
     ["/news/", last],
     ["/updates/", last],
     ["/topics/", null],
-    ["/drugs/", null],
     ["/mcrc/", null],
     ["/robotic/", null],
     ["/subscribe/", null],
@@ -442,10 +440,6 @@ export function sitemapPages(
     ...topics
       .flatMap((t) => t.roboticSections)
       .map((s): [string, null] => [`/robotic/${s.slug}/`, null]),
-    ...drugCounts(papers).map(({ drug }): [string, null] => [
-      drugPath(drug),
-      null,
-    ]),
     ...papers
       .filter((p) => !isUnreviewed(p))
       .map((p): [string, string] => [paperPath(p), p.reviewedAt]),

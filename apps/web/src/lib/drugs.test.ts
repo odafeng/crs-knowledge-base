@@ -8,7 +8,6 @@ import {
   drugsOf,
   papersOf,
 } from "./drugs";
-import { sitemapPages } from "./seo";
 import type { Paper } from "./site";
 
 const slugs = (regimen: string, summary?: Partial<Paper["summary"]>) =>
@@ -94,19 +93,5 @@ describe("drugs", () => {
     const groups = new Set(DRUG_GROUPS.map(([g]) => g));
     expect(DRUGS.every((d) => groups.has(d.group))).toBe(true);
     expect(drugPath({ slug: "regorafenib" })).toBe("/drugs/regorafenib/");
-  });
-
-  it("puts the drug index and each named drug in the sitemap", () => {
-    const paper = {
-      slug: "c",
-      regimen: "Regorafenib vs placebo",
-      reviewedAt: "2026-01-01",
-      source: "curated",
-      relations: [],
-    } as unknown as Paper;
-    const pages = sitemapPages([paper], [], []).map(([path]) => path);
-    expect(pages).toContain("/drugs/");
-    expect(pages).toContain("/drugs/regorafenib/");
-    expect(pages).not.toContain("/drugs/fruquintinib/");
   });
 });
