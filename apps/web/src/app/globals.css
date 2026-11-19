@@ -694,3 +694,9 @@ mark.hl {
   margin-block-start: calc(-1 * var(--space-5));
   border-block-start: 0;
 }
+
+/* "全部藥物" under the home rail's drug list (J1 #205). */
+.rail-more {
+  margin-block-start: var(--space-2);
+  font-size: var(--text-sm);
+}

@@ -23,6 +23,7 @@ import {
 } from "@/components/reading";
 import { getDailyPick, listNews, listPapers, listTopics } from "@/lib/content";
 import { dailyLabel } from "@/lib/daily";
+import { drugCounts, drugPath } from "@/lib/drugs";
 import {
   byTopic,
   isUnreviewed,
@@ -197,7 +198,7 @@ export default async function Home() {
                 ))}
             </ol>
           </section>
-          <aside className="home-rail" aria-label="訂閱、主題與最新給付">
+          <aside className="home-rail" aria-label="訂閱、主題、藥物與最新給付">
             <Alerts />
             <section className="ask" aria-labelledby="ask-title">
               <h2 className="rail-title" id="ask-title">
@@ -237,6 +238,24 @@ export default async function Home() {
                   </li>
                 ))}
               </ul>
+            </section>
+            <section aria-labelledby="drugs-title">
+              <h2 className="rail-title" id="drugs-title">
+                藥物
+              </h2>
+              <ul className="topic-list">
+                {drugCounts(papers)
+                  .slice(0, 8)
+                  .map(({ drug, count }) => (
+                    <li key={drug.slug}>
+                      <Link href={drugPath(drug)}>{drug.name}</Link>
+                      <span>{count} 篇</span>
+                    </li>
+                  ))}
+              </ul>
+              <p className="rail-more">
+                <Link href="/drugs/">全部藥物</Link>
+              </p>
             </section>
             <section aria-labelledby="board-title">
               <h2 className="rail-title" id="board-title">
