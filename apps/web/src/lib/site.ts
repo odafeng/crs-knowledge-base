@@ -240,7 +240,7 @@ export function areaOf(path: string): Area {
   if (path.startsWith("/updates/") || path.startsWith("/papers/"))
     return "papers";
   if (
-    ["/topics/", "/mcrc/", "/robotic/"].some((prefix) =>
+    ["/topics/", "/mcrc/", "/robotic/", "/drugs/"].some((prefix) =>
       path.startsWith(prefix),
     )
   )
