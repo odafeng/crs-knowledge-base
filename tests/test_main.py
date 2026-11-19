@@ -74,3 +74,32 @@ class TestIsConferenceSeason:
         # First element is bool, second is str or None
         assert isinstance(result[0], bool)
         assert result[1] is None or isinstance(result[1], str)
+
+
+class TestPubmedReach:
+    """A paper stays without MeSH for weeks after it appears; a [MeSH]-only query never sees it (OSERO, J3 #210)."""
+
+    def test_every_topic_query_reads_title_and_abstract_too(self):
+        import json
+
+        from config import QUERIES_FILE
+
+        queries = json.loads(QUERIES_FILE.read_text(encoding="utf-8"))
+        for topic, q in queries.items():
+            if not isinstance(q, dict) or "pubmed_query" not in q:
+                continue
+            assert "[tiab]" in q["pubmed_query"], f"{topic} relies on MeSH alone"
+
+    def test_reldate_widens_the_pubmed_window(self):
+        from unittest.mock import patch
+
+        with (
+            patch("main.fetch_pubmed", return_value=[]) as fetch,
+            patch("main.fetch_rss", return_value=[]),
+            patch("main.load_tracked_dois", return_value={}),
+            patch("main.load_tracked_abstracts", return_value={}),
+        ):
+            from main import run_pipeline
+
+            run_pipeline(topic="generic-CRS", dry_run=True, reldate=60)
+        assert fetch.call_args.kwargs["reldate"] == 60

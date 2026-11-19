@@ -1,6 +1,6 @@
 {
   "mCRC-BRAF-V600E": {
-    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH]) AND (BRAF V600E OR encorafenib OR BEACON CRC OR BREAKWATER) AND (metastatic OR advanced)",
+    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (BRAF V600E OR encorafenib OR BEACON CRC OR BREAKWATER) AND (metastatic OR advanced)",
     "keywords": [
       "BRAF V600E",
       "encorafenib",
@@ -22,7 +22,7 @@
     ]
   },
   "mCRC-KRAS-G12C": {
-    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH]) AND (KRAS G12C OR sotorasib OR adagrasib OR divarasib OR CodeBreaK OR KRYSTAL) AND (metastatic OR advanced)",
+    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (KRAS G12C OR sotorasib OR adagrasib OR divarasib OR CodeBreaK OR KRYSTAL) AND (metastatic OR advanced)",
     "keywords": [
       "KRAS G12C",
       "sotorasib",
@@ -45,7 +45,7 @@
     ]
   },
   "mCRC-MSI-H": {
-    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH]) AND (MSI-H OR dMMR OR mismatch repair deficient OR pembrolizumab OR nivolumab OR ipilimumab OR dostarlimab) AND (metastatic OR neoadjuvant)",
+    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (MSI-H OR dMMR OR mismatch repair deficient OR pembrolizumab OR nivolumab OR ipilimumab OR dostarlimab) AND (metastatic OR neoadjuvant)",
     "keywords": [
       "MSI-H",
       "dMMR",
@@ -68,7 +68,7 @@
     ]
   },
   "mCRC-HER2": {
-    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH]) AND (HER2 OR ERBB2 OR trastuzumab deruxtecan OR tucatinib OR pertuzumab OR T-DXd) AND (metastatic OR advanced)",
+    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (HER2 OR ERBB2 OR trastuzumab deruxtecan OR tucatinib OR pertuzumab OR T-DXd) AND (metastatic OR advanced)",
     "keywords": [
       "HER2",
       "ERBB2",
@@ -91,7 +91,7 @@
     ]
   },
   "mCRC-RAS-wt": {
-    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH]) AND (RAS wild-type OR cetuximab OR panitumumab OR anti-EGFR) AND (first-line OR maintenance OR rechallenge OR sidedness) AND (metastatic)",
+    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (RAS wild-type OR cetuximab OR panitumumab OR anti-EGFR) AND (first-line OR maintenance OR rechallenge OR sidedness) AND (metastatic)",
     "keywords": [
       "RAS wild-type",
       "cetuximab",
@@ -114,7 +114,7 @@
     ]
   },
   "generic-CRS": {
-    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH]) AND (fruquintinib OR Fruzaqla OR FRESCO OR regorafenib OR trifluridine OR TAS-102 OR lonsurf OR bevacizumab) AND (metastatic OR advanced) AND (third-line OR refractory OR later-line OR salvage)",
+    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (fruquintinib OR Fruzaqla OR FRESCO OR regorafenib OR trifluridine OR TAS-102 OR lonsurf OR bevacizumab) AND (metastatic OR advanced) AND (third-line OR refractory OR later-line OR salvage)",
     "keywords": [
       "fruquintinib",
       "Fruzaqla",
@@ -140,7 +140,7 @@
     ]
   },
   "robotic-surgery": {
-    "pubmed_query": "(rectal cancer[MeSH] OR colon cancer[MeSH]) AND (robotic OR robot-assisted) AND (total mesorectal excision OR TME OR complete mesocolic excision OR CME OR anastomosis OR intracorporeal)",
+    "pubmed_query": "(rectal cancer[MeSH] OR colon cancer[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (robotic OR robot-assisted) AND (total mesorectal excision OR TME OR complete mesocolic excision OR CME OR anastomosis OR intracorporeal)",
     "keywords": [
       "robotic",
       "robot-assisted",

@@ -152,13 +152,14 @@ def update_tracking(research: list[dict], triaged: list[tuple[dict, CommentaryPr
     print("\n[Pipeline] Updated tracking files.")
 
 
-def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
+def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False, reldate=None):
     """Run the full paper-watch pipeline.
 
     Sources: PubMed (primary) + RSS feeds (supplementary).
     During conference season: also searches JCO/AnnOncol/DCR meeting abstract supplements.
 
     bootstrap: if True, use a 730-day PubMed window to seed a new topic.
+    reldate: a one-off wider PubMed window in days, to catch papers an earlier query missed.
     """
     # In daily mode (conference cron), check if we're in conference season
     if daily_mode:
@@ -168,13 +169,13 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False):
             return False
         print(f"[Pipeline] Conference season active: {conf_name}")
 
-    reldate = 730 if bootstrap else None
+    reldate = reldate or (730 if bootstrap else None)
 
     print(f"[Pipeline] Starting paper-watch — {datetime.now().isoformat()}")
     print(f"  Topic filter: {topic or 'all'}")
     print(f"  Dry run: {dry_run}")
-    if bootstrap:
-        print("  Bootstrap mode: 730-day PubMed window")
+    if reldate:
+        print(f"  PubMed window: {reldate} days")
     print()
 
     # Layer 1: Fetch from PubMed + RSS
@@ -258,12 +259,14 @@ Examples:
   python main.py --topic mCRC-BRAF-V600E              # Single topic
   python main.py --daily                              # Conference-season aware daily scan
   python main.py --bootstrap --topic generic-CRS      # Seed new topic with 2-year history
+  python main.py --reldate 60 --topic generic-CRS     # One-off catch-up over the last 60 days
         """,
     )
     parser.add_argument("--topic", help="Single topic to process (default: all)")
     parser.add_argument("--dry-run", action="store_true", help="Don't create issues or update tracking")
     parser.add_argument("--daily", action="store_true", help="Daily mode: only run during conference season")
     parser.add_argument("--bootstrap", action="store_true", help="Seed a new topic with 2-year PubMed history")
+    parser.add_argument("--reldate", type=int, help="PubMed window in days for a one-off catch-up scan")
     args = parser.parse_args()
 
     journal_outage = run_pipeline(
@@ -271,6 +274,7 @@ Examples:
         dry_run=args.dry_run,
         daily_mode=args.daily,
         bootstrap=args.bootstrap,
+        reldate=args.reldate,
     )
 
     # Fail loudly if every journal feed errored — never silently green again.
