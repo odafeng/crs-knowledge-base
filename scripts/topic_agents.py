@@ -279,6 +279,11 @@ def build_paper_prompt(paper):
             f"\n⚠ **此摘要{'被截斷' if status == 'truncated' else '缺失'}**："
             "結果數據可能不在摘要中。評分與分析請說明這個限制，所有數字都要標明實際來源。"
         )
+    if paper.get("maintainer_requested"):
+        parts.append(
+            "\n**維護者已指定這篇送人工審核**：照實評分，但不論 score 多少，"
+            "都要產出 suggested_js、suggested_filename 與 evidence，讓審核者可以直接收錄。"
+        )
     if paper.get("abstract"):
         parts.append(f"\n**Abstract:**\n{paper['abstract']}")
     return "\n".join(parts)

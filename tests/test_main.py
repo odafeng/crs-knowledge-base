@@ -103,3 +103,67 @@ class TestPubmedReach:
 
             run_pipeline(topic="generic-CRS", dry_run=True, reldate=60)
         assert fetch.call_args.kwargs["reldate"] == 60
+
+
+REQUESTED = {"pmid": "42811047", "title": "OSERO", "abstract": "Regorafenib then FTD/TPI.", "doi": "10.1/x"}
+
+
+class TestReviewRequested:
+    """A tracked paper can be sent to review again: its issue failed to open, or it scored low (J5 #214)."""
+
+    def _classify(self, papers, dry_run=False):
+        for p in papers:
+            p.update(ai_score=3, ai_analysis="", ai_parse_failed=False, ai_suggested_js={"id": "osero"})
+        return []  # below the threshold, so the scan would drop it
+
+    def test_a_low_scoring_paper_still_gets_a_review_issue(self):
+        from unittest.mock import patch
+
+        with (
+            patch("main.efetch", return_value=[dict(REQUESTED)]),
+            patch("main.classify_all", side_effect=self._classify),
+            patch("main.create_issues") as issues,
+            patch("main.update_tracking") as tracking,
+            patch("main.publish_paper") as publish,
+        ):
+            from main import review_requested
+
+            review_requested(["42811047"], "generic-CRS")
+
+        (held,) = issues.call_args.args
+        assert [p["pmid"] for p in held] == ["42811047"]
+        assert held[0]["topic"] == "generic-CRS"
+        assert held[0]["gate_reasons"][0] == "維護者指定送審（AI 評分 3/5）"
+        tracking.assert_called_once()
+        publish.assert_not_called()
+
+    def test_dry_run_neither_tracks_nor_opens_issues_for_real(self):
+        from unittest.mock import patch
+
+        with (
+            patch("main.efetch", return_value=[dict(REQUESTED)]),
+            patch("main.classify_all", side_effect=self._classify),
+            patch("main.create_issues") as issues,
+            patch("main.update_tracking") as tracking,
+        ):
+            from main import review_requested
+
+            review_requested(["42811047"], "generic-CRS", dry_run=True)
+
+        assert issues.call_args.kwargs["dry_run"] is True
+        tracking.assert_not_called()
+
+    def test_the_agent_is_told_to_draft_an_entry_whatever_the_score(self):
+        from topic_agents import build_paper_prompt
+
+        assert "維護者已指定" in build_paper_prompt({**REQUESTED, "maintainer_requested": True})
+        assert "維護者已指定" not in build_paper_prompt(REQUESTED)
+
+    def test_review_needs_a_topic(self, monkeypatch):
+        import pytest
+
+        import main
+
+        monkeypatch.setattr("sys.argv", ["main.py", "--review", "42811047"])
+        with pytest.raises(SystemExit):
+            main.main()
