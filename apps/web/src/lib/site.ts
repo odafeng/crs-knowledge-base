@@ -87,6 +87,14 @@ export const paperTitle = (
   paper: Pick<Paper, "regimen" | "journal" | "year">,
 ) => `${paper.regimen}（${paper.journal} ${paper.year}）`;
 
+/** What a paper card or list entry leads with: the plain-language summary when there is one (I3 #192, ADR-0025). */
+export const paperLead = (
+  paper: Pick<Paper, "regimen" | "result" | "summary">,
+) => ({
+  title: paper.summary?.title ?? paper.regimen,
+  result: paper.summary?.takeaway ?? paper.result,
+});
+
 /** When a paper entered the KB: the bot's publish date, else the Paper Watch issue date, else the review date. */
 export const publishedAt = (paper: Paper) =>
   paper.review?.publishedAt?.slice(0, 10) ?? paper.addedAt ?? paper.reviewedAt;

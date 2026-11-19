@@ -8,6 +8,7 @@ import {
   findingText,
   otherNews,
   paperTitle,
+  paperLead,
   publishedAt,
   latestCoverage,
   regulatoryRows,
@@ -112,6 +113,22 @@ describe("presentation rules mirrored from sitegen", () => {
       "1",
       "4",
     ]);
+  });
+
+  it("leads a card or list entry with the summary when there is one", () => {
+    const plain = paper("bw", "mCRC-BRAF-V600E", 2025);
+    expect(paperLead(plain)).toEqual({ title: "bw", result: "HR 0.5" });
+    const summarised = {
+      ...plain,
+      summary: {
+        title: "BREAKWATER：一線 EC + mFOLFOX6",
+        takeaway: "中位存活從 15.1 延長到 30.3 個月",
+      },
+    } as Paper;
+    expect(paperLead(summarised)).toEqual({
+      title: "BREAKWATER：一線 EC + mFOLFOX6",
+      result: "中位存活從 15.1 延長到 30.3 個月",
+    });
   });
 
   it("titles papers and joins regulatory notes like the site", () => {
