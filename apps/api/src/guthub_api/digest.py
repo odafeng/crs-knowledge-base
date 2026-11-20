@@ -10,6 +10,9 @@ At most one email per reader and day: the job claims (account, day) in app.comme
 key as Resend's Idempotency-Key, so a rerun after Resend took the mail but before sent_at was recorded gets the
 original answer instead of a second email. A failed send leaves the claim open for the job's retry; the job still
 tries the other readers and exits non-zero, which the job-failure alert reports.
+
+send_sample mails one made-up digest to the address the maintainer gives, to check the Resend key and how the mail
+looks before any reader has something to read. It reads and records nothing.
 """
 
 import html
@@ -21,7 +24,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 from typing import Any
 from urllib.parse import urlencode
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import psycopg
 from psycopg.rows import dict_row
@@ -165,3 +168,14 @@ def send_digests(url: str, day: date, origin: str, api_key: str | None, base: st
             )
             sent += 1
         return {"status": "sent" if not failed else "failed", "sent": sent, "alreadySent": already, "failed": failed}
+
+
+def send_sample(to: str, day: date, origin: str, api_key: str, base: str = RESEND_API) -> dict[str, Any]:
+    """One test email to `to`, built like a real digest from made-up counts. Its links carry a blank token, which the
+    unsubscribe page answers as invalid, so the test mail can change no one's settings. The address is not returned,
+    so it stays out of the job log."""
+    sample = Digest(UUID(int=0), to, UUID(int=0), [Item("sample", "（測試）範例文獻（Journal 2026）", "/updates/", 2)])
+    payload = render(sample, day, origin)
+    payload["subject"] = f"[測試] {payload['subject']}"
+    status = _send(base, api_key, f"comment-digest-sample/{uuid4()}", payload)
+    return {"status": "sent" if status == 200 else "failed", "httpStatus": status}
