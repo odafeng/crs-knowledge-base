@@ -10,7 +10,7 @@
 
 ## Decision
 
-維護者選擇先做單一主題的 ADK pilot，MVP 的 Paper Watch 繼續使用現有 Python agents。2026-11-17 維護者於 [E5 #90](https://github.com/odafeng/crs-knowledge-base/issues/90) 確認：pilot 主題為 `mCRC-BRAF-V600E`，模型沿用現行管線的 Claude，只比較 framework 本身的差異。費用上限尚未確定，確定前不實作；pilot 結果不影響 MVP 的時程。
+維護者選擇先做單一主題的 ADK pilot，MVP 的 Paper Watch 繼續使用現有 Python agents。2026-11-17 維護者於 [E5 #90](https://github.com/odafeng/crs-knowledge-base/issues/90) 確認：pilot 主題為 `mCRC-BRAF-V600E`，模型沿用現行管線的 Claude，只比較 framework 本身的差異。2026-11-20 維護者確定整個 pilot 的模型費用上限為 USD 20，到上限自動停止。pilot 結果不影響 MVP 的時程。
 
 以下原則同時適用於 MVP 管線與 pilot：
 
