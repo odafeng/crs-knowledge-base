@@ -192,3 +192,18 @@ class TestClassifyWithAgenticLoop:
         result = classify_paper(mock_client, sample_candidate)
         assert result["ai_parse_failed"] is True
         assert result["ai_score"] is None
+
+
+def test_tool_results_keep_the_whole_title(sample_pubmed_xml):
+    """The agent's own PubMed lookups read the title the same way as the scan (J7 #220)."""
+    import xml.etree.ElementTree as ET
+
+    from agent_tools import _parse_article_brief, _parse_article_full
+
+    xml = sample_pubmed_xml.replace(
+        b"<ArticleTitle>Test Article About BRAF V600E in Colorectal Cancer</ArticleTitle>",
+        b"<ArticleTitle>Prognostic impact of circulating tumor <i>RAS</i> dynamics.</ArticleTitle>",
+    )
+    article = ET.fromstring(xml).find(".//PubmedArticle")
+    for parse in (_parse_article_brief, _parse_article_full):
+        assert parse(article)["title"] == "Prognostic impact of circulating tumor RAS dynamics."

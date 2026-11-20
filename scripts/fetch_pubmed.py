@@ -64,13 +64,19 @@ def efetch(pmids):
     return articles
 
 
+def article_title(art) -> str:
+    """The whole title. PubMed marks gene names up as <i>RAS</i>, and findtext stops at the first tag (#220)."""
+    elem = art.find(".//ArticleTitle")
+    return "".join(elem.itertext()) if elem is not None else ""
+
+
 def _parse_article(article_elem):
     """Parse a PubmedArticle XML element into a dict."""
     medline = article_elem.find(".//MedlineCitation")
     art = medline.find(".//Article")
 
     pmid = medline.findtext(".//PMID", "")
-    title = art.findtext(".//ArticleTitle", "")
+    title = article_title(art)
     journal = art.findtext(".//Journal/ISOAbbreviation", "") or art.findtext(".//Journal/Title", "")
     year = art.findtext(".//Journal/JournalIssue/PubDate/Year", "")
     if not year:
