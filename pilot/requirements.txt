@@ -1,0 +1,2 @@
+# ADK pilot only (E5 #90, ADR-0018): not part of Paper Watch or any deployed image.
+google-adk==2.15.0

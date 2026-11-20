@@ -13,3 +13,6 @@ apps/web/*.tsbuildinfo
 apps/web/next-env.d.ts
 .vercel
 .env*
+
+# ADK pilot output (E5 #90): holds PubMed abstracts and run results; never committed.
+pilot-out/

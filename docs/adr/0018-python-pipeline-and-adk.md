@@ -24,6 +24,15 @@
 - ADK 可以搭配不同模型與儲存服務，採用它不等於同時改用 Gemini 或 Cloud SQL。更換模型、公開 AI 問答或自動寫新聞稿，需各自有需求與驗收，不能隨 framework 遷移一併加入。
 - 網站與留言的 MVP 不依賴 ADK 決策完成；未核准 pilot 前不預建全面 agent 重寫工作。
 
+### Pilot 設計（2026-11-21，E5 #90）
+
+程式在 `pilot/adk_braf.py`，獨立於 Paper Watch，不進任何部署 image，也不寫內容與 tracking。
+
+- **同一批論文**：`freeze` 把 `mCRC-BRAF-V600E` 查詢式近 120 天的 PubMed 結果凍結成一份檔案（不經 tracking 去重；2026-11-21 為 38 篇），兩邊都讀這份；摘要只存在 `pilot-out/`，不進 repo。
+- **兩邊同設定**：現行版直接呼叫 `classify_paper`；ADK 版用 ADK 2.15 的 `AnthropicLlm` 接官方 Anthropic SDK，同模型、同 system／paper prompt、同工具、adaptive thinking 與同 effort、prompt cache。唯一差異是 ADK 無法傳 server-side `fallbacks` beta，拒答時沒有備援；兩邊的拒答都算人工介入。輸出都送進同一個 provenance gate。
+- **退出條件（執行前訂定）**：任一篇現行版通過 gate 而 ADK 不通過；ADK 總費用或總耗時超過現行版 1.5 倍；ADK 的人工介入（parse failure、拒答、錯誤）比現行版多。都沒觸發也只代表「一樣好」，改用 ADK 還要有具體好處。
+- **費用**：兩邊共用 USD 20，每篇開跑前以平均單價估算，超過就停，可從中斷處續跑。預估 38 篇約 USD 5–8。
+
 ## Consequences
 
 - 網站互動、資料庫遷移與 agent 改造可以分別驗收，來源查核不因 framework 更換而失去保護。
