@@ -326,6 +326,21 @@ class TestStudyDesign:
     def test_cohort_number_is_not_a_phase(self):
         assert study_design_reasons("Phase 3 (Cohort 2)", "phase 3 BREAKWATER cohort") == []
 
+    def test_a_prospective_study_is_not_labelled_retrospective(self):
+        # OSERO (#217): "A prospective observational study ..." drafted as "Retrospective cohort".
+        source = "A prospective observational study of treatment sequencing (UMIN000040586)."
+        [reason] = study_design_reasons("Retrospective cohort", source)
+        assert "回溯性" in reason and "前瞻性" in reason
+        assert study_design_reasons("Prospective cohort", source) == []
+
+    def test_a_cohort_direction_must_be_written(self):
+        assert study_design_reasons("Retrospective cohort", "We retrospectively reviewed 200 patients.") == []
+        # A retrospective analysis of a prospective trial is still retrospective.
+        mixed = "A retrospective analysis of a prospective registry."
+        assert study_design_reasons("Retrospective cohort", mixed) == []
+        [reason] = study_design_reasons("Prospective cohort", "We reviewed 200 patients treated in 2019.")
+        assert "沒有寫明" in reason
+
     def test_untyped_designs_are_not_checked(self):
         assert study_design_reasons("Meta-analysis", "a pooled look") == []
 

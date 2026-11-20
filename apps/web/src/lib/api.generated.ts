@@ -885,7 +885,7 @@ export interface components {
             year: number;
             journal: string;
             /** @enum {string} */
-            studyType: "Biomarker (exploratory)" | "Guideline" | "Meta-analysis" | "Phase 1" | "Phase 1-2" | "Phase 1-2 (expanded)" | "Phase 1b" | "Phase 2" | "Phase 2 (exploratory)" | "Phase 2 (updated)" | "Phase 2 RCT" | "Phase 2a (basket)" | "Phase 3 (Cohort 3)" | "Phase 3 RCT" | "Phase 3 RCT (final OS)" | "Phase 3 RCT (final)" | "Phase 3 RCT (updated)" | "Pooled analysis" | "Post-hoc analysis" | "Retrospective cohort";
+            studyType: "Biomarker (exploratory)" | "Guideline" | "Meta-analysis" | "Phase 1" | "Phase 1-2" | "Phase 1-2 (expanded)" | "Phase 1b" | "Phase 2" | "Phase 2 (exploratory)" | "Phase 2 (updated)" | "Phase 2 RCT" | "Phase 2a (basket)" | "Phase 3 (Cohort 3)" | "Phase 3 RCT" | "Phase 3 RCT (final OS)" | "Phase 3 RCT (final)" | "Phase 3 RCT (updated)" | "Pooled analysis" | "Post-hoc analysis" | "Prospective cohort" | "Retrospective cohort";
             n?: number | string | null;
             regimen: string;
             endpoint: string;
