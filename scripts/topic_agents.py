@@ -210,9 +210,10 @@ def build_system_prompt(topic):
 3. **Structured Output**（只有 score >= 4 才產出）：
    - bottomLine：繁體中文，100 字以內，一句話摘要
    - JS 物件草稿（符合既有 schema：id, year, journal, studyType, n, regimen, endpoint, result, bottomLine, doi, file, relations）
-   - studyType 只能用：Phase 3 RCT, Phase 3 RCT (updated), Phase 2 RCT, Phase 2, Phase 1-2, Phase 1, Phase 1b, Biomarker (exploratory), Post-hoc analysis, Meta-analysis, Pooled analysis, Retrospective cohort, Guideline, Phase 3 (Cohort N), Phase 2 (updated), Phase 2 (exploratory)
+   - studyType 只能用：Phase 3 RCT, Phase 3 RCT (updated), Phase 2 RCT, Phase 2, Phase 1-2, Phase 1, Phase 1b, Biomarker (exploratory), Post-hoc analysis, Meta-analysis, Pooled analysis, Prospective cohort, Retrospective cohort, Guideline, Phase 3 (Cohort N), Phase 2 (updated), Phase 2 (exploratory)
    - relations 中的 targetId 必須是既有文獻中的 id
    - studyType 的期別與 RCT 必須是標題或摘要明確寫出的：摘要沒寫 phase 就不要標 Phase，沒寫隨機分派就不要標 RCT
+   - 觀察性研究依摘要寫的方向選：寫 prospective 用 Prospective cohort，寫 retrospective 用 Retrospective cohort，不可互換
    - result 與 bottomLine 也一樣：不要提到標題或摘要沒寫的期別（例如摘要是 Phase 2，就不要寫「待 Phase 3 驗證」）
    - evidence：suggested_js 的 n、regimen、endpoint、result、bottomLine 中出現的**每一個數字**都要有一筆出處（劑量、人數、百分比、時間、HR、p 值都算；試驗名稱裡的數字如 STELLAR-303、以及「Phase 3」這類期別不算）
      - claim：含該數字的片段，例如 "mOS 30.3 vs 15.1 mo"
@@ -220,7 +221,7 @@ def build_system_prompt(topic):
      - source="web_fetch"：url 填你用 web_fetch 讀到的網址，quote 填該頁原文片段
      - source="inference"：你推算或推論的數字（例如由百分比推回人數、兩組相加），quote 與 url 填 null
    - 摘要裡沒有的數字盡量不要寫進 result；確實需要時必須照上面標明來源，不可與摘要數字混在一起
-   - 系統會逐字比對 quote 是否真的出現在摘要中，檢查上述五個欄位的每個數字都在摘要裡，並核對 studyType 的期別與 RCT。全部通過才會自動發布，否則轉人工審核
+   - 系統會逐字比對 quote 是否真的出現在摘要中，檢查上述五個欄位的每個數字都在摘要裡，並核對 studyType 的期別、RCT 與前瞻／回溯。全部通過才會自動發布，否則轉人工審核
 
 4. **Chart Updates**（只有當新文獻有明確的療效數據可加入柱狀圖時才產出）：
    - 判斷新文獻是否有 mOS/ORR/mPFS 等數據值得加入比較圖

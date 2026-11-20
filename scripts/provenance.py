@@ -66,6 +66,9 @@ _NOT_RANDOMISED = re.compile(
     r"\b(?:non[-\u2010\u2011\u2013\s]?|un|not\s+|no\s+|without\s+|lack\s+of\s+)(?:randomi[sz]\w*|randomly)\b",
     re.IGNORECASE,
 )
+# OSERO (#217) was prospective but labelled "Retrospective cohort", the only cohort badge there was.
+_PROSPECTIVE = re.compile(r"\bprospective(?:ly)?\b", re.IGNORECASE)
+_RETROSPECTIVE = re.compile(r"\bretrospective(?:ly)?\b", re.IGNORECASE)
 
 
 def numbers_in(text: str) -> set[str]:
@@ -103,6 +106,11 @@ def study_design_reasons(study_type: str, source_text: str) -> list[str]:
             reasons.append(f"studyType「{study_type}」的 Phase {'、'.join(missing)} 在標題與摘要中沒有寫明")
     if "RCT" in design and not states_randomisation(source_text):
         reasons.append(f"studyType「{study_type}」標為 RCT，但標題與摘要沒有提到隨機分派")
+    text = source_text or ""
+    if "retrospective" in design.lower() and _PROSPECTIVE.search(text) and not _RETROSPECTIVE.search(text):
+        reasons.append(f"studyType「{study_type}」標為回溯性，但標題與摘要寫的是前瞻性")
+    if "prospective" in design.lower() and not _PROSPECTIVE.search(text):
+        reasons.append(f"studyType「{study_type}」標為前瞻性，但標題與摘要沒有寫明")
     return reasons
 
 

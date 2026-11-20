@@ -53,6 +53,7 @@ KNOWN_STUDY_TYPES = {
     "Post-hoc analysis",
     "Meta-analysis",
     "Pooled analysis",
+    "Prospective cohort",
     "Retrospective cohort",
     "Guideline",
 }
