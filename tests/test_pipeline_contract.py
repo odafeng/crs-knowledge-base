@@ -49,7 +49,7 @@ def harness(tmp_path, monkeypatch):
     # Fail closed if a future refactor accidentally escapes the fixture boundaries.
     monkeypatch.setattr(socket, "create_connection", Mock(side_effect=AssertionError("network forbidden")))
     monkeypatch.setattr(socket.socket, "connect", Mock(side_effect=AssertionError("network forbidden")))
-    for name in ("create_issues", "create_commentary_review_issue", "notify_papers"):
+    for name in ("create_issues", "create_commentary_review_issue", "create_digest_issue", "notify_papers"):
         monkeypatch.setattr(pipeline, name, Mock())
     return kb
 

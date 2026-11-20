@@ -35,6 +35,7 @@ LABEL_COLORS: dict[str, str] = {
     "priority:high": "b60205",
     "parse-failed": "d93f0b",
     "commentary": "bfdadc",
+    "paper-digest": "d4c5f9",
     "accepted": "0e8a16",
     "stale-review": "fbca04",
     **{

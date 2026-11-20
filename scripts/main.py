@@ -12,6 +12,7 @@ from commentary import CommentaryProposal, kb_papers, split_commentary, triage_c
 from config import (
     ANTHROPIC_API_KEY,
     PAPERS_JSON,
+    RELEVANCE_THRESHOLD,
     is_conference_season,
     load_tracked_abstracts,
     load_tracked_dois,
@@ -21,6 +22,7 @@ from config import (
 )
 from content_store import content_session
 from create_issues import create_commentary_review_issue, create_issues
+from digest import accepted_digests, create_digest_issue, finish, picked
 from fetch_pubmed import efetch, fetch_pubmed, resolve_dois
 from fetch_rss import AllFeedsFailedError, fetch_rss
 from notify_line import notify_papers
@@ -152,12 +154,12 @@ def update_tracking(research: list[dict], triaged: list[tuple[dict, CommentaryPr
     print("\n[Pipeline] Updated tracking files.")
 
 
-def review_requested(pmids: list[str], topic: str, dry_run: bool = False) -> None:
+def review_requested(pmids: list[str], topic: str, dry_run: bool = False) -> int:
     """Classify papers the maintainer names and open a review issue for each, whatever the score (#214).
 
     The scan never revisits a tracked paper, so this is the way back for one whose review
     issue failed to open, or one that scored under the threshold but belongs on the site.
-    Nothing is published without review.
+    Nothing is published without review. Returns how many review issues were opened.
     """
     papers = efetch(pmids)
     missing = set(pmids) - {p["pmid"] for p in papers}
@@ -174,10 +176,36 @@ def review_requested(pmids: list[str], topic: str, dry_run: bool = False) -> Non
             f"維護者指定送審（AI 評分 {score if score is not None else '—'}/5）",
             *evaluate_paper_gate(p, AUTO_PUBLISH_TOPICS).reasons,
         ]
-    create_issues(papers, dry_run=dry_run)
+    opened = create_issues(papers, dry_run=dry_run)
     if not dry_run:
         update_tracking(papers, [], date.today().isoformat())
     USAGE.report()
+    return opened
+
+
+def review_picks(dry_run: bool = False) -> bool:
+    """Send the papers ticked on accepted digest issues to review (#218). Returns False if anything failed.
+
+    A digest that fails keeps its label, so the next run tries it again.
+    """
+    digests = accepted_digests()
+    if digests is None:
+        print("[Digest] Could not list digest issues", file=sys.stderr)
+        return False
+    ok = True
+    for issue in digests:
+        picks = picked(issue["body"] or "")
+        sent = sum(len(pmids) for pmids in picks.values())
+        print(f"[Digest] #{issue['number']}: {sent} paper(s) ticked")
+        try:
+            opened = sum(review_requested(pmids, topic, dry_run=dry_run) for topic, pmids in picks.items())
+        except Exception as e:  # one digest's failure should not stop the scan or the other digests
+            print(f"[Digest] #{issue['number']} failed, will retry next run: {e}", file=sys.stderr)
+            ok = False
+            continue
+        if not dry_run:
+            finish(issue["number"], sent, opened)
+    return ok
 
 
 def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False, reldate=None):
@@ -252,6 +280,9 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False, r
     print()
     classified = classify_all(research, dry_run=dry_run)
     print(f"[Pipeline] Papers passing relevance threshold: {len(classified)}")
+    # One under the threshold: listed for the maintainer to pick from (#218)
+    near_miss = [p for p in research if p.get("ai_score") == RELEVANCE_THRESHOLD - 1]
+    create_digest_issue(near_miss, today_str, dry_run=dry_run)
 
     if classified:
         # Layer 3: papers passing the provenance gate are published; the rest get
@@ -307,6 +338,8 @@ Examples:
         review_requested(args.review, args.topic, dry_run=args.dry_run)
         return
 
+    # Before the scan, which returns early outside conference season on --daily days
+    picks_ok = review_picks(dry_run=args.dry_run)
     journal_outage = run_pipeline(
         topic=args.topic,
         dry_run=args.dry_run,
@@ -318,6 +351,9 @@ Examples:
     # Fail loudly if every journal feed errored — never silently green again.
     if journal_outage:
         print("[Pipeline] Exiting non-zero: all journal feeds failed.", file=sys.stderr)
+    if not picks_ok:
+        print("[Pipeline] Exiting non-zero: a digest's picks were not sent to review.", file=sys.stderr)
+    if journal_outage or not picks_ok:
         sys.exit(1)
 
 

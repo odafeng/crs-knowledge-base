@@ -167,3 +167,86 @@ class TestReviewRequested:
         monkeypatch.setattr("sys.argv", ["main.py", "--review", "42811047"])
         with pytest.raises(SystemExit):
             main.main()
+
+
+DIGEST = {"number": 7, "body": "", "author": {"login": "owner"}}
+
+
+class TestReviewPicks:
+    """Papers ticked on an accepted digest go through the --review path (J6 #218)."""
+
+    def _run(self, picks, review=None, digests=None, dry_run=False):
+        from unittest.mock import patch
+
+        with (
+            patch("main.accepted_digests", return_value=[DIGEST] if digests is None else digests),
+            patch("main.picked", return_value=picks),
+            patch("main.review_requested", side_effect=review or (lambda pmids, topic, dry_run: len(pmids))) as rr,
+            patch("main.finish") as finish,
+        ):
+            from main import review_picks
+
+            ok = review_picks(dry_run=dry_run)
+        return ok, rr, finish
+
+    def test_picks_are_reviewed_by_topic_and_the_digest_is_closed(self):
+        ok, rr, finish = self._run({"generic-CRS": ["1", "3"], "mCRC-RAS-wt": ["2"]})
+        assert ok
+        assert [c.args for c in rr.call_args_list] == [(["1", "3"], "generic-CRS"), (["2"], "mCRC-RAS-wt")]
+        finish.assert_called_once_with(7, 3, 3)
+
+    def test_nothing_ticked_still_reports_back(self):
+        ok, rr, finish = self._run({})
+        assert ok
+        rr.assert_not_called()
+        finish.assert_called_once_with(7, 0, 0)
+
+    def test_a_failure_leaves_the_digest_for_the_next_run(self):
+        def boom(pmids, topic, dry_run):
+            raise RuntimeError("credit")
+
+        ok, _, finish = self._run({"generic-CRS": ["1"]}, review=boom)
+        assert not ok
+        finish.assert_not_called()
+
+    def test_dry_run_touches_no_issue(self):
+        ok, rr, finish = self._run({"generic-CRS": ["1"]}, dry_run=True)
+        assert ok
+        assert rr.call_args.kwargs["dry_run"] is True
+        finish.assert_not_called()
+
+    def test_listing_failure_is_reported(self):
+        from unittest.mock import patch
+
+        with patch("main.accepted_digests", return_value=None):
+            from main import review_picks
+
+            assert review_picks() is False
+
+
+def test_three_point_papers_are_listed_after_classification():
+    from unittest.mock import patch
+
+    research = [
+        {"pmid": "1", "title": "a", "topic": "generic-CRS", "abstract": "x"},
+        {"pmid": "2", "title": "b", "topic": "generic-CRS", "abstract": "y"},
+        {"pmid": "3", "title": "c", "topic": "generic-CRS", "abstract": "z"},
+    ]
+
+    def classify(papers, dry_run=False):
+        for p, score in zip(papers, (3, 2, 3), strict=True):
+            p.update(ai_score=score, ai_parse_failed=False)
+        return []
+
+    with (
+        patch("main.fetch_pubmed", return_value=research),
+        patch("main.fetch_rss", return_value=[]),
+        patch("main.classify_all", side_effect=classify),
+        patch("main.create_digest_issue") as listed,
+        patch("main.update_tracking"),
+        patch("main.USAGE"),
+    ):
+        from main import run_pipeline
+
+        run_pipeline()
+    assert [p["pmid"] for p in listed.call_args.args[0]] == ["1", "3"]

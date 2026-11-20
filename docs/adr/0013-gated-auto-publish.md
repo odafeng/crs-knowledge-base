@@ -35,6 +35,7 @@ Replace "review everything" with a deterministic gate. Papers that pass are publ
 **Human controls**:
 
 - Held items: add `accepted` to the issue → `paper-accept.yml` publishes it (`accepted`). For commentary, only ticked items are published.
+- Near misses (#218): papers scored 3/5, one under the threshold, are listed per run in one `paper-digest` issue. The threshold stays at 4, because a 3/5 paper has no KB entry to publish and a lower threshold would also loosen auto-publishing. The maintainer ticks papers and adds `accepted`; the next Paper Watch run re-classifies the ticked ones through `main.py --review` (#214), which drafts an entry whatever the score, and opens an ordinary held issue for each. `content-requests` skips digests because it has no Anthropic key. The cost is one more classification per ticked paper and up to a day's wait for the daily schedule.
 - Anything published by the bot: Actions → `Unpublish` with the paper id or commentary DOI. Hand-curated entries are refused.
 - Writes to `main` from these workflows share one concurrency group. Because pushes made with `GITHUB_TOKEN` do not trigger workflows, each one dispatches `ci.yml`, which validates and deploys.
 
