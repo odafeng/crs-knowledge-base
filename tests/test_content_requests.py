@@ -219,3 +219,11 @@ def test_an_unknown_target_is_reported(db_writer):
     request = site_request(db_writer, "unpublish", "news", "no-such-story")
     assert content_requests.run(FakeGh([]), REPO, TODAY, db_writer, db_writer) == 1
     assert outcome(db_writer, request) == (False, "找不到消息 `no-such-story`")
+
+
+def test_digests_are_left_to_paper_watch():
+    from digest import format_digest_body
+
+    body = format_digest_body([{"pmid": "1", "topic": "generic-CRS", "title": "x"}], "2026-11-20")
+    accepts, _ = content_requests.pending([issue(5, "owner", ["accepted", "paper-digest"], body=body)], "owner")
+    assert accepts == []

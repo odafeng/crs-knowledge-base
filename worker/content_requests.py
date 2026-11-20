@@ -7,7 +7,8 @@ no arguments and reads the requests from the open issues themselves:
 
 - labelled `accepted` and opened by the pipeline (github-actions before cutover, the repository owner's token that
   Paper Watch uses after it): publish, comment, close. A request that cannot be published gets the reasons as a
-  comment and loses the label, so adding the label again retries it.
+  comment and loses the label, so adding the label again retries it. Digests of 3/5 papers are left to Paper Watch,
+  which alone can classify their picks (#218).
 - labelled `unpublish-request`, opened by github-actions (the Unpublish workflow), titled `[撤下] <target>`:
   unpublish, comment, close.
 - rows in app.content_requests that the API recorded for an admin's button on the site (E6 #159): mark an
@@ -36,6 +37,7 @@ for path in (ROOT, ROOT / "scripts"):
 
 from accept_issue import accept  # noqa: E402
 from content_store import DATABASE_ENV, content_session  # noqa: E402
+from digest import is_digest  # noqa: E402
 from issue_data import extract  # noqa: E402
 from publish import PublishError, mark_reviewed, unpublish, unpublish_story  # noqa: E402
 
@@ -65,7 +67,12 @@ def _labelled(issue: Issue, label: str) -> bool:
 def pending(issues: list[Issue], owner: str) -> tuple[list[Issue], list[Issue]]:
     """(accept requests, unpublish requests), oldest first; anything not opened by the pipeline is ignored."""
     issues = sorted(issues, key=lambda issue: issue["number"])
-    accepts = [i for i in issues if _labelled(i, ACCEPTED) and i["user"]["login"] in (ACTIONS_BOT, owner)]
+    accepts = [
+        i
+        for i in issues
+        # A digest's picks need classifying, which only Paper Watch can do (#218)
+        if _labelled(i, ACCEPTED) and i["user"]["login"] in (ACTIONS_BOT, owner) and not is_digest(i.get("body"))
+    ]
     unpublishes = [
         i
         for i in issues

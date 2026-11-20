@@ -126,11 +126,11 @@ def format_issue_body(paper: dict) -> str:
     return "\n".join(lines)
 
 
-def create_issues(papers: list[dict], dry_run: bool = False) -> None:
-    """Create GitHub Issues for classified papers."""
+def create_issues(papers: list[dict], dry_run: bool = False) -> int:
+    """Create GitHub Issues for classified papers. Returns how many were created."""
     if not papers:
         print("[Issues] No papers to create issues for.")
-        return
+        return 0
 
     # Collect all labels we'll need
     all_labels = {"new-paper", "priority:high", "parse-failed"}
@@ -186,6 +186,7 @@ def create_issues(papers: list[dict], dry_run: bool = False) -> None:
             print(f"  [ERROR] Failed to create issue for: {title_short}", file=sys.stderr)
 
     print(f"\n[Issues] Created {created}/{len(papers)} issues.")
+    return created
 
 
 def main():
