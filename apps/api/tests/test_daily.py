@@ -1,9 +1,10 @@
 """The daily pick's rules without a database (G2 #113)."""
 
 import re
-from datetime import date
+from datetime import UTC, date, datetime
 
 from guthub_api.daily import Candidate, choose, pick_text
+from guthub_api.maintenance import line_day
 
 DAY = date(2026, 11, 17)
 
@@ -52,3 +53,9 @@ def test_every_number_comes_from_the_entry() -> None:
     text = pick_text(entry, "https://guthub.tw")
     source = " ".join([entry.title, entry.conclusion, entry.path, entry.date.isoformat(), "https://guthub.tw"])
     assert set(re.findall(r"\d+(?:\.\d+)?", text)) <= set(re.findall(r"\d+(?:\.\d+)?", source))
+
+
+def test_the_morning_broadcast_covers_the_day_before() -> None:
+    # Paper Watch publishes at 16:00, so the 07:00 message is the only one that can carry those papers (#114).
+    assert line_day(datetime(2026, 11, 17, 23, 0, tzinfo=UTC)) == date(2026, 11, 17)  # 07:00 on the 18th in Taipei
+    assert line_day(datetime(2026, 1, 1, 7, 0, tzinfo=UTC)) == date(2025, 12, 31)
