@@ -285,6 +285,10 @@ jobs:
       - name: Colorectal surgeon verification
         run: node tools/next-surgeons.js "http://127.0.0.1:$WEB_PORT" "http://127.0.0.1:$API_PORT/api/v1"
 
+      # DATABASE_URL reads the follows and the digest token a real digest would carry in its links.
+      - name: Following papers and the digest's unsubscribe links
+        run: node tools/next-follows.js "http://127.0.0.1:$WEB_PORT"
+
   deploy:
     needs: [test, web, api, e2e]
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')

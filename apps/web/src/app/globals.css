@@ -350,6 +350,49 @@
 }
 
 /* Colorectal surgeon membership (H5 #127) */
+/* Following papers for the daily comment digest (G8 #119). */
+.follow-paper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-block: var(--space-3);
+}
+.follow-paper .note:empty {
+  display: none;
+}
+.followed-papers {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-start: var(--space-8);
+}
+.followed-papers__switch {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.followed-papers__switch input {
+  margin-block-start: 0.3em;
+}
+.followed-papers__list {
+  padding: 0;
+  list-style: none;
+  border-block-start: 1px solid var(--line);
+}
+.followed-papers__list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  padding-block: var(--space-2);
+  border-block-end: 1px solid var(--line);
+}
+.followed-papers__list a {
+  flex: 1 1 14rem;
+  font-weight: 600;
+}
+
 .surgeon {
   display: grid;
   gap: var(--space-3);
