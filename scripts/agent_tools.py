@@ -16,6 +16,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 
 from config import NCBI_API_KEY, PUBMED_FETCH_URL, PUBMED_SEARCH_URL, RELEVANCE_THRESHOLD, load_tracked_dois
+from fetch_pubmed import article_title
 from net import fetch_json, fetch_with_retry
 
 # ---------------------------------------------------------------------------
@@ -347,7 +348,7 @@ def _parse_article_brief(article_elem):
     medline = article_elem.find(".//MedlineCitation")
     art = medline.find(".//Article")
     pmid = medline.findtext(".//PMID", "")
-    title = art.findtext(".//ArticleTitle", "")
+    title = article_title(art)
     journal = art.findtext(".//Journal/ISOAbbreviation", "")
     year = art.findtext(".//Journal/JournalIssue/PubDate/Year", "")
 
@@ -377,7 +378,7 @@ def _parse_article_full(article_elem):
     medline = article_elem.find(".//MedlineCitation")
     art = medline.find(".//Article")
     pmid = medline.findtext(".//PMID", "")
-    title = art.findtext(".//ArticleTitle", "")
+    title = article_title(art)
     journal = art.findtext(".//Journal/ISOAbbreviation", "")
     year = art.findtext(".//Journal/JournalIssue/PubDate/Year", "")
 

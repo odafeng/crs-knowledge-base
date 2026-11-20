@@ -27,6 +27,15 @@ class TestParseArticle:
         assert "Doe A" in result["authors"]
         assert "encorafenib" in result["abstract"]
 
+    def test_title_keeps_text_after_italic_gene_names(self, sample_pubmed_xml):
+        """PubMed writes gene names as <i>RAS</i>; the title used to stop there (J7 #220)."""
+        xml = sample_pubmed_xml.replace(
+            b"<ArticleTitle>Test Article About BRAF V600E in Colorectal Cancer</ArticleTitle>",
+            b"<ArticleTitle>Association of ctDNA <i>RAS</i> status and <i>BRAF</i> outcomes.</ArticleTitle>",
+        )
+        article = ET.fromstring(xml).find(".//PubmedArticle")
+        assert _parse_article(article)["title"] == "Association of ctDNA RAS status and BRAF outcomes."
+
     def test_handles_missing_doi(self, sample_pubmed_xml):
         xml = sample_pubmed_xml.replace(b'IdType="doi"', b'IdType="pubmed"')
         root = ET.fromstring(xml)
