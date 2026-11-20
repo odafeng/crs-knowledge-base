@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount, type Account } from "@/components/account";
+import { FollowPaper } from "@/components/paper-follows";
 import { apiFetch, apiUrl, authEnabled, returnPath } from "@/lib/auth";
 import {
   BODY_MAX,
@@ -48,6 +49,7 @@ function Discussion({ paperId }: { paperId: string }) {
   });
   const [version, setVersion] = useState(0);
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
+  const [posted, setPosted] = useState(0);
 
   const loadPage = useCallback(
     async (cursor: string | null): Promise<CommentPage> => {
@@ -126,6 +128,7 @@ function Discussion({ paperId }: { paperId: string }) {
       <p className="note">
         讀者留言是個人意見，不是本站的文獻整理，也沒有經過醫學審核。
       </p>
+      <FollowPaper paperId={paperId} posted={posted} />
       {signedIn && mine.unpublished.length > 0 && (
         <ul className="comment-list" aria-label="只有你看得到的留言">
           {mine.unpublished.map((item) => (
@@ -178,7 +181,14 @@ function Discussion({ paperId }: { paperId: string }) {
           載入更多留言
         </button>
       )}
-      <CommentForm paperId={paperId} account={account} onPosted={refresh} />
+      <CommentForm
+        paperId={paperId}
+        account={account}
+        onPosted={() => {
+          refresh();
+          setPosted((n) => n + 1);
+        }}
+      />
     </section>
   );
 }

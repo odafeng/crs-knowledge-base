@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { TopicChoices } from "@/components/followed-topics";
+import { FollowedPapers } from "@/components/paper-follows";
 import { AccountSettings } from "@/components/sign-in";
 import { SurgeonMembership } from "@/components/surgeon-membership";
-import { listTopics } from "@/lib/content";
+import { listPapers, listTopics } from "@/lib/content";
 import { SITE_NAME } from "@/lib/seo";
+import { paperPath, paperTitle } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: `帳號設定｜${SITE_NAME}`,
@@ -12,11 +14,18 @@ export const metadata: Metadata = {
 };
 
 export default async function AccountPage() {
-  // Rendered per request so `next build` never calls the API; the topic list is public and cached (lib/content.ts).
+  // Rendered per request so `next build` never calls the API; topics and papers are public and cached (lib/content.ts).
   await connection();
-  const topics = (await listTopics()).map((t) => ({
-    key: t.key,
-    label: t.label,
+  const [topicList, paperList] = await Promise.all([
+    listTopics(),
+    listPapers(),
+  ]);
+  const topics = topicList.map((t) => ({ key: t.key, label: t.label }));
+  // Every public paper's name, so the browser can name what the reader follows without the server knowing it.
+  const papers = paperList.map((p) => ({
+    id: p.id,
+    title: paperTitle(p),
+    path: paperPath(p),
   }));
   return (
     <div className="container page">
@@ -26,6 +35,7 @@ export default async function AccountPage() {
       <div className="page__narrow">
         <AccountSettings />
         <TopicChoices topics={topics} />
+        <FollowedPapers papers={papers} />
         <SurgeonMembership />
       </div>
     </div>
