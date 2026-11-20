@@ -9,14 +9,15 @@ accounts deleted that long ago (app.purge_deleted_authors, ADR-0017). The privac
 daily. announce-news pushes stories published in the last two days to subscribed browsers, each story once
 (guthub_api.announce, C5 #95); it also needs GUTHUB_VAPID_PRIVATE_KEY and GUTHUB_VAPID_SUBJECT. Both connect as
 guthub_api through GUTHUB_DATABASE_URL, like the API. line-daily broadcasts the day's pick to the GutHub LINE account
-(guthub_api.line, G3 #114) with GUTHUB_LINE_CHANNEL_ACCESS_TOKEN; --dry-run prints it without sending.
+(guthub_api.line, G3 #114) with GUTHUB_LINE_CHANNEL_ACCESS_TOKEN; --dry-run prints it without sending. It runs at 07:00
+and sends what went public the day before, since Paper Watch publishes at 16:00.
 """
 
 import argparse
 import json
 import logging
 import sys
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import psycopg
 
@@ -28,6 +29,11 @@ from guthub_api.settings import Settings
 logger = logging.getLogger("guthub_api.maintenance")
 
 DUE = "deleted_at < now() - interval '90 days'"
+
+
+def line_day(now: datetime) -> date:
+    """The day line-daily reports on: the day before the run, so the 07:00 message carries the 16:00 papers (#114)."""
+    return now.astimezone(TAIPEI).date() - timedelta(days=1)
 
 
 def purge_deleted_authors(url: str) -> dict[str, int]:
@@ -47,7 +53,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("job", choices=["purge-deleted-authors", "announce-news", "line-daily"])
     parser.add_argument("--dry-run", action="store_true", help="line-daily: print the message, send nothing")
-    parser.add_argument("--date", type=date.fromisoformat, help="line-daily: the day to send (default: today, Taiwan)")
+    parser.add_argument(
+        "--date",
+        type=date.fromisoformat,
+        help="line-daily: the day whose additions to send (default: yesterday, Taiwan)",
+    )
     args = parser.parse_args(argv)
     settings = Settings()
     if settings.database_url is None:
@@ -61,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         result = broadcast_daily(
             url,
-            args.date or datetime.now(TAIPEI).date(),
+            args.date or line_day(datetime.now(TAIPEI)),
             settings.site_origin,
             None if args.dry_run or token is None else token.get_secret_value(),
         )

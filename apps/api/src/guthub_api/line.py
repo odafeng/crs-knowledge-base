@@ -1,11 +1,11 @@
 """The daily LINE broadcast (G3 #114, ADR-0022): the day's pick to every follower of the GutHub official account.
 
-Runs as a Cloud Run job at 07:00 Taiwan time (maintenance line-daily). Only days with something new are sent, never a
-fallback to an older item, and at most once a day: the job claims the day in app.line_broadcasts with a retry key
-before sending and reuses that key on every retry, so LINE refuses a second delivery (it answers 409 for a key it has
-already accepted) even if the job died after LINE took the message but before sent_at was recorded. Messages are
-counted per recipient against the account's monthly quota; going over makes LINE answer 429 and the job fail, which
-the job-failure alert reports.
+Runs as a Cloud Run job at 07:00 Taiwan time (maintenance line-daily) and sends the previous day's pick. Only days
+with something new are sent, never a fallback to an older item, and at most once a day: the job claims the day in
+app.line_broadcasts with a retry key before sending and reuses that key on every retry, so LINE refuses a second
+delivery (it answers 409 for a key it has already accepted) even if the job died after LINE took the message but before
+sent_at was recorded. Messages are counted per recipient against the account's monthly quota; going over makes LINE
+answer 429 and the job fail, which the job-failure alert reports.
 """
 
 import json

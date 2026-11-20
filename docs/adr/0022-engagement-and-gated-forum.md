@@ -32,7 +32,7 @@
 - **方案**：先用免費的輕用量（每月 200 則），接近上限再升級中用量（每月 1,000 元未稅、3,000 則）。訊息按收件人計算，推一則給 N 位追蹤者就算 N 則；Messaging API 的推送與官方帳號後台的群發共用這個額度。
 - **頻率**：有新內容才推，一天最多一則，內容用 G2 的每日挑選（`GET /api/v1/daily-pick`）；當天沒有新內容就不推，不用「最近的一件事」補位。
 - **帳號**：另外建立給讀者的「GutHub」官方帳號，由維護者擁有。Paper Watch 通知維護者自己的既有帳號維持不變，兩邊的額度與追蹤者互不影響。agent 只拿新帳號的 Messaging API channel access token，存放在 Secret Manager。
-- **實作（G3 #114）**：每天 07:00 的 Cloud Run job 用 Messaging API 的 broadcast 發送。job 先在 `app.line_broadcasts` 佔下當天並存一個 retry key，重試都沿用同一個 key；LINE 對已接受過的 key 會回 409，所以就算 job 在 LINE 收下後、記錄前中斷，重跑也不會重複發送。
+- **實作（G3 #114）**：每天 07:00 的 Cloud Run job 用 Messaging API 的 broadcast 發送前一天的挑選；Paper Watch 在 16:00 發布，只有隔天早上的推送帶得到這些論文。job 先在 `app.line_broadcasts` 佔下當天並存一個 retry key，重試都沿用同一個 key；LINE 對已接受過的 key 會回 409，所以就算 job 在 LINE 收下後、記錄前中斷，重跑也不會重複發送。
 
 ### 論壇提前開放（2026-11-17 維護者決定；H4 #126）
 
