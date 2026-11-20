@@ -305,7 +305,9 @@ def test_one_email_per_reader_and_day_naming_nobody(world: World, resend: tuple[
     assert message["from"] == "GutHub <no-reply@guthub.tw>"
     assert message["subject"] == "GutHub｜你追蹤的文獻有 2 則新留言"
     assert "Nivo + ipi（Lancet 2026）：2 則新留言" in message["text"]
-    assert f"{ORIGIN}/papers/{world.paper}/#comments" in message["text"]
+    assert (
+        f"{ORIGIN}/papers/{world.paper}/#discussion"
+    )  # the heading the discussion section is labelled by in message["text"]
     assert "Quiet" not in message["text"]  # nothing new there
     for part in (message["text"], message["html"]):
         assert "Writer Name" not in part and "comment " not in part

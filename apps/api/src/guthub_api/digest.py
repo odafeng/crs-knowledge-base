@@ -66,7 +66,7 @@ def gather(conn: psycopg.Connection[Any], day: date) -> list[Digest]:
     for r in rows:
         digest = digests.setdefault(r["account_id"], Digest(r["account_id"], r["email"], r["digest_token"]))
         title = f"{r['regimen']}（{r['journal']} {r['year']}）"
-        digest.items.append(Item(r["paper_id"], title, f"/papers/{r['slug']}/#comments", r["new_comments"]))
+        digest.items.append(Item(r["paper_id"], title, f"/papers/{r['slug']}/#discussion", r["new_comments"]))
     return list(digests.values())
 
 
