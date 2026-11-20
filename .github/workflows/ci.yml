@@ -281,6 +281,10 @@ jobs:
       - name: Colorectal surgeon forum
         run: node tools/next-forum.js "http://127.0.0.1:$WEB_PORT" "http://127.0.0.1:$API_PORT/api/v1"
 
+      # DATABASE_URL grants the reviewer the admin flag; applying, approving, rejecting and revoking go through the UI.
+      - name: Colorectal surgeon verification
+        run: node tools/next-surgeons.js "http://127.0.0.1:$WEB_PORT" "http://127.0.0.1:$API_PORT/api/v1"
+
   deploy:
     needs: [test, web, api, e2e]
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
