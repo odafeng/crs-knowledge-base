@@ -176,6 +176,31 @@ jobs:
             gcloud scheduler jobs create http line-daily-0700 "${ARGS[@]}"
           fi
 
+      # Daily comment digest email (G8 #119, ADR-0022): 07:30 Taiwan time, one email per follower and day, naming no
+      # commenter. Needs the Resend API key for the guthub.tw sending domain in Secret Manager (resend-api-key), so it
+      # stays off until COMMENT_DIGEST_ENABLED=true in the environment whose readers should get it.
+      - name: Deploy the comment digest job
+        if: vars.COMMENT_DIGEST_ENABLED == 'true'
+        env:
+          SITE_ORIGIN: ${{ vars.LINE_SITE_ORIGIN || 'https://guthub.tw' }}
+        run: |
+          gcloud run jobs deploy comment-digest --project="$PROJECT" --region="$REGION" \
+            --image="$IMAGES/api:$GITHUB_SHA" --service-account="$API_RUNTIME" \
+            --command=python --args=-m,guthub_api.maintenance,comment-digest \
+            --set-secrets=GUTHUB_DATABASE_URL=guthub-api-database-url:latest,GUTHUB_RESEND_API_KEY=resend-api-key:latest \
+            --set-env-vars="GUTHUB_ENVIRONMENT=${GUTHUB_ENV_NAME},GUTHUB_SITE_ORIGIN=$SITE_ORIGIN" \
+            --max-retries=2 --task-timeout=600
+          gcloud run jobs add-iam-policy-binding comment-digest --project="$PROJECT" --region="$REGION" \
+            --member="serviceAccount:$WORKER_RUNTIME" --role=roles/run.invoker --format=none
+          ARGS=(--project="$PROJECT" --location="$REGION" --schedule="30 7 * * *" --time-zone="Asia/Taipei"
+            --uri="https://run.googleapis.com/v2/projects/$PROJECT/locations/$REGION/jobs/comment-digest:run"
+            --http-method=POST --oauth-service-account-email="$WORKER_RUNTIME")
+          if gcloud scheduler jobs describe comment-digest-0730 --project="$PROJECT" --location="$REGION" >/dev/null 2>&1; then
+            gcloud scheduler jobs update http comment-digest-0730 "${ARGS[@]}"
+          else
+            gcloud scheduler jobs create http comment-digest-0730 "${ARGS[@]}"
+          fi
+
       # Coverage and approval watch (G5 #116): weekly, opens review issues and never edits a card. Needs the same
       # secrets as Paper Watch (content database, GitHub token), so it stays off until REGULATORY_WATCH_ENABLED=true.
       - name: Deploy the coverage watch job

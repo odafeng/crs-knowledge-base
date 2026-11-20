@@ -771,6 +771,99 @@ paths:
           application/json:
             schema: {$ref: '#/components/schemas/TopicSubscriptions'}
       description: 'Requires a verified session. Set Cache-Control: private, no-store.'
+  /me/follows:
+    get:
+      operationId: getPaperFollows
+      summary: The papers the signed-in reader follows, newest first, and whether the daily comment digest is on.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaperFollows'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Requires a verified session; 403 until the reader has chosen a display name. Set Cache-Control:
+        private, no-store.'
+  /me/follows/{paperId}:
+    put:
+      operationId: followPaper
+      summary: Follow a public paper for the daily comment digest (G8). Commenting on a paper follows it too.
+      security:
+      - BearerAuth: []
+      parameters:
+      - {$ref: '#/components/parameters/PaperId'}
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaperFollows'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store.'
+    delete:
+      operationId: unfollowPaper
+      summary: Stop following a paper; unfollowing one that is not followed changes nothing.
+      security:
+      - BearerAuth: []
+      parameters:
+      - {$ref: '#/components/parameters/PaperId'}
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaperFollows'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store.'
+  /me/comment-digest:
+    put:
+      operationId: setCommentDigest
+      summary: Turn the daily comment digest email on or off without changing what is followed.
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CommentDigestSetting'}
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaperFollows'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store.'
+  /digest/unsubscribe:
+    post:
+      operationId: unsubscribeCommentDigest
+      summary: From a digest's link, without signing in. With paper, unfollow it; otherwise turn the digest off.
+      security: []
+      parameters:
+      - {name: token, in: query, required: true, schema: {type: string, format: uuid}}
+      - {name: paper, in: query, schema: {type: string, minLength: 1}}
+      responses:
+        '204': {description: Done}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'The token is the account''s digest token, which only appears in its own digests. Unknown tokens
+        answer 404. Set Cache-Control: no-store.'
   /forum/threads:
     get:
       operationId: listForumThreads
@@ -1728,6 +1821,22 @@ components:
               accountId: {type: string, format: uuid}
               displayName: {type: string}
               since: {type: string, format: date-time}
+    PaperFollows:
+      type: object
+      additionalProperties: false
+      required: [papers, commentDigest]
+      properties:
+        papers:
+          type: array
+          uniqueItems: true
+          items: {type: string, minLength: 1}
+        commentDigest: {type: boolean}
+    CommentDigestSetting:
+      type: object
+      additionalProperties: false
+      required: [enabled]
+      properties:
+        enabled: {type: boolean}
     TopicSubscriptions:
       type: object
       additionalProperties: false

@@ -3,6 +3,7 @@
 python -m guthub_api.maintenance purge-deleted-authors
 python -m guthub_api.maintenance announce-news
 python -m guthub_api.maintenance line-daily [--dry-run] [--date YYYY-MM-DD]
+python -m guthub_api.maintenance comment-digest [--dry-run] [--date YYYY-MM-DD]
 
 purge-deleted-authors clears the private author mapping of comments and forum posts deleted more than 90 days ago and removes
 accounts deleted that long ago (app.purge_deleted_authors, ADR-0017). The privacy policy promises this, so it runs
@@ -10,7 +11,9 @@ daily. announce-news pushes stories published in the last two days to subscribed
 (guthub_api.announce, C5 #95); it also needs GUTHUB_VAPID_PRIVATE_KEY and GUTHUB_VAPID_SUBJECT. Both connect as
 guthub_api through GUTHUB_DATABASE_URL, like the API. line-daily broadcasts the day's pick to the GutHub LINE account
 (guthub_api.line, G3 #114) with GUTHUB_LINE_CHANNEL_ACCESS_TOKEN; --dry-run prints it without sending. It runs at 07:00
-and sends what went public the day before, since Paper Watch publishes at 16:00.
+and sends what went public the day before, since Paper Watch publishes at 16:00. comment-digest emails each follower
+how many comments others published the day before on the papers they follow (guthub_api.digest, G8 #119) with
+GUTHUB_RESEND_API_KEY; --dry-run counts and previews without sending.
 """
 
 import argparse
@@ -23,6 +26,7 @@ import psycopg
 
 from guthub_api.announce import announce_news, web_push
 from guthub_api.daily import TAIPEI
+from guthub_api.digest import send_digests
 from guthub_api.line import broadcast_daily
 from guthub_api.settings import Settings
 
@@ -51,12 +55,12 @@ def purge_deleted_authors(url: str) -> dict[str, int]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("job", choices=["purge-deleted-authors", "announce-news", "line-daily"])
-    parser.add_argument("--dry-run", action="store_true", help="line-daily: print the message, send nothing")
+    parser.add_argument("job", choices=["purge-deleted-authors", "announce-news", "line-daily", "comment-digest"])
+    parser.add_argument("--dry-run", action="store_true", help="line-daily, comment-digest: print, send nothing")
     parser.add_argument(
         "--date",
         type=date.fromisoformat,
-        help="line-daily: the day whose additions to send (default: yesterday, Taiwan)",
+        help="line-daily, comment-digest: the day to report on (default: yesterday, Taiwan)",
     )
     args = parser.parse_args(argv)
     settings = Settings()
@@ -75,6 +79,17 @@ def main(argv: list[str] | None = None) -> int:
             settings.site_origin,
             None if args.dry_run or token is None else token.get_secret_value(),
         )
+    elif args.job == "comment-digest":
+        key = settings.resend_api_key
+        if key is None and not args.dry_run:
+            print("GUTHUB_RESEND_API_KEY is required (or use --dry-run)", file=sys.stderr)
+            return 1
+        result = send_digests(
+            url,
+            args.date or line_day(datetime.now(TAIPEI)),
+            settings.site_origin,
+            None if args.dry_run or key is None else key.get_secret_value(),
+        )
     elif args.job == "announce-news":
         if settings.vapid_private_key is None or not settings.vapid_subject:
             print("GUTHUB_VAPID_PRIVATE_KEY and GUTHUB_VAPID_SUBJECT are required", file=sys.stderr)
@@ -84,7 +99,8 @@ def main(argv: list[str] | None = None) -> int:
         result = purge_deleted_authors(url)
     # One JSON line, so Cloud Logging can parse it; no identifiers, only counts.
     print(json.dumps({"job": args.job, **result}, ensure_ascii=False))
-    return 0
+    # A digest that could not be sent stays claimed but unsent, so the job's retry sends it; fail to trigger that.
+    return 1 if result.get("status") == "failed" else 0
 
 
 if __name__ == "__main__":

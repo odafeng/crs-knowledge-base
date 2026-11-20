@@ -5,7 +5,7 @@ import { pageJsonLd, pageMetadata } from "@/lib/seo";
 import { HOME } from "@/lib/site";
 
 // Every statement here must match what the code does (C6 #110); update this page in the same change as the code.
-const UPDATED = "2026-11-17";
+const UPDATED = "2026-11-20";
 const CONTACT = "privacy@guthub.tw";
 const TITLE = "隱私權政策";
 const DESCRIPTION =
@@ -71,6 +71,11 @@ export default function PrivacyPage() {
           </li>
           <li>
             訂閱主題：在帳號設定勾選的主題只有你看得到，用來在首頁列出這些主題的最新文獻；刪除帳號時一併刪除。
+          </li>
+          <li>
+            追蹤文獻：你在文獻頁按「追蹤新留言」或在該篇留言後，我們記下你追蹤了哪幾篇，只有你看得到。
+            每天早上最多寄一封信到你的登入信箱，列出你追蹤的文獻前一天各有幾則別人的新留言；信裡不寫任何留言者的名稱，也不引用留言內容。
+            每封信都附有取消追蹤這篇與停止寄信的連結，帳號設定也可以隨時關掉；刪除帳號時，追蹤紀錄一併刪除。
           </li>
           <li>
             大腸直腸外科會員申請：真實姓名、執業院所與證書字號後三碼，只用來讓維護者對照大腸直腸外科醫學會的專科醫師名單或衛福部醫事人員查詢。
@@ -140,7 +145,7 @@ export default function PrivacyPage() {
             程式，以及文獻整理排程。
           </li>
           <li>Vercel：網站頁面的主機。</li>
-          <li>Resend：寄送 Email 登入連結。</li>
+          <li>Resend：寄送 Email 登入連結與追蹤文獻的每日留言通知。</li>
           <li>
             瀏覽器的推播服務（依你的瀏覽器，是 Google、Mozilla、Apple 或
             Microsoft）：轉送加密過的新消息通知，只在你開啟推播時使用。
