@@ -6,6 +6,7 @@ import {
   drugBySlug,
   drugCounts,
   drugPath,
+  drugShelves,
   drugsOf,
   evidenceOrder,
   papersOf,
@@ -88,6 +89,44 @@ describe("drugs", () => {
       ["fruquintinib", 1],
     ]);
     expect(papersOf(drugBySlug("fruquintinib")!, papers)).toEqual([papers[2]]);
+  });
+
+  it("shelves drugs by class, the class most papers name first, each paper once per class", () => {
+    const papers = [
+      { regimen: "Encorafenib + binimetinib + cetuximab" },
+      { regimen: "Encorafenib + cetuximab" },
+      { regimen: "Pembrolizumab vs chemotherapy" },
+      { regimen: "Nivolumab + ipilimumab" },
+      { regimen: "Dostarlimab" },
+    ];
+    const shelves = drugShelves(papers).map((shelf) => [
+      shelf.group,
+      shelf.papers,
+      shelf.rows.map((r) => [r.drug.slug, r.count]),
+    ]);
+    expect(shelves).toEqual([
+      [
+        "immune",
+        3,
+        [
+          ["dostarlimab", 1],
+          ["ipilimumab", 1],
+          ["nivolumab", 1],
+          ["pembrolizumab", 1],
+        ],
+      ],
+      // A tie keeps the order of DRUG_GROUPS
+      ["egfr", 2, [["cetuximab", 2]]],
+      // Two papers, though encorafenib (2) and binimetinib (1) add up to three
+      [
+        "braf",
+        2,
+        [
+          ["encorafenib", 2],
+          ["binimetinib", 1],
+        ],
+      ],
+    ]);
   });
 
   it("has unique slugs and a known group for every drug", () => {

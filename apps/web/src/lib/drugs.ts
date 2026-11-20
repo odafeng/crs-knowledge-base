@@ -105,6 +105,22 @@ export const drugCounts = (papers: readonly Named[]) =>
       (a, b) => b.count - a.count || a.drug.name.localeCompare(b.drug.name),
     );
 
+/** The drugs papers name, by class: the class named by the most papers first, its drugs most papers first. A
+ *  class counts each paper once, so a combination (encorafenib + binimetinib) is not counted twice. */
+export const drugShelves = (papers: readonly Named[]) => {
+  const counts = drugCounts(papers);
+  return DRUG_GROUPS.map(([group, label]) => ({
+    group,
+    label,
+    rows: counts.filter((row) => row.drug.group === group),
+    papers: papers.filter((paper) =>
+      drugsOf(paper).some((drug) => drug.group === group),
+    ).length,
+  }))
+    .filter((shelf) => shelf.rows.length > 0)
+    .sort((a, b) => b.papers - a.papers);
+};
+
 export const drugBySlug = (slug: string) => DRUGS.find((d) => d.slug === slug);
 
 /** A drug by its brand as typed in a URL (/drugs/stivarga/), so the page can redirect to the generic name. */

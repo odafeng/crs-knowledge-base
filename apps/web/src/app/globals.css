@@ -695,12 +695,6 @@ mark.hl {
   border-block-start: 0;
 }
 
-/* "全部藥物" under the home rail's drug list (J1 #205). */
-.rail-more {
-  margin-block-start: var(--space-2);
-  font-size: var(--text-sm);
-}
-
 /* A drug's evidence as a history (J2): oldest study first. On desktop the year column carries a spine with a dot
    per study, since the list is a real sequence; on a phone each study stacks under its year. */
 .evidence {
