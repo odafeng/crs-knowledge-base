@@ -1,0 +1,38 @@
+{
+  "ASCO_GI": {
+    "start": "01-05",
+    "end": "02-15",
+    "name": "ASCO GI",
+    "url": "https://conferences.asco.org/gi/attend"
+  },
+  "ASCRS": {
+    "start": "04-15",
+    "end": "05-20",
+    "name": "ASCRS Annual Meeting",
+    "url": "https://www.fascrs.org/ascrs-annual-scientific-meeting"
+  },
+  "ASCO": {
+    "start": "05-20",
+    "end": "06-25",
+    "name": "ASCO Annual Meeting",
+    "url": "https://conferences.asco.org/am/attend"
+  },
+  "ESCP": {
+    "start": "06-15",
+    "end": "07-10",
+    "name": "ESCP Annual Meeting",
+    "url": "https://www.escp.eu.com/meetings/annual-meeting"
+  },
+  "WCGC": {
+    "start": "06-25",
+    "end": "07-25",
+    "name": "ESMO World GI",
+    "url": "https://www.esmo.org/meeting-calendar"
+  },
+  "ESMO": {
+    "start": "09-05",
+    "end": "11-05",
+    "name": "ESMO Congress",
+    "url": "https://www.esmo.org/meeting-calendar"
+  }
+}

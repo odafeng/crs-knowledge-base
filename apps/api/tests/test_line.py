@@ -77,9 +77,9 @@ def line() -> Iterator[tuple[str, MockLine]]:
 
 @pytest.fixture
 def day() -> Iterator[date]:
-    """A day with exactly one new story, far from real content."""
+    """A day with exactly one new story, far from real content and outside every conference window (March)."""
     run = uuid.uuid4().hex[:8]
-    the_day = date(2031, 1, 1 + int(run, 16) % 28)
+    the_day = date(2031, 3, 1 + int(run, 16) % 28)
     paper = f"g3-{run}"
     sql("insert into app.topics (key, slug, label, title) values ('mCRC-MSI-H', 'msi-h', 'MSI-H', 'MSI-H mCRC')"
         " on conflict do nothing")  # fmt: skip
@@ -122,6 +122,32 @@ def test_broadcasts_the_days_pick_once(day: date, line: tuple[str, MockLine]) ->
     # The schedule fires again, or someone reruns the job: nothing is sent.
     assert broadcast_daily(API_DB_URL, day, ORIGIN, TOKEN, base)["status"] == "already-sent"
     assert len(mock.requests) == 1
+
+
+def test_during_a_conference_the_message_lists_the_day(line: tuple[str, MockLine]) -> None:
+    # 2031-10-xx falls in the ESMO window: one message, every addition of the day in it (G9 #120).
+    run = uuid.uuid4().hex[:8]
+    the_day = date(2031, 10, 1 + int(run, 16) % 28)
+    papers = [f"g9-{run}-{i}" for i in range(2)]
+    sql("insert into app.topics (key, slug, label, title) values ('mCRC-MSI-H', 'msi-h', 'MSI-H', 'MSI-H mCRC')"
+        " on conflict do nothing")  # fmt: skip
+    try:
+        for i, paper in enumerate(papers):
+            sql(
+                "insert into app.papers (id, slug, topic_key, year, journal, study_type, regimen, endpoint, result,"
+                " bottom_line, source, reviewed_at, detail_html) values (%s, %s, 'mCRC-MSI-H', 2031, 'Lancet',"
+                " 'Phase 3 RCT', %s, 'OS', 'HR 0.7', %s, 'fulltext', %s, '<p>x</p>')",
+                (paper, paper, f"Drug {i}", f"結論 {i}", the_day),
+            )
+        base, mock = line
+        assert broadcast_daily(API_DB_URL, the_day, ORIGIN, TOKEN, base)["status"] == "sent"
+        [request] = mock.requests
+        [text] = request["body"]["messages"]
+        assert text["text"].startswith("GutHub｜ESMO Congress 期間速報")
+        assert "結論 0" in text["text"] and "結論 1" in text["text"]
+    finally:
+        sql("delete from app.line_broadcasts where day = %s", (the_day,))
+        sql("delete from app.papers where id = any(%s)", (papers,))
 
 
 def test_a_failed_send_is_retried_with_the_same_key(day: date, line: tuple[str, MockLine]) -> None:
