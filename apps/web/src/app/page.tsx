@@ -11,6 +11,7 @@ import { connection } from "next/server";
 import { AskSite } from "@/components/ask-site";
 import { FollowedUpdates } from "@/components/followed-topics";
 import { NewsFigure } from "@/components/news-figure";
+import { TopicMap } from "@/components/topic-map";
 import {
   AiChip,
   Alerts,
@@ -23,7 +24,7 @@ import {
 } from "@/components/reading";
 import { getDailyPick, listNews, listPapers, listTopics } from "@/lib/content";
 import { dailyLabel } from "@/lib/daily";
-import { drugCounts, drugPath } from "@/lib/drugs";
+import { drugPath, drugShelves } from "@/lib/drugs";
 import {
   byTopic,
   isUnreviewed,
@@ -219,43 +220,62 @@ export default async function Home() {
               </a>
             </section>
             <section aria-labelledby="topics-title">
-              <h2 className="rail-title" id="topics-title">
-                主題
-              </h2>
-              <ul className="topic-list">
-                {mcrc.map((topic) => (
-                  <li key={topic.key}>
-                    <Link href={topicPath(topic)}>{topic.label}</Link>
-                    <span>{byTopic(papers, topic.key).length} 篇</span>
-                  </li>
-                ))}
-                {sections.map((section) => (
-                  <li key={section.slug}>
-                    <Link href={`/robotic/${section.slug}/`}>
-                      {ROBOTIC_PAGES[section.slug] ?? section.slug}
-                    </Link>
-                    <span>{section.cards.length} 則</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="rail-head">
+                <h2 className="rail-title" id="topics-title">
+                  主題
+                </h2>
+                <Link href="/topics/">全部主題</Link>
+              </div>
+              <TopicMap
+                label="mCRC 治療"
+                unit="篇"
+                rows={mcrc.map((topic) => ({
+                  key: topic.key,
+                  href: topicPath(topic),
+                  name: topic.label,
+                  count: byTopic(papers, topic.key).length,
+                }))}
+              />
+              <TopicMap
+                label="機器手臂手術"
+                unit="則"
+                rows={sections.map((section) => ({
+                  key: section.slug,
+                  href: `/robotic/${section.slug}/`,
+                  name: ROBOTIC_PAGES[section.slug] ?? section.slug,
+                  count: section.cards.length,
+                }))}
+              />
             </section>
             <section aria-labelledby="drugs-title">
-              <h2 className="rail-title" id="drugs-title">
-                藥物
-              </h2>
-              <ul className="topic-list">
-                {drugCounts(papers)
-                  .slice(0, 8)
-                  .map(({ drug, count }) => (
-                    <li key={drug.slug}>
-                      <Link href={drugPath(drug)}>{drug.name}</Link>
-                      <span>{count} 篇</span>
-                    </li>
-                  ))}
-              </ul>
-              <p className="rail-more">
+              <div className="rail-head">
+                <h2 className="rail-title" id="drugs-title">
+                  藥物
+                </h2>
                 <Link href="/drugs/">全部藥物</Link>
-              </p>
+              </div>
+              <dl className="drug-shelves">
+                {drugShelves(papers).map((shelf) => (
+                  <div className="drug-shelf" key={shelf.group}>
+                    <dt>{shelf.label}</dt>
+                    <dd>
+                      <ul className="drug-chips">
+                        {shelf.rows.map(({ drug, count }) => (
+                          <li key={drug.slug}>
+                            <Link className="drug-chip" href={drugPath(drug)}>
+                              {drug.name}
+                              <span className="drug-chip__count">
+                                {count}
+                                <span className="visually-hidden"> 篇</span>
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             </section>
             <section aria-labelledby="board-title">
               <h2 className="rail-title" id="board-title">
