@@ -145,8 +145,9 @@ def test_comment_requests_cannot_choose_an_author_or_moderation_state():
 
 
 # Writes that need no sign-in, each on purpose: a push subscription names a browser, never an account (C5 #95).
-# POSTs that need no session: a browser push subscription, and a search whose query belongs in the body (H3).
-ANONYMOUS_WRITES = {"/push/subscription", "/semantic-search"}
+# POSTs that need no session: a browser push subscription, a search whose query belongs in the body (H3), and the
+# digest's unsubscribe link, which carries the account's digest token instead of a session (G8).
+ANONYMOUS_WRITES = {"/push/subscription", "/semantic-search", "/digest/unsubscribe"}
 # Public, but a session adds to the answer: semantic search returns forum threads to verified members (H8).
 OPTIONAL_SESSION = {"/semantic-search"}
 

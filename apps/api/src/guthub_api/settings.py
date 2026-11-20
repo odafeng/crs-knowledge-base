@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     # and the site origin the message links to.
     line_channel_access_token: SecretStr | None = None
     site_origin: str = "https://guthub.tw"
+    # Daily comment digest email (G8 #119): the Resend API key for the guthub.tw sending domain (Secret Manager).
+    resend_api_key: SecretStr | None = None
     # The content-requests Cloud Run job an admin's review or unpublish button starts (E6 #159), as
     # projects/<project>/locations/<region>/jobs/content-requests. Unset: requests wait for the job's next run.
     content_requests_job: str | None = None

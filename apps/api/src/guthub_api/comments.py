@@ -188,6 +188,11 @@ def create_comment(
             " values (%s, %s, %s, %s, %s) returning id, paper_id, status",
             (paper_id, user.id, comment.body, comment.anonymous, None if comment.anonymous else name),
         ).fetchone()
+        # Commenting follows the paper for the daily digest (G8 #119); commenting again after unfollowing re-follows.
+        db.execute(
+            "insert into app.paper_follows (account_id, paper_id) values (%s, %s) on conflict do nothing",
+            (user.id, paper_id),
+        )
     assert row is not None
     return _receipt(row)
 

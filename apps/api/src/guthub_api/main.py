@@ -12,6 +12,7 @@ from guthub_api.content_requests import router as content_requests_router
 from guthub_api.daily import router as daily_router
 from guthub_api.db import open_pool
 from guthub_api.errors import error_response, install_error_handling
+from guthub_api.follows import router as follows_router
 from guthub_api.forum import router as forum_router
 from guthub_api.moderation import router as moderation_router
 from guthub_api.push import router as push_router
@@ -95,6 +96,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(daily_router, prefix=API_PREFIX)
     app.include_router(accounts_router, prefix=API_PREFIX)
     app.include_router(comments_router, prefix=API_PREFIX)
+    app.include_router(follows_router, prefix=API_PREFIX)
     app.include_router(moderation_router, prefix=API_PREFIX)
     app.include_router(push_router, prefix=API_PREFIX)
     app.include_router(stats_router, prefix=API_PREFIX)

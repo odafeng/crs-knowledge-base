@@ -51,6 +51,8 @@ TABLES = [
     "forum_post_likes",
     "forum_reports",
     "forum_moderation_events",
+    "paper_follows",
+    "comment_digests",
 ]
 VIEWS = ["public_papers", "public_news", "public_comments", "visible_forum_posts"]
 CLIENT_ROLES = ["anon", "authenticated", "service_role"]

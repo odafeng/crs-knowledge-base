@@ -589,6 +589,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/follows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The papers the signed-in reader follows, newest first, and whether the daily comment digest is on.
+         * @description Requires a verified session; 403 until the reader has chosen a display name. Set Cache-Control: private, no-store.
+         */
+        get: operations["getPaperFollows"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/follows/{paperId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Follow a public paper for the daily comment digest (G8). Commenting on a paper follows it too.
+         * @description Requires a verified session. Set Cache-Control: private, no-store.
+         */
+        put: operations["followPaper"];
+        post?: never;
+        /**
+         * Stop following a paper; unfollowing one that is not followed changes nothing.
+         * @description Requires a verified session. Set Cache-Control: private, no-store.
+         */
+        delete: operations["unfollowPaper"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/comment-digest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Turn the daily comment digest email on or off without changing what is followed.
+         * @description Requires a verified session. Set Cache-Control: private, no-store.
+         */
+        put: operations["setCommentDigest"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/digest/unsubscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * From a digest's link, without signing in. With paper, unfollow it; otherwise turn the digest off.
+         * @description The token is the account's digest token, which only appears in its own digests. Unknown tokens answer 404. Set Cache-Control: no-store.
+         */
+        post: operations["unsubscribeCommentDigest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/forum/threads": {
         parameters: {
             query?: never;
@@ -1212,6 +1296,13 @@ export interface components {
                 /** Format: date-time */
                 since: string;
             }[];
+        };
+        PaperFollows: {
+            papers: string[];
+            commentDigest: boolean;
+        };
+        CommentDigestSetting: {
+            enabled: boolean;
         };
         TopicSubscriptions: {
             topics: ("mCRC-BRAF-V600E" | "mCRC-KRAS-G12C" | "mCRC-MSI-H" | "mCRC-HER2" | "mCRC-RAS-wt" | "generic-CRS" | "robotic-surgery")[];
@@ -2586,6 +2677,135 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    getPaperFollows: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperFollows"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    followPaper: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paperId: components["parameters"]["PaperId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperFollows"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    unfollowPaper: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paperId: components["parameters"]["PaperId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperFollows"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    setCommentDigest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentDigestSetting"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperFollows"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    unsubscribeCommentDigest: {
+        parameters: {
+            query: {
+                token: string;
+                paper?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
             422: components["responses"]["InvalidRequest"];
             503: components["responses"]["Unavailable"];
         };
