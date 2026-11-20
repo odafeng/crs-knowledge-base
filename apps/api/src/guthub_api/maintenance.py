@@ -3,7 +3,7 @@
 python -m guthub_api.maintenance purge-deleted-authors
 python -m guthub_api.maintenance announce-news
 python -m guthub_api.maintenance line-daily [--dry-run] [--date YYYY-MM-DD]
-python -m guthub_api.maintenance comment-digest [--dry-run] [--date YYYY-MM-DD]
+python -m guthub_api.maintenance comment-digest [--dry-run] [--date YYYY-MM-DD] [--sample-to ADDRESS]
 
 purge-deleted-authors clears the private author mapping of comments and forum posts deleted more than 90 days ago and removes
 accounts deleted that long ago (app.purge_deleted_authors, ADR-0017). The privacy policy promises this, so it runs
@@ -13,7 +13,8 @@ guthub_api through GUTHUB_DATABASE_URL, like the API. line-daily broadcasts the 
 (guthub_api.line, G3 #114) with GUTHUB_LINE_CHANNEL_ACCESS_TOKEN; --dry-run prints it without sending. It runs at 07:00
 and sends what went public the day before, since Paper Watch publishes at 16:00. comment-digest emails each follower
 how many comments others published the day before on the papers they follow (guthub_api.digest, G8 #119) with
-GUTHUB_RESEND_API_KEY; --dry-run counts and previews without sending.
+GUTHUB_RESEND_API_KEY; --dry-run counts and previews without sending, --sample-to mails one made-up digest to the
+given address instead (to check the key) and touches no reader's data.
 """
 
 import argparse
@@ -26,7 +27,7 @@ import psycopg
 
 from guthub_api.announce import announce_news, web_push
 from guthub_api.daily import TAIPEI
-from guthub_api.digest import send_digests
+from guthub_api.digest import send_digests, send_sample
 from guthub_api.line import broadcast_daily
 from guthub_api.settings import Settings
 
@@ -62,6 +63,7 @@ def main(argv: list[str] | None = None) -> int:
         type=date.fromisoformat,
         help="line-daily, comment-digest: the day to report on (default: yesterday, Taiwan)",
     )
+    parser.add_argument("--sample-to", help="comment-digest: mail one made-up digest to this address and stop")
     args = parser.parse_args(argv)
     settings = Settings()
     if settings.database_url is None:
@@ -84,12 +86,16 @@ def main(argv: list[str] | None = None) -> int:
         if key is None and not args.dry_run:
             print("GUTHUB_RESEND_API_KEY is required (or use --dry-run)", file=sys.stderr)
             return 1
-        result = send_digests(
-            url,
-            args.date or line_day(datetime.now(TAIPEI)),
-            settings.site_origin,
-            None if args.dry_run or key is None else key.get_secret_value(),
-        )
+        day = args.date or line_day(datetime.now(TAIPEI))
+        if args.sample_to:
+            if key is None:
+                print("--sample-to sends a real email and needs GUTHUB_RESEND_API_KEY", file=sys.stderr)
+                return 1
+            result = send_sample(args.sample_to, day, settings.site_origin, key.get_secret_value())
+        else:
+            result = send_digests(
+                url, day, settings.site_origin, None if args.dry_run or key is None else key.get_secret_value()
+            )
     elif args.job == "announce-news":
         if settings.vapid_private_key is None or not settings.vapid_subject:
             print("GUTHUB_VAPID_PRIVATE_KEY and GUTHUB_VAPID_SUBJECT are required", file=sys.stderr)
