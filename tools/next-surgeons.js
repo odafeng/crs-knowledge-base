@@ -111,7 +111,10 @@ let browser;
   await pending.getByText('王測試').waitFor();
   check(await pending.getByText('測試醫院').count() === 1, 'the review does not show the hospital');
   for (const colorScheme of ['light', 'dark']) {
+    // Reload rather than switch in place: buttons transition their colours, and axe would measure halfway.
     await m.emulateMedia({ colorScheme });
+    await m.reload();
+    await pending.getByText('王測試').waitFor();
     await axe(m, `review page ${colorScheme}`);
   }
   await pending.getByRole('button', { name: '核准' }).click();
