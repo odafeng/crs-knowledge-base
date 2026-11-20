@@ -33,6 +33,7 @@
 - **頻率**：有新內容才推，一天最多一則，內容用 G2 的每日挑選（`GET /api/v1/daily-pick`）；當天沒有新內容就不推，不用「最近的一件事」補位。
 - **帳號**：另外建立給讀者的「GutHub」官方帳號，由維護者擁有。Paper Watch 通知維護者自己的既有帳號維持不變，兩邊的額度與追蹤者互不影響。agent 只拿新帳號的 Messaging API channel access token，存放在 Secret Manager。
 - **實作（G3 #114）**：每天 07:00 的 Cloud Run job 用 Messaging API 的 broadcast 發送前一天的挑選；Paper Watch 在 16:00 發布，只有隔天早上的推送帶得到這些論文。job 先在 `app.line_broadcasts` 佔下當天並存一個 retry key，重試都沿用同一個 key；LINE 對已接受過的 key 會回 409，所以就算 job 在 LINE 收下後、記錄前中斷，重跑也不會重複發送。
+- **會議季（G9 #120）**：在 Paper Watch 每日掃描的會議期間內（`scripts/queries.json` 的 `conference_seasons`），同一則訊息改列出前一天新增的全部文獻與消息，最多 5 則，順序與每日挑選相同，其餘附「全部更新」連結；仍是一天最多一則。API image 只含 `apps/api`，所以期間另存一份 `guthub_api/conference_seasons.json`，由 `refresh_conference_dates.py` 一起更新，測試確保兩份一致。
 
 ### 論壇提前開放（2026-11-17 維護者決定；H4 #126）
 

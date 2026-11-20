@@ -39,16 +39,30 @@ class Candidate:
     unreviewed: bool
 
 
+def _rank(c: Candidate) -> tuple[int, bool, str]:
+    return (PRIORITY[c.kind], c.unreviewed, c.ident)
+
+
 def choose(candidates: list[Candidate]) -> Candidate | None:
     if not candidates:
         return None
-    return min(candidates, key=lambda c: (PRIORITY[c.kind], c.unreviewed, c.ident))
+    return min(candidates, key=_rank)
+
+
+def ranked(candidates: list[Candidate]) -> list[Candidate]:
+    """All of a day's candidates in the order the pick is chosen from (G9 #120 lists them during a conference)."""
+    return sorted(candidates, key=_rank)
 
 
 def pick_text(pick: Candidate, origin: str) -> str:
     """The fixed plain-text form for messages: title, one-line conclusion, link, date."""
+    return f"{item_text(pick, origin)}\n{pick.date.isoformat()}"
+
+
+def item_text(pick: Candidate, origin: str) -> str:
+    """Title (marked when unreviewed), one-line conclusion and link."""
     label = "【AI 未審】" if pick.unreviewed else ""
-    return f"{label}{pick.title}\n{pick.conclusion}\n{origin.rstrip('/')}{pick.path}\n{pick.date.isoformat()}"
+    return f"{label}{pick.title}\n{pick.conclusion}\n{origin.rstrip('/')}{pick.path}"
 
 
 def collect(conn: Connection[Any], day: date) -> list[Candidate]:

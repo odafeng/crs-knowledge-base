@@ -1,7 +1,8 @@
 """Quarterly refresh of conference dates from official websites.
 
 Scrapes each conference's official page for the next meeting dates,
-then updates queries.json with precise start/end windows (±2 weeks buffer).
+then updates queries.json with precise start/end windows (±2 weeks buffer), and the copy of those windows the API
+image reads for the conference-season LINE message (apps/api/src/guthub_api/conference_seasons.json, G9 #120).
 
 Usage:
   python scripts/refresh_conference_dates.py           # refresh all
@@ -15,6 +16,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 QUERIES_FILE = Path(__file__).resolve().parent / "queries.json"
+API_SEASONS_FILE = Path(__file__).resolve().parent.parent / "apps/api/src/guthub_api/conference_seasons.json"
 
 # Month name → number mapping
 MONTHS = {
@@ -194,7 +196,8 @@ def refresh_dates(dry_run: bool = False) -> bool:
     if updated:
         with open(QUERIES_FILE, "w") as f:
             json.dump(queries, f, indent=2, ensure_ascii=False)
-        print("\n[Dates] Updated queries.json")
+        API_SEASONS_FILE.write_text(json.dumps(seasons, indent=2, ensure_ascii=False) + "\n")
+        print("\n[Dates] Updated queries.json and the API's copy")
 
     return updated
 

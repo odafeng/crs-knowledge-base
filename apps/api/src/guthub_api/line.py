@@ -6,6 +6,10 @@ app.line_broadcasts with a retry key before sending and reuses that key on every
 delivery (it answers 409 for a key it has already accepted) even if the job died after LINE took the message but before
 sent_at was recorded. Messages are counted per recipient against the account's monthly quota; going over makes LINE
 answer 429 and the job fail, which the job-failure alert reports.
+
+During a conference (G9 #120: the windows Paper Watch scans daily) the one message lists the day's additions instead of
+picking one, up to ROUNDUP of them in the pick's order with a link to the rest; outside those windows it goes back to
+the single pick on its own.
 """
 
 import json
@@ -18,15 +22,25 @@ from typing import Any
 import psycopg
 from psycopg.rows import dict_row
 
-from guthub_api.daily import Candidate, choose, collect, pick_text
+from guthub_api.conference import season_on
+from guthub_api.daily import Candidate, collect, item_text, pick_text, ranked
 
 LINE_API = "https://api.line.me"
 TIMEOUT = 30
 HEADING = "GutHub｜今天的一件事"
+ROUNDUP = 5
 
 
 def message(pick: Candidate, origin: str) -> str:
     return f"{HEADING}\n{pick_text(pick, origin)}"
+
+
+def roundup(season: str, day: date, picks: list[Candidate], origin: str) -> str:
+    """The conference-season message: the day's additions, best first, each with its title, conclusion and link."""
+    parts = [f"GutHub｜{season} 期間速報（{day.isoformat()}）", *(item_text(pick, origin) for pick in picks[:ROUNDUP])]
+    if len(picks) > ROUNDUP:
+        parts.append(f"另有 {len(picks) - ROUNDUP} 則：{origin.rstrip('/')}/updates/")
+    return "\n\n".join(parts)
 
 
 def _broadcast(base: str, token: str, retry_key: str, text: str) -> int:
@@ -51,10 +65,11 @@ def broadcast_daily(url: str, day: date, origin: str, token: str | None, base: s
     """Send the day's pick. Without a token it is a dry run: it shows the text and records nothing."""
     with psycopg.connect(url, autocommit=True) as conn:
         cur = conn.cursor(row_factory=dict_row)
-        pick = choose(collect(conn, day))
-        if pick is None:
+        picks = ranked(collect(conn, day))
+        if not picks:
             return {"status": "nothing-new"}
-        text = message(pick, origin)
+        pick, season = picks[0], season_on(day)
+        text = roundup(season, day, picks, origin) if season else message(pick, origin)
         if token is None:
             return {"status": "dry-run", "text": text}
         cur.execute(

@@ -3,7 +3,9 @@
 import re
 from datetime import UTC, date, datetime
 
-from guthub_api.daily import Candidate, choose, pick_text
+from guthub_api.conference import season_on
+from guthub_api.daily import Candidate, choose, pick_text, ranked
+from guthub_api.line import ROUNDUP, roundup
 from guthub_api.maintenance import line_day
 
 DAY = date(2026, 11, 17)
@@ -59,3 +61,33 @@ def test_the_morning_broadcast_covers_the_day_before() -> None:
     # Paper Watch publishes at 16:00, so the 07:00 message is the only one that can carry those papers (#114).
     assert line_day(datetime(2026, 11, 17, 23, 0, tzinfo=UTC)) == date(2026, 11, 17)  # 07:00 on the 18th in Taipei
     assert line_day(datetime(2026, 1, 1, 7, 0, tzinfo=UTC)) == date(2025, 12, 31)
+
+
+SEASONS = {
+    "ESMO": {"start": "09-05", "end": "11-05", "name": "ESMO Congress"},
+    "SABCS": {"start": "12-15", "end": "01-10", "name": "Year-end"},
+}
+
+
+def test_conference_windows_include_both_ends_and_may_wrap_the_new_year() -> None:
+    assert season_on(date(2026, 9, 5), SEASONS) == season_on(date(2026, 11, 5), SEASONS) == "ESMO Congress"
+    assert season_on(date(2026, 11, 6), SEASONS) is None
+    assert season_on(date(2026, 12, 31), SEASONS) == season_on(date(2027, 1, 10), SEASONS) == "Year-end"
+    assert season_on(date(2027, 1, 11), SEASONS) is None
+
+
+def test_the_shipped_windows_load() -> None:
+    assert season_on(date(2026, 10, 20)) == "ESMO Congress"
+    assert season_on(date(2026, 3, 15)) is None
+
+
+def test_the_conference_roundup_lists_the_day_best_first_and_links_the_rest() -> None:
+    day = [candidate("paper", f"p{i}") for i in range(ROUNDUP)] + [candidate("news", "n1", reviewed=False)]
+    text = roundup("ESMO Congress", DAY, ranked(day), "https://guthub.tw/")
+    blocks = text.split("\n\n")
+    assert blocks[0] == "GutHub｜ESMO Congress 期間速報（2026-11-17）"
+    # News before papers, as for the single pick; an unreviewed story still says so.
+    assert blocks[1] == "【AI 未審】n1 標題\nHR 0.62，延長存活\nhttps://guthub.tw/news/n1/"
+    assert len(blocks) == 1 + ROUNDUP + 1
+    assert blocks[-1] == "另有 1 則：https://guthub.tw/updates/"
+    assert "另有" not in roundup("ESMO Congress", DAY, ranked(day[:2]), "https://guthub.tw")
