@@ -194,7 +194,7 @@ broadcast 會送給這個帳號的**所有**追蹤者，所以只在給讀者用
 
 ## 告警
 
-用 `python3 tools/setup_monitoring.py $P <API 主機名稱> [通知管道 ...]` 建立，重複執行不會重複建立。
+用 `python3 tools/setup_monitoring.py $P <API 主機名稱> --email <維護者信箱>` 建立，重複執行不會重複建立。`--email` 會找出或建立該信箱的通知管道，並補進已存在的告警政策；政策上原有的管道會保留。
 
 | 告警 | 觸發條件 | 先查什麼 |
 | --- | --- | --- |
@@ -203,9 +203,9 @@ broadcast 會送給這個帳號的**所有**追蹤者，所以只在給讀者用
 | regulatory-watch 開出的 issue（標題以「[G5 監測]」開頭） | 健保給付規定有新版、章節消失，或 TFDA 許可證在卡片查核日之後異動、註銷 | 對照 issue 裡的新條文或適應症全文更新卡片；job 不會自動改卡片 |
 | 預算 50%／90%／100% | 每月花費（staging 320 TWD、prod 960 TWD） | Billing 報表，看是哪個服務 |
 
-告警建立時沒有掛通知管道，事件只會出現在 Cloud Console 的 Monitoring → Incidents。要收到 email，先在 Monitoring → Alerting → Edit notification channels 新增自己的 email，再把管道名稱（`projects/$P/notificationChannels/<id>`）加進兩條告警政策。預算告警會寄給帳單管理員，不需要另外設定。
+2026-11-21 起 staging 與 prod 的兩條告警都掛上維護者的 email 管道（prod 在這天才第一次建立 uptime check 與告警）。沒帶 `--email` 也沒給管道時，事件只會出現在 Cloud Console 的 Monitoring → Incidents。換維護者時，用新信箱再跑一次 `--email`，再到 Monitoring → Alerting → Edit notification channels 移除舊的。預算告警會寄給帳單管理員，不需要另外設定。
 
-2026-11-17 在 staging 驗證：用不存在的子指令讓 `purge-deleted-authors` 執行失敗一次，幾分鐘後 `run.googleapis.com/job/completed_execution_count`（`result=failed`）記到 1，這正是 job 告警的條件。通知是否寄達，要等通知管道設定好後再實測一次。
+2026-11-17 在 staging 驗證：用不存在的子指令讓 `purge-deleted-authors` 執行失敗一次，幾分鐘後 `run.googleapis.com/job/completed_execution_count`（`result=failed`）記到 1，這正是 job 告警的條件。2026-11-21 掛上 email 管道後，用同樣方式（`--args=-m,guthub_api.maintenance,no-such-command`）再讓它失敗一次，測試通知是否寄達。
 
 同一天也在 staging 實際打開與關閉暫停開關：暫停時寫入回 503 加 `retry-after: 600`，CORS 標頭照常並公開 `Retry-After`，讀取維持 200；恢復後寫入回到正常的 401（未登入）。
 

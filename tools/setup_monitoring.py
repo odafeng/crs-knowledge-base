@@ -1,21 +1,22 @@
 """Health and job-failure alerts for one GutHub Google Cloud project (F3 #78, docs/runbook-cutover.md).
 
-    python3 tools/setup_monitoring.py guthub-staging guthub-api-xxxx-an.a.run.app [channel ...]
+    python3 tools/setup_monitoring.py guthub-staging guthub-api-xxxx-an.a.run.app [--email ADDRESS] [channel ...]
 
 Creates, if missing (matched by display name, so reruns change nothing):
 - an uptime check on https://<host>/api/v1/health every 5 minutes;
 - an alert when that check fails from more than one region;
 - an alert when any Cloud Run job execution fails (the daily purge, Paper Watch).
 
-Channels are notification channel resource names (projects/<p>/notificationChannels/<id>); without any, incidents
-still open in the Cloud Console but nobody is emailed. Spend alerts are the billing budgets, set up separately.
+Channels are notification channel resource names (projects/<p>/notificationChannels/<id>); --email finds or creates
+an email channel for that address. Every given channel is added to both alert policies, including ones that already
+exist; channels already on a policy stay. Without any, incidents still open in the Cloud Console but nobody is emailed. Spend alerts are the billing budgets, set up separately.
 Uses the Monitoring REST API with the caller's gcloud credentials. Uptime-metric alerts are not billed; other alert
 conditions are free until at least 2027-09 (Google's announced start of alerting charges).
 """
 
+import argparse
 import json
 import subprocess
-import sys
 import urllib.request
 
 API = "https://monitoring.googleapis.com/v3"
@@ -41,6 +42,22 @@ def call(method: str, url: str, body: dict | None = None) -> dict:
 def existing(project: str, collection: str, key: str) -> dict[str, dict]:
     items = call("GET", f"{API}/projects/{project}/{collection}?pageSize=500").get(key, [])
     return {item["displayName"]: item for item in items}
+
+
+def email_channel(project: str, address: str) -> str:
+    channels = call("GET", f"{API}/projects/{project}/notificationChannels?pageSize=500").get(
+        "notificationChannels", []
+    )
+    for channel in channels:
+        if channel["type"] == "email" and channel.get("labels", {}).get("email_address") == address:
+            return channel["name"]
+    created = call(
+        "POST",
+        f"{API}/projects/{project}/notificationChannels",
+        {"type": "email", "displayName": "GutHub maintainer", "labels": {"email_address": address}},
+    )
+    print("email channel created")
+    return created["name"]
 
 
 def main(project: str, host: str, channels: list[str]) -> None:
@@ -106,7 +123,18 @@ def main(project: str, host: str, channels: list[str]) -> None:
     }
     for name, condition in wanted.items():
         if name in policies:
-            print(f"alert policy exists: {name}")
+            policy = policies[name]
+            current = policy.get("notificationChannels", [])
+            missing = [c for c in channels if c not in current]
+            if missing:
+                call(
+                    "PATCH",
+                    f"{API}/{policy['name']}?updateMask=notificationChannels",
+                    {"notificationChannels": current + missing},
+                )
+                print(f"alert policy exists, channels added: {name}")
+            else:
+                print(f"alert policy exists: {name}")
             continue
         call(
             "POST",
@@ -126,6 +154,13 @@ def main(project: str, host: str, channels: list[str]) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        sys.exit(__doc__)
-    main(sys.argv[1], sys.argv[2], sys.argv[3:])
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("project")
+    parser.add_argument("host")
+    parser.add_argument("channels", nargs="*")
+    parser.add_argument("--email", help="email address to notify; its channel is created if missing")
+    args = parser.parse_args()
+    channels = list(args.channels)
+    if args.email:
+        channels.append(email_channel(args.project, args.email))
+    main(args.project, args.host, channels)
