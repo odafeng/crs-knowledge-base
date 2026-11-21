@@ -15,7 +15,13 @@ import {
 
 type Choice = { key: string; label: string };
 
-export function TopicChoices({ topics }: { topics: Choice[] }) {
+export function TopicChoices({
+  topics,
+  onChange,
+}: {
+  topics: Choice[];
+  onChange?: (topics: string[]) => void;
+}) {
   const account = useAccount();
   const signedIn = account.status === "signed-in" ? account : null;
   const token = signedIn?.token;
@@ -28,8 +34,12 @@ export function TopicChoices({ topics }: { topics: Choice[] }) {
     let live = true;
     loadTopics(token).then((loaded) => {
       if (!live) return;
-      if (loaded) setChosen(new Set(loaded));
-      else setStatus("暫時無法載入訂閱主題，請稍後再試。");
+      if (loaded) {
+        setChosen(new Set(loaded));
+        onChange?.(loaded);
+      } else {
+        setStatus("暫時無法載入訂閱主題，請稍後再試。");
+      }
     });
     return () => {
       live = false;
@@ -44,10 +54,13 @@ export function TopicChoices({ topics }: { topics: Choice[] }) {
     event.preventDefault();
     if (!token || !chosen) return;
     setSaving(true);
-    const response = await saveTopics(token, [...chosen]);
+    const nextList = [...chosen];
+    const response = await saveTopics(token, nextList);
     setSaving(false);
-    if (response?.ok)
+    if (response?.ok) {
+      onChange?.(nextList);
       return setStatus("已儲存。首頁會列出這些主題的最新文獻。");
+    }
     setStatus(
       response?.status === 503 && retryAfterOf(response)
         ? "網站維護中，暫時無法儲存，請稍後再試。"
@@ -56,34 +69,50 @@ export function TopicChoices({ topics }: { topics: Choice[] }) {
   }
 
   return (
-    <form className="topic-choices" onSubmit={save}>
-      <fieldset>
-        <legend>訂閱主題</legend>
-        <p className="note">
-          只有你看得到自己訂了什麼。首頁會另外列出這些主題的最新文獻。
-        </p>
-        {topics.map((topic) => (
-          <label className="topic-choices__item" key={topic.key}>
-            <input
-              type="checkbox"
-              checked={chosen.has(topic.key)}
-              onChange={(event) => {
-                const next = new Set(chosen);
-                if (event.target.checked) next.add(topic.key);
-                else next.delete(topic.key);
-                setChosen(next);
-                setStatus("");
-              }}
-            />
-            {topic.label}
-          </label>
-        ))}
-      </fieldset>
-      <button className="btn btn--secondary" type="submit" disabled={saving}>
-        儲存訂閱主題
-      </button>
-      <p role="status">{status}</p>
-    </form>
+    <section className="dash-card" aria-labelledby="topics-card-title">
+      <div className="dash-card__head">
+        <h2 id="topics-card-title">訂閱主題</h2>
+        <span className="chip">已選 {chosen.size} 項</span>
+      </div>
+      <form className="topic-choices" onSubmit={save}>
+        <fieldset>
+          <legend className="visually-hidden">訂閱主題</legend>
+          <p className="note">
+            只有你看得到自己訂了什麼。首頁會另外列出這些主題的最新文獻。
+          </p>
+          <div className="topic-choices__grid">
+            {topics.map((topic) => (
+              <label className="topic-choices__item" key={topic.key}>
+                <input
+                  type="checkbox"
+                  checked={chosen.has(topic.key)}
+                  onChange={(event) => {
+                    const next = new Set(chosen);
+                    if (event.target.checked) next.add(topic.key);
+                    else next.delete(topic.key);
+                    setChosen(next);
+                    setStatus("");
+                  }}
+                />
+                {topic.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <div className="dash-card__actions">
+          <button
+            className="btn btn--secondary"
+            type="submit"
+            disabled={saving}
+          >
+            儲存訂閱主題
+          </button>
+          <p className="note" role="status">
+            {status}
+          </p>
+        </div>
+      </form>
+    </section>
   );
 }
 

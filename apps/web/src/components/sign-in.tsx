@@ -232,7 +232,11 @@ export function AuthCallback() {
   return <p aria-live="polite">登入中…</p>;
 }
 
-export function AccountSettings() {
+export function AccountSettings({
+  embedded = false,
+}: {
+  embedded?: boolean;
+} = {}) {
   const account = useAccount();
   const router = useRouter();
   const [name, setName] = useState<string | null>(null);
@@ -247,9 +251,22 @@ export function AccountSettings() {
   }
   if (account.status === "signed-out") {
     return (
-      <p>
-        尚未登入。<Link href="/login/?next=%2Faccount%2F">登入</Link>
-      </p>
+      <div className="forum-gate">
+        <div className="forum-gate__body">
+          <p className="forum-gate__kicker">個人儀表板與設定</p>
+          <p>
+            尚未登入。登入後即可管理訂閱主題、追蹤文獻新留言通知，並申請大腸直腸外科醫師會員資格。
+          </p>
+          <div className="forum-gate__action">
+            <Link
+              className="btn btn--primary"
+              href="/login/?next=%2Faccount%2F"
+            >
+              登入
+            </Link>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -294,7 +311,15 @@ export function AccountSettings() {
   }
 
   return (
-    <div className="sign-in">
+    <section
+      className={embedded ? "dash-card account-settings-card" : "sign-in"}
+      aria-labelledby={embedded ? "profile-settings-title" : undefined}
+    >
+      {embedded && (
+        <div className="dash-card__head">
+          <h2 id="profile-settings-title">個人資料與帳號安全</h2>
+        </div>
+      )}
       {firstTime && (
         <p className="callout">
           歡迎！請先設定公開顯示名稱。署名留言會顯示這個名稱；也可以選擇匿名留言，其他讀者看不到你的名稱。
@@ -332,11 +357,11 @@ export function AccountSettings() {
           </p>
         )}
       </div>
-      {account.email && (
+      {!embedded && account.email && (
         <p className="note">登入帳號：{account.email}（不會公開）</p>
       )}
       {googleEnabled && <GoogleLink />}
-      {account.isAdmin && (
+      {!embedded && account.isAdmin && (
         <p>
           <Link href="/admin/review/">待審內容</Link>
           {"　"}
@@ -345,10 +370,19 @@ export function AccountSettings() {
           <Link href="/admin/stats/">每週活動</Link>
         </p>
       )}
-      <button className="btn btn--secondary" type="button" onClick={leave}>
-        登出
-      </button>
-    </div>
+      {embedded ? (
+        <div className="account-settings-card__footer">
+          <span className="note">僅會登出這台裝置的登入階段。</span>
+          <button className="btn btn--secondary" type="button" onClick={leave}>
+            登出
+          </button>
+        </div>
+      ) : (
+        <button className="btn btn--secondary" type="button" onClick={leave}>
+          登出
+        </button>
+      )}
+    </section>
   );
 }
 
