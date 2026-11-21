@@ -234,6 +234,9 @@ let browser;
   await reportedAnonymous.getByRole('button', { name: '查看作者' }).click();
   await reportedAnonymous.getByText(`作者：Reader A ${run}`).waitFor();
 
+  // axe target-size counts a button half-hidden under the sticky header as too small, so where the
+  // last click left the scroll decides the result. Check the queue from the top of the page.
+  await m.evaluate(() => window.scrollTo(0, 0));
   await m.addScriptTag({ content: AXE });
   const queueAxe = await m.evaluate(tags => axe.run(document.querySelector('main'), { runOnly: { type: 'tag', values: tags } }), TAGS);
   check(queueAxe.violations.length === 0, `axe queue: ${queueAxe.violations.map(v => `${v.id} ${v.nodes[0].target}`).join('; ')}`);
