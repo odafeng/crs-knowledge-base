@@ -129,7 +129,7 @@ export default async function NewsPage({ params }: Props) {
           )}
           {unreviewed && (
             <div className="callout callout--ai" role="note">
-              <Icon name="spark" />
+              <Icon name="info" />
               <p>
                 這則新聞稿由 AI
                 撰寫，尚未經人工審核。內容可能有誤，臨床判斷請以原文為準。

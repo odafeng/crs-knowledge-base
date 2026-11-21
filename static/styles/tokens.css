@@ -1,50 +1,54 @@
 /* Design tokens.
-   Concept: a journal figure. The lead story is set like Figure 1 of a trial report, on a field of
-   ribbon blue (the colorectal cancer awareness color); eosin rose, the pink of an H&E slide, marks what is new.
-   Everything else is ink on a cool paper. Components read semantic tokens only. */
+   Concept: an authoritative Taiwanese clinical-surgical journal and evidence workstation.
+   Warm archival paper grounds long-form reading; deep institutional indigo honors the colorectal
+   cancer awareness ribbon; muted claret/eosin marks AI disclosure and freshness without shouting.
+   Dark mode uses calm neutral obsidian slate rather than saturated blue glow.
+   Components read semantic tokens only. */
 :root {
   color-scheme: light;
 
-  /* Surfaces and ink: neutrals lean toward the brand blue */
-  --ground: #F3F5FB;
+  /* Surfaces and ink: warm archival paper with deep neutral charcoal ink */
+  --ground: #F6F5F0;
   --surface: #FFFFFF;
-  --sunken: #E9EDF7;
-  --ink: #0B1433;
-  --ink-2: #414A68;
-  --ink-3: #5F6887;
-  --line: #D8DEEC;
-  --line-strong: #8089A8;
+  --sunken: #ECEAE2;
+  --ink: #111827;
+  --ink-2: #3A4252;
+  --ink-3: #575F6E;
+  --line: #DFDDD4;
+  --line-strong: #B6B1A4;
 
-  /* Brand: ribbon blue */
-  --brand: #1B3BC4;
-  --brand-hover: #142E9E;
+  /* Brand: deep institutional colorectal indigo-navy */
+  --brand: #1A3A7E;
+  --brand-hover: #12295C;
   --on-brand: #FFFFFF;
-  --tint: #E4EAFE;
-  --field: #0E2270;          /* the blue band behind the lead story */
-  --field-2: #142C8C;
+  --tint: #EDF1F9;
+  --field: #0F1F44;          /* the masthead / abstract field */
+  --field-2: #172C5E;
 
-  /* Signal: eosin rose. Reserved for "new" and for AI disclosure. */
-  --rose: #C2185B;
-  --rose-fill: #E8356F;
-  --rose-wash: #FDE8EF;
+  /* Signal: restrained editorial claret/eosin for "new" and AI disclosure */
+  --rose: #8F2542;
+  --rose-fill: #B33054;
+  --rose-wash: #FAF0F2;
+  --rose-line: #E6C7D0;
 
-  /* Chart marks: the trial arm in blue, the comparator in gray. Both keep 3:1 against the panel they sit on. */
-  --mark: #3D63F0;
-  --mark-muted: #848DAB;
-  --mark-track: #DCE3FA;
+  /* Chart marks: trial arm in institutional indigo, comparator in slate. Both keep >=3:1 contrast. */
+  --mark: #24489B;
+  --mark-muted: #767E91;
+  --mark-track: #E1E5EF;
 
-  /* Status: regulatory states only, always with an icon and a label */
-  --good: #0B6B43;  --good-bg: #E2F4EA;
-  --warn: #7A4F00;  --warn-bg: #FBF0D3;
-  --bad: #A1261F;   --bad-bg: #FBE7E4;
+  /* Status: regulatory states only, always paired with an icon and a label */
+  --good: #0B5D3C;  --good-bg: #E6F4EC;
+  --warn: #734604;  --warn-bg: #FAF0D8;
+  --bad: #96231E;   --bad-bg: #FCECEB;
 
-  --focus: #1B3BC4;
-  /* The header's navy logo disc needs no edge on light ground; on dark ground it would melt into the page. */
-  --mark-ring: transparent;
-  --shadow-1: 0 1px 2px rgb(11 20 51 / 0.05), 0 1px 1px rgb(11 20 51 / 0.04);
-  --shadow-2: 0 2px 4px rgb(11 20 51 / 0.06), 0 12px 28px -14px rgb(11 20 51 / 0.28);
+  --focus: #1A3A7E;
+  /* The header's navy logo disc needs no edge on light ground; on dark ground a hairline keeps it crisp. */
+  --mark-ring: rgb(17 24 39 / 0.08);
+  --shadow-1: 0 1px 2px rgb(17 24 39 / 0.04);
+  --shadow-2: 0 4px 16px -4px rgb(17 24 39 / 0.1), 0 1px 3px rgb(17 24 39 / 0.05);
+  --scroll-scrim: rgb(17 24 39 / 0.09);
 
-  /* Type: Archivo carries Latin and figures; Chinese uses the reader's system font */
+  /* Type: Archivo carries Latin, biomarkers and tabular numerals; Chinese uses the reader's system font */
   --font-sans: 'Archivo', 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', system-ui, sans-serif;
   --text-xs: 0.8125rem;    /* 13px */
   --text-sm: 0.9375rem;    /* 15px */
@@ -52,27 +56,27 @@
   --text-lg: 1.1875rem;    /* 19px */
   --text-xl: 1.375rem;     /* 22px */
   --text-2xl: 1.75rem;     /* 28px */
-  --text-display: clamp(1.875rem, 1.3rem + 2.6vw, 2.875rem);  /* 30px at 360, 46px from 1280 */
-  --text-figure: clamp(2.5rem, 1.9rem + 2.7vw, 3.75rem);      /* the large numerals */
-  --leading-tight: 1.25;
-  --leading-snug: 1.5;
-  --leading-body: 1.8;
-  --measure: 38em;         /* line length cap: 38 full-width characters at the element's own text size */
+  --text-display: clamp(1.75rem, 1.25rem + 2.1vw, 2.625rem);  /* 28px at 360, 42px from 1280 */
+  --text-figure: clamp(2.25rem, 1.75rem + 2.2vw, 3.25rem);    /* structured large numerals */
+  --leading-tight: 1.24;
+  --leading-snug: 1.48;
+  --leading-body: 1.78;
+  --measure: 38em;         /* line length cap: 38 full-width characters */
 
   /* Spacing: 4px base */
   --space-1: 0.25rem; --space-2: 0.5rem;  --space-3: 0.75rem; --space-4: 1rem;
   --space-5: 1.25rem; --space-6: 1.5rem;  --space-8: 2rem;    --space-10: 2.5rem;
   --space-12: 3rem;   --space-16: 4rem;   --space-20: 5rem;
 
-  /* Shape: radius by role, not one radius everywhere */
-  --radius-chip: 999px;
-  --radius-control: 10px;
-  --radius-card: 14px;
-  --radius-panel: 20px;
+  /* Shape: crisp editorial radii by role, never bubbly */
+  --radius-chip: 4px;
+  --radius-control: 6px;
+  --radius-card: 8px;
+  --radius-panel: 10px;
 
   /* Layout */
   --gutter: 1.25rem;       /* 20px at phone width */
-  --container: 80rem;      /* 1280px: room for two reading columns on a desktop (I4 #193) */
+  --container: 80rem;      /* 1280px */
   --header-h: 3.5rem;      /* 56px */
   --tabbar-h: 3.75rem;     /* 60px, phones and tablets only */
   --target: 2.75rem;       /* 44px touch target */
@@ -84,90 +88,95 @@
 }
 
 @media (min-width: 768px) {
-  :root { --gutter: 2rem; --header-h: 4rem; }
+  :root { --gutter: 2rem; --header-h: 3.875rem; }
 }
 
-/* Dark theme, in three states: the system setting applies until the reader picks a theme with the toggle,
-   which sets data-theme and wins in both directions. The two blocks below hold the same values. */
+/* Dark theme: calm neutral obsidian slate with subtle surface elevation and crisp 1px keylines.
+   System preference applies until toggled, which sets data-theme and wins in both directions. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --ground: #060B1C;
-    --surface: #0E1530;
-    --sunken: #0A1024;
-    --ink: #ECEFFA;
-    --mark-ring: #5B668F;
-    --ink-2: #B9C0DA;
-    --ink-3: #929AB9;
-    --line: #222B4E;
-    --line-strong: #5B668F;
-    --brand: #A4B6FF;
-    --brand-hover: #C0CDFF;
-    --on-brand: #0B1433;
-    --tint: #16215A;
-    --field: #101C5C;
-    --field-2: #17277A;
-    --rose: #FF8FB1;
-    --rose-fill: #F0497F;
-    --rose-wash: #3A1226;
-    --mark: #7F9BFF;
-    --mark-muted: #66719C;
-    --mark-track: #1C2757;
-    --good: #6FD7A0;  --good-bg: #0E2A1D;
-    --warn: #F2C25B;  --warn-bg: #2E230A;
-    --bad: #FF9A8F;   --bad-bg: #3A1512;
-    --focus: #A4B6FF;
-    --shadow-1: 0 0 0 1px rgb(164 182 255 / 0.08);
-    --shadow-2: 0 0 0 1px rgb(164 182 255 / 0.12), 0 16px 32px -16px rgb(0 0 0 / 0.7);
+    --ground: #0F1217;
+    --surface: #161A22;
+    --sunken: #1D222C;
+    --ink: #F2F4F8;
+    --mark-ring: #475066;
+    --ink-2: #B9C0CE;
+    --ink-3: #959EB1;
+    --line: #272D3A;
+    --line-strong: #4B556B;
+    --brand: #8FB0FF;
+    --brand-hover: #B2C9FF;
+    --on-brand: #0B1220;
+    --tint: #1A2540;
+    --field: #121D38;
+    --field-2: #1A2A50;
+    --rose: #F39BB2;
+    --rose-fill: #E0567D;
+    --rose-wash: #2B151E;
+    --rose-line: #542838;
+    --mark: #84A6FF;
+    --mark-muted: #6C768E;
+    --mark-track: #232C42;
+    --good: #72D9A4;  --good-bg: #10291D;
+    --warn: #F0C362;  --warn-bg: #2D220B;
+    --bad: #FF9C91;   --bad-bg: #381614;
+    --focus: #8FB0FF;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.28);
+    --shadow-2: 0 8px 24px -8px rgb(0 0 0 / 0.55);
+    --scroll-scrim: rgb(0 0 0 / 0.36);
   }
 }
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --mark-ring: #5B668F;
-  --ground: #060B1C;
-  --surface: #0E1530;
-  --sunken: #0A1024;
-  --ink: #ECEFFA;
-  --ink-2: #B9C0DA;
-  --ink-3: #929AB9;
-  --line: #222B4E;
-  --line-strong: #5B668F;
-  --brand: #A4B6FF;
-  --brand-hover: #C0CDFF;
-  --on-brand: #0B1433;
-  --tint: #16215A;
-  --field: #101C5C;
-  --field-2: #17277A;
-  --rose: #FF8FB1;
-  --rose-fill: #F0497F;
-  --rose-wash: #3A1226;
-  --mark: #7F9BFF;
-  --mark-muted: #66719C;
-  --mark-track: #1C2757;
-  --good: #6FD7A0;  --good-bg: #0E2A1D;
-  --warn: #F2C25B;  --warn-bg: #2E230A;
-  --bad: #FF9A8F;   --bad-bg: #3A1512;
-  --focus: #A4B6FF;
-  --shadow-1: 0 0 0 1px rgb(164 182 255 / 0.08);
-  --shadow-2: 0 0 0 1px rgb(164 182 255 / 0.12), 0 16px 32px -16px rgb(0 0 0 / 0.7);
+  --mark-ring: #475066;
+  --ground: #0F1217;
+  --surface: #161A22;
+  --sunken: #1D222C;
+  --ink: #F2F4F8;
+  --ink-2: #B9C0CE;
+  --ink-3: #959EB1;
+  --line: #272D3A;
+  --line-strong: #4B556B;
+  --brand: #8FB0FF;
+  --brand-hover: #B2C9FF;
+  --on-brand: #0B1220;
+  --tint: #1A2540;
+  --field: #121D38;
+  --field-2: #1A2A50;
+  --rose: #F39BB2;
+  --rose-fill: #E0567D;
+  --rose-wash: #2B151E;
+  --rose-line: #542838;
+  --mark: #84A6FF;
+  --mark-muted: #6C768E;
+  --mark-track: #232C42;
+  --good: #72D9A4;  --good-bg: #10291D;
+  --warn: #F0C362;  --warn-bg: #2D220B;
+  --bad: #FF9C91;   --bad-bg: #381614;
+  --focus: #8FB0FF;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.28);
+  --shadow-2: 0 8px 24px -8px rgb(0 0 0 / 0.55);
+  --scroll-scrim: rgb(0 0 0 / 0.36);
 }
 
-/* Anything set on the blue field reads these instead: the field is blue in both themes. */
+/* Anything set on the ink-navy field reads these instead: high contrast in both themes. */
 .on-field {
   --ink: #FFFFFF;
-  --ink-2: #C9D2F6;
-  --ink-3: #C9D2F6;
-  --line: rgb(255 255 255 / 0.18);
-  --line-strong: rgb(255 255 255 / 0.55);
-  --surface: rgb(255 255 255 / 0.07);
+  --ink-2: #CFD9F2;
+  --ink-3: #BAC8E8;
+  --line: rgb(255 255 255 / 0.16);
+  --line-strong: rgb(255 255 255 / 0.45);
+  --surface: rgb(255 255 255 / 0.06);
   --brand: #FFFFFF;
-  --brand-hover: #E4EAFE;
-  --on-brand: #0E2270;
-  --rose: #FF9DBA;
-  --rose-wash: rgb(255 157 186 / 0.16);
-  --mark: #B4C3FF;
-  --mark-muted: rgb(255 255 255 / 0.45);
-  --mark-track: rgb(255 255 255 / 0.16);
+  --brand-hover: #E6ECFA;
+  --on-brand: #0F1F44;
+  --rose: #F8ABC1;
+  --rose-wash: rgb(248 171 193 / 0.14);
+  --rose-line: rgb(248 171 193 / 0.32);
+  --mark: #A8C0FF;
+  --mark-muted: rgb(255 255 255 / 0.48);
+  --mark-track: rgb(255 255 255 / 0.15);
   --focus: #FFFFFF;
   color: var(--ink);
 }

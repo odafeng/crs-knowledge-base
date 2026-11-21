@@ -47,9 +47,6 @@ export const metadata: Metadata = {
   title: `${SITE_NAME}｜${TAGLINE}`,
 };
 
-// The guideline Q&A (crs-guideline-rag): a separate site that answers from the guideline text itself.
-const GUIDELINE_QA = "https://crs.fredrichuang.com/";
-
 export default async function Home() {
   // Rendered per request so `next build` never calls the API; API reads stay cached for 300 s (lib/content.ts).
   await connection();
@@ -79,11 +76,13 @@ export default async function Home() {
             <h2 className="daily__label" id="daily-title">
               {dailyLabel(pick.date, daily.date)}
             </h2>
-            <p className="daily__title">
-              <Link href={pick.url}>{pick.title}</Link>
-              {pick.unreviewed && <AiChip label="AI 未審" />}
-            </p>
-            <p className="daily__conclusion">{pick.conclusion}</p>
+            <div className="daily__main">
+              <p className="daily__title">
+                <Link href={pick.url}>{pick.title}</Link>
+                {pick.unreviewed && <AiChip label="AI 未審" />}
+              </p>
+              <p className="daily__conclusion">{pick.conclusion}</p>
+            </div>
           </div>
         </section>
       )}
@@ -111,7 +110,13 @@ export default async function Home() {
                 本週新增 {stats.weekPapers} 篇文獻、{stats.weekNews} 則消息
               </span>
             </p>
-            <div className="lead__grid">
+            <div
+              className={
+                lead.figures.length > 0
+                  ? "lead__grid"
+                  : "lead__grid lead__grid--plate"
+              }
+            >
               <div>
                 <p className="eyebrow">
                   <span className="eyebrow__flag">頭條</span>
@@ -144,7 +149,20 @@ export default async function Home() {
                   {isUnreviewed(lead) && <AiChip label="AI 未審" />}
                 </div>
               </div>
-              {lead.figures.length > 0 && <NewsFigure item={lead} />}
+              {lead.figures.length > 0 ? (
+                <NewsFigure item={lead} />
+              ) : (
+                <div className="lead__plate">
+                  <span className="lead__plate-kicker">關鍵數字</span>
+                  <p className="lead__plate-value num">
+                    {lead.key.value}
+                    {lead.key.unit && (
+                      <span className="stat__unit">{lead.key.unit}</span>
+                    )}
+                  </p>
+                  <p className="lead__plate-label">{lead.key.label}</p>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -201,25 +219,7 @@ export default async function Home() {
           </section>
           <aside className="home-rail" aria-label="訂閱、主題、藥物與最新給付">
             <Alerts />
-            <section className="ask" aria-labelledby="ask-title">
-              <h2 className="rail-title" id="ask-title">
-                問指引
-              </h2>
-              <p>
-                用中文問
-                NCCN、ESMO、ASCRS、JSCCR、台灣共識與健保給付規定，答案附上指引原文與出處。
-              </p>
-              <a
-                className="btn btn--primary"
-                href={GUIDELINE_QA}
-                target="_blank"
-                rel="noopener"
-              >
-                開啟指引問答
-                <span className="visually-hidden">（另開新分頁）</span>
-              </a>
-            </section>
-            <section aria-labelledby="topics-title">
+            <section className="rail-section" aria-labelledby="topics-title">
               <div className="rail-head">
                 <h2 className="rail-title" id="topics-title">
                   主題
@@ -247,7 +247,7 @@ export default async function Home() {
                 }))}
               />
             </section>
-            <section aria-labelledby="drugs-title">
+            <section className="rail-section" aria-labelledby="drugs-title">
               <div className="rail-head">
                 <h2 className="rail-title" id="drugs-title">
                   藥物
@@ -277,7 +277,7 @@ export default async function Home() {
                 ))}
               </dl>
             </section>
-            <section aria-labelledby="board-title">
+            <section className="rail-section" aria-labelledby="board-title">
               <h2 className="rail-title" id="board-title">
                 最新核准給付資訊
               </h2>

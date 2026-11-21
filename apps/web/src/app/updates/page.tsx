@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { pageJsonLd, pageMetadata } from "@/lib/seo";
 import { connection } from "next/server";
-import { Breadcrumb, Entry, JsonLd } from "@/components/reading";
+import { Breadcrumb, JsonLd } from "@/components/reading";
 import { SearchBox } from "@/components/search-box";
+import { UpdatesFilter } from "@/components/updates-filter";
 import { listPapers, listTopics } from "@/lib/content";
 import { HOME, updates } from "@/lib/site";
 
@@ -16,7 +17,6 @@ export default async function UpdatesPage() {
   await connection();
   const [papers, topics] = await Promise.all([listPapers(), listTopics()]);
   const rows = updates(papers);
-  const topicOf = (key: string) => topics.find((t) => t.key === key);
   return (
     <div className="container page">
       <JsonLd
@@ -35,16 +35,7 @@ export default async function UpdatesPage() {
         </p>
       </header>
       <SearchBox />
-      <ol className="entries entries--grid page__section">
-        {rows.map((update) => (
-          <Entry
-            update={update}
-            topic={topicOf(update.paper.topic)}
-            level={2}
-            key={update.id}
-          />
-        ))}
-      </ol>
+      <UpdatesFilter rows={rows} topics={topics} />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { pageJsonLd, pageMetadata } from "@/lib/seo";
 import { connection } from "next/server";
 import { Alerts, Breadcrumb, JsonLd } from "@/components/reading";
+import { ScrollTable } from "@/components/scroll-table";
 import { listNews, listPapers, listTopics } from "@/lib/content";
 import { pushEnabled } from "@/lib/push";
 import { feedList, HOME } from "@/lib/site";
@@ -60,11 +61,10 @@ export default async function SubscribePage() {
           </ol>
         </div>
       </div>
-      <div
-        className="table-wrap page__section"
-        tabIndex={0}
-        role="region"
-        aria-label="訂閱網址表格，可左右捲動"
+      <ScrollTable
+        className="page__section"
+        label="訂閱網址表格，可左右捲動"
+        hint="左右滑動查看完整網址"
       >
         <table className="table">
           <thead>
@@ -87,7 +87,7 @@ export default async function SubscribePage() {
             ))}
           </tbody>
         </table>
-      </div>
+      </ScrollTable>
     </div>
   );
 }

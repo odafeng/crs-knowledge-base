@@ -230,24 +230,25 @@ export const TABS: ReadonlyArray<
   ["消息", "/news/", "news", "news"],
   ["文獻", "/updates/", "papers", "list"],
   ["主題", "/topics/", "topics", "grid"],
-  ["訂閱", "/subscribe/", "subscribe", "bell"],
+  ["論壇", "/forum/", "forum", "chat"],
 ];
 
 /** Which navigation entry a path belongs to (the `area` rules at the top of base.html.j2). */
-export function areaOf(path: string): Area {
+export function areaOf(path: string): Area | null {
   if (path === "/") return "home";
   if (path.startsWith("/news/")) return "news";
   if (path.startsWith("/updates/") || path.startsWith("/papers/"))
     return "papers";
   if (
-    ["/topics/", "/mcrc/", "/robotic/", "/drugs/"].some((prefix) =>
-      path.startsWith(prefix),
+    ["/topics/", "/mcrc/", "/robotic/", "/drugs/", "/tumor-board/"].some(
+      (prefix) => path.startsWith(prefix),
     )
   )
     return "topics";
   if (path.startsWith("/subscribe/")) return "subscribe";
   if (path.startsWith("/forum/")) return "forum";
-  return "about";
+  if (path.startsWith("/about/")) return "about";
+  return null;
 }
 
 // --- updates and feeds (sitegen/models.py KnowledgeBase.updates, render.py _feeds) ---------------------------

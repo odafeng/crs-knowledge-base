@@ -10,6 +10,7 @@ import {
   Status,
   JsonLd,
 } from "@/components/reading";
+import { ScrollTable } from "@/components/scroll-table";
 import { getTopicBySlug, listNews, listPapers } from "@/lib/content";
 import {
   byTopic,
@@ -63,13 +64,20 @@ export default async function TopicPage({ params }: Props) {
       <header className="page-head">
         <h1>{topic.title}</h1>
         <p className="page-head__lead">共 {papers.length} 篇文獻。</p>
-        {topic.standardOfCare.length > 0 && (
-          <p>
-            <Link className="btn btn--secondary" href={boardPath(topic)}>
-              Tumor board 一頁摘要
-            </Link>
-          </p>
-        )}
+        <div className="page-head__bar">
+          {topic.standardOfCare.length > 0 && (
+            <div className="page-head__actions">
+              <Link className="btn btn--secondary" href={boardPath(topic)}>
+                Tumor board 一頁摘要
+              </Link>
+            </div>
+          )}
+          <nav className="section-nav" aria-label="本頁章節">
+            {regulatory.length > 0 && <a href="#reg">核准與給付現況</a>}
+            {topic.standardOfCare.length > 0 && <a href="#soc">治療現況</a>}
+            <a href="#papers">文獻（{papers.length}）</a>
+          </nav>
+        </div>
       </header>
       {stories.length > 0 && (
         <section aria-labelledby="stories">
@@ -86,11 +94,9 @@ export default async function TopicPage({ params }: Props) {
       {regulatory.length > 0 && (
         <section className="page__section" aria-labelledby="reg">
           <h2 id="reg">核准與給付現況</h2>
-          <div
-            className="table-wrap"
-            tabIndex={0}
-            role="region"
-            aria-label="核准與給付現況表格，可左右捲動"
+          <ScrollTable
+            label="核准與給付現況表格，可左右捲動"
+            hint="左右滑動查看 TFDA、健保與查核日"
           >
             <table className="table">
               <thead>
@@ -123,7 +129,7 @@ export default async function TopicPage({ params }: Props) {
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollTable>
         </section>
       )}
       {topic.standardOfCare.length > 0 && (

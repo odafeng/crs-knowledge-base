@@ -3,6 +3,7 @@ import {
   areaOf,
   byTopic,
   feedList,
+  TABS,
   updates,
   weekStats,
   findingText,
@@ -224,6 +225,9 @@ describe("navigation, reading log and feeds mirrored from sitegen", () => {
         "/subscribe/",
         "/forum/x/",
         "/about/",
+        "/tumor-board/ras-wt/",
+        "/login/",
+        "/account/",
       ].map(areaOf),
     ).toEqual([
       "home",
@@ -236,6 +240,20 @@ describe("navigation, reading log and feeds mirrored from sitegen", () => {
       "subscribe",
       "forum",
       "about",
+      "topics",
+      null,
+      null,
+    ]);
+  });
+
+  it("keeps five mobile tabs including direct forum access", () => {
+    expect(TABS).toHaveLength(5);
+    expect(TABS.map(([, href, area]) => [href, area])).toEqual([
+      ["/", "home"],
+      ["/news/", "news"],
+      ["/updates/", "papers"],
+      ["/topics/", "topics"],
+      ["/forum/", "forum"],
     ]);
   });
 

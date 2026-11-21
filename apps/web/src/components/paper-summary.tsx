@@ -23,12 +23,6 @@ export function Marked({ text }: { text: string }) {
   );
 }
 
-const PEOPLE =
-  '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/>';
-const SCALE =
-  '<path d="M12 4v16M7 20h10M5 8h14"/><path d="m5 8-3 6a3 3 0 0 0 6 0zM19 8l-3 6a3 3 0 0 0 6 0z"/>';
-const CHART =
-  '<path d="M4 20V4M4 20h16"/><path d="M8 16v-4M12 16V8M16 16v-6"/>';
 const WARN =
   '<path d="M12 4 2.5 20h19z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.25" r=".6"/>';
 
@@ -59,7 +53,9 @@ export function PaperGlance({
       <div className="glance__flow">
         <div className="glance__step">
           <h3 className="glance__heading">
-            <Glyph paths={PEOPLE} />
+            <span className="glance__step-num" aria-hidden="true">
+              01
+            </span>
             收了誰
           </h3>
           <p>
@@ -68,14 +64,18 @@ export function PaperGlance({
         </div>
         <div className="glance__step">
           <h3 className="glance__heading">
-            <Glyph paths={SCALE} />
+            <span className="glance__step-num" aria-hidden="true">
+              02
+            </span>
             比什麼
           </h3>
           <p>{summary.comparison}</p>
         </div>
         <div className="glance__step glance__step--result">
           <h3 className="glance__heading">
-            <Glyph paths={CHART} />
+            <span className="glance__step-num" aria-hidden="true">
+              03
+            </span>
             主要結果
           </h3>
           <p className="glance__lead-finding">
@@ -120,10 +120,11 @@ export function PaperGlance({
   );
 }
 
-/** The finding in one line, set on the blue field like Figure 1 of a trial report. */
+/** The finding in one line, set on the ink-navy field like a clinical journal visual abstract. */
 export function GlanceFinding({ summary }: { summary: Summary }) {
   return (
     <div className="finding" role="note" aria-label="一句話結論">
+      <p className="finding__kicker">臨床問題與結論</p>
       <p className="finding__question">{summary.question}</p>
       <p className="finding__line">
         <Marked text={summary.takeaway} />

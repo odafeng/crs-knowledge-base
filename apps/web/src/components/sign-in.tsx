@@ -92,10 +92,36 @@ export function LoginForm() {
     <div className="sign-in">
       {googleEnabled && (
         <>
-          <button className="btn btn--secondary" type="button" onClick={google}>
+          <button
+            className="btn btn--secondary sign-in__google"
+            type="button"
+            onClick={google}
+          >
+            <svg
+              className="sign-in__google-mark"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                fill="#4285F4"
+                d="M21.8 12.23c0-.68-.06-1.36-.18-2.02H12v3.83h5.5a4.7 4.7 0 0 1-2.04 3.09v2.56h3.3c1.94-1.78 3.04-4.4 3.04-7.46Z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 22c2.76 0 5.08-.91 6.77-2.47l-3.3-2.56c-.92.62-2.1.98-3.47.98-2.66 0-4.92-1.8-5.73-4.21H2.87v2.64A10.22 10.22 0 0 0 12 22Z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M6.27 13.74a6.13 6.13 0 0 1 0-3.48V7.62H2.87a10.22 10.22 0 0 0 0 8.76l3.4-2.64Z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 6.05c1.5 0 2.85.52 3.91 1.53l2.93-2.93C17.07 2.99 14.76 2 12 2A10.22 10.22 0 0 0 2.87 7.62l3.4 2.64c.81-2.41 3.07-4.21 5.73-4.21Z"
+              />
+            </svg>
             使用 Google 帳號登入
           </button>
-          <p className="sign-in__or">或</p>
+          <p className="sign-in__or">或以 Email 寄送登入連結</p>
         </>
       )}
       <form className="sign-in__form" onSubmit={sendLink}>
@@ -105,6 +131,7 @@ export function LoginForm() {
           type="email"
           name="email"
           autoComplete="email"
+          placeholder="例：name@hospital.org.tw"
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
@@ -130,13 +157,15 @@ export function LoginForm() {
           </p>
         )}
       </div>
-      <p className="note">
-        不需要密碼。第一次登入時會請你自訂公開顯示名稱，不會自動使用 Google
-        姓名或 Email。Google 信箱和你用來收連結的 Email
-        不同時，兩種登入會是兩個帳號；先用 Email 登入，再到帳號設定連結
-        Google，之後就能直接用 Google 登入同一個帳號。登入即表示你已閱讀
-        <Link href="/privacy/">隱私權政策</Link>。
-      </p>
+      <div className="sign-in__footnote">
+        <p className="note">
+          不需要密碼。第一次登入時會請你自訂公開顯示名稱，不會自動使用 Google
+          姓名或 Email。Google 信箱和你用來收連結的 Email
+          不同時，兩種登入會是兩個帳號；先用 Email 登入，再到帳號設定連結
+          Google，之後就能直接用 Google 登入同一個帳號。登入即表示你已閱讀
+          <Link href="/privacy/">隱私權政策</Link>。
+        </p>
+      </div>
     </div>
   );
 }
