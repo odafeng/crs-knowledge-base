@@ -26,7 +26,7 @@
 
 ### Pilot 設計（2026-11-21，E5 #90）
 
-程式在 `pilot/adk_braf.py`，獨立於 Paper Watch，不進任何部署 image，也不寫內容與 tracking。
+程式在 `pilot/adk_braf.py`，獨立於 Paper Watch，不進任何部署 image，也不寫內容與 tracking。由手動觸發的 `.github/workflows/adk-pilot.yml` 執行：用 repo 的 Anthropic secret、預算上限為輸入值，結果只上傳成 artifact。
 
 - **同一批論文**：`freeze` 把 `mCRC-BRAF-V600E` 查詢式近 120 天的 PubMed 結果凍結成一份檔案（不經 tracking 去重；2026-11-21 為 38 篇），兩邊都讀這份；摘要只存在 `pilot-out/`，不進 repo。
 - **兩邊同設定**：現行版直接呼叫 `classify_paper`；ADK 版用 ADK 2.15 的 `AnthropicLlm` 接官方 Anthropic SDK，同模型、同 system／paper prompt、同工具、adaptive thinking 與同 effort、prompt cache。唯一差異是 ADK 無法傳 server-side `fallbacks` beta，拒答時沒有備援；兩邊的拒答都算人工介入。輸出都送進同一個 provenance gate。
