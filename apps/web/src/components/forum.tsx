@@ -313,9 +313,9 @@ function Threads({
             )}
             {list.items.length === 0 && list.pinned.length === 0 ? (
               <div className="empty-state">
-                <p>還沒有話題，來開第一個吧。</p>
+                <p>還沒有話題。</p>
                 <Link className="btn btn--primary" href="/forum/new/">
-                  開新話題
+                  開第一個話題
                 </Link>
               </div>
             ) : (
