@@ -1,0 +1,65 @@
+name: ADK pilot
+
+# E5 #90: compare the production BRAF classifier with the same agent on Google ADK.
+# Manual only. It spends Anthropic credit up to budget_usd and never writes to the repo:
+# the frozen candidates, per-paper results and report are uploaded as an artifact.
+on:
+  workflow_dispatch:
+    inputs:
+      budget_usd:
+        description: 'Spending cap in USD for both arms together'
+        default: '20'
+        required: true
+      limit:
+        description: 'Papers to run (empty for all frozen candidates)'
+        default: ''
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: adk-pilot
+  cancel-in-progress: false
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt -r pilot/requirements.txt
+
+      - name: Freeze candidates
+        env:
+          NCBI_API_KEY: ${{ secrets.NCBI_API_KEY }}
+        run: python pilot/adk_braf.py freeze --out pilot-out
+
+      - name: Run both arms
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NCBI_API_KEY: ${{ secrets.NCBI_API_KEY }}
+          BUDGET: ${{ inputs.budget_usd }}
+          LIMIT: ${{ inputs.limit }}
+        run: python pilot/adk_braf.py run --out pilot-out --budget-usd "$BUDGET" ${LIMIT:+--limit "$LIMIT"}
+
+      - name: Report
+        if: always()
+        run: |
+          if [ -f pilot-out/results.jsonl ]; then
+            python pilot/adk_braf.py report --out pilot-out || true
+          fi
+          if [ -f pilot-out/report.md ]; then cat pilot-out/report.md >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: adk-pilot
+          path: pilot-out/
+          if-no-files-found: warn
