@@ -187,7 +187,15 @@
 .paper__title { font-size: var(--text-base); line-height: 1.45; }
 .paper__title a { color: var(--ink); text-decoration: none; }
 .paper__title a:hover { color: var(--brand); text-decoration: underline; }
-.paper__result { color: var(--ink); font-size: var(--text-sm); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.58; }
+.paper__result {
+  padding-inline-start: var(--space-3);
+  border-inline-start: 2px solid var(--brand);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.58;
+}
 .paper__bottom { max-width: var(--measure); color: var(--ink-2); font-size: var(--text-sm); line-height: 1.65; }
 
 /* Paper page */
@@ -247,8 +255,23 @@
 .prose > h2 { margin-block-start: 2em; font-size: var(--text-xl); }
 .prose li + li { margin-block-start: 0.4em; }
 
-/* Existing rich text (treatment summaries, robotic cards): map legacy variables, crisp clinical tables */
-.richtext { --primary: var(--brand); --primary-light: var(--brand-hover); --accent: var(--brand); --green: var(--good); --text: var(--ink); --text-sec: var(--ink-2); --border: var(--line); --card-bg: var(--surface); --bg: var(--sunken); overflow-x: auto; font-size: var(--text-sm); line-height: 1.72; }
+/* Existing rich text (treatment summaries, robotic cards): map legacy variables, crisp clinical tables with scroll-edge shadows */
+.richtext {
+  --primary: var(--brand); --primary-light: var(--brand-hover); --accent: var(--brand); --green: var(--good); --text: var(--ink); --text-sec: var(--ink-2); --border: var(--line); --card-bg: var(--surface); --bg: var(--sunken);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  font-size: var(--text-sm);
+  line-height: 1.72;
+  background:
+    linear-gradient(to right, var(--surface) 30%, transparent),
+    linear-gradient(to left, var(--surface) 30%, transparent),
+    radial-gradient(farthest-side at 0 50%, rgb(17 24 39 / 0.14), transparent),
+    radial-gradient(farthest-side at 100% 50%, rgb(17 24 39 / 0.14), transparent);
+  background-position: left center, right center, left center, right center;
+  background-repeat: no-repeat;
+  background-size: 20px 100%, 20px 100%, 10px 100%, 10px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
 .richtext > * + * { margin-block-start: var(--space-3); }
 .richtext table { width: 100%; min-width: 30rem; font-variant-numeric: tabular-nums; border: 1px solid var(--line); }
 .richtext th, .richtext td { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; }

@@ -92,7 +92,7 @@ export default async function PaperPage({ params }: Props) {
           {summary && <GlanceFinding summary={summary} />}
           {(isUnreviewed(paper) || summaryPending) && (
             <div className="callout callout--ai" role="note">
-              <Icon name="spark" />
+              <Icon name="info" />
               <p>
                 {isUnreviewed(paper)
                   ? "這一頁由 AI 依摘要整理，尚未經人工審核。"

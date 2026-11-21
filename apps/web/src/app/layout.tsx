@@ -62,6 +62,7 @@ export default function RootLayout({
               </p>
               <nav aria-label="頁尾導覽">
                 <Link href="/about/">關於本站與 AI 使用說明</Link>
+                <Link href="/forum/">醫師論壇</Link>
                 <Link href="/subscribe/">推播與 RSS 訂閱</Link>
                 <Link href="/updates/">全部文獻</Link>
                 <Link href="/privacy/">隱私權政策</Link>

@@ -39,6 +39,8 @@ const ICONS = {
     '<path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7"/><path d="M12 17h.01"/>',
   spark:
     '<path d="m12 4 1.6 4.4L18 10l-4.4 1.6L12 16l-1.6-4.4L6 10l4.4-1.6z"/><path d="M18.5 15.5v3M17 17h3"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 10.5v5.5"/><circle cx="12" cy="7.5" r=".6" fill="currentColor"/>',
+  chat: '<path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6.5a2.5 2.5 0 0 1-2.5 2.5H11l-4.2 3.5V15.5H7.5A2.5 2.5 0 0 1 5 13z"/>',
   external:
     '<path d="M14 5h5v5M19 5l-8 8"/><path d="M11 6H6a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-5"/>',
 } as const;

@@ -199,6 +199,34 @@ body { padding-block-end: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px
 .page-head h1 { max-width: 24em; }
 .page-head__lead { max-width: var(--measure); margin-block-start: var(--space-3); color: var(--ink-2); font-size: var(--text-base); line-height: 1.75; }
 .page-head__actions { margin-block-start: var(--space-4); display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.page-head__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+  margin-block-start: var(--space-4);
+}
+.page-head__bar .page-head__actions { margin-block-start: 0; }
+.section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
+}
+.section-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  border-block-end: 1px solid transparent;
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.section-nav a:hover { color: var(--brand); border-block-end-color: var(--brand); }
 .page__section { margin-block-start: var(--space-10); }
 .page__section > h2 {
   margin-block-end: var(--space-4);

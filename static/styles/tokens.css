@@ -46,6 +46,7 @@
   --mark-ring: rgb(17 24 39 / 0.08);
   --shadow-1: 0 1px 2px rgb(17 24 39 / 0.04);
   --shadow-2: 0 4px 16px -4px rgb(17 24 39 / 0.1), 0 1px 3px rgb(17 24 39 / 0.05);
+  --scroll-scrim: rgb(17 24 39 / 0.09);
 
   /* Type: Archivo carries Latin, biomarkers and tabular numerals; Chinese uses the reader's system font */
   --font-sans: 'Archivo', 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', system-ui, sans-serif;
@@ -123,6 +124,7 @@
     --focus: #8FB0FF;
     --shadow-1: 0 1px 2px rgb(0 0 0 / 0.28);
     --shadow-2: 0 8px 24px -8px rgb(0 0 0 / 0.55);
+    --scroll-scrim: rgb(0 0 0 / 0.36);
   }
 }
 :root[data-theme='dark'] {
@@ -155,6 +157,7 @@
   --focus: #8FB0FF;
   --shadow-1: 0 1px 2px rgb(0 0 0 / 0.28);
   --shadow-2: 0 8px 24px -8px rgb(0 0 0 / 0.55);
+  --scroll-scrim: rgb(0 0 0 / 0.36);
 }
 
 /* Anything set on the ink-navy field reads these instead: high contrast in both themes. */

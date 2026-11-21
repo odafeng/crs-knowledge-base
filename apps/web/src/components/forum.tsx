@@ -40,6 +40,47 @@ export type TopicLabel = { key: string; label: string };
 const ABOUT =
   "論壇只開放給通過驗證的大腸直腸外科會員：大腸直腸外科專科醫師，以及受訓中的住院醫師與 fellow。論壇內容不公開，搜尋引擎也不收錄。";
 
+function GateCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="forum-gate">
+      <div className="forum-gate__body">
+        <p className="forum-gate__kicker">醫師會員限定</p>
+        <p>{ABOUT}</p>
+        <div className="forum-gate__action">{children}</div>
+      </div>
+      <ol className="forum-gate__steps" aria-label="加入與使用流程">
+        <li>
+          <span className="forum-gate__num" aria-hidden="true">
+            01
+          </span>
+          <div>
+            <strong>以 Email 或 Google 登入</strong>
+            <span>無須密碼，首次登入自訂公開顯示名稱。</span>
+          </div>
+        </li>
+        <li>
+          <span className="forum-gate__num" aria-hidden="true">
+            02
+          </span>
+          <div>
+            <strong>完成大腸直腸外科身分驗證</strong>
+            <span>醫院信箱自動核可，或於帳號設定提交專科／受訓資料。</span>
+          </div>
+        </li>
+        <li>
+          <span className="forum-gate__num" aria-hidden="true">
+            03
+          </span>
+          <div>
+            <strong>私密討論・去識別化原則</strong>
+            <span>可選擇署名或匿名；內容不公開、不被搜尋引擎收錄。</span>
+          </div>
+        </li>
+      </ol>
+    </div>
+  );
+}
+
 /** Renders its children only for verified members; everyone else gets the explanation and the next step. */
 function MembersOnly({
   children,
@@ -75,25 +116,19 @@ function MembersOnly({
     return <p role="alert">目前無法連線到帳號服務，請稍後再試。</p>;
   if (account.status === "signed-out") {
     return (
-      <div className="forum-gate">
-        <p className="forum-gate__kicker">醫師會員限定</p>
-        <p>{ABOUT}</p>
-        <p>
-          <Link
-            className="btn btn--primary"
-            href={`/login/?next=${encodeURIComponent(returnPath(path))}`}
-          >
-            登入
-          </Link>
-        </p>
-      </div>
+      <GateCard>
+        <Link
+          className="btn btn--primary"
+          href={`/login/?next=${encodeURIComponent(returnPath(path))}`}
+        >
+          登入
+        </Link>
+      </GateCard>
     );
   }
   if (!account.displayName) {
     return (
-      <div className="forum-gate">
-        <p className="forum-gate__kicker">醫師會員限定</p>
-        <p>{ABOUT}</p>
+      <GateCard>
         <p>
           請先
           <Link href="/account/?welcome=1&next=%2Faccount%2F">
@@ -101,7 +136,7 @@ function MembersOnly({
           </Link>
           ，再申請驗證。
         </p>
-      </div>
+      </GateCard>
     );
   }
   if (membership?.user !== user) return <p aria-live="polite">載入中…</p>;
@@ -109,16 +144,14 @@ function MembersOnly({
     return <p role="alert">暫時無法確認會員資格，請稍後再試。</p>;
   if (membership.value.status !== "verified") {
     return (
-      <div className="forum-gate">
-        <p className="forum-gate__kicker">醫師會員限定</p>
-        <p>{ABOUT}</p>
+      <GateCard>
         <p>
           {membership.value.status === "pending"
             ? "你的驗證申請正在審核中，開通後就能進入論壇。"
             : "你還不是大腸直腸外科會員。"}{" "}
           <Link href="/account/">到帳號設定查看或申請</Link>
         </p>
-      </div>
+      </GateCard>
     );
   }
   return children(account);
@@ -264,6 +297,13 @@ function Threads({
         )}
         {list.kind === "ready" && (
           <>
+            {(list.pinned.length > 0 || list.items.length > 0) && (
+              <div className="forum-rows__head" aria-hidden="true">
+                <span>話題</span>
+                <span>回覆</span>
+                <span>最新動態</span>
+              </div>
+            )}
             {list.pinned.length > 0 && (
               <ul className="forum-rows" aria-label="置頂話題">
                 {list.pinned.map((thread) => (
@@ -272,7 +312,12 @@ function Threads({
               </ul>
             )}
             {list.items.length === 0 && list.pinned.length === 0 ? (
-              <p>還沒有話題，來開第一個吧。</p>
+              <div className="empty-state">
+                <p>還沒有話題，來開第一個吧。</p>
+                <Link className="btn btn--primary" href="/forum/new/">
+                  開新話題
+                </Link>
+              </div>
             ) : (
               <ul className="forum-rows" aria-label="話題">
                 {list.items.map((thread) => (

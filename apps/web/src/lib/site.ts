@@ -230,7 +230,7 @@ export const TABS: ReadonlyArray<
   ["消息", "/news/", "news", "news"],
   ["文獻", "/updates/", "papers", "list"],
   ["主題", "/topics/", "topics", "grid"],
-  ["訂閱", "/subscribe/", "subscribe", "bell"],
+  ["論壇", "/forum/", "forum", "chat"],
 ];
 
 /** Which navigation entry a path belongs to (the `area` rules at the top of base.html.j2). */
