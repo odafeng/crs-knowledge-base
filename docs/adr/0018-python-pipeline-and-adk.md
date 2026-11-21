@@ -1,6 +1,6 @@
 # 0018. 保留 Python 文獻管線，獨立決定 ADK 導入
 
-**Status**: Accepted（2026-11-16 維護者於 [E4 #74](https://github.com/odafeng/crs-knowledge-base/issues/74) 選擇單一主題 ADK pilot；既有發布規則仍依 ADR-0013）
+**Status**: Accepted（2026-11-16 維護者於 [E4 #74](https://github.com/odafeng/crs-knowledge-base/issues/74) 選擇單一主題 ADK pilot；2026-11-21 pilot 完成，結論是不改用 ADK；既有發布規則仍依 ADR-0013）
 
 ## Context
 
@@ -32,6 +32,24 @@
 - **兩邊同設定**：現行版直接呼叫 `classify_paper`；ADK 版用 ADK 2.15 的 `AnthropicLlm` 接官方 Anthropic SDK，同模型、同 system／paper prompt、同工具、adaptive thinking 與同 effort、prompt cache。唯一差異是 ADK 無法傳 server-side `fallbacks` beta，拒答時沒有備援；兩邊的拒答都算人工介入。輸出都送進同一個 provenance gate。
 - **退出條件（執行前訂定）**：任一篇現行版通過 gate 而 ADK 不通過；ADK 總費用或總耗時超過現行版 1.5 倍；ADK 的人工介入（parse failure、拒答、錯誤）比現行版多。都沒觸發也只代表「一樣好」，改用 ADK 還要有具體好處。
 - **費用**：兩邊共用 USD 20，每篇開跑前以平均單價估算，超過就停，可從中斷處續跑。預估 38 篇約 USD 5–8。
+
+### Pilot 結果（2026-11-21）
+
+在 Actions 執行一次（`adk-pilot.yml`，上限 USD 20）。workflow 當下重新凍結，得到 36 篇；本機稍早凍結的是 38 篇，差別來自 PubMed 查詢結果的變動。36 篇全部跑完，總花費 USD 3.52。
+
+| | 現行版 | ADK 版 |
+|---|---|---|
+| 費用 | USD 1.70 | USD 1.83（1.08 倍） |
+| 總耗時 | 254 秒 | 302 秒（1.19 倍） |
+| 人工介入（parse failure、拒答、錯誤） | 0 | 0 |
+| 研究工具呼叫 | 4 次 | 6 次 |
+| 通過 gate | 0 篇 | 0 篇 |
+
+- **退出條件都沒有觸發。** 費用和耗時都在 1.5 倍內，人工介入一樣多，也沒有「現行版通過、ADK 不通過」的論文。
+- **分數**：31 篇兩邊一致，5 篇不同，差距都在 1 分以內，只有一篇例外：NCCN Colon Cancer 指引的 Insights 摘要，現行版給 2 分、不提條目；ADK 版給 4 分並提出條目，但出處查核失敗（版本號只出現在標題，網頁也抓不到），gate 擋下來了。
+- **限制**：這批論文大多是綜論或間接相關的研究（分數以 1–2 分為主），兩邊都沒有論文通過 gate。所以這次 pilot 只證明兩邊在低分論文上行為相近，沒有測到可發布論文上的品質差異；「現行版通過、ADK 不通過」這條退出條件實際上沒有被檢驗到。
+
+**結論**：不改用 ADK，Paper Watch 繼續用現有 Python agents。依照前面訂下的規則，兩邊一樣好時，改用 ADK 要有具體好處，但這次沒有看到：ADK 版稍貴、稍慢，少了 `fallbacks` 備援，還多一個大型依賴。`pilot/` 程式與 workflow 保留，之後如果出現 ADK 才能解決的需求（例如多 agent 協作或它的評估工具），可以換主題，或挑一段會產生可發布論文的期間重跑。
 
 ## Consequences
 
