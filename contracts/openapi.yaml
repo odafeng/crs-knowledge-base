@@ -2019,6 +2019,28 @@ components:
         else:
           properties:
             displayName: {type: string, minLength: 1}
+    ForumLatestReply:
+      type: object
+      additionalProperties: false
+      required: [bodyPreview, anonymous, displayName, createdAt, ai]
+      properties:
+        bodyPreview: {type: string, minLength: 1}
+        anonymous: {type: boolean}
+        displayName:
+          type: [string, 'null']
+        createdAt: {type: string, format: date-time}
+        ai: {type: boolean}
+      allOf:
+      - if:
+          properties:
+            anonymous: {const: true}
+        then:
+          properties:
+            displayName: {type: 'null'}
+        else:
+          properties:
+            displayName: {type: string, minLength: 1}
+      description: Latest visible reply summary for a thread card; never carries the author account or an anonymous name.
     ForumThreadSummary:
       type: object
       additionalProperties: false
@@ -2027,6 +2049,7 @@ components:
       properties:
         id: {type: string, format: uuid}
         title: {type: string, minLength: 1}
+        bodyPreview: {type: string}
         topicKey:
           oneOf:
           - {$ref: '#/components/schemas/TopicKey'}
@@ -2042,6 +2065,12 @@ components:
           type: [string, 'null']
           format: date-time
         likeCount: {type: integer, minimum: 0}
+        liked: {type: boolean, description: Whether the member making the request liked the opening post.}
+        mine: {type: boolean, description: Whether the member making the request opened the thread.}
+        latestReply:
+          oneOf:
+          - {$ref: '#/components/schemas/ForumLatestReply'}
+          - {type: 'null'}
         pinned: {type: boolean}
         ai: {type: boolean}
       allOf:

@@ -5,9 +5,16 @@
 // gives everyone else 404. Which posts are the member's own comes from the API's `mine`, never from names.
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import { useAccount, type Account } from "@/components/account";
-import { AiChip } from "@/components/reading";
+import { Avatar } from "@/components/avatar";
+import { AiChip, Icon } from "@/components/reading";
 import { paperPathFromId, retryAfterOf } from "@/lib/comments";
 import { apiFetch, authEnabled, returnPath } from "@/lib/auth";
 import {
@@ -19,6 +26,7 @@ import {
   paperIdParam,
   postDate,
   receiptMessage,
+  relativeTime,
   threadPath,
   titleError,
   type Action,
@@ -85,7 +93,7 @@ function GateCard({ children }: { children: React.ReactNode }) {
 function MembersOnly({
   children,
 }: {
-  children: (account: SignedIn) => React.ReactNode;
+  children: (account: SignedIn, membership: Membership) => React.ReactNode;
 }) {
   const account = useAccount();
   const path = usePathname();
@@ -154,10 +162,10 @@ function MembersOnly({
       </GateCard>
     );
   }
-  return children(account);
+  return children(account, membership.value);
 }
 
-// --- the thread list ---------------------------------------------------------------------------------------------
+// --- the thread feed ---------------------------------------------------------------------------------------------
 
 type List =
   | { kind: "loading" | "error" }
@@ -171,27 +179,130 @@ type List =
 export function ForumHome({ topics }: { topics: TopicLabel[] }) {
   return (
     <MembersOnly>
-      {(account) => <Threads account={account} topics={topics} />}
+      {(account, membership) => (
+        <Threads account={account} membership={membership} topics={topics} />
+      )}
     </MembersOnly>
+  );
+}
+
+function TopicFilterBar({
+  topics,
+  active,
+  onSelect,
+}: {
+  topics: TopicLabel[];
+  active: string;
+  onSelect: (key: string) => void;
+}) {
+  const track = useRef<HTMLDivElement>(null);
+  const [fade, setFade] = useState({ start: false, end: false });
+  const options = [{ key: "all", label: "全部討論" }, ...topics];
+  const selectedIndex = Math.max(
+    0,
+    options.findIndex((o) => o.key === active),
+  );
+
+  useEffect(() => {
+    const node = track.current;
+    if (!node) return;
+    const measure = () => {
+      const start = node.scrollLeft > 2;
+      const end = node.scrollWidth - node.clientWidth - node.scrollLeft > 2;
+      setFade((prev) =>
+        prev.start === start && prev.end === end ? prev : { start, end },
+      );
+    };
+    measure();
+    node.addEventListener("scroll", measure, { passive: true });
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(measure);
+    observer?.observe(node);
+    return () => {
+      node.removeEventListener("scroll", measure);
+      observer?.disconnect();
+    };
+  }, [options.length]);
+
+  function onKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    const last = options.length - 1;
+    const next =
+      event.key === "ArrowRight" || event.key === "ArrowDown"
+        ? selectedIndex === last
+          ? 0
+          : selectedIndex + 1
+        : event.key === "ArrowLeft" || event.key === "ArrowUp"
+          ? selectedIndex === 0
+            ? last
+            : selectedIndex - 1
+          : event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? last
+              : -1;
+    if (next < 0 || !options[next]) return;
+    event.preventDefault();
+    const targetKey = options[next].key;
+    onSelect(targetKey);
+    const button = track.current?.querySelector<HTMLElement>(
+      `[data-topic-key="${CSS.escape(targetKey)}"]`,
+    );
+    button?.focus();
+  }
+
+  return (
+    <div
+      className="filter-bar forum-filter"
+      data-fade-start={fade.start || undefined}
+      data-fade-end={fade.end || undefined}
+    >
+      <div
+        ref={track}
+        className="filter-bar__track"
+        role="group"
+        aria-label="依臨床主題篩選討論"
+      >
+        {options.map((opt, index) => (
+          <button
+            key={opt.key}
+            type="button"
+            className="filter-tab"
+            data-topic-key={opt.key}
+            aria-pressed={active === opt.key}
+            tabIndex={index === selectedIndex ? 0 : -1}
+            onClick={() => onSelect(opt.key)}
+            onKeyDown={onKeyDown}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
 function Threads({
   account,
+  membership,
   topics,
 }: {
   account: SignedIn;
+  membership: Membership;
   topics: TopicLabel[];
 }) {
   const [list, setList] = useState<List>({ kind: "loading" });
   const [own, setOwn] = useState<OwnPost[]>([]);
+  const [activeTopic, setActiveTopic] = useState("all");
   const [version, setVersion] = useState(0);
   const token = account.token;
 
   const loadPage = useCallback(
-    async (cursor: string | null): Promise<ThreadPage> => {
+    async (cursor: string | null, topicKey: string): Promise<ThreadPage> => {
       const query = new URLSearchParams({ limit: "20" });
       if (cursor) query.set("cursor", cursor);
+      if (topicKey !== "all") query.set("topic", topicKey);
       const response = await apiFetch(`/forum/threads?${query}`, token);
       if (!response.ok) throw new Error(`threads ${response.status}`);
       return response.json();
@@ -203,7 +314,7 @@ function Threads({
 
   useEffect(() => {
     let live = true;
-    loadPage(null).then(
+    loadPage(null, activeTopic).then(
       (page) =>
         live &&
         setList({
@@ -214,6 +325,13 @@ function Threads({
         }),
       () => live && setList({ kind: "error" }),
     );
+    return () => {
+      live = false;
+    };
+  }, [loadPage, activeTopic, version]);
+
+  useEffect(() => {
+    let live = true;
     apiFetch("/forum/me/posts?limit=100", token)
       .then((response) => (response.ok ? response.json() : null))
       .then(
@@ -225,12 +343,18 @@ function Threads({
       live = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadPage, version]);
+  }, [account.userId, version]);
+
+  function selectTopic(key: string) {
+    if (key === activeTopic) return;
+    setActiveTopic(key);
+    setList({ kind: "loading" });
+  }
 
   async function more() {
     if (list.kind !== "ready" || !list.next) return;
     try {
-      const page = await loadPage(list.next);
+      const page = await loadPage(list.next, activeTopic);
       setList({
         ...list,
         items: [...list.items, ...page.items],
@@ -242,46 +366,49 @@ function Threads({
   }
 
   const labels = new Map(topics.map((t) => [t.key, t.label]));
+  const myName = account.displayName ?? "";
   return (
     <div className="forum-layout">
-      <aside className="forum-layout__rail" aria-label="發文">
-        <Link className="btn btn--primary forum-layout__cta" href="/forum/new/">
-          開新話題
-        </Link>
-        <ForumRules />
-        {own.length > 0 && (
-          <section aria-labelledby="forum-own">
-            <h2 id="forum-own">只有你看得到的話題</h2>
-            <ul className="comment-list">
-              {own.map((item) => (
-                <li className="comment" key={item.post.id}>
-                  <p className="comment__meta">
-                    <span className="chip">
-                      {item.status === "pending"
-                        ? "等待審核"
-                        : "已被維護者隱藏"}
-                    </span>
-                    <time dateTime={item.post.createdAt}>
-                      {postDate(item.post.createdAt)}
-                    </time>
-                  </p>
-                  <p className="forum-thread__title">{item.post.title}</p>
-                  <p className="comment__body">{item.post.body}</p>
-                  <DeleteButton
-                    postId={item.post.id}
-                    token={token}
-                    onDeleted={() => setVersion((v) => v + 1)}
-                  />
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-      </aside>
       <div className="forum-layout__main">
-        {list.kind === "loading" && <p aria-live="polite">載入話題中…</p>}
+        {/* Facebook-style composer card leading into /forum/new/ */}
+        <section className="composer-card" aria-label="快速發文">
+          <div className="composer-card__top">
+            <Avatar name={myName} size="md" />
+            <Link className="composer-card__trigger" href="/forum/new/">
+              {myName}，想和同儕分享臨床觀察或討論案例嗎？
+            </Link>
+          </div>
+          <div className="composer-card__bar">
+            <Link className="composer-card__shortcut" href="/forum/new/">
+              <Icon name="edit" />
+              發起臨床討論
+            </Link>
+            <Link
+              className="composer-card__shortcut"
+              href="/forum/new/?anonymous=1"
+            >
+              <Icon name="shield" />
+              匿名提問
+            </Link>
+            <span className="composer-card__hint">請維持去識別化原則</span>
+          </div>
+        </section>
+
+        {topics.length > 0 && (
+          <TopicFilterBar
+            topics={topics}
+            active={activeTopic}
+            onSelect={selectTopic}
+          />
+        )}
+
+        {list.kind === "loading" && (
+          <p className="forum-status" aria-live="polite">
+            載入話題中…
+          </p>
+        )}
         {list.kind === "error" && (
-          <p role="alert">
+          <p className="forum-status" role="alert">
             {errorMessage(null, "load")}{" "}
             <button
               className="btn btn--secondary"
@@ -297,46 +424,127 @@ function Threads({
         )}
         {list.kind === "ready" && (
           <>
-            {(list.pinned.length > 0 || list.items.length > 0) && (
-              <div className="forum-rows__head" aria-hidden="true">
-                <span>話題</span>
-                <span>回覆</span>
-                <span>最新動態</span>
-              </div>
-            )}
             {list.pinned.length > 0 && (
-              <ul className="forum-rows" aria-label="置頂話題">
+              <ul className="forum-feed" aria-label="置頂話題">
                 {list.pinned.map((thread) => (
-                  <ThreadRow key={thread.id} thread={thread} labels={labels} />
+                  <FeedCard
+                    key={thread.id}
+                    thread={thread}
+                    labels={labels}
+                    token={token}
+                  />
                 ))}
               </ul>
             )}
             {list.items.length === 0 && list.pinned.length === 0 ? (
               <div className="empty-state">
-                <p>還沒有話題。</p>
-                <Link className="btn btn--primary" href="/forum/new/">
-                  開第一個話題
-                </Link>
+                <p>
+                  {activeTopic === "all"
+                    ? "還沒有話題。"
+                    : `「${labels.get(activeTopic) ?? activeTopic}」目前還沒有討論。`}
+                </p>
+                <div className="comment__actions">
+                  <Link className="btn btn--primary" href="/forum/new/">
+                    開第一個話題
+                  </Link>
+                  {activeTopic !== "all" && (
+                    <button
+                      className="btn btn--secondary"
+                      type="button"
+                      onClick={() => selectTopic("all")}
+                    >
+                      顯示全部討論
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
-              <ul className="forum-rows" aria-label="話題">
-                {list.items.map((thread) => (
-                  <ThreadRow key={thread.id} thread={thread} labels={labels} />
-                ))}
-              </ul>
+              list.items.length > 0 && (
+                <ul className="forum-feed" aria-label="話題">
+                  {list.items.map((thread) => (
+                    <FeedCard
+                      key={thread.id}
+                      thread={thread}
+                      labels={labels}
+                      token={token}
+                    />
+                  ))}
+                </ul>
+              )
             )}
             {list.next && (
-              <button
-                className="btn btn--secondary"
-                type="button"
-                onClick={more}
-              >
-                載入更多話題
-              </button>
+              <div className="forum-feed__more">
+                <button
+                  className="btn btn--secondary"
+                  type="button"
+                  onClick={more}
+                >
+                  載入更多話題
+                </button>
+              </div>
             )}
           </>
         )}
       </div>
+
+      <aside className="forum-layout__rail" aria-label="發文與社群資訊">
+        <Link className="btn btn--primary forum-layout__cta" href="/forum/new/">
+          開新話題
+        </Link>
+
+        <section className="forum-member-card" aria-label="你的會員身分">
+          <div className="forum-member-card__head">
+            <Avatar name={myName} size="md" />
+            <div className="forum-member-card__info">
+              <strong>{myName}</strong>
+              <span className="forum-member-card__badge">
+                <Icon name="shield" />
+                大腸直腸外科會員
+              </span>
+            </div>
+          </div>
+          {membership.since && (
+            <p className="note">驗證於 {postDate(membership.since)}</p>
+          )}
+          <Link className="forum-member-card__link" href="/account/">
+            前往個人儀表板 →
+          </Link>
+        </section>
+
+        <ForumRules />
+
+        {own.length > 0 && (
+          <section className="forum-own-panel" aria-labelledby="forum-own">
+            <h2 id="forum-own">只有你看得到的話題</h2>
+            <ul className="comment-list">
+              {own.map((item) => (
+                <li className="comment" key={item.post.id}>
+                  <p className="comment__meta">
+                    <span className="chip">
+                      {item.status === "pending"
+                        ? "等待審核"
+                        : "已被維護者隱藏"}
+                    </span>
+                    <time
+                      dateTime={item.post.createdAt}
+                      title={postDate(item.post.createdAt)}
+                    >
+                      {relativeTime(item.post.createdAt)}
+                    </time>
+                  </p>
+                  <p className="forum-thread__title">{item.post.title}</p>
+                  <p className="comment__body">{item.post.body}</p>
+                  <DeleteButton
+                    postId={item.post.id}
+                    token={token}
+                    onDeleted={() => setVersion((v) => v + 1)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </aside>
     </div>
   );
 }
@@ -352,44 +560,140 @@ function ForumRules() {
   );
 }
 
-function ThreadRow({
+function FeedCard({
   thread,
   labels,
+  token,
 }: {
   thread: ThreadSummary;
   labels: Map<string, string>;
+  token: string;
 }) {
   const topic = thread.topicKey ? labels.get(thread.topicKey) : undefined;
+  const author = authorName(thread);
+  const href = threadPath(thread.id);
+  const preview = thread.bodyPreview;
+  const latest = thread.latestReply;
+
   return (
-    <li className="forum-row">
-      <div className="forum-row__main">
-        <Link className="forum-thread__title" href={threadPath(thread.id)}>
+    <li
+      className={`forum-row feed-card${thread.pinned ? " feed-card--pinned" : ""}`}
+    >
+      <header className="feed-card__header">
+        <Avatar
+          name={thread.displayName}
+          anonymous={thread.anonymous}
+          ai={thread.ai}
+          size="md"
+        />
+        <div className="feed-card__author-block">
+          <div className="feed-card__author-line">
+            <span className="comment__author">{author}</span>
+            {thread.ai && <AiChip label="AI" />}
+            {thread.mine && <span className="chip">你的貼文</span>}
+            {thread.pinned && (
+              <span className="chip chip--pin">
+                <Icon name="pin" />
+                置頂
+              </span>
+            )}
+          </div>
+          <p className="feed-card__submeta">
+            <time
+              dateTime={thread.createdAt}
+              title={postDate(thread.createdAt)}
+            >
+              {relativeTime(thread.createdAt)}
+            </time>
+            {!thread.ai && !thread.anonymous && <span>大腸直腸外科會員</span>}
+            {topic && <span className="feed-card__topic">{topic}</span>}
+          </p>
+        </div>
+      </header>
+
+      <div className="feed-card__body">
+        <Link className="forum-thread__title feed-card__title" href={href}>
           {thread.title}
         </Link>
-        <p className="comment__meta">
-          {thread.pinned && <span className="chip">置頂</span>}
-          {topic && <span className="chip">{topic}</span>}
-          <span className="comment__author">{authorName(thread)}</span>
-          {thread.ai && <AiChip label="AI" />}
-          <time dateTime={thread.createdAt}>{postDate(thread.createdAt)}</time>
-          {thread.likeCount > 0 && <span>{thread.likeCount} 個讚</span>}
-        </p>
-      </div>
-      <p className="forum-row__stat">
-        <span className="forum-row__count">{thread.replyCount}</span> 則回覆
-      </p>
-      <p className="forum-row__stat">
-        {thread.lastReplyAt ? (
-          <>
-            最新回覆{" "}
-            <time dateTime={thread.lastReplyAt}>
-              {postDate(thread.lastReplyAt)}
-            </time>
-          </>
-        ) : (
-          "還沒有回覆"
+        {preview && <p className="feed-card__preview">{preview}</p>}
+        {thread.paperId && (
+          <Link
+            className="feed-card__paper"
+            href={paperPathFromId(thread.paperId)}
+          >
+            <Icon name="book" />
+            <span>連結文獻：{thread.paperId}</span>
+          </Link>
         )}
-      </p>
+      </div>
+
+      <div className="feed-card__footer">
+        <div className="feed-card__actions">
+          <LikeButton
+            key={`${thread.id}-${thread.likeCount}-${Boolean(thread.liked)}`}
+            postId={thread.id}
+            count={thread.likeCount}
+            liked={Boolean(thread.liked)}
+            canLike={!thread.mine}
+            token={token}
+          />
+          <Link
+            className="btn btn--quiet feed-card__action-btn"
+            href={`${href}#forum-replies`}
+          >
+            <Icon name="chat" />
+            <span>
+              {thread.replyCount > 0
+                ? `${thread.replyCount} 則回覆`
+                : "回覆討論"}
+            </span>
+          </Link>
+        </div>
+        <span className="feed-card__activity">
+          {thread.lastReplyAt ? (
+            <>
+              最新回覆{" "}
+              <time
+                dateTime={thread.lastReplyAt}
+                title={postDate(thread.lastReplyAt)}
+              >
+                {relativeTime(thread.lastReplyAt)}
+              </time>
+            </>
+          ) : (
+            "尚無回覆"
+          )}
+        </span>
+      </div>
+
+      {latest && (
+        <div className="feed-card__latest">
+          <Avatar
+            name={latest.displayName}
+            anonymous={latest.anonymous}
+            ai={latest.ai}
+            size="xs"
+          />
+          <div className="feed-card__latest-bubble">
+            <p className="feed-card__latest-meta">
+              <strong>{authorName(latest)}</strong>
+              {latest.ai && <AiChip label="AI" />}
+              <time
+                dateTime={latest.createdAt}
+                title={postDate(latest.createdAt)}
+              >
+                {relativeTime(latest.createdAt)}
+              </time>
+            </p>
+            <p className="feed-card__latest-text">{latest.bodyPreview}</p>
+            {thread.replyCount > 1 && (
+              <Link className="feed-card__latest-more" href={href}>
+                查看全部 {thread.replyCount} 則回覆 →
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </li>
   );
 }
@@ -468,34 +772,36 @@ function PostFields({
     <>
       <fieldset className="comment-form__identity">
         <legend>顯示方式</legend>
-        <label>
+        <label className="identity-option">
           <input
             type="radio"
             name={`${idPrefix}-identity`}
             checked={!anonymous}
             onChange={() => setAnonymous(false)}
           />
-          署名，顯示為「{name}」
+          <span>署名，顯示為「{name}」</span>
         </label>
-        <label>
+        <label className="identity-option">
           <input
             type="radio"
             name={`${idPrefix}-identity`}
             checked={anonymous}
             onChange={() => setAnonymous(true)}
           />
-          匿名：其他會員看不到你的名稱；你本人和維護者仍能對應到你的帳號
+          <span>
+            匿名：其他會員看不到你的名稱；你本人和維護者仍能對應到你的帳號
+          </span>
         </label>
       </fieldset>
       <div className="callout forum-deidentify" id={`${idPrefix}-deidentify`}>
         <p>{DEIDENTIFY}</p>
-        <label>
+        <label className="forum-deidentify__check">
           <input
             type="checkbox"
             checked={confirmed}
             onChange={(event) => setConfirmed(event.target.checked)}
           />
-          我確認內容不含可識別病人的資訊
+          <span>我確認內容不含可識別病人的資訊</span>
         </label>
       </div>
     </>
@@ -530,11 +836,13 @@ function NewThreadForm({
   topics: TopicLabel[];
 }) {
   const router = useRouter();
-  const paperId = paperIdParam(useSearchParams().get("paperId"));
+  const searchParams = useSearchParams();
+  const paperId = paperIdParam(searchParams.get("paperId"));
+  const initialAnonymous = searchParams.get("anonymous") === "1";
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [topic, setTopic] = useState("");
-  const [anonymous, setAnonymous] = useState(false);
+  const [anonymous, setAnonymous] = useState(initialAnonymous);
   const [confirmed, setConfirmed] = useState(false);
   const [state, setState] = useState<
     | { kind: "idle" | "sending" }
@@ -579,80 +887,131 @@ function NewThreadForm({
 
   if (state.kind === "pending") {
     return (
-      <div aria-live="polite">
+      <div className="forum-composer-card" aria-live="polite">
         <p className="callout">{receiptMessage("pending")}</p>
-        <Link className="btn btn--secondary" href="/forum/">
-          回論壇
-        </Link>
+        <div className="comment__actions">
+          <Link className="btn btn--secondary" href="/forum/">
+            回論壇
+          </Link>
+        </div>
       </div>
     );
   }
+
   const error = state.kind === "error" ? state.message : null;
+  const displayName = account.displayName ?? "";
   return (
-    <form className="comment-form" onSubmit={submit} noValidate>
-      {paperId && (
-        <p className="note">
-          這個話題會連結到文獻：
-          <Link href={paperPathFromId(paperId)}>{paperId}</Link>
-        </p>
-      )}
-      <label htmlFor="thread-title">標題</label>
-      <input
-        id="thread-title"
-        className="forum-input"
-        value={title}
-        aria-invalid={error !== null && titleError(title) !== null}
-        onChange={(event) => setTitle(event.target.value)}
-      />
-      <label htmlFor="thread-topic">相關主題（可不選）</label>
-      <select
-        id="thread-topic"
-        className="forum-input"
-        value={topic}
-        onChange={(event) => setTopic(event.target.value)}
-      >
-        <option value="">不指定</option>
-        {topics.map((t) => (
-          <option key={t.key} value={t.key}>
-            {t.label}
-          </option>
-        ))}
-      </select>
-      <label htmlFor="thread-body">內容</label>
-      <textarea
-        id="thread-body"
-        rows={8}
-        value={body}
-        aria-invalid={error !== null && bodyError(body) !== null}
-        aria-describedby="thread-help"
-        onChange={(event) => setBody(event.target.value)}
-      />
-      <p id="thread-help" className="note">
-        {[...body].length} / {BODY_MAX} 字。純文字，不支援粗體或連結格式。
-      </p>
-      <PostFields
-        idPrefix="thread"
-        name={account.displayName ?? ""}
-        anonymous={anonymous}
-        setAnonymous={setAnonymous}
-        confirmed={confirmed}
-        setConfirmed={setConfirmed}
-      />
-      <button
-        className="btn btn--primary"
-        type="submit"
-        disabled={state.kind === "sending"}
-      >
-        {state.kind === "sending" ? "送出中…" : "發表話題"}
-      </button>
-      <div aria-live="polite">
-        {error && (
-          <p className="callout" role="alert">
-            {error}
-          </p>
-        )}
+    <div className="split">
+      <div className="forum-composer-card">
+        <div className="forum-composer-card__author">
+          <Avatar name={displayName} anonymous={anonymous} size="md" />
+          <div>
+            <strong>{anonymous ? "匿名醫師" : displayName}</strong>
+            <span className="note">
+              {anonymous
+                ? "匿名發表・僅你與維護者可對應帳號"
+                : "署名發表・大腸直腸外科會員"}
+            </span>
+          </div>
+        </div>
+
+        <form
+          className="comment-form forum-composer-form"
+          onSubmit={submit}
+          noValidate
+        >
+          {paperId && (
+            <p className="feed-card__paper">
+              <Icon name="book" />
+              <span>
+                這個話題會連結到文獻：
+                <Link href={paperPathFromId(paperId)}>{paperId}</Link>
+              </span>
+            </p>
+          )}
+          <div className="forum-field">
+            <label htmlFor="thread-title">標題</label>
+            <input
+              id="thread-title"
+              className="forum-input"
+              placeholder="例：低位直腸癌 TNT 後 cCR 的追蹤節奏討論"
+              value={title}
+              aria-invalid={error !== null && titleError(title) !== null}
+              onChange={(event) => setTitle(event.target.value)}
+            />
+          </div>
+          <div className="forum-field">
+            <label htmlFor="thread-topic">相關主題（可不選）</label>
+            <select
+              id="thread-topic"
+              className="forum-input"
+              value={topic}
+              onChange={(event) => setTopic(event.target.value)}
+            >
+              <option value="">不指定</option>
+              {topics.map((t) => (
+                <option key={t.key} value={t.key}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="forum-field">
+            <label htmlFor="thread-body">內容</label>
+            <textarea
+              id="thread-body"
+              rows={8}
+              placeholder="分享你的臨床經驗、疑問或文獻觀察（請改寫為年齡區間與必要臨床資訊）…"
+              value={body}
+              aria-invalid={error !== null && bodyError(body) !== null}
+              aria-describedby="thread-help"
+              onChange={(event) => setBody(event.target.value)}
+            />
+            <p id="thread-help" className="note">
+              {[...body].length} / {BODY_MAX} 字。純文字，不支援粗體或連結格式。
+            </p>
+          </div>
+          <PostFields
+            idPrefix="thread"
+            name={displayName}
+            anonymous={anonymous}
+            setAnonymous={setAnonymous}
+            confirmed={confirmed}
+            setConfirmed={setConfirmed}
+          />
+          <div className="forum-composer-form__actions">
+            <button
+              className="btn btn--primary"
+              type="submit"
+              disabled={state.kind === "sending"}
+            >
+              {state.kind === "sending" ? "送出中…" : "發表話題"}
+            </button>
+            <Link className="btn btn--quiet" href="/forum/">
+              回論壇
+            </Link>
+          </div>
+          <div aria-live="polite">
+            {error && (
+              <p className="callout" role="alert">
+                {error}
+              </p>
+            )}
+          </div>
+        </form>
       </div>
-    </form>
+      <aside className="split__rail" aria-label="發文指引">
+        <ForumRules />
+        <section className="forum-tips" aria-labelledby="forum-tips-title">
+          <h2 id="forum-tips-title">臨床討論小提醒</h2>
+          <ul>
+            <li>清楚描述分期、分子狀態與治療線別，方便同儕快速對焦。</li>
+            <li>若針對特定試驗或指引討論，可在上方選取對應臨床主題。</li>
+            <li>首次在論壇發文須經維護者核准，通過後即可即時發布。</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
   );
 }
 
@@ -768,55 +1127,83 @@ function Thread({
     return <p role="alert">{errorMessage(null, "load")}</p>;
   if (detail.kind === "missing") {
     return (
-      <>
+      <div className="empty-state">
         <h1>找不到這個話題</h1>
         <p>話題可能已被作者刪除或由維護者隱藏。</p>
         <Link className="btn btn--secondary" href="/forum/">
           回論壇
         </Link>
-      </>
+      </div>
     );
   }
   const { thread } = detail;
   const topic = topics.find((t) => t.key === thread.topicKey)?.label;
   return (
     <>
-      <header className="page-head">
+      <header className="page-head thread-head">
         <p className="comment__meta">
-          <Link href="/forum/">論壇</Link>
-          {thread.pinned && <span className="chip">置頂</span>}
+          <Link className="thread-head__back" href="/forum/">
+            ← 回醫師論壇
+          </Link>
+          {thread.pinned && (
+            <span className="chip chip--pin">
+              <Icon name="pin" />
+              置頂
+            </span>
+          )}
           {topic && <span className="chip">{topic}</span>}
           {thread.paperId && (
-            <Link href={paperPathFromId(thread.paperId)}>相關文獻</Link>
+            <Link
+              className="thread-head__paper"
+              href={paperPathFromId(thread.paperId)}
+            >
+              相關文獻
+            </Link>
           )}
         </p>
         <h1>{thread.title}</h1>
       </header>
       <div className="split">
-        <div>
-          <ul className="comment-list" aria-label="話題內容">
+        <div className="thread-stream">
+          <ul className="comment-list thread-op-list" aria-label="話題內容">
             <PostItem
               post={thread}
               title={thread.title}
+              replyCount={detail.replies.length}
+              hasMoreReplies={Boolean(detail.next)}
+              paperId={thread.paperId}
+              variant="opening"
               account={account}
               onChanged={refresh}
               onDeleted={() => router.push("/forum/")}
             />
           </ul>
-          <section aria-labelledby="forum-replies">
-            <h2 id="forum-replies">回覆</h2>
-            {detail.replies.length > 0 && (
-              <ul className="comment-list" aria-label="回覆">
+          <section className="thread-replies" aria-labelledby="forum-replies">
+            <div className="thread-replies__head">
+              <h2 id="forum-replies">
+                回覆
+                <span className="thread-replies__count">
+                  {detail.replies.length + (detail.next ? "+" : "")}
+                </span>
+              </h2>
+            </div>
+            {detail.replies.length > 0 ? (
+              <ul className="comment-list reply-list" aria-label="回覆">
                 {detail.replies.map((reply) => (
                   <PostItem
                     key={reply.id}
                     post={reply}
+                    variant="reply"
                     account={account}
                     onChanged={refresh}
                     onDeleted={refresh}
                   />
                 ))}
               </ul>
+            ) : (
+              <p className="note thread-replies__empty">
+                還沒有回覆，歡迎在下方分享你的臨床經驗。
+              </p>
             )}
             {detail.next && (
               <button
@@ -830,23 +1217,35 @@ function Thread({
             {own.length > 0 && (
               <ul className="comment-list" aria-label="只有你看得到的回覆">
                 {own.map((item) => (
-                  <li className="comment" key={item.post.id}>
-                    <p className="comment__meta">
-                      <span className="comment__author">
-                        {authorName(item.post)}
-                      </span>
-                      <span className="chip">
-                        {item.status === "pending"
-                          ? "等待審核，只有你看得到"
-                          : "已被維護者隱藏，只有你看得到"}
-                      </span>
-                    </p>
-                    <p className="comment__body">{item.post.body}</p>
-                    <DeleteButton
-                      postId={item.post.id}
-                      token={token}
-                      onDeleted={refresh}
-                    />
+                  <li className="comment reply-bubble" key={item.post.id}>
+                    <div className="reply-bubble__row">
+                      <Avatar
+                        name={item.post.displayName}
+                        anonymous={item.post.anonymous}
+                        ai={item.post.ai}
+                        size="sm"
+                      />
+                      <div className="reply-bubble__main">
+                        <div className="reply-bubble__surface">
+                          <p className="comment__meta">
+                            <span className="comment__author">
+                              {authorName(item.post)}
+                            </span>
+                            <span className="chip">
+                              {item.status === "pending"
+                                ? "等待審核，只有你看得到"
+                                : "已被維護者隱藏，只有你看得到"}
+                            </span>
+                          </p>
+                          <p className="comment__body">{item.post.body}</p>
+                        </div>
+                        <DeleteButton
+                          postId={item.post.id}
+                          token={token}
+                          onDeleted={refresh}
+                        />
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -876,7 +1275,7 @@ function Thread({
             <dd>{detail.replies.length + (detail.next ? "+" : "")} 則</dd>
           </dl>
           <div className="actions actions--rail">
-            <a className="btn btn--primary" href="#forum-replies">
+            <a className="btn btn--primary" href="#reply-body">
               回覆這個話題
             </a>
             {thread.paperId && (
@@ -945,13 +1344,18 @@ function ReplyForm({
   }
 
   const error = state.kind === "error" ? state.message : null;
+  const displayName = account.displayName ?? "";
   return (
-    <form className="comment-form" onSubmit={submit} noValidate>
-      <h3>回覆</h3>
+    <form className="comment-form reply-composer" onSubmit={submit} noValidate>
+      <div className="reply-composer__head">
+        <Avatar name={displayName} anonymous={anonymous} size="sm" />
+        <h3>回覆</h3>
+      </div>
       <label htmlFor="reply-body">你的回覆</label>
       <textarea
         id="reply-body"
-        rows={5}
+        rows={4}
+        placeholder="寫下你的臨床看法或補充經驗…"
         value={body}
         aria-invalid={error !== null && bodyError(body) !== null}
         aria-describedby="reply-help"
@@ -965,7 +1369,7 @@ function ReplyForm({
       </p>
       <PostFields
         idPrefix="reply"
-        name={account.displayName ?? ""}
+        name={displayName}
         anonymous={anonymous}
         setAnonymous={setAnonymous}
         confirmed={confirmed}
@@ -995,12 +1399,20 @@ function ReplyForm({
 function PostItem({
   post,
   title,
+  replyCount,
+  hasMoreReplies,
+  paperId,
+  variant = "reply",
   account,
   onChanged,
   onDeleted,
 }: {
   post: Reply | OpeningPost;
   title?: string;
+  replyCount?: number;
+  hasMoreReplies?: boolean;
+  paperId?: string | null;
+  variant?: "opening" | "reply";
   account: SignedIn;
   onChanged: () => void;
   onDeleted: () => void;
@@ -1081,57 +1493,51 @@ function PostItem({
   }
 
   const edited = post.updatedAt !== post.createdAt;
-  return (
-    <li className="comment">
-      <p className="comment__meta">
-        <span className="comment__author">{authorName(post)}</span>
-        {post.ai && <AiChip label="AI" />}
-        {post.mine && <span className="chip">你的貼文</span>}
-        <time dateTime={post.createdAt}>{postDate(post.createdAt)}</time>
-        {edited && <span>（已編輯）</span>}
-      </p>
-      {mode === "edit" ? (
-        <form className="comment-form" onSubmit={saveEdit} noValidate>
-          {title !== undefined && (
-            <>
-              <label htmlFor={`edit-title-${post.id}`}>修改標題</label>
-              <input
-                id={`edit-title-${post.id}`}
-                className="forum-input"
-                value={draftTitle}
-                onChange={(event) => setDraftTitle(event.target.value)}
-              />
-            </>
-          )}
-          <label htmlFor={`edit-${post.id}`}>修改內容</label>
-          <textarea
-            id={`edit-${post.id}`}
-            rows={6}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+  const author = authorName(post);
+
+  const editForm = (
+    <form className="comment-form" onSubmit={saveEdit} noValidate>
+      {title !== undefined && (
+        <>
+          <label htmlFor={`edit-title-${post.id}`}>修改標題</label>
+          <input
+            id={`edit-title-${post.id}`}
+            className="forum-input"
+            value={draftTitle}
+            onChange={(event) => setDraftTitle(event.target.value)}
           />
-          <p className="note">{DEIDENTIFY}</p>
-          <div className="comment__actions">
-            <button className="btn btn--primary" type="submit" disabled={busy}>
-              儲存
-            </button>
-            <button
-              className="btn btn--quiet"
-              type="button"
-              onClick={() => {
-                setMode("view");
-                setDraft(post.body);
-                setDraftTitle(title ?? "");
-                setMessage(null);
-              }}
-            >
-              取消
-            </button>
-          </div>
-        </form>
-      ) : (
-        <p className="comment__body">{post.body}</p>
+        </>
       )}
+      <label htmlFor={`edit-${post.id}`}>修改內容</label>
+      <textarea
+        id={`edit-${post.id}`}
+        rows={6}
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+      />
+      <p className="note">{DEIDENTIFY}</p>
+      <div className="comment__actions">
+        <button className="btn btn--primary" type="submit" disabled={busy}>
+          儲存
+        </button>
+        <button
+          className="btn btn--quiet"
+          type="button"
+          onClick={() => {
+            setMode("view");
+            setDraft(post.body);
+            setDraftTitle(title ?? "");
+            setMessage(null);
+          }}
+        >
+          取消
+        </button>
+      </div>
+    </form>
+  );
+
+  const actionControls = (
+    <div className="post-action-bar">
       <LikeButton
         // Remount when the server's numbers change, so a refresh replaces any optimistic state.
         key={`${post.likeCount}-${post.liked}`}
@@ -1141,8 +1547,17 @@ function PostItem({
         canLike={!post.mine}
         token={account.token}
       />
+      {variant === "opening" && replyCount !== undefined && (
+        <a className="btn btn--quiet feed-card__action-btn" href="#reply-body">
+          <Icon name="chat" />
+          <span>
+            {replyCount}
+            {hasMoreReplies ? "+" : ""} 則回覆
+          </span>
+        </a>
+      )}
       {mode === "view" && (
-        <div className="comment__actions">
+        <div className="comment__actions post-action-bar__end">
           {post.mine ? (
             <>
               <button
@@ -1174,6 +1589,11 @@ function PostItem({
           )}
         </div>
       )}
+    </div>
+  );
+
+  const secondaryPanels = (
+    <>
       {mode === "delete" && (
         <div className="comment__actions" role="group" aria-label="確認刪除">
           <p>
@@ -1229,6 +1649,80 @@ function PostItem({
           </p>
         )}
       </div>
+    </>
+  );
+
+  if (variant === "opening") {
+    return (
+      <li className="comment thread-op">
+        <header className="feed-card__header">
+          <Avatar
+            name={post.displayName}
+            anonymous={post.anonymous}
+            ai={post.ai}
+            size="md"
+          />
+          <div className="feed-card__author-block">
+            <div className="feed-card__author-line">
+              <span className="comment__author">{author}</span>
+              {post.ai && <AiChip label="AI" />}
+              {post.mine && <span className="chip">你的貼文</span>}
+            </div>
+            <p className="feed-card__submeta">
+              <time dateTime={post.createdAt} title={postDate(post.createdAt)}>
+                {relativeTime(post.createdAt)} · {postDate(post.createdAt)}
+              </time>
+              {edited && <span>（已編輯）</span>}
+            </p>
+          </div>
+        </header>
+        {mode === "edit" ? (
+          editForm
+        ) : (
+          <p className="comment__body thread-op__body">{post.body}</p>
+        )}
+        {paperId && mode === "view" && (
+          <Link className="feed-card__paper" href={paperPathFromId(paperId)}>
+            <Icon name="book" />
+            <span>查看關聯文獻：{paperId}</span>
+          </Link>
+        )}
+        {actionControls}
+        {secondaryPanels}
+      </li>
+    );
+  }
+
+  return (
+    <li className="comment reply-bubble">
+      <div className="reply-bubble__row">
+        <Avatar
+          name={post.displayName}
+          anonymous={post.anonymous}
+          ai={post.ai}
+          size="sm"
+        />
+        <div className="reply-bubble__main">
+          <div className="reply-bubble__surface">
+            <p className="comment__meta">
+              <span className="comment__author">{author}</span>
+              {post.ai && <AiChip label="AI" />}
+              {post.mine && <span className="chip">你的貼文</span>}
+              <time dateTime={post.createdAt} title={postDate(post.createdAt)}>
+                {relativeTime(post.createdAt)}
+              </time>
+              {edited && <span>（已編輯）</span>}
+            </p>
+            {mode === "edit" ? (
+              editForm
+            ) : (
+              <p className="comment__body">{post.body}</p>
+            )}
+          </div>
+          {actionControls}
+          {secondaryPanels}
+        </div>
+      </div>
     </li>
   );
 }
@@ -1252,7 +1746,10 @@ function LikeButton({
 
   if (!canLike) {
     return state.likeCount > 0 ? (
-      <p className="comment__likes">{state.likeCount} 個讚</p>
+      <p className="comment__likes comment__likes--readonly">
+        <Icon name="thumb" />
+        <span>{state.likeCount} 個讚</span>
+      </p>
     ) : null;
   }
 
@@ -1277,12 +1774,15 @@ function LikeButton({
   return (
     <div className="comment__likes">
       <button
-        className="btn btn--quiet"
+        className="btn btn--quiet feed-card__action-btn"
         type="button"
         aria-pressed={state.liked}
         onClick={toggle}
       >
-        讚<span aria-hidden="true">・{state.likeCount}</span>
+        <Icon name="thumb" />
+        <span>
+          讚<span aria-hidden="true">・{state.likeCount}</span>
+        </span>
         <span className="visually-hidden">，目前 {state.likeCount} 個讚</span>
       </button>
       {error && (

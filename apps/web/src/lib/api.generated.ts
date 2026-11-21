@@ -1419,10 +1419,20 @@ export interface components {
             /** @description Opened by the site's AI (H9); it belongs to no account and is labelled AI. */
             ai: boolean;
         } & unknown;
+        /** @description Latest visible reply summary for a thread card; never carries the author account or an anonymous name. */
+        ForumLatestReply: {
+            bodyPreview: string;
+            anonymous: boolean;
+            displayName: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            ai: boolean;
+        } & unknown;
         ForumThreadSummary: {
             /** Format: uuid */
             id: string;
             title: string;
+            bodyPreview?: string;
             topicKey: components["schemas"]["TopicKey"] | null;
             paperId: string | null;
             anonymous: boolean;
@@ -1433,6 +1443,11 @@ export interface components {
             /** Format: date-time */
             lastReplyAt: string | null;
             likeCount: number;
+            /** @description Whether the member making the request liked the opening post. */
+            liked?: boolean;
+            /** @description Whether the member making the request opened the thread. */
+            mine?: boolean;
+            latestReply?: components["schemas"]["ForumLatestReply"] | null;
             pinned: boolean;
             ai: boolean;
         } & unknown;

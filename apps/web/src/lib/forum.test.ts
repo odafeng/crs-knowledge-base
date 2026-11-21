@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   BODY_MAX,
+  authorInitials,
   authorName,
+  avatarTone,
   bodyError,
   errorMessage,
   paperIdParam,
   receiptMessage,
+  relativeTime,
   threadPath,
   titleError,
 } from "./forum";
@@ -82,5 +85,25 @@ describe("forum helpers", () => {
     expect(paperIdParam(" niche2 ")).toBe("niche2");
     expect(paperIdParam("../admin")).toBeNull();
     expect(paperIdParam(null)).toBeNull();
+  });
+
+  it("derives readable initials and deterministic avatar tones", () => {
+    expect(authorInitials("陳志明 醫師")).toBe("陳");
+    expect(authorInitials("Dr Alice")).toBe("DA");
+    expect(authorInitials(null, { anonymous: true })).toBe("匿");
+    expect(authorInitials("GutHub AI", { ai: true })).toBe("AI");
+    expect(avatarTone("陳志明 醫師")).toBe(avatarTone("陳志明 醫師"));
+    expect(avatarTone("陳志明 醫師")).toBeGreaterThanOrEqual(0);
+    expect(avatarTone("陳志明 醫師")).toBeLessThan(5);
+  });
+
+  it("formats relative timestamps and falls back to ISO date after a week", () => {
+    const now = Date.parse("2026-11-21T12:00:00Z");
+    expect(relativeTime("2026-11-21T11:59:40Z", now)).toBe("剛剛");
+    expect(relativeTime("2026-11-21T11:45:00Z", now)).toBe("15 分鐘前");
+    expect(relativeTime("2026-11-21T08:00:00Z", now)).toBe("4 小時前");
+    expect(relativeTime("2026-11-20T10:00:00Z", now)).toBe("昨天");
+    expect(relativeTime("2026-11-18T12:00:00Z", now)).toBe("3 天前");
+    expect(relativeTime("2026-11-10T12:00:00Z", now)).toBe("2026-11-10");
   });
 });
