@@ -24,15 +24,17 @@ export function SiteHeader() {
           </span>
         </Link>
         <SiteNav />
-        <Link
-          className="btn btn--quiet btn--icon"
-          href="/updates/#q"
-          aria-label="搜尋消息與文獻"
-        >
-          <Icon name="search" />
-        </Link>
-        <ThemeToggle />
-        <AccountLink />
+        <div className="site-header__utils">
+          <Link
+            className="btn btn--quiet btn--icon"
+            href="/updates/#q"
+            aria-label="搜尋消息與文獻"
+          >
+            <Icon name="search" />
+          </Link>
+          <ThemeToggle />
+          <AccountLink />
+        </div>
       </div>
     </header>
   );

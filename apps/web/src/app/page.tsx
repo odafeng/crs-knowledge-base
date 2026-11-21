@@ -76,11 +76,13 @@ export default async function Home() {
             <h2 className="daily__label" id="daily-title">
               {dailyLabel(pick.date, daily.date)}
             </h2>
-            <p className="daily__title">
-              <Link href={pick.url}>{pick.title}</Link>
-              {pick.unreviewed && <AiChip label="AI 未審" />}
-            </p>
-            <p className="daily__conclusion">{pick.conclusion}</p>
+            <div className="daily__main">
+              <p className="daily__title">
+                <Link href={pick.url}>{pick.title}</Link>
+                {pick.unreviewed && <AiChip label="AI 未審" />}
+              </p>
+              <p className="daily__conclusion">{pick.conclusion}</p>
+            </div>
           </div>
         </section>
       )}
@@ -108,7 +110,13 @@ export default async function Home() {
                 本週新增 {stats.weekPapers} 篇文獻、{stats.weekNews} 則消息
               </span>
             </p>
-            <div className="lead__grid">
+            <div
+              className={
+                lead.figures.length > 0
+                  ? "lead__grid"
+                  : "lead__grid lead__grid--plate"
+              }
+            >
               <div>
                 <p className="eyebrow">
                   <span className="eyebrow__flag">頭條</span>
@@ -141,7 +149,20 @@ export default async function Home() {
                   {isUnreviewed(lead) && <AiChip label="AI 未審" />}
                 </div>
               </div>
-              {lead.figures.length > 0 && <NewsFigure item={lead} />}
+              {lead.figures.length > 0 ? (
+                <NewsFigure item={lead} />
+              ) : (
+                <div className="lead__plate">
+                  <span className="lead__plate-kicker">關鍵數字</span>
+                  <p className="lead__plate-value num">
+                    {lead.key.value}
+                    {lead.key.unit && (
+                      <span className="stat__unit">{lead.key.unit}</span>
+                    )}
+                  </p>
+                  <p className="lead__plate-label">{lead.key.label}</p>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -198,7 +219,7 @@ export default async function Home() {
           </section>
           <aside className="home-rail" aria-label="訂閱、主題、藥物與最新給付">
             <Alerts />
-            <section aria-labelledby="topics-title">
+            <section className="rail-section" aria-labelledby="topics-title">
               <div className="rail-head">
                 <h2 className="rail-title" id="topics-title">
                   主題
@@ -226,7 +247,7 @@ export default async function Home() {
                 }))}
               />
             </section>
-            <section aria-labelledby="drugs-title">
+            <section className="rail-section" aria-labelledby="drugs-title">
               <div className="rail-head">
                 <h2 className="rail-title" id="drugs-title">
                   藥物
@@ -256,7 +277,7 @@ export default async function Home() {
                 ))}
               </dl>
             </section>
-            <section aria-labelledby="board-title">
+            <section className="rail-section" aria-labelledby="board-title">
               <h2 className="rail-title" id="board-title">
                 最新核准給付資訊
               </h2>

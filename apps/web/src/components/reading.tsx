@@ -98,12 +98,7 @@ export function Breadcrumb({ crumbs }: { crumbs: Crumbs }) {
 }
 
 export function AiChip({ label }: { label: string }) {
-  return (
-    <span className="chip chip--ai">
-      <Icon name="spark" />
-      {label}
-    </span>
-  );
+  return <span className="chip chip--ai">{label}</span>;
 }
 
 export function Status({

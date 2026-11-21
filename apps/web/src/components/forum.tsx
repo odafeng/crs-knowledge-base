@@ -76,6 +76,7 @@ function MembersOnly({
   if (account.status === "signed-out") {
     return (
       <div className="forum-gate">
+        <p className="forum-gate__kicker">醫師會員限定</p>
         <p>{ABOUT}</p>
         <p>
           <Link
@@ -91,6 +92,7 @@ function MembersOnly({
   if (!account.displayName) {
     return (
       <div className="forum-gate">
+        <p className="forum-gate__kicker">醫師會員限定</p>
         <p>{ABOUT}</p>
         <p>
           請先
@@ -108,6 +110,7 @@ function MembersOnly({
   if (membership.value.status !== "verified") {
     return (
       <div className="forum-gate">
+        <p className="forum-gate__kicker">醫師會員限定</p>
         <p>{ABOUT}</p>
         <p>
           {membership.value.status === "pending"

@@ -46,32 +46,34 @@ export function AskSite() {
 
   return (
     <section className="ask-site" aria-labelledby="ask-site-title">
-      <div className="container">
+      <div className="container ask-site__bar">
         <h2 id="ask-site-title">用一句話找證據</h2>
-        <form className="ask-site__form" role="search" onSubmit={submit}>
-          <label className="visually-hidden" htmlFor="ask-site-q">
-            用一句話描述你的問題
-          </label>
-          <Icon name="search" />
-          <input
-            id="ask-site-q"
-            type="search"
-            maxLength={200}
-            placeholder="例：左側 RAS 野生型的一線該選哪個生物製劑？"
-            autoComplete="off"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          <button className="btn btn--primary" type="submit" disabled={busy}>
-            {busy ? "搜尋中…" : "搜尋"}
-          </button>
-        </form>
-        <p className="ask-site__note">
-          依語意找出站上最相關的文獻、消息與治療整理，不會產生答案。問題不會存下來。
-        </p>
-        <div className="ask-site__results" aria-live="polite">
-          {outcome?.kind === "error" && <p>{outcome.message}</p>}
-          {outcome?.kind === "done" && <Results hits={outcome.hits} />}
+        <div className="ask-site__body">
+          <form className="ask-site__form" role="search" onSubmit={submit}>
+            <label className="visually-hidden" htmlFor="ask-site-q">
+              用一句話描述你的問題
+            </label>
+            <Icon name="search" />
+            <input
+              id="ask-site-q"
+              type="search"
+              maxLength={200}
+              placeholder="例：左側 RAS 野生型的一線該選哪個生物製劑？"
+              autoComplete="off"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            <button className="btn btn--primary" type="submit" disabled={busy}>
+              {busy ? "搜尋中…" : "搜尋"}
+            </button>
+          </form>
+          <p className="ask-site__note">
+            依語意找出站上最相關的文獻、消息與治療整理，不會產生答案。問題不會存下來。
+          </p>
+          <div className="ask-site__results" aria-live="polite">
+            {outcome?.kind === "error" && <p>{outcome.message}</p>}
+            {outcome?.kind === "done" && <Results hits={outcome.hits} />}
+          </div>
         </div>
       </div>
     </section>

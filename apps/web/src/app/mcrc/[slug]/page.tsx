@@ -64,11 +64,11 @@ export default async function TopicPage({ params }: Props) {
         <h1>{topic.title}</h1>
         <p className="page-head__lead">共 {papers.length} 篇文獻。</p>
         {topic.standardOfCare.length > 0 && (
-          <p>
+          <div className="page-head__actions">
             <Link className="btn btn--secondary" href={boardPath(topic)}>
               Tumor board 一頁摘要
             </Link>
-          </p>
+          </div>
         )}
       </header>
       {stories.length > 0 && (

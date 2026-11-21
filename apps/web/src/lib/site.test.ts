@@ -224,6 +224,9 @@ describe("navigation, reading log and feeds mirrored from sitegen", () => {
         "/subscribe/",
         "/forum/x/",
         "/about/",
+        "/tumor-board/ras-wt/",
+        "/login/",
+        "/account/",
       ].map(areaOf),
     ).toEqual([
       "home",
@@ -236,6 +239,9 @@ describe("navigation, reading log and feeds mirrored from sitegen", () => {
       "subscribe",
       "forum",
       "about",
+      "topics",
+      null,
+      null,
     ]);
   });
 
