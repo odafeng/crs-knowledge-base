@@ -96,14 +96,29 @@ export function FollowPaper({
 }
 
 /** On the account page: the daily digest switch and every followed paper, each with a way to stop following it. */
-export function FollowedPapers({ papers }: { papers: FollowedPaper[] }) {
+export function FollowedPapers({
+  papers,
+  onChange,
+}: {
+  papers: FollowedPaper[];
+  onChange?: (follows: Follows) => void;
+}) {
   const { token, follows, setFollows, failed } = useFollows();
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
 
+  useEffect(() => {
+    if (follows) onChange?.(follows);
+    // Sync whenever server state updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [follows]);
+
   if (failed)
     return (
-      <section className="followed-papers" aria-labelledby="follows-title">
+      <section
+        className="dash-card followed-papers"
+        aria-labelledby="follows-title"
+      >
         <h2 id="follows-title">追蹤的文獻</h2>
         <p role="status">暫時無法載入追蹤的文獻，請稍後再試。</p>
       </section>
@@ -114,11 +129,11 @@ export function FollowedPapers({ papers }: { papers: FollowedPaper[] }) {
   async function change(
     run: Promise<Follows | null>,
     done: string,
-    shown?: Follows,
+    shownState?: Follows,
   ) {
-    // `shown` is the state to show while the request runs, so a checkbox moves when it is clicked.
+    // `shownState` is the state to show while the request runs, so a checkbox moves when it is clicked.
     const before = follows;
-    if (shown) setFollows(shown);
+    if (shownState) setFollows(shownState);
     setBusy(true);
     const next = await run;
     setBusy(false);
@@ -131,8 +146,14 @@ export function FollowedPapers({ papers }: { papers: FollowedPaper[] }) {
   }
 
   return (
-    <section className="followed-papers" aria-labelledby="follows-title">
-      <h2 id="follows-title">追蹤的文獻</h2>
+    <section
+      className="dash-card followed-papers"
+      aria-labelledby="follows-title"
+    >
+      <div className="dash-card__head">
+        <h2 id="follows-title">追蹤的文獻</h2>
+        <span className="chip">{shown.length} 篇</span>
+      </div>
       <p className="note">
         在文獻頁按「追蹤新留言」，或在那篇留言，就會追蹤。只有你看得到自己追蹤了哪些。
       </p>
@@ -152,10 +173,17 @@ export function FollowedPapers({ papers }: { papers: FollowedPaper[] }) {
             );
           }}
         />
-        每天早上寄一封信，列出追蹤的文獻前一天有幾則新留言（不寫留言者是誰）
+        <span>
+          每天早上寄一封信，列出追蹤的文獻前一天有幾則新留言（不寫留言者是誰）
+        </span>
       </label>
       {shown.length === 0 ? (
-        <p>還沒有追蹤任何文獻。</p>
+        <div className="dash-empty">
+          <p>還沒有追蹤任何文獻。</p>
+          <Link className="btn btn--secondary" href="/updates/">
+            瀏覽最新文獻
+          </Link>
+        </div>
       ) : (
         <ul className="followed-papers__list">
           {shown.map((paper) => (
@@ -179,7 +207,9 @@ export function FollowedPapers({ papers }: { papers: FollowedPaper[] }) {
           ))}
         </ul>
       )}
-      <p role="status">{status}</p>
+      <p className="note" role="status">
+        {status}
+      </p>
     </section>
   );
 }

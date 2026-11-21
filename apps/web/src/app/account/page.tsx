@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { TopicChoices } from "@/components/followed-topics";
-import { FollowedPapers } from "@/components/paper-follows";
-import { AccountSettings } from "@/components/sign-in";
-import { SurgeonMembership } from "@/components/surgeon-membership";
+import { AccountDashboard } from "@/components/account-dashboard";
 import { listPapers, listTopics } from "@/lib/content";
 import { SITE_NAME } from "@/lib/seo";
 import { paperPath, paperTitle } from "@/lib/site";
@@ -30,14 +27,12 @@ export default async function AccountPage() {
   return (
     <div className="container page">
       <header className="page-head">
-        <h1>帳號設定</h1>
+        <h1>帳號設定與個人儀表板</h1>
+        <p className="page-head__lead">
+          檢視你的閱讀追蹤、近期討論紀錄、通知偏好與大腸直腸外科會員資格。
+        </p>
       </header>
-      <div className="page__narrow">
-        <AccountSettings />
-        <TopicChoices topics={topics} />
-        <FollowedPapers papers={papers} />
-        <SurgeonMembership />
-      </div>
+      <AccountDashboard topics={topics} papers={papers} />
     </div>
   );
 }

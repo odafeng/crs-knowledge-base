@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { NewThread } from "@/components/forum";
@@ -19,14 +20,20 @@ export default async function NewThreadPage() {
   return (
     <div className="container page">
       <header className="page-head">
+        <p className="comment__meta">
+          <Link className="thread-head__back" href="/forum/">
+            ← 回醫師論壇
+          </Link>
+        </p>
         <h1>開新話題</h1>
+        <p className="page-head__lead">
+          與通過驗證的大腸直腸外科同儕交流臨床案例、指引解讀或手術經驗。
+        </p>
       </header>
-      <div className="page__narrow">
-        {/* The form reads ?paperId= from the URL. */}
-        <Suspense fallback={<p aria-live="polite">載入中…</p>}>
-          <NewThread topics={topics} />
-        </Suspense>
-      </div>
+      {/* The form reads ?paperId= and ?anonymous= from the URL. */}
+      <Suspense fallback={<p aria-live="polite">載入中…</p>}>
+        <NewThread topics={topics} />
+      </Suspense>
     </div>
   );
 }

@@ -26,7 +26,11 @@ const FIELDS: [keyof ApplicationForm, string, string][] = [
   ["certificateDigits", "證書字號後三碼", "off"],
 ];
 
-export function SurgeonMembership() {
+export function SurgeonMembership({
+  onChange,
+}: {
+  onChange?: (membership: Membership) => void;
+} = {}) {
   const account = useAccount();
   const signedIn = account.status === "signed-in" ? account : null;
   const token = signedIn?.token;
@@ -40,8 +44,12 @@ export function SurgeonMembership() {
     let live = true;
     loadMembership(token).then((loaded) => {
       if (!live) return;
-      if (loaded) setMembership(loaded);
-      else setStatus("暫時無法載入會員狀態，請稍後再試。");
+      if (loaded) {
+        setMembership(loaded);
+        onChange?.(loaded);
+      } else {
+        setStatus("暫時無法載入會員狀態，請稍後再試。");
+      }
     });
     return () => {
       live = false;
@@ -63,6 +71,7 @@ export function SurgeonMembership() {
     setStatus(result.message);
     if (result.membership) {
       setMembership(result.membership);
+      onChange?.(result.membership);
       setForm(EMPTY);
     }
   }
@@ -72,20 +81,41 @@ export function SurgeonMembership() {
     setBusy(true);
     const ok = await withdrawApplication(token);
     setBusy(false);
-    if (ok) setMembership({ status: "none", since: null });
+    if (ok) {
+      const next: Membership = { status: "none", since: null };
+      setMembership(next);
+      onChange?.(next);
+    }
     setStatus(ok ? "已撤回申請，填寫的資料已刪除。" : "撤回失敗，請稍後再試。");
   }
 
   return (
-    <section className="surgeon" aria-labelledby="surgeon-title">
-      <h2 id="surgeon-title">大腸直腸外科會員</h2>
+    <section
+      className={`dash-card surgeon${membership?.status === "verified" ? " surgeon--verified" : ""}`}
+      aria-labelledby="surgeon-title"
+    >
+      <div className="dash-card__head">
+        <h2 id="surgeon-title">大腸直腸外科會員</h2>
+        {membership?.status === "verified" && (
+          <span className="status status--good">已驗證</span>
+        )}
+        {membership?.status === "pending" && (
+          <span className="status status--partial">審核中</span>
+        )}
+        {membership?.status === "none" && <span className="chip">未驗證</span>}
+      </div>
       {membership?.status === "verified" && (
         <>
-          <p>
+          <p className="surgeon__lead">
             你是大腸直腸外科會員
             {membership.since && `（${membership.since.slice(0, 10)} 起）`}
             ，可以進入論壇。
           </p>
+          <ul className="surgeon__perks">
+            <li>可閱讀與參與醫師專屬臨床論壇討論</li>
+            <li>發起討論或回覆時可自由選擇署名或匿名</li>
+            <li>語意搜尋同時涵蓋論壇內的實務討論</li>
+          </ul>
           <div className="comment__actions">
             <Link className="btn btn--primary" href="/forum/">
               進入論壇
@@ -137,7 +167,9 @@ export function SurgeonMembership() {
           </button>
         </form>
       )}
-      <p role="status">{status}</p>
+      <p className="note" role="status">
+        {status}
+      </p>
     </section>
   );
 }

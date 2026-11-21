@@ -50,13 +50,24 @@ POST_COLUMNS = (
 PAPER_LINK = "(select pp.id from app.public_papers pp where pp.id = v.paper_id) as paper_id"
 #: Visible threads with their counts, filtered by `%(topic)s` and `%(paper)s`; callers add order and paging.
 THREAD_SUMMARY = (
-    "select v.id, v.title, v.topic_key, "
+    "select v.id, v.title, v.body, v.topic_key, "
     + PAPER_LINK
     + ", v.anonymous, v.display_name, v.created_at, v.pinned_at, v.ai,"
     " (select count(*) from app.visible_forum_posts r where r.thread_id = v.id) as reply_count,"
     " (select max(r.created_at) from app.visible_forum_posts r where r.thread_id = v.id) as last_reply_at,"
-    " (select count(*) from app.forum_post_likes l where l.post_id = v.id) as like_count"
-    " from app.visible_forum_posts v where v.thread_id is null"
+    " (select count(*) from app.forum_post_likes l where l.post_id = v.id) as like_count,"
+    " exists (select 1 from app.forum_post_likes l where l.post_id = v.id and l.account_id = %(me)s) as liked,"
+    " exists (select 1 from app.forum_posts o where o.id = v.id and o.author_id = %(me)s) as mine,"
+    " lr.body as latest_reply_body, lr.anonymous as latest_reply_anonymous,"
+    " lr.display_name as latest_reply_display_name, lr.created_at as latest_reply_created_at,"
+    " lr.ai as latest_reply_ai"
+    " from app.visible_forum_posts v"
+    " left join lateral ("
+    "   select r.body, r.anonymous, r.display_name, r.created_at, r.ai"
+    "   from app.visible_forum_posts r where r.thread_id = v.id"
+    "   order by r.created_at desc, r.id desc limit 1"
+    " ) lr on true"
+    " where v.thread_id is null"
     " and (%(topic)s::text is null or v.topic_key = %(topic)s)"
     " and (%(paper)s::text is null or v.paper_id = %(paper)s)"
 )
@@ -172,10 +183,29 @@ def _opening(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _preview(text: str, limit: int = 240) -> str:
+    collapsed = " ".join(text.split())
+    if len(collapsed) <= limit:
+        return collapsed
+    return collapsed[:limit].rstrip() + "…"
+
+
 def _summary(row: dict[str, Any]) -> dict[str, Any]:
+    latest = (
+        {
+            "bodyPreview": _preview(row["latest_reply_body"], 160),
+            "anonymous": row["latest_reply_anonymous"],
+            "displayName": row["latest_reply_display_name"],
+            "createdAt": _iso(row["latest_reply_created_at"]),
+            "ai": row["latest_reply_ai"],
+        }
+        if row["latest_reply_created_at"] is not None
+        else None
+    )
     return {
         "id": str(row["id"]),
         "title": row["title"],
+        "bodyPreview": _preview(row["body"]),
         "topicKey": row["topic_key"],
         "paperId": row["paper_id"],
         "anonymous": row["anonymous"],
@@ -184,6 +214,9 @@ def _summary(row: dict[str, Any]) -> dict[str, Any]:
         "replyCount": row["reply_count"],
         "lastReplyAt": _iso(row["last_reply_at"]) if row["last_reply_at"] else None,
         "likeCount": row["like_count"],
+        "liked": row["liked"],
+        "mine": row["mine"],
+        "latestReply": latest,
         "pinned": row["pinned_at"] is not None,
         "ai": row["ai"],
     }
@@ -304,7 +337,14 @@ def list_threads(
     """Visible threads, newest first. Pinned threads come apart, on the first page only, so paging stays stable."""
     response.headers.update(PRIVATE)
     after = _decode_cursor(cursor)
-    params = {"topic": topic, "paper": paper_id, "t": after and after[0], "i": after and after[1], "n": limit + 1}
+    params = {
+        "me": member.id,
+        "topic": topic,
+        "paper": paper_id,
+        "t": after and after[0],
+        "i": after and after[1],
+        "n": limit + 1,
+    }
     rows = db.execute(
         THREAD_SUMMARY + " and v.pinned_at is null"
         " and (%(t)s::timestamptz is null or (v.created_at, v.id) < (%(t)s::timestamptz, %(i)s::uuid))"

@@ -463,3 +463,33 @@ def test_ai_threads_are_labelled_and_belong_to_no_one(client: TestClient, forum:
         sql("delete from app.forum_posts where thread_id = %s", (thread,))
         sql("delete from app.forum_posts where id = %s", (thread,))
     assert own
+
+
+def test_thread_summary_carries_preview_like_mine_and_latest_reply_without_leaking_anonymous(
+    client: TestClient, forum: Forum
+) -> None:
+    f = forum
+    long_body = "臨床討論內容 " + ("測試文字" * 80)
+    thread = published_thread(client, f, f.surgeon, title="Preview check", body=long_body)
+    assert client.put(f"{POSTS}/{thread}/likes", headers=f.headers(f.peer)).status_code == 200
+
+    # Before any published reply, latestReply is null; mine and liked reflect the caller.
+    as_author = next(t for t in thread_list(client, f, f.surgeon) if t["id"] == thread)
+    assert as_author["mine"] is True and as_author["liked"] is False
+    assert as_author["bodyPreview"].endswith("…") and len(as_author["bodyPreview"]) <= 241
+    assert as_author["latestReply"] is None
+
+    as_peer = next(t for t in thread_list(client, f, f.peer) if t["id"] == thread)
+    assert as_peer["mine"] is False and as_peer["liked"] is True and as_peer["likeCount"] == 1
+
+    # Pending reply stays hidden from latestReply; once approved, anonymous reply never leaks displayName.
+    first_reply = reply(client, f, f.peer, thread, "Anonymous clinical reply", anonymous=True).json()["id"]
+    assert next(t for t in thread_list(client, f, f.surgeon) if t["id"] == thread)["latestReply"] is None
+    assert moderate(client, f, first_reply).status_code == 200
+
+    updated = next(t for t in thread_list(client, f, f.surgeon) if t["id"] == thread)
+    assert updated["latestReply"] is not None
+    assert updated["latestReply"]["anonymous"] is True
+    assert updated["latestReply"]["displayName"] is None
+    assert updated["latestReply"]["bodyPreview"] == "Anonymous clinical reply"
+    assert "林醫師" not in str(updated["latestReply"])

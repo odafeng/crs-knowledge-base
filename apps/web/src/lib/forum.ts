@@ -120,6 +120,52 @@ export function postDate(iso: string): string {
   return iso.slice(0, 10);
 }
 
+/** Human-friendly Traditional Chinese relative timestamp; falls back to YYYY-MM-DD after 7 days. */
+export function relativeTime(iso: string, nowMs: number = Date.now()): string {
+  const parsed = Date.parse(iso);
+  if (Number.isNaN(parsed)) return postDate(iso);
+  const diffSec = Math.floor((nowMs - parsed) / 1000);
+  if (diffSec < 0) return postDate(iso);
+  if (diffSec < 60) return "剛剛";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} 分鐘前`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr} 小時前`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay === 1) return "昨天";
+  if (diffDay < 7) return `${diffDay} 天前`;
+  return postDate(iso);
+}
+
+/** Compact initials for an avatar circle: AI -> "AI", anonymous -> "匿", CJK -> surname char, Latin -> up to 2 letters. */
+export function authorInitials(
+  name: string | null | undefined,
+  options?: { anonymous?: boolean; ai?: boolean },
+): string {
+  if (options?.ai) return "AI";
+  if (options?.anonymous) return "匿";
+  const cleaned = (name ?? "").trim();
+  if (!cleaned) return "醫";
+  const firstChar = [...cleaned][0] ?? "";
+  if (/[\u3400-\u9fff\uf900-\ufaff]/.test(firstChar)) return firstChar;
+  const words = cleaned
+    .replace(/[^A-Za-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+  if (words.length >= 2) return `${words[0][0]}${words[1][0]}`.toUpperCase();
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return firstChar.toUpperCase();
+}
+
+/** Stable palette tone index (0..4) derived from an author label so each surgeon keeps a consistent muted tint. */
+export function avatarTone(seed: string): 0 | 1 | 2 | 3 | 4 {
+  let hash = 0;
+  for (const ch of seed) {
+    hash = (hash * 31 + ch.codePointAt(0)!) >>> 0;
+  }
+  return (hash % 5) as 0 | 1 | 2 | 3 | 4;
+}
+
 /** A paper ID from a `?paperId=` link, as the API accepts it, or null. */
 export function paperIdParam(value: string | null): string | null {
   const id = value?.trim();

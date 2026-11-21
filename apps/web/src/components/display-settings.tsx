@@ -49,16 +49,16 @@ export function ThemeToggle({ labelled = false }: { labelled?: boolean }) {
   );
 }
 
-export function DisplaySettings() {
+export function DisplaySettings({
+  labelId = "text-size-label",
+}: {
+  labelId?: string;
+} = {}) {
   const size = useSyncExternalStore(subscribe, currentSize, () => "md");
   return (
     <div className="display-settings">
-      <span id="text-size-label">文字大小</span>
-      <span
-        className="segmented"
-        role="group"
-        aria-labelledby="text-size-label"
-      >
+      <span id={labelId}>文字大小</span>
+      <span className="segmented" role="group" aria-labelledby={labelId}>
         {FONT_SIZES.map(([option, label]) => (
           <button
             type="button"
