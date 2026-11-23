@@ -298,7 +298,7 @@
 .richtext th, .richtext td { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; }
 .richtext th { background: var(--sunken); color: var(--ink-2); font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.03em; }
 .richtext p, .richtext li { max-width: var(--measure); }
-.richtext .note {
+.source-details .richtext .note {
   padding: var(--space-3) var(--space-4);
   border-inline-start: 3px solid var(--warn);
   border-radius: 0 var(--radius-control) var(--radius-control) 0;
@@ -306,7 +306,7 @@
   color: var(--ink);
   font-size: var(--text-sm);
 }
-.richtext .src {
+.source-details .richtext .src {
   margin-block-start: var(--space-5);
   padding-block-start: var(--space-3);
   border-block-start: 1px solid var(--line);
