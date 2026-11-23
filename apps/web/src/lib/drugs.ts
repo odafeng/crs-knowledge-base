@@ -1,7 +1,7 @@
 // Browse papers by drug (J1 #205, ADR-0026). A hand-kept list: a paper belongs to a drug when its regimen, or its
 // summary's title or comparison, names the drug, whether as the studied treatment or as the control arm.
 import type { Crumbs, Paper } from "./site";
-import { HOME } from "./site";
+import { TOPICS } from "./site";
 
 export type DrugGroup =
   | "antiangiogenic"
@@ -134,4 +134,4 @@ export const evidenceOrder = <P extends Pick<Paper, "year">>(
 
 export const drugPath = (drug: Pick<Drug, "slug">) => `/drugs/${drug.slug}/`;
 
-export const DRUG_CRUMBS: Crumbs = [...HOME, ["藥物", "/drugs/"]];
+export const DRUG_CRUMBS: Crumbs = [...TOPICS, ["藥物", "/drugs/"]];

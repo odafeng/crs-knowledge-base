@@ -82,14 +82,14 @@
 .entry__title a:hover { color: var(--brand); text-decoration: underline; }
 .entry__result {
   padding-inline-start: var(--space-3);
-  border-inline-start: 2px solid var(--brand);
+  border-inline-start: 2px solid var(--mark);
   color: var(--ink);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   line-height: 1.55;
 }
-.entry__line { color: var(--ink-2); font-size: var(--text-sm); line-height: 1.68; }
+.entry__line { color: var(--ink-2); font-size: var(--text-sm); line-height: 1.65; }
 .entry__result, .entry__line { max-width: var(--measure); }
 
 /* Rail lists */
@@ -199,6 +199,27 @@
 .paper__bottom { max-width: var(--measure); color: var(--ink-2); font-size: var(--text-sm); line-height: 1.65; }
 
 /* Paper page */
+.paper-brief {
+  display: grid;
+  gap: var(--space-4);
+  margin-block-end: var(--space-6);
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--brand);
+  border-radius: 2px var(--radius-card) var(--radius-card) 2px;
+}
+.paper-brief .result {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.paper-brief .bottom-line {
+  margin: 0;
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--line);
+}
 .result {
   padding: var(--space-4) var(--space-5);
   border: 1px solid var(--line);
@@ -277,6 +298,21 @@
 .richtext th, .richtext td { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; }
 .richtext th { background: var(--sunken); color: var(--ink-2); font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.03em; }
 .richtext p, .richtext li { max-width: var(--measure); }
+.richtext .note {
+  padding: var(--space-3) var(--space-4);
+  border-inline-start: 3px solid var(--warn);
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+  background: var(--warn-bg);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+.richtext .src {
+  margin-block-start: var(--space-5);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--line);
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+}
 
 /* Natural-language search bar on the home page (H3 #125): compact horizontal query strip */
 .ask-site {
@@ -312,6 +348,8 @@
 .ask-site__form input:focus { border-color: var(--brand); }
 .ask-site__form input::placeholder { color: var(--ink-3); opacity: 1; }
 .ask-site__note { color: var(--ink-3); font-size: 0.75rem; line-height: 1.5; }
+.ask-site__note a { color: var(--brand); font-weight: 600; text-decoration: none; }
+.ask-site__note a:hover { text-decoration: underline; }
 .ask-site__results:not(:empty) {
   max-width: 48rem;
   margin-block-start: var(--space-3);

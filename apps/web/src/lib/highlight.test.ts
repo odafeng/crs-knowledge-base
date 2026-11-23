@@ -22,6 +22,23 @@ describe("figures marks the numbers a reader scans for", () => {
 
   it("leaves digits inside names alone", () => {
     expect(marked("BRAF V600E 與 mFOLFOX6")).toEqual([]);
+    expect(marked("PD-1、CTLA-4、5-FU 與 TAS-102")).toEqual([]);
+  });
+
+  it("leaves clinical classifiers, age ranges and randomization ratios unmarked", () => {
+    expect(
+      marked(
+        "德國與奧地利，18-75 歲、ECOG 0-2 的 KRAS exon 2 野生型第四期大腸直腸癌病人，共 592 位。",
+      ),
+    ).toEqual(["592 位"]);
+    expect(
+      marked(
+        "Grade 3 以上皮膚反應：cetuximab 組 26%、bevacizumab 組 2%；腹瀉 11% vs 14%。",
+      ),
+    ).toEqual(["26%", "2%", "11%", "14%"]);
+    expect(
+      marked("Open-label phase 3 RCT，1:1 隨機分派，RECIST 1.1。"),
+    ).toEqual([]);
   });
 
   it("keeps every character, in order", () => {

@@ -23,9 +23,11 @@ import {
 } from "@/lib/content";
 import {
   byTopic,
+  cleanPaperDetailHtml,
   COMMENTARY_LABELS,
   commentaryOf,
   doiUrl,
+  extractPmid,
   isUnreviewed,
   MCRC,
   newsPath,
@@ -69,6 +71,10 @@ export default async function PaperPage({ params }: Props) {
   const commentary = commentaryOf(paper);
   const summary = paper.summary;
   const summaryPending = summary?.reviewedAt === null;
+  const detailHtml = paper.detailHtml
+    ? cleanPaperDetailHtml(paper.detailHtml)
+    : "";
+  const pmid = paper.detailHtml ? extractPmid(paper.detailHtml) : null;
   const crumbs = [
     ...MCRC,
     ...(topic ? ([[topic.label, topicPath(topic)]] as const) : []),
@@ -107,15 +113,15 @@ export default async function PaperPage({ params }: Props) {
           {summary ? (
             <PaperGlance summary={summary} topic={topic} />
           ) : (
-            <>
+            <div className="paper-brief">
               <p className="result">
                 <span className="result__label">關鍵結果</span>
                 {paper.result}
               </p>
               <p className="bottom-line">{paper.bottomLine}</p>
-            </>
+            </div>
           )}
-          {(summary || paper.detailHtml) && (
+          {(summary || detailHtml) && (
             <details className="page__section source-details" open={!summary}>
               <summary>
                 <h2>{summary ? "原始條目與原文摘要" : "詳細證據整理"}</h2>
@@ -129,11 +135,8 @@ export default async function PaperPage({ params }: Props) {
                   <p className="bottom-line">{paper.bottomLine}</p>
                 </>
               )}
-              {paper.detailHtml && (
-                <RichHtml
-                  html={paper.detailHtml}
-                  label="詳細證據整理，可左右捲動"
-                />
+              {detailHtml && (
+                <RichHtml html={detailHtml} label="詳細證據整理，可左右捲動" />
               )}
             </details>
           )}
@@ -185,6 +188,19 @@ export default async function PaperPage({ params }: Props) {
             <dd>{paper.endpoint}</dd>
             <dt>資料來源</dt>
             <dd>{SOURCE_LABELS[paper.source]}</dd>
+            {pmid && (
+              <>
+                <dt>PMID</dt>
+                <dd>
+                  <a
+                    href={`https://pubmed.ncbi.nlm.nih.gov/${pmid}/`}
+                    rel="noopener"
+                  >
+                    {pmid}
+                  </a>
+                </dd>
+              </>
+            )}
             <dt>最近複查</dt>
             <dd>
               <time dateTime={paper.reviewedAt}>{paper.reviewedAt}</time>

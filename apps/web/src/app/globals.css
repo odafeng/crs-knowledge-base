@@ -302,8 +302,8 @@
 }
 .daily__inner {
   display: grid;
-  gap: var(--space-1) var(--space-4);
-  padding-block: var(--space-3);
+  gap: 0.125rem var(--space-4);
+  padding-block: var(--space-2);
 }
 .daily__label {
   margin: 0;
@@ -326,7 +326,7 @@
   margin: 0;
   font-size: var(--text-sm);
   font-weight: 700;
-  line-height: 1.45;
+  line-height: 1.4;
   overflow-wrap: anywhere;
 }
 .daily__title a {
@@ -338,10 +338,14 @@
   text-decoration: underline;
 }
 .daily__conclusion {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   margin: 0;
   color: var(--ink-2);
   font-size: var(--text-xs);
-  line-height: 1.55;
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 @media (min-width: 1024px) {
@@ -352,6 +356,9 @@
   .daily__label {
     padding-inline-end: var(--space-4);
     border-inline-end: 1px solid var(--line);
+  }
+  .daily__conclusion {
+    -webkit-line-clamp: 1;
   }
 }
 
@@ -1357,6 +1364,85 @@ mark.hl {
   margin-block-end: var(--space-4);
   padding-block-end: var(--space-3);
   border-block-end: 1px solid var(--line);
+}
+
+/* Loading skeletons for /forum/ to prevent layout shift during auth/feed hydration */
+.forum-skeleton {
+  display: grid;
+  gap: var(--space-4);
+}
+.forum-skeleton__card {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+.forum-skeleton__card--composer {
+  padding: var(--space-4) var(--space-5);
+}
+.forum-skeleton__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.forum-skeleton__meta {
+  display: grid;
+  gap: 0.375rem;
+  flex: 1;
+}
+.forum-skeleton__avatar,
+.forum-skeleton__input,
+.forum-skeleton__line {
+  display: block;
+  background: var(--sunken);
+  animation: forum-pulse 1.5s ease-in-out infinite;
+}
+.forum-skeleton__avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  flex: none;
+}
+.forum-skeleton__input {
+  flex: 1;
+  height: 2.75rem;
+  border-radius: var(--radius-control);
+}
+.forum-skeleton__line {
+  height: 0.875rem;
+  border-radius: 4px;
+}
+.forum-skeleton__line--title {
+  height: 1.25rem;
+  width: 72%;
+}
+.forum-skeleton__line--mid {
+  width: 64%;
+}
+.forum-skeleton__line--short {
+  width: 34%;
+}
+.forum-skeleton__line--xs {
+  height: 0.75rem;
+  width: 22%;
+}
+@keyframes forum-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .forum-skeleton__avatar,
+  .forum-skeleton__input,
+  .forum-skeleton__line {
+    animation: none;
+  }
 }
 
 /* Forum on a desktop (H7 #129): Facebook-feel feed beside sticky member/rules rail */

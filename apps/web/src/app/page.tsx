@@ -24,12 +24,15 @@ import {
 } from "@/components/reading";
 import { getDailyPick, listNews, listPapers, listTopics } from "@/lib/content";
 import { dailyLabel } from "@/lib/daily";
-import { drugPath, drugShelves } from "@/lib/drugs";
+import { drugCounts, drugPath } from "@/lib/drugs";
 import {
   byTopic,
+  formatWeekSummary,
   isUnreviewed,
   latestCoverage,
   newsPath,
+  paperPath,
+  plateKicker,
   ROBOTIC_PAGES,
   topicPath,
   updates,
@@ -65,6 +68,16 @@ export default async function Home() {
   const stats = weekStats(papers, news);
   const mcrc = topics.filter((t) => t.roboticSections.length === 0);
   const sections = topics.flatMap((t) => t.roboticSections);
+  const allUpdates = updates(papers);
+  // Avoid repeating the daily pick verbatim as the first row of "新收錄文獻" right below.
+  const recentUpdates =
+    pick && allUpdates.length > 1
+      ? allUpdates.filter(
+          (u) => !(u.kind === "paper" && paperPath(u.paper) === pick.url),
+        )
+      : allUpdates;
+  const allDrugs = drugCounts(papers);
+  const topDrugs = allDrugs.slice(0, 12);
 
   return (
     <>
@@ -86,7 +99,6 @@ export default async function Home() {
           </div>
         </section>
       )}
-      <AskSite />
       {lead && (
         <section className="lead on-field" aria-labelledby="lead-title">
           <svg
@@ -106,9 +118,7 @@ export default async function Home() {
               <time dateTime={stats.lastUpdated}>
                 {longDate(stats.lastUpdated)}
               </time>
-              <span>
-                本週新增 {stats.weekPapers} 篇文獻、{stats.weekNews} 則消息
-              </span>
+              <span>{formatWeekSummary(stats)}</span>
             </p>
             <div
               className={
@@ -128,6 +138,7 @@ export default async function Home() {
                       {leadTopic.label}
                     </Link>
                   )}
+                  <time dateTime={lead.publishedAt}>{lead.publishedAt}</time>
                   {leadPaper && (
                     <span>
                       {leadPaper.journal} {leadPaper.year}
@@ -153,7 +164,9 @@ export default async function Home() {
                 <NewsFigure item={lead} />
               ) : (
                 <div className="lead__plate">
-                  <span className="lead__plate-kicker">關鍵數字</span>
+                  <span className="lead__plate-kicker">
+                    {plateKicker(lead.key.value)}
+                  </span>
                   <p className="lead__plate-value num">
                     {lead.key.value}
                     {lead.key.unit && (
@@ -167,6 +180,7 @@ export default async function Home() {
           </div>
         </section>
       )}
+      <AskSite />
       <div className="container">
         {rest.length > 0 && (
           <section className="band" aria-labelledby="more-title">
@@ -186,18 +200,16 @@ export default async function Home() {
           </section>
         )}
         <FollowedUpdates
-          rows={updates(papers)
-            .slice(0, 60)
-            .map((update) => {
-              const topic = topicOf(update.paper.id);
-              return {
-                path: `/papers/${update.paper.slug}/`,
-                title: update.title,
-                date: update.date,
-                topic: update.paper.topic,
-                topicLabel: topic?.label ?? "",
-              };
-            })}
+          rows={allUpdates.slice(0, 60).map((update) => {
+            const topic = topicOf(update.paper.id);
+            return {
+              path: `/papers/${update.paper.slug}/`,
+              title: update.title,
+              date: update.date,
+              topic: update.paper.topic,
+              topicLabel: topic?.label ?? "",
+            };
+          })}
         />
         <div className="band home-split">
           <section aria-labelledby="log-title">
@@ -206,18 +218,21 @@ export default async function Home() {
               <Link href="/updates/">全部 {papers.length} 篇</Link>
             </div>
             <ol className="entries">
-              {updates(papers)
-                .slice(0, 8)
-                .map((update) => (
-                  <Entry
-                    update={update}
-                    topic={topicOf(update.paper.id)}
-                    key={update.id}
-                  />
-                ))}
+              {recentUpdates.slice(0, 6).map((update) => (
+                <Entry
+                  update={update}
+                  topic={topicOf(update.paper.id)}
+                  key={update.id}
+                />
+              ))}
             </ol>
+            <p className="page__more">
+              <Link href="/updates/">
+                瀏覽全部 {papers.length} 篇文獻與評論
+              </Link>
+            </p>
           </section>
-          <aside className="home-rail" aria-label="訂閱、主題、藥物與最新給付">
+          <aside className="home-rail" aria-label="訂閱、主題、最新給付與藥物">
             <Alerts />
             <section className="rail-section" aria-labelledby="topics-title">
               <div className="rail-head">
@@ -246,36 +261,6 @@ export default async function Home() {
                   count: section.cards.length,
                 }))}
               />
-            </section>
-            <section className="rail-section" aria-labelledby="drugs-title">
-              <div className="rail-head">
-                <h2 className="rail-title" id="drugs-title">
-                  藥物
-                </h2>
-                <Link href="/drugs/">全部藥物</Link>
-              </div>
-              <dl className="drug-shelves">
-                {drugShelves(papers).map((shelf) => (
-                  <div className="drug-shelf" key={shelf.group}>
-                    <dt>{shelf.label}</dt>
-                    <dd>
-                      <ul className="drug-chips">
-                        {shelf.rows.map(({ drug, count }) => (
-                          <li key={drug.slug}>
-                            <Link className="drug-chip" href={drugPath(drug)}>
-                              {drug.name}
-                              <span className="drug-chip__count">
-                                {count}
-                                <span className="visually-hidden"> 篇</span>
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </dd>
-                  </div>
-                ))}
-              </dl>
             </section>
             <section className="rail-section" aria-labelledby="board-title">
               <h2 className="rail-title" id="board-title">
@@ -308,6 +293,29 @@ export default async function Home() {
                 日期取自健保署藥品給付規定的條文，是現行規定的生效日。
               </p>
             </section>
+            {topDrugs.length > 0 && (
+              <section className="rail-section" aria-labelledby="drugs-title">
+                <div className="rail-head">
+                  <h2 className="rail-title" id="drugs-title">
+                    常用藥物
+                  </h2>
+                  <Link href="/drugs/">全部 {allDrugs.length} 種</Link>
+                </div>
+                <ul className="drug-chips">
+                  {topDrugs.map(({ drug, count }) => (
+                    <li key={drug.slug}>
+                      <Link className="drug-chip" href={drugPath(drug)}>
+                        {drug.name}
+                        <span className="drug-chip__count">
+                          {count}
+                          <span className="visually-hidden"> 篇</span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </aside>
         </div>
       </div>

@@ -28,7 +28,8 @@ export function SiteHeader() {
           <Link
             className="btn btn--quiet btn--icon"
             href="/updates/#q"
-            aria-label="搜尋消息與文獻"
+            aria-label="關鍵字搜尋消息與文獻"
+            title="關鍵字搜尋"
           >
             <Icon name="search" />
           </Link>

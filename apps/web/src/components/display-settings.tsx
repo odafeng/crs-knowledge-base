@@ -39,9 +39,10 @@ export function ThemeToggle({ labelled = false }: { labelled?: boolean }) {
     </button>
   ) : (
     <button
-      className="btn btn--quiet btn--icon header-wide"
+      className="btn btn--quiet btn--icon"
       type="button"
       aria-label="切換深色模式"
+      title="切換深色模式"
       onClick={toggleTheme}
     >
       <Icon name="theme" />
