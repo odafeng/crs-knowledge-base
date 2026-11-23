@@ -284,8 +284,12 @@ def test_daily_pick_takes_the_days_story_with_its_papers_bottom_line(client: Tes
         ).fetchone()
         assert news is not None
         news_id, paper_id, day = news
-        bottom_line = conn.execute("select bottom_line from app.papers where id = %s", (paper_id,)).fetchone()
-        assert bottom_line is not None
+        row = conn.execute(
+            "select n.dek, p.bottom_line from app.news n join app.papers p on p.id = n.paper_id where n.id = %s",
+            (news_id,),
+        ).fetchone()
+        assert row is not None
+        expected_conclusion = (row[0] or "").strip() or row[1]
         kinds = {c.kind for c in collect(conn, day)}
     assert "news" in kinds
 
@@ -296,7 +300,7 @@ def test_daily_pick_takes_the_days_story_with_its_papers_bottom_line(client: Tes
     schema("DailyPick").validate(body)
     pick = body["pick"]
     assert pick["kind"] == "news" and pick["date"] == day.isoformat()
-    assert pick["url"].startswith("/news/") and pick["conclusion"] == bottom_line[0]
+    assert pick["url"].startswith("/news/") and pick["conclusion"] == expected_conclusion
 
 
 def test_daily_pick_is_empty_on_a_day_without_new_content(client: TestClient) -> None:

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { pageJsonLd, pageMetadata } from "@/lib/seo";
 import { connection } from "next/server";
+import { LineCard } from "@/components/line-card";
 import { Alerts, Breadcrumb, JsonLd } from "@/components/reading";
 import { ScrollTable } from "@/components/scroll-table";
 import { listNews, listPapers, listTopics } from "@/lib/content";
@@ -43,12 +44,13 @@ export default async function SubscribePage() {
         <h1>訂閱</h1>
         <p className="page-head__lead">
           {pushEnabled
-            ? "開啟推播，或用 RSS 訂閱全部更新、只訂閱關心的主題。不需要留 Email。"
-            : "用 RSS 訂閱全部更新，或只訂閱關心的主題。不需要留 Email。"}
+            ? "加入 LINE 官方帳號收每日白話重點，或開啟推播、用 RSS 訂閱全部更新與關心的主題。不需要留 Email。"
+            : "加入 LINE 官方帳號收每日白話重點，或用 RSS 訂閱全部更新與關心的主題。不需要留 Email。"}
         </p>
       </header>
-      <div className="page__narrow">
-        <Alerts />
+      <div className="page__narrow subscribe-stack">
+        <LineCard />
+        <Alerts showLine={false} />
         <div className="prose page__section">
           <h2>用 RSS 訂閱</h2>
           <ol>
