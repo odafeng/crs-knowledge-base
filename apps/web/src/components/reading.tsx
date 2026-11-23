@@ -1,6 +1,7 @@
 // Building blocks of the reading pages, ported from templates/_macros.html.j2.
 import Link from "next/link";
 import { PushToggle } from "@/components/push-toggle";
+import { LINE_OA } from "@/lib/line-oa";
 import { pushEnabled } from "@/lib/push";
 import {
   headline,
@@ -266,33 +267,74 @@ export function Entry({
  * Subscribe box (templates/_alerts.html.j2). With a push key (C5 #95) it leads with push, as the current site does;
  * without one it offers RSS only.
  */
-export function Alerts() {
+export function Alerts({ showLine = true }: { showLine?: boolean } = {}) {
   return (
     <section className="alerts" aria-labelledby="alerts-title">
-      {pushEnabled ? (
+      {showLine ? (
         <>
-          <h2 id="alerts-title">新消息一出來就通知你</h2>
-          <p>
-            開啟推播後，新的消息一發布，手機或電腦就會跳出通知。也可以用 RSS
-            訂閱。
-          </p>
+          <h2 id="alerts-title">訂閱新消息</h2>
+          <div className="alerts__line">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              className="alerts__qr"
+              src={LINE_OA.qrSrc}
+              alt={`掃描加入 GutHub LINE 官方帳號（${LINE_OA.id}）`}
+              width={88}
+              height={88}
+            />
+            <div className="alerts__line-body">
+              <p className="alerts__line-title">LINE 晨間摘要</p>
+              <p className="alerts__line-desc">
+                有新內容才在早上 7 點推一則白話重點（<code>{LINE_OA.id}</code>
+                ）。
+              </p>
+              <a
+                className="btn btn--primary alerts__line-btn"
+                href={LINE_OA.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Icon name="chat" />
+                加入 LINE 好友
+              </a>
+            </div>
+          </div>
+          <div className="alerts__actions alerts__actions--secondary">
+            {pushEnabled && <PushToggle icon={<Icon name="bell" />} />}
+            <a className="btn btn--secondary" href={NEWS_FEED}>
+              <Icon name="rss" />
+              RSS
+            </a>
+            <Link className="btn btn--quiet" href="/subscribe/">
+              所有訂閱方式
+            </Link>
+          </div>
         </>
       ) : (
         <>
-          <h2 id="alerts-title">訂閱新消息</h2>
-          <p>把訂閱網址加進 RSS 閱讀器，新的消息與文獻會自動出現。</p>
+          {pushEnabled ? (
+            <>
+              <h2 id="alerts-title">瀏覽器推播與 RSS</h2>
+              <p>
+                開啟推播後，新的消息一發布，手機或電腦就會跳出通知。也可以用 RSS
+                訂閱。
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 id="alerts-title">用 RSS 閱讀器訂閱</h2>
+              <p>把訂閱網址加進 RSS 閱讀器，新的消息與文獻會自動出現。</p>
+            </>
+          )}
+          <div className="alerts__actions">
+            {pushEnabled && <PushToggle icon={<Icon name="bell" />} />}
+            <a className="btn btn--secondary" href={NEWS_FEED}>
+              <Icon name="rss" />
+              RSS
+            </a>
+          </div>
         </>
       )}
-      <div className="alerts__actions">
-        {pushEnabled && <PushToggle icon={<Icon name="bell" />} />}
-        <a className="btn btn--secondary" href={NEWS_FEED}>
-          <Icon name="rss" />
-          RSS
-        </a>
-        <Link className="btn btn--quiet" href="/subscribe/">
-          依主題訂閱
-        </Link>
-      </div>
     </section>
   );
 }
