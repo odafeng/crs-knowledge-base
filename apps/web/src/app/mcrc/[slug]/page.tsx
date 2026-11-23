@@ -11,7 +11,9 @@ import {
   JsonLd,
 } from "@/components/reading";
 import { ScrollTable } from "@/components/scroll-table";
+import { TreatmentPathway } from "@/components/treatment-pathway";
 import { getTopicBySlug, listNews, listPapers } from "@/lib/content";
+import { buildTreatmentPathway } from "@/lib/pathway";
 import {
   byTopic,
   MCRC,
@@ -48,6 +50,7 @@ export default async function TopicPage({ params }: Props) {
   const ids = new Set(papers.map((p) => p.id));
   const stories = news.filter((item) => ids.has(item.paperId)).slice(0, 3);
   const regulatory = regulatoryRows(topic);
+  const pathway = buildTreatmentPathway(topic);
   const crumbs = [...MCRC, [topic.label, topicPath(topic)] as const];
 
   return (
@@ -73,6 +76,7 @@ export default async function TopicPage({ params }: Props) {
             </div>
           )}
           <nav className="section-nav" aria-label="本頁章節">
+            {pathway && <a href="#pathway">治療路徑</a>}
             {regulatory.length > 0 && <a href="#reg">核准與給付現況</a>}
             {topic.standardOfCare.length > 0 && <a href="#soc">治療現況</a>}
             <a href="#papers">文獻（{papers.length}）</a>
@@ -91,6 +95,7 @@ export default async function TopicPage({ params }: Props) {
           </ul>
         </section>
       )}
+      {pathway && <TreatmentPathway model={pathway} />}
       {regulatory.length > 0 && (
         <section className="page__section" aria-labelledby="reg">
           <h2 id="reg">核准與給付現況</h2>
@@ -136,7 +141,12 @@ export default async function TopicPage({ params }: Props) {
         <section className="page__section" aria-labelledby="soc">
           <h2 id="soc">治療現況</h2>
           {topic.standardOfCare.map((card, index) => (
-            <details className="accordion" open={index === 0} key={card.title}>
+            <details
+              className="accordion"
+              id={`soc-${index}`}
+              open={index === 0}
+              key={card.title}
+            >
               <summary>{card.title}</summary>
               <RichHtml
                 html={repairCardHtml(card.body_html)}
