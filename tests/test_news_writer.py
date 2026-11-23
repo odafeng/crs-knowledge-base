@@ -77,6 +77,9 @@ def _story(**changes: Any) -> dict[str, Any]:
 
 def test_well_formed_story_passes_validation_and_number_gate() -> None:
     assert news_writer.problems(_story(), PAPER) == []
+    without_note = _story()
+    del without_note["figureNote"]
+    assert news_writer.problems(without_note, PAPER) == []
 
 
 def test_unsupported_number_in_any_field_is_refused() -> None:

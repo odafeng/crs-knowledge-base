@@ -31,7 +31,7 @@ def _strings(value) -> list[str]:
 
 
 def story_numbers(story: dict) -> set[str]:
-    stated = {key: story[key] for key in ("headline", "dek", "key", "figures", "figureNote", "body")}
+    stated = {key: story.get(key) for key in ("headline", "dek", "key", "figures", "figureNote", "body")}
     return numbers(" ".join(_strings(stated)))
 
 
