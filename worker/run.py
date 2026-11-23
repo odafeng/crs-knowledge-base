@@ -1,10 +1,10 @@
-"""Paper Watch as a Cloud Run job (E3 #76, ADR-0021).
+"""Paper Watch as a Cloud Run job (E3 #76, ADR-0021; daily full scan K1 #251).
 
 python worker/run.py [main.py arguments, e.g. --daily or --topic mCRC-MSI-H --dry-run]
 python worker/run.py --scheduled [--dry-run]   # the daily 16:00 schedule
 
---scheduled picks the scan the GitHub workflow used to pick by cron: the full scan on Tuesday and Friday (Taiwan time),
-otherwise --daily, which scans only in conference season. One job and one schedule cover both.
+--scheduled runs the full scan every day at 16:00 Taiwan time (PubMed + key journals; during conference season
+fetch_pubmed.py also searches conference abstract supplements automatically).
 
 With GUTHUB_CONTENT_DATABASE_URL set, the job first exports the database's content into this container's data/ and
 docs/: the agents read papers.json for their prompts and triage. That copy is read-only in practice: data/WRITER says
@@ -20,13 +20,14 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent.parent
-FULL_SCAN_DAYS = {2, 5}  # Tuesday, Friday
 
 
-def main_args(args: list[str], today: date) -> list[str]:
+def main_args(args: list[str], today: date | None = None) -> list[str]:
+    """Translate --scheduled into a daily full scan; explicit arguments pass through unchanged."""
+    del today
     if args[:1] != ["--scheduled"]:
         return args
-    return ([] if today.isoweekday() in FULL_SCAN_DAYS else ["--daily"]) + args[1:]
+    return args[1:]
 
 
 def main() -> None:
