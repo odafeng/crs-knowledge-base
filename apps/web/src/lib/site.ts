@@ -135,6 +135,29 @@ export function repairCardHtml(html: string): string {
     .replace(/<a\b[^>]*href="docs\/[^"]*"[^>]*>([\s\S]*?)<\/a>/g, "$1");
 }
 
+/** Pulls a PubMed ID from legacy paper detail HTML so the facts rail can surface it cleanly. */
+export function extractPmid(detailHtml: string): string | null {
+  const match = detailHtml.match(
+    /(?:<strong>)?PMID:?(?:<\/strong>)?\s*(\d{5,9})/i,
+  );
+  return match?.[1] ?? null;
+}
+
+/**
+ * Strips legacy header/footer blocks from paper detail HTML that the paper page already renders in its
+ * own facts rail, bottom-line block and site footer, while preserving the study body and provenance note.
+ */
+export function cleanPaperDetailHtml(detailHtml: string): string {
+  return detailHtml
+    .replace(/<div\s+class="meta">[\s\S]*?<\/div>/gi, "")
+    .replace(
+      /<div\s+class="note">\s*<strong>\s*Bottom Line:?\s*<\/strong>[\s\S]*?<\/div>/gi,
+      "",
+    )
+    .replace(/<p[^>]*>\s*本頁僅供醫療專業人員教育與臨床參考[\s\S]*?<\/p>/g, "")
+    .trim();
+}
+
 /** Regulatory rows of a topic, with the three notes joined the way sitegen does. */
 export function regulatoryRows(topic: Topic) {
   return topic.standardOfCare.flatMap((card) =>
@@ -309,6 +332,25 @@ export function weekStats(papers: readonly Paper[], news: readonly News[]) {
       .length,
     weekNews: news.filter((n) => n.publishedAt >= since).length,
   };
+}
+
+/** Omits zero-count clauses in the dateline so "本週新增 19 篇文獻" never trails an awkward "、0 則消息". */
+export function formatWeekSummary({
+  weekPapers,
+  weekNews,
+}: {
+  weekPapers: number;
+  weekNews: number;
+}): string {
+  const parts: string[] = [];
+  if (weekPapers > 0) parts.push(`${weekPapers} 篇文獻`);
+  if (weekNews > 0) parts.push(`${weekNews} 則消息`);
+  return parts.length > 0 ? `本週新增 ${parts.join("、")}` : "最近更新";
+}
+
+/** Labels the lead feature's right-hand plate accurately when the highlighted token is a guideline version. */
+export function plateKicker(value: string | number): string {
+  return /^v\d/i.test(String(value).trim()) ? "指引版本" : "關鍵數字";
 }
 
 export const NEWS_FEED = "/feed/news.xml";

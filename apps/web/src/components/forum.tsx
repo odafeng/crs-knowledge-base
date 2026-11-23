@@ -89,6 +89,67 @@ function GateCard({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ForumFeedSkeleton({ label = "載入話題中…" }: { label?: string }) {
+  return (
+    <div className="forum-skeleton" role="status" aria-live="polite">
+      <span className="visually-hidden">{label}</span>
+      {[0, 1].map((item) => (
+        <div className="forum-skeleton__card" aria-hidden="true" key={item}>
+          <div className="forum-skeleton__head">
+            <span className="forum-skeleton__avatar" />
+            <div className="forum-skeleton__meta">
+              <span className="forum-skeleton__line forum-skeleton__line--short" />
+              <span className="forum-skeleton__line forum-skeleton__line--xs" />
+            </div>
+          </div>
+          <span className="forum-skeleton__line forum-skeleton__line--title" />
+          <span className="forum-skeleton__line" />
+          <span className="forum-skeleton__line forum-skeleton__line--mid" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ForumSkeleton() {
+  return (
+    <div className="forum-layout" role="status" aria-live="polite">
+      <span className="visually-hidden">載入中…</span>
+      <div className="forum-layout__main" aria-hidden="true">
+        <div className="forum-skeleton__card forum-skeleton__card--composer">
+          <div className="forum-skeleton__head">
+            <span className="forum-skeleton__avatar" />
+            <span className="forum-skeleton__input" />
+          </div>
+        </div>
+        <div className="forum-skeleton">
+          {[0, 1].map((item) => (
+            <div className="forum-skeleton__card" key={item}>
+              <div className="forum-skeleton__head">
+                <span className="forum-skeleton__avatar" />
+                <div className="forum-skeleton__meta">
+                  <span className="forum-skeleton__line forum-skeleton__line--short" />
+                  <span className="forum-skeleton__line forum-skeleton__line--xs" />
+                </div>
+              </div>
+              <span className="forum-skeleton__line forum-skeleton__line--title" />
+              <span className="forum-skeleton__line" />
+              <span className="forum-skeleton__line forum-skeleton__line--mid" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <aside className="forum-layout__rail" aria-hidden="true">
+        <div className="forum-skeleton__card">
+          <span className="forum-skeleton__line forum-skeleton__line--short" />
+          <span className="forum-skeleton__line" />
+          <span className="forum-skeleton__line forum-skeleton__line--mid" />
+        </div>
+      </aside>
+    </div>
+  );
+}
+
 /** Renders its children only for verified members; everyone else gets the explanation and the next step. */
 function MembersOnly({
   children,
@@ -119,7 +180,7 @@ function MembersOnly({
   }, [user, named]);
 
   if (!authEnabled) return <p>{ABOUT}</p>;
-  if (account.status === "loading") return <p aria-live="polite">載入中…</p>;
+  if (account.status === "loading") return <ForumSkeleton />;
   if (account.status === "unavailable")
     return <p role="alert">目前無法連線到帳號服務，請稍後再試。</p>;
   if (account.status === "signed-out") {
@@ -147,7 +208,7 @@ function MembersOnly({
       </GateCard>
     );
   }
-  if (membership?.user !== user) return <p aria-live="polite">載入中…</p>;
+  if (membership?.user !== user) return <ForumSkeleton />;
   if (membership.value === null)
     return <p role="alert">暫時無法確認會員資格，請稍後再試。</p>;
   if (membership.value.status !== "verified") {
@@ -402,11 +463,7 @@ function Threads({
           />
         )}
 
-        {list.kind === "loading" && (
-          <p className="forum-status" aria-live="polite">
-            載入話題中…
-          </p>
-        )}
+        {list.kind === "loading" && <ForumFeedSkeleton />}
         {list.kind === "error" && (
           <p className="forum-status" role="alert">
             {errorMessage(null, "load")}{" "}

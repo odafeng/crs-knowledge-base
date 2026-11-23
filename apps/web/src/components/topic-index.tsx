@@ -83,6 +83,17 @@ export async function TopicIndex({
           </ul>
         </section>
       ))}
+      {groups.length > 1 && (
+        <section className="page__section" aria-labelledby="group-drugs">
+          <h2 id="group-drugs">
+            <Link href="/drugs/">藥物索引</Link>
+          </h2>
+          <p className="page-head__lead">
+            改依藥物名稱瀏覽所有試驗與實證演進時間軸。{" "}
+            <Link href="/drugs/">前往全部藥物</Link>
+          </p>
+        </section>
+      )}
     </div>
   );
 }

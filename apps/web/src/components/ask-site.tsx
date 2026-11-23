@@ -58,7 +58,7 @@ export function AskSite() {
               id="ask-site-q"
               type="search"
               maxLength={200}
-              placeholder="例：左側 RAS 野生型的一線該選哪個生物製劑？"
+              placeholder="例：左側 RAS 野生型一線用哪個標靶？"
               autoComplete="off"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -68,7 +68,8 @@ export function AskSite() {
             </button>
           </form>
           <p className="ask-site__note">
-            依語意找出站上最相關的文獻、消息與治療整理，不會產生答案。問題不會存下來。
+            依語意找出最相關的文獻與治療整理，不產生答案（不會存下問題）。精確查字請用
+            <Link href="/updates/#q">關鍵字搜尋</Link>。
           </p>
           <div className="ask-site__results" aria-live="polite">
             {outcome?.kind === "error" && <p>{outcome.message}</p>}

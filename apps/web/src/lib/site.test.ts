@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   areaOf,
   byTopic,
+  cleanPaperDetailHtml,
+  extractPmid,
   feedList,
+  formatWeekSummary,
+  plateKicker,
   TABS,
   updates,
   weekStats,
@@ -208,6 +212,42 @@ describe("presentation rules mirrored from sitegen", () => {
     expect(
       findingText("<strong>R0</strong> &amp; CRM &lt;1 mm&#x2009;&#8805;"),
     ).toBe("R0 & CRM <1 mm ≥");
+  });
+
+  it("extracts PMID and strips redundant header/footer blocks from legacy paper detail HTML", () => {
+    const raw = [
+      "<h3>Original Study Title</h3>",
+      '<div class="meta"><strong>Journal:</strong> <em>NEJM</em> 2026<br><strong>PMID:</strong> 42675036</div>',
+      '<div class="note"><strong>Bottom Line:</strong> Duplicate takeaway</div>',
+      "<h3>Key Results</h3><p>mPFS 11.0 mo</p>",
+      '<div class="note">Keep clinical caveats</div>',
+      "<p>本頁僅供醫療專業人員教育與臨床參考，不構成醫療建議。</p>",
+    ].join("");
+    expect(extractPmid(raw)).toBe("42675036");
+    expect(extractPmid("<p>No identifier</p>")).toBeNull();
+    const cleaned = cleanPaperDetailHtml(raw);
+    expect(cleaned).toContain("Original Study Title");
+    expect(cleaned).toContain("Key Results");
+    expect(cleaned).toContain("Keep clinical caveats");
+    expect(cleaned).not.toContain('class="meta"');
+    expect(cleaned).not.toContain("Duplicate takeaway");
+    expect(cleaned).not.toContain("本頁僅供醫療專業人員教育與臨床參考");
+  });
+
+  it("formats the weekly summary without zero counts and labels guideline versions accurately", () => {
+    expect(formatWeekSummary({ weekPapers: 19, weekNews: 0 })).toBe(
+      "本週新增 19 篇文獻",
+    );
+    expect(formatWeekSummary({ weekPapers: 0, weekNews: 2 })).toBe(
+      "本週新增 2 則消息",
+    );
+    expect(formatWeekSummary({ weekPapers: 3, weekNews: 1 })).toBe(
+      "本週新增 3 篇文獻、1 則消息",
+    );
+    expect(formatWeekSummary({ weekPapers: 0, weekNews: 0 })).toBe("最近更新");
+    expect(plateKicker("v3.2026")).toBe("指引版本");
+    expect(plateKicker("30.3")).toBe("關鍵數字");
+    expect(plateKicker(100)).toBe("關鍵數字");
   });
 });
 

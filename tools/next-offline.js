@@ -49,7 +49,7 @@ let browser;
     const page = await context.newPage();
     await page.goto(`${ORIGIN}/`);
     await page.getByRole('button', { name: '特大字級' }).click();
-    await page.getByRole('button', { name: '深色模式' }).click();
+    await page.getByRole('button', { name: '深色模式', exact: true }).click();
     const theme = await page.evaluate(() => document.documentElement.dataset.theme);
     await page.goto(`${ORIGIN}/papers/niche2/`);
     const after = await page.evaluate(() => ({ ...document.documentElement.dataset }));
