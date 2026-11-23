@@ -124,13 +124,6 @@ export function RecentNewsTicker({ items }: { items: readonly TickerItem[] }) {
           </div>
         )}
       </div>
-      {canRotate && (
-        <span
-          className="daily__progress"
-          key={`bar-${active.id}`}
-          aria-hidden="true"
-        />
-      )}
     </section>
   );
 }
