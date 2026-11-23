@@ -1,8 +1,10 @@
 import { pageMetadata, paperJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { DataFigure } from "@/components/news-figure";
 import { GlanceFinding, PaperGlance } from "@/components/paper-summary";
 import { ReviewActions } from "@/components/review-actions";
+import { extractPaperFigures } from "@/lib/paper-figures";
 import { needsReview } from "@/lib/review";
 import { ReaderComments } from "@/components/comments";
 import { notFound } from "next/navigation";
@@ -68,6 +70,13 @@ export default async function PaperPage({ params }: Props) {
     .filter((p) => p.id !== paper.id)
     .slice(0, 4);
   const stories = news.filter((item) => item.paperId === paper.id);
+  const storyWithFigures = stories.find((item) => item.figures.length > 0);
+  const paperFigures = storyWithFigures
+    ? storyWithFigures.figures
+    : extractPaperFigures(paper);
+  const figureCaption = storyWithFigures
+    ? storyWithFigures.figureNote
+    : `依本頁條目數據繪製（來源：${paper.journal} ${paper.year}），完整數據與亞組分析請見原文。`;
   const commentary = commentaryOf(paper);
   const summary = paper.summary;
   const summaryPending = summary?.reviewedAt === null;
@@ -111,15 +120,35 @@ export default async function PaperPage({ params }: Props) {
             <ReviewActions kind="paper" target={paper.id} />
           )}
           {summary ? (
-            <PaperGlance summary={summary} topic={topic} />
+            <>
+              {paperFigures.length > 0 && (
+                <DataFigure
+                  figures={paperFigures}
+                  title="試驗關鍵數據"
+                  caption={figureCaption}
+                  className="paper-figure"
+                />
+              )}
+              <PaperGlance summary={summary} topic={topic} />
+            </>
           ) : (
-            <div className="paper-brief">
-              <p className="result">
-                <span className="result__label">關鍵結果</span>
-                {paper.result}
-              </p>
-              <p className="bottom-line">{paper.bottomLine}</p>
-            </div>
+            <>
+              <div className="paper-brief">
+                <p className="result">
+                  <span className="result__label">關鍵結果</span>
+                  {paper.result}
+                </p>
+                <p className="bottom-line">{paper.bottomLine}</p>
+              </div>
+              {paperFigures.length > 0 && (
+                <DataFigure
+                  figures={paperFigures}
+                  title="試驗關鍵數據"
+                  caption={figureCaption}
+                  className="paper-figure"
+                />
+              )}
+            </>
           )}
           {(summary || detailHtml) && (
             <details className="page__section source-details" open={!summary}>

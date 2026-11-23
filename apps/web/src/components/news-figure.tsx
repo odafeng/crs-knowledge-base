@@ -125,6 +125,33 @@ function Block({ figure }: { figure: Figure }) {
   }
 }
 
+export function DataFigure({
+  figures,
+  title = "關鍵數字",
+  caption,
+  className,
+}: {
+  figures: readonly Figure[];
+  title?: string;
+  caption?: string;
+  className?: string;
+}) {
+  if (figures.length === 0) return null;
+  return (
+    <figure className={className ? `figure ${className}` : "figure"}>
+      <p className="figure__title">{title}</p>
+      {figures.map((figure, index) => (
+        <div className="figure__block" key={index}>
+          <Block figure={figure} />
+        </div>
+      ))}
+      {caption && (
+        <figcaption className="figure__caption">{caption}</figcaption>
+      )}
+    </figure>
+  );
+}
+
 export function NewsFigure({
   item,
   title = "關鍵數字",
@@ -133,16 +160,10 @@ export function NewsFigure({
   title?: string;
 }) {
   return (
-    <figure className="figure">
-      <p className="figure__title">{title}</p>
-      {item.figures.map((figure, index) => (
-        <div className="figure__block" key={index}>
-          <Block figure={figure} />
-        </div>
-      ))}
-      {item.figureNote && (
-        <figcaption className="figure__caption">{item.figureNote}</figcaption>
-      )}
-    </figure>
+    <DataFigure
+      figures={item.figures}
+      title={title}
+      caption={item.figureNote}
+    />
   );
 }
