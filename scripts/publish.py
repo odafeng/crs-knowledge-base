@@ -9,6 +9,7 @@ file is touched; an invalid result raises PublishError and leaves the KB as it w
 import html
 import json
 import re
+import sys
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -352,6 +353,34 @@ def mark_reviewed(kind: Literal["paper", "news"], target: str, kb: KB | None = N
         text = page.read_text().replace(_banner("auto"), _banner("accepted"))
         page.write_text(text.replace(f'<div class="banner">{auto}</div>', f'<div class="banner">{accepted}</div>'))
     return f"review paper {target}"
+
+
+def publish_news(story: dict, kb: KB | None = None, *, replace: bool = False) -> dict:
+    """Append one news story to data/news.json after checking its source paper and numbers (K2 #252)."""
+    kb = kb or KB()
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from newsroom.gate import unsupported
+
+    data = kb.load()
+    paper = next((p for t in data.values() for p in t.get("papers", []) if p["id"] == story.get("paperId")), None)
+    if paper is None:
+        raise PublishError([f"找不到來源文獻 `{story.get('paperId', '')}`"])
+    missing = unsupported(story, paper)
+    if missing:
+        raise PublishError([f"新聞數字未出現在來源文獻：{', '.join(missing)}"])
+    news = json.loads(kb.news_json.read_text(encoding="utf-8")) if kb.news_json.exists() else []
+    if replace:
+        news = [s for s in news if s["id"] != story["id"] and s["paperId"] != story["paperId"]]
+    else:
+        if any(s["id"] == story["id"] for s in news):
+            raise PublishError([f"消息 ID `{story['id']}` 已存在"])
+        if any(s["paperId"] == story["paperId"] for s in news):
+            raise PublishError([f"文獻 `{story['paperId']}` 已有對應新聞"])
+    if not json_writer_active(kb.root):
+        raise PublishError(["內容已改由資料庫寫入（data/WRITER），JSON 檔不再接受發布或撤下"])
+    kb.news_json.write_text(json.dumps([story, *news], ensure_ascii=False, indent=2), encoding="utf-8")
+    return story
 
 
 def unpublish_story(target: str, kb: KB | None = None) -> str:
