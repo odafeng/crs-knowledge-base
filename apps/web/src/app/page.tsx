@@ -11,6 +11,7 @@ import { connection } from "next/server";
 import { AskSite } from "@/components/ask-site";
 import { FollowedUpdates } from "@/components/followed-topics";
 import { NewsFigure } from "@/components/news-figure";
+import { RecentNewsTicker } from "@/components/recent-news-ticker";
 import { TopicMap } from "@/components/topic-map";
 import {
   AiChip,
@@ -23,7 +24,7 @@ import {
   JsonLd,
 } from "@/components/reading";
 import { getDailyPick, listNews, listPapers, listTopics } from "@/lib/content";
-import { dailyLabel } from "@/lib/daily";
+import { buildRecentTicker } from "@/lib/daily";
 import { drugCounts, drugPath } from "@/lib/drugs";
 import {
   byTopic,
@@ -78,27 +79,13 @@ export default async function Home() {
       : allUpdates;
   const allDrugs = drugCounts(papers);
   const topDrugs = allDrugs.slice(0, 12);
+  const tickerItems = buildRecentTicker(news, papers, topics, daily);
 
   return (
     <>
       <JsonLd data={pageJsonLd(SITE_NAME, DESCRIPTION, "/", HOME)} />
       <h1 className="visually-hidden">GutHub：大腸直腸外科實證更新</h1>
-      {daily && pick && (
-        <section className="daily" aria-labelledby="daily-title">
-          <div className="container daily__inner">
-            <h2 className="daily__label" id="daily-title">
-              {dailyLabel(pick.date, daily.date)}
-            </h2>
-            <div className="daily__main">
-              <p className="daily__title">
-                <Link href={pick.url}>{pick.title}</Link>
-                {pick.unreviewed && <AiChip label="AI 未審" />}
-              </p>
-              <p className="daily__conclusion">{pick.conclusion}</p>
-            </div>
-          </div>
-        </section>
-      )}
+      <RecentNewsTicker items={tickerItems} />
       {lead && (
         <section className="lead on-field" aria-labelledby="lead-title">
           <svg

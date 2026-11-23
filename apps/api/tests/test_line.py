@@ -91,7 +91,8 @@ def day() -> Iterator[date]:
     )
     sql(
         "insert into app.news (id, paper_id, published_at, headline, dek, key, body, review_status)"
-        " values (%s, %s, %s, '[\"NICHE-2 \", \"五年追蹤\"]', 'dek', '{}', '[]', 'accepted')",
+        " values (%s, %s, %s, '[\"NICHE-2 \", \"五年追蹤\"]', '術前雙免疫後 5 年存活 58.7%%', '{}',"
+        ' \'[{"heading": "為什麼重要", "text": "長期追蹤結果支持術前免疫策略。"}]\', \'accepted\')',
         (f"g3-news-{run}", paper, the_day),
     )
     yield the_day
@@ -103,9 +104,22 @@ def day() -> Iterator[date]:
 def test_message_is_the_daily_pick_text_under_a_heading() -> None:
     from guthub_api.daily import Candidate
 
-    pick = Candidate("news", "x", "NICHE-2 五年追蹤", "5 年存活 58.7%", "/news/x/", date(2026, 11, 17), False)
+    pick = Candidate(
+        "news",
+        "x",
+        "NICHE-2 五年追蹤",
+        "術前雙免疫後 5 年存活 58.7%",
+        "/news/x/",
+        date(2026, 11, 17),
+        False,
+        "長期追蹤結果支持術前免疫策略。",
+    )
     assert message(pick, ORIGIN) == (
-        "GutHub｜今天的一件事\nNICHE-2 五年追蹤\n5 年存活 58.7%\nhttps://guthub.tw/news/x/\n2026-11-17"
+        "GutHub 晨間摘要｜11 月 17 日\n\n"
+        "NICHE-2 五年追蹤\n\n"
+        "重點：術前雙免疫後 5 年存活 58.7%\n\n"
+        "臨床意義：長期追蹤結果支持術前免疫策略。\n\n"
+        "閱讀完整整理：\nhttps://guthub.tw/news/x/"
     )
 
 

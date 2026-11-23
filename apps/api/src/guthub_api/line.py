@@ -27,19 +27,22 @@ from guthub_api.daily import Candidate, collect, item_text, pick_text, ranked
 
 LINE_API = "https://api.line.me"
 TIMEOUT = 30
-HEADING = "GutHub｜今天的一件事"
+HEADING = "GutHub 晨間摘要"
 ROUNDUP = 5
 
 
 def message(pick: Candidate, origin: str) -> str:
-    return f"{HEADING}\n{pick_text(pick, origin)}"
+    return f"{HEADING}｜{pick.date.month} 月 {pick.date.day} 日\n\n{pick_text(pick, origin)}"
 
 
 def roundup(season: str, day: date, picks: list[Candidate], origin: str) -> str:
-    """The conference-season message: the day's additions, best first, each with its title, conclusion and link."""
-    parts = [f"GutHub｜{season} 期間速報（{day.isoformat()}）", *(item_text(pick, origin) for pick in picks[:ROUNDUP])]
+    """The conference-season message: the day's additions in plain language, best first, with links."""
+    parts = [
+        f"GutHub｜{season} 期間速報（{day.month} 月 {day.day} 日）",
+        *(item_text(pick, origin) for pick in picks[:ROUNDUP]),
+    ]
     if len(picks) > ROUNDUP:
-        parts.append(f"另有 {len(picks) - ROUNDUP} 則：{origin.rstrip('/')}/updates/")
+        parts.append(f"還有 {len(picks) - ROUNDUP} 則更新：\n{origin.rstrip('/')}/updates/")
     return "\n\n".join(parts)
 
 

@@ -66,21 +66,21 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-prac
   await page.waitForURL(/\/mcrc\/[^/]+\/$/);
   console.log('flow: home -> story -> paper', JSON.stringify(paperTitle.slice(0, 40)), '-> topic', new URL(page.url()).pathname);
 
-  // Today's one thing (G4 #115): above the lead, labelled with its freshness, and its link opens a page.
+  // Recent plain-language news ticker above the lead, and its link opens a story or paper.
   await page.goto(`${ORIGIN}/`);
   const daily = page.locator('section.daily');
-  if (await daily.count() !== 1) problems.push('home: no daily pick shown');
+  if (await daily.count() !== 1) problems.push('home: no recent news ticker shown');
   else {
     const label = await daily.locator('h2').innerText();
-    if (!/^(今天的一件事|最近的一件事・\d+ 月 \d+ 日)$/.test(label)) problems.push(`home: daily label ${label}`);
+    if (label !== '近期新聞') problems.push(`home: ticker label ${label}`);
     const before = await page.evaluate(() => {
       const [d, lead] = [document.querySelector('section.daily'), document.querySelector('section.lead')];
       return Boolean(d && lead && d.compareDocumentPosition(lead) & Node.DOCUMENT_POSITION_FOLLOWING);
     });
-    if (!before) problems.push('home: daily pick is not above the lead story');
+    if (!before) problems.push('home: recent news ticker is not above the lead story');
     await daily.locator('a').first().click();
     await page.waitForURL(/\/(news|papers)\/[^/]+\/$/);
-    console.log('daily:', label, '->', new URL(page.url()).pathname);
+    console.log('ticker:', label, '->', new URL(page.url()).pathname);
   }
 
   await page.goto(`${ORIGIN}/`);

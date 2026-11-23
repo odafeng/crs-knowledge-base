@@ -295,17 +295,28 @@
   font-size: var(--text-sm);
 }
 
-/* Today's one thing (G4 #115): subtle warm editorial bulletin strip distinct from white header */
+/* Recent plain-language news ticker above the home hero */
 .daily {
+  position: relative;
+  overflow: hidden;
   border-block-end: 1px solid var(--line);
   background: var(--sunken);
 }
 .daily__inner {
   display: grid;
-  gap: 0.125rem var(--space-4);
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "label controls"
+    "stage stage";
+  align-items: center;
+  gap: 0.25rem var(--space-3);
   padding-block: var(--space-2);
 }
 .daily__label {
+  grid-area: label;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   margin: 0;
   color: var(--brand);
   font-size: 0.75rem;
@@ -313,21 +324,52 @@
   letter-spacing: 0.06em;
   white-space: nowrap;
 }
+.daily__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--rose-fill);
+  flex: none;
+}
+.daily__stage {
+  grid-area: stage;
+  min-width: 0;
+  overflow: hidden;
+}
 .daily__main {
   display: grid;
   gap: 0.125rem;
   min-width: 0;
 }
+.daily__main--enter {
+  animation: daily-slide-in 360ms var(--ease) both;
+}
 .daily__title {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
+  gap: 0.25rem var(--space-2);
   margin: 0;
   font-size: var(--text-sm);
   font-weight: 700;
   line-height: 1.4;
   overflow-wrap: anywhere;
+}
+.daily__date {
+  color: var(--ink-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.daily__topic {
+  padding: 0 0.4rem;
+  border-radius: var(--radius-chip);
+  background: var(--tint);
+  color: var(--brand);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
 }
 .daily__title a {
   color: var(--ink);
@@ -348,10 +390,93 @@
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
+.daily__controls {
+  grid-area: controls;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex: none;
+}
+.daily__ctrl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+  transition:
+    border-color var(--fast) var(--ease),
+    color var(--fast) var(--ease),
+    background-color var(--fast) var(--ease);
+}
+.daily__ctrl--pause {
+  font-size: 0.625rem;
+  letter-spacing: -0.05em;
+}
+.daily__ctrl:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.daily__ctrl[aria-pressed="true"] {
+  border-color: var(--brand);
+  background: var(--tint);
+  color: var(--brand);
+}
+.daily__counter {
+  min-width: 2rem;
+  color: var(--ink-2);
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.daily__progress {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: var(--brand);
+  opacity: 0.45;
+  transform-origin: left center;
+  animation: daily-progress 6s linear forwards;
+  pointer-events: none;
+}
+@keyframes daily-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes daily-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .daily__main,
+  .daily__progress {
+    animation: none;
+  }
+}
 @media (min-width: 1024px) {
   .daily__inner {
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: baseline;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "label stage controls";
+    align-items: center;
+    gap: var(--space-4);
   }
   .daily__label {
     padding-inline-end: var(--space-4);

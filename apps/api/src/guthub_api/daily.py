@@ -1,10 +1,9 @@
 """The daily pick (G2 #113): one item from what was added on a given day, shared by LINE, push and the home page.
 
 Order: coverage or approval changes, then news, then papers; within a kind, reviewed entries before unreviewed ones.
-A day with nothing new has no pick, so nobody is sent an empty message. The conclusion is always an entry's existing
-bottom line (for a story, the bottom line of the paper it reports), never new wording, so every number shown can be
-traced to a reviewed or labelled entry. Coverage changes arrive with G5 (#116); until then only news and papers
-qualify.
+A day with nothing new has no pick, so nobody is sent an empty message. Plain-language copy is preferred when present
+(news `dek` + clinical significance section, or a paper's `summary` title/takeaway/meaning), falling back to the
+entry's bottom line so every number shown can still be traced directly to a reviewed or labelled entry.
 """
 
 from dataclasses import dataclass
@@ -26,6 +25,7 @@ type Kind = Literal["regulatory", "news", "paper"]
 
 TAIPEI = ZoneInfo("Asia/Taipei")
 PRIORITY: dict[str, int] = {"regulatory": 0, "news": 1, "paper": 2}
+MEANING_HEADINGS = ("為什麼重要", "對臨床的意義")
 
 
 @dataclass(frozen=True)
@@ -37,6 +37,7 @@ class Candidate:
     path: str
     date: date
     unreviewed: bool
+    meaning: str = ""
 
 
 def _rank(c: Candidate) -> tuple[int, bool, str]:
@@ -55,54 +56,98 @@ def ranked(candidates: list[Candidate]) -> list[Candidate]:
 
 
 def pick_text(pick: Candidate, origin: str) -> str:
-    """The fixed plain-text form for messages: title, one-line conclusion, link, date."""
-    return f"{item_text(pick, origin)}\n{pick.date.isoformat()}"
+    """Plain-language single-item briefing for LINE and push: title, key takeaway, clinical meaning, and link."""
+    return item_text(pick, origin, detailed=True)
 
 
-def item_text(pick: Candidate, origin: str) -> str:
-    """Title (marked when unreviewed), one-line conclusion and link."""
+def item_text(pick: Candidate, origin: str, *, detailed: bool = False) -> str:
+    """Plain-language summary of one candidate, preserving AI-unreviewed disclosure and direct link."""
     label = "【AI 未審】" if pick.unreviewed else ""
-    return f"{label}{pick.title}\n{pick.conclusion}\n{origin.rstrip('/')}{pick.path}"
+    url = f"{origin.rstrip('/')}{pick.path}"
+    if detailed:
+        lines = [f"{label}{pick.title}", "", f"重點：{pick.conclusion}"]
+        if pick.meaning:
+            lines.extend(["", f"臨床意義：{pick.meaning}"])
+        lines.extend(["", f"閱讀完整整理：\n{url}"])
+        return "\n".join(lines)
+    lines = [f"▸ {label}{pick.title}", f"重點：{pick.conclusion}", url]
+    return "\n".join(lines)
+
+
+def _news_meaning(body: Any) -> str:
+    if not isinstance(body, list):
+        return ""
+    for heading in MEANING_HEADINGS:
+        for section in body:
+            if isinstance(section, dict) and section.get("heading") == heading:
+                text = str(section.get("text") or "").strip()
+                if text:
+                    return text
+    return ""
+
+
+def _paper_copy(row: dict[str, Any]) -> tuple[str, str, str, bool]:
+    """Prefers a paper's plain-Chinese summary when present, falling back to regimen + bottom_line."""
+    summary = row.get("summary")
+    if isinstance(summary, dict):
+        title = str(summary.get("title") or "").strip()
+        takeaway = str(summary.get("takeaway") or "").strip()
+        meaning = str(summary.get("meaning") or "").strip()
+        if title and takeaway:
+            unreviewed = row["review_status"] == "auto" or summary.get("reviewedAt") is None
+            return title, takeaway, meaning, unreviewed
+    return (
+        f"{row['regimen']}（{row['journal']} {row['year']}）",
+        row["bottom_line"],
+        "",
+        row["review_status"] == "auto",
+    )
 
 
 def collect(conn: Connection[Any], day: date) -> list[Candidate]:
     """News and papers that went public on `day`, by the same dates the site lists them with."""
     cur = conn.cursor(row_factory=dict_row)  # the API pool and the job may hand over connections with any row factory
     news = cur.execute(
-        "select n.id, n.headline, n.review_status, p.bottom_line"
+        "select n.id, n.headline, n.dek, n.body, n.review_status, p.bottom_line"
         " from app.public_news n join app.public_papers p on p.id = n.paper_id where n.published_at = %s",
         (day,),
     ).fetchall()
     papers = cur.execute(
-        "select p.id, p.slug, p.regimen, p.journal, p.year, p.bottom_line, p.review_status from app.public_papers p"
+        "select p.id, p.slug, p.regimen, p.journal, p.year, p.bottom_line, p.review_status, p.summary"
+        " from app.public_papers p"
         " where coalesce(p.review_published_at, p.added_at, p.reviewed_at) = %s",
         (day,),
     ).fetchall()
+    paper_candidates: list[Candidate] = []
+    for r in papers:
+        title, conclusion, meaning, unreviewed = _paper_copy(r)
+        paper_candidates.append(
+            Candidate(
+                "paper",
+                r["id"],
+                title,
+                conclusion,
+                f"/papers/{r['slug']}/",
+                day,
+                unreviewed,
+                meaning,
+            )
+        )
     return [
         *(
             Candidate(
                 "news",
                 r["id"],
                 "".join(r["headline"]),
-                r["bottom_line"],
+                str(r.get("dek") or "").strip() or r["bottom_line"],
                 f"/news/{r['id']}/",
                 day,
                 r["review_status"] == "auto",
+                _news_meaning(r.get("body")),
             )
             for r in news
         ),
-        *(
-            Candidate(
-                "paper",
-                r["id"],
-                f"{r['regimen']}（{r['journal']} {r['year']}）",
-                r["bottom_line"],
-                f"/papers/{r['slug']}/",
-                day,
-                r["review_status"] == "auto",
-            )
-            for r in papers
-        ),
+        *paper_candidates,
     ]
 
 
