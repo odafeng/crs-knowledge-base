@@ -29,15 +29,18 @@ RISKY_PATHS: tuple[str, ...] = (
 )
 
 # Paths deployed by deploy.yml (Cloud Run API, worker jobs, Supabase).
+# Keep in sync with worker/Dockerfile COPY inputs and .github/workflows/deploy-pending.yml.
 BACKEND_PATHS: tuple[str, ...] = (
     "apps/api",
     "worker",
     "scripts",
+    "sitegen",
     "newsroom",
     "supabase",
     "contracts/openapi.yaml",
     "import_content.py",
     "content_writer.py",
+    "requirements-site.txt",
     ".github/workflows/deploy.yml",
     ".github/workflows/deploy-staging.yml",
 )
@@ -80,35 +83,31 @@ def _commits_touching(rev_range: str, paths: tuple[str, ...]) -> tuple[CommitInf
     return tuple(commits)
 
 
-def _latest_workflow_sha(repo: str, workflow: str) -> str | None:
-    out = _run(
-        [
-            "gh",
-            "run",
-            "list",
-            "--repo",
-            repo,
-            "--workflow",
-            workflow,
-            "--branch",
-            "main",
-            "--status",
-            "success",
-            "--limit",
-            "1",
-            "--json",
-            "headSha",
-            "--jq",
-            ".[0].headSha // empty",
-        ]
-    )
-    return out or None
+def _job_succeeded(repo: str, run_id: int, job_name: str) -> bool:
+    raw = _run(["gh", "api", f"repos/{repo}/actions/runs/{run_id}/jobs?per_page=100"])
+    payload = json.loads(raw or "{}")
+    return any(job.get("name") == job_name and job.get("conclusion") == "success" for job in payload.get("jobs", []))
+
+
+def _latest_workflow_sha(repo: str, workflow: str, *, required_job: str | None = None) -> str | None:
+    raw = _run(["gh", "api", f"repos/{repo}/actions/workflows/{workflow}/runs?branch=main&status=success&per_page=20"])
+    runs = json.loads(raw or "{}").get("workflow_runs", [])
+    for run in runs:
+        sha = run.get("head_sha")
+        run_id = run.get("id")
+        if not sha:
+            continue
+        if required_job is not None and (not isinstance(run_id, int) or not _job_succeeded(repo, run_id, required_job)):
+            continue
+        return str(sha)
+    return None
 
 
 def collect_state(repo: str, head_sha: str | None = None) -> DeployState:
     head = head_sha or _run(["git", "rev-parse", "HEAD"])
-    last_prod = _latest_workflow_sha(repo, "deploy-prod.yml")
-    last_staging = _latest_workflow_sha(repo, "deploy-staging.yml")
+    # Require the actual deploy job to succeed so a mistyped confirmation (skipped jobs) never counts as deployed.
+    last_prod = _latest_workflow_sha(repo, "deploy-prod.yml", required_job="production / deploy")
+    last_staging = _latest_workflow_sha(repo, "deploy-staging.yml", required_job="staging / deploy")
     rev_range = f"{last_prod}..{head}" if last_prod else head
     pending = _commits_touching(rev_range, BACKEND_PATHS)
     risky = _commits_touching(rev_range, RISKY_PATHS)

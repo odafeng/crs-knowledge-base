@@ -110,3 +110,60 @@ def test_find_open_tracking_issue_uses_rest_api_and_ignores_prs_and_non_bots() -
         found = deploy_status._find_open_tracking_issue("owner/repo")
     assert found is not None
     assert found["number"] == 3
+
+
+def test_latest_workflow_sha_skips_runs_where_deploy_job_was_skipped() -> None:
+    import json
+
+    runs_payload = {
+        "workflow_runs": [
+            {"id": 200, "head_sha": "skipped-confirm-sha"},
+            {"id": 100, "head_sha": "real-deploy-sha"},
+        ]
+    }
+    jobs_by_run = {
+        200: {
+            "jobs": [
+                {"name": "rehearsed", "conclusion": "skipped"},
+                {"name": "production / deploy", "conclusion": "skipped"},
+            ]
+        },
+        100: {
+            "jobs": [
+                {"name": "rehearsed", "conclusion": "success"},
+                {"name": "production / deploy", "conclusion": "success"},
+            ]
+        },
+    }
+
+    def fake_run(cmd: list[str], *, check: bool = True) -> str:
+        endpoint = cmd[-1]
+        if "/runs?" in endpoint:
+            return json.dumps(runs_payload)
+        for run_id, payload in jobs_by_run.items():
+            if f"/runs/{run_id}/jobs" in endpoint:
+                return json.dumps(payload)
+        raise AssertionError(f"unexpected endpoint: {endpoint}")
+
+    with patch.object(deploy_status, "_run", side_effect=fake_run):
+        sha = deploy_status._latest_workflow_sha("owner/repo", "deploy-prod.yml", required_job="production / deploy")
+    assert sha == "real-deploy-sha"
+
+
+def test_backend_paths_cover_worker_dockerfile_and_pending_workflow() -> None:
+    root = Path(__file__).resolve().parent.parent
+    dockerfile = (root / "worker/Dockerfile").read_text(encoding="utf-8")
+    pending_yml = (root / ".github/workflows/deploy-pending.yml").read_text(encoding="utf-8")
+
+    # Every COPY source in worker/Dockerfile must be covered by BACKEND_PATHS.
+    for line in dockerfile.splitlines():
+        if not line.startswith("COPY "):
+            continue
+        sources = line.split()[1:-1]
+        for src in sources:
+            covered = any(src == p or src.startswith(f"{p}/") for p in deploy_status.BACKEND_PATHS)
+            assert covered, f"worker/Dockerfile COPY input {src!r} missing from BACKEND_PATHS"
+
+    # Every BACKEND_PATHS entry must appear in deploy-pending.yml push path filters.
+    for path in deploy_status.BACKEND_PATHS:
+        assert path in pending_yml, f"{path!r} missing from deploy-pending.yml"
