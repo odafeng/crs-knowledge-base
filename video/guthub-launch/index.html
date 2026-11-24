@@ -1,0 +1,178 @@
+<!doctype html>
+<html
+  lang="zh-Hant-TW"
+  data-composition-variables='[
+    {"id":"brandName","type":"string","label":"Brand Name","default":"GutHub"},
+    {"id":"siteDomain","type":"string","label":"Site Domain","default":"guthub.tw"},
+    {"id":"lineId","type":"string","label":"LINE OA ID","default":"@742rxviu"}
+  ]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>GutHub｜大腸直腸外科實證更新</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "Archivo";
+        font-style: normal;
+        font-weight: 100 900;
+        src: url("assets/fonts/archivo-latin.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "GutHubTC";
+        font-style: normal;
+        font-weight: 400 800;
+        src: local("PingFang TC"), local("Heiti TC");
+      }
+      :root {
+        --ground: #f6f5f0;
+        --field: #0f1f44;
+        --brand: #1a3a7e;
+        --rose: #8f2542;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--ground);
+        font-family: "Archivo", "GutHubTC", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--ground);
+      }
+      .scene-host {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="92"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div
+        id="s01-hook"
+        class="clip scene-host"
+        data-composition-id="s01-hook"
+        data-composition-src="compositions/s01-hook.html"
+        data-start="0"
+        data-duration="11"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 1"
+      ></div>
+
+      <div
+        id="s02-paperwatch"
+        class="clip scene-host"
+        data-composition-id="s02-paperwatch"
+        data-composition-src="compositions/s02-paperwatch.html"
+        data-start="11"
+        data-duration="15"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 2"
+      ></div>
+
+      <div
+        id="s03-asksite"
+        class="clip scene-host"
+        data-composition-id="s03-asksite"
+        data-composition-src="compositions/s03-asksite.html"
+        data-start="26"
+        data-duration="14"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 3"
+      ></div>
+
+      <div
+        id="s04-nhi-drugs"
+        class="clip scene-host"
+        data-composition-id="s04-nhi-drugs"
+        data-composition-src="compositions/s04-nhi-drugs.html"
+        data-start="40"
+        data-duration="13"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 4"
+      ></div>
+
+      <div
+        id="s05-tumorboard"
+        class="clip scene-host"
+        data-composition-id="s05-tumorboard"
+        data-composition-src="compositions/s05-tumorboard.html"
+        data-start="53"
+        data-duration="12"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 5"
+      ></div>
+
+      <div
+        id="s06-forum-dark"
+        class="clip scene-host"
+        data-composition-id="s06-forum-dark"
+        data-composition-src="compositions/s06-forum-dark.html"
+        data-start="65"
+        data-duration="14"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 6"
+      ></div>
+
+      <div
+        id="s07-endcard"
+        class="clip scene-host"
+        data-composition-id="s07-endcard"
+        data-composition-src="compositions/s07-endcard.html"
+        data-start="79"
+        data-duration="13"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 7"
+      ></div>
+
+      <!-- VOICEOVER_TRACKS_SLOT -->
+    </div>
+    <script>
+      const mainTl = gsap.timeline({ paused: true });
+      window.__timelines["main"] = mainTl;
+      mainTl.seek(0);
+    </script>
+  </body>
+</html>

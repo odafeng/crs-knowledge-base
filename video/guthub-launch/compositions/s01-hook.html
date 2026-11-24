@@ -1,0 +1,416 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Archivo";
+      font-style: normal;
+      font-weight: 100 900;
+      src: url("assets/fonts/archivo-latin.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "GutHubTC";
+      font-style: normal;
+      font-weight: 400 800;
+      src: local("PingFang TC"), local("Heiti TC");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #eceae2;
+      font-family: "Archivo", "GutHubTC", sans-serif;
+      color: #111827;
+    }
+    .s01-stage {
+      position: absolute;
+      inset: 0;
+      padding: 68px 104px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    .s01-clockbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #b6b1a4;
+      padding-bottom: 18px;
+    }
+    .s01-time {
+      display: flex;
+      align-items: baseline;
+      gap: 20px;
+    }
+    .s01-time-num {
+      font-family: "Archivo", sans-serif;
+      font-size: 46px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      color: #0f1f44;
+    }
+    .s01-time-ctx {
+      font-size: 32px;
+      font-weight: 700;
+      color: #8f2542;
+    }
+    .s01-tabcount {
+      font-size: 28px;
+      font-weight: 600;
+      color: #3a4252;
+      background: #ffffff;
+      border: 1.5px solid #b6b1a4;
+      padding: 8px 22px;
+      border-radius: 6px;
+    }
+    .s01-panes {
+      position: relative;
+      height: 700px;
+      width: 100%;
+      display: flex;
+      gap: 26px;
+      align-items: stretch;
+    }
+    .s01-pane {
+      flex: 1;
+      background: #ffffff;
+      border: 1.5px solid #c9c5b9;
+      border-radius: 10px;
+      box-shadow: 0 14px 36px rgba(17, 24, 39, 0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .s01-pane-head {
+      background: #f6f5f0;
+      border-bottom: 1.5px solid #dfddd4;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .s01-pane-source {
+      font-size: 29px;
+      font-weight: 700;
+      color: #0f1f44;
+    }
+    .s01-pane-badge {
+      font-size: 28px;
+      font-weight: 600;
+      color: #575f6e;
+    }
+    .s01-pane-body {
+      padding: 24px;
+      flex: 1;
+      overflow: hidden;
+    }
+    .s01-scroll-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .s01-row {
+      border-bottom: 1px solid #eceae2;
+      padding-bottom: 18px;
+    }
+    .s01-row-title {
+      font-size: 29px;
+      font-weight: 700;
+      color: #111827;
+      line-height: 1.38;
+      margin-bottom: 8px;
+    }
+    .s01-row-meta {
+      font-size: 28px;
+      color: #575f6e;
+      line-height: 1.42;
+    }
+    .s01-nhi-box {
+      background: #faf0d8;
+      border-left: 5px solid #734604;
+      padding: 18px 20px;
+      font-size: 28px;
+      line-height: 1.48;
+      color: #111827;
+    }
+    .s01-merge-btn-wrap {
+      display: flex;
+      justify-content: center;
+      padding-top: 8px;
+    }
+    .s01-merge-btn {
+      background: #1a3a7e;
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 700;
+      padding: 20px 44px;
+      border-radius: 8px;
+      box-shadow: 0 18px 44px rgba(15, 31, 68, 0.34);
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      border: 2px solid #ffffff;
+    }
+    .s01-cursor {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 56px;
+      height: 56px;
+      pointer-events: none;
+      filter: drop-shadow(0 6px 12px rgba(15, 31, 68, 0.35));
+    }
+    .s01-reveal {
+      position: absolute;
+      inset: 0;
+      background: #0f1f44;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 100px 140px;
+      overflow: hidden;
+      opacity: 0;
+    }
+    .s01-km-svg {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 110px;
+      width: 1920px;
+      height: 220px;
+      opacity: 0.24;
+    }
+    .s01-reveal-inner {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 56px;
+    }
+    .s01-logo-disc {
+      width: 236px;
+      height: 236px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px solid rgba(255, 255, 255, 0.24);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.42);
+      flex-shrink: 0;
+    }
+    .s01-logo-disc img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .s01-brand-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .s01-brand-kicker {
+      font-size: 30px;
+      font-weight: 700;
+      color: #f8abc1;
+      letter-spacing: 0.04em;
+    }
+    .s01-brand-name {
+      font-family: "Archivo", sans-serif;
+      font-size: 112px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.02;
+      color: #ffffff;
+    }
+    .s01-brand-sub {
+      font-size: 46px;
+      font-weight: 700;
+      color: #cfd9f2;
+      line-height: 1.28;
+    }
+    .s01-domain-pill {
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1.5px solid rgba(255, 255, 255, 0.34);
+      padding: 10px 28px;
+      border-radius: 6px;
+      font-family: "Archivo", sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.02em;
+    }
+  </style>
+
+  <div id="root" data-composition-id="s01-hook" data-width="1920" data-height="1080">
+    <div id="s01-tension" class="s01-stage">
+      <div id="s01-clockbar" class="s01-clockbar">
+        <div class="s01-time">
+          <span class="s01-time-num">07:20</span>
+          <span class="s01-time-ctx">Tumor Board 前 10 分鐘</span>
+        </div>
+        <div class="s01-tabcount">開啟中：3 個資料庫視窗</div>
+      </div>
+
+      <div id="s01-panes" class="s01-panes">
+        <div id="s01-pane-1" class="s01-pane">
+          <div class="s01-pane-head">
+            <span class="s01-pane-source">PubMed</span>
+            <span class="s01-pane-badge">1,428 筆</span>
+          </div>
+          <div class="s01-pane-body" data-layout-allow-overflow="true">
+            <div id="s01-scroll-1" class="s01-scroll-inner">
+              <div class="s01-row">
+                <div class="s01-row-title">Neoadjuvant nivolumab + ipilimumab in dMMR colon cancer (NICHE-2)</div>
+                <div class="s01-row-meta">Lancet 2026 · Phase 2 · 需對照長期追蹤</div>
+              </div>
+              <div class="s01-row">
+                <div class="s01-row-title">Encorafenib + cetuximab + mFOLFOX6 in BRAF V600E mCRC</div>
+                <div class="s01-row-meta">BREAKWATER · 2026/02 核准更新</div>
+              </div>
+              <div class="s01-row">
+                <div class="s01-row-title">Panitumumab vs bevacizumab in left-sided RAS wt mCRC</div>
+                <div class="s01-row-meta">PARADIGM · JAMA 2023</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="s01-pane-2" class="s01-pane">
+          <div class="s01-pane-head">
+            <span class="s01-pane-source">臨床指引 PDF</span>
+            <span class="s01-pane-badge">第 47 頁</span>
+          </div>
+          <div class="s01-pane-body" data-layout-allow-overflow="true">
+            <div id="s01-scroll-2" class="s01-scroll-inner">
+              <div class="s01-row">
+                <div class="s01-row-title">BRAF V600E · KRAS G12C · HER2 · MSI-H</div>
+                <div class="s01-row-meta">分子分型一線與後線路徑分散於多份附錄</div>
+              </div>
+              <div class="s01-row">
+                <div class="s01-row-title">機器手臂 TME 與體內吻合實證</div>
+                <div class="s01-row-meta">需另開期刊比對 REAL / COLRAR 結果</div>
+              </div>
+              <div class="s01-row">
+                <div class="s01-row-title">無台灣核准與健保條文對照</div>
+                <div class="s01-row-meta">開會討論仍需手動交叉核對</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="s01-pane-3" class="s01-pane">
+          <div class="s01-pane-head">
+            <span class="s01-pane-source">健保署給付規定</span>
+            <span class="s01-pane-badge">第 9 節</span>
+          </div>
+          <div class="s01-pane-body" data-layout-allow-overflow="true">
+            <div id="s01-scroll-3" class="s01-scroll-inner">
+              <div class="s01-nhi-box">
+                9.134 Encorafenib + cetuximab：115 年 5 月 1 日生效，限 BRAF V600E 二線以上使用。
+              </div>
+              <div class="s01-row">
+                <div class="s01-row-title">9.53 1. Panitumumab · 9.27 1.(1) Cetuximab</div>
+                <div class="s01-row-meta">2026/02/01 生效條件更新</div>
+              </div>
+              <div class="s01-row">
+                <div class="s01-row-title">9.69 1.(11) Pembrolizumab</div>
+                <div class="s01-row-meta">一線 MSI-H/dMMR 條文附表查核</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="s01-merge-btn-wrap">
+        <div id="s01-merge-btn" class="s01-merge-btn">
+          <span>整合為單一實證工作站</span>
+          <span>→</span>
+        </div>
+      </div>
+
+      <svg id="s01-cursor" class="s01-cursor" viewBox="0 0 48 48" fill="none" data-layout-ignore="true">
+        <path
+          d="M8 5L39 22.5L23.5 26.2L17.2 41.5L8 5Z"
+          fill="#0f1f44"
+          stroke="#ffffff"
+          stroke-width="3.2"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
+
+    <div id="s01-reveal" class="s01-reveal">
+      <svg class="s01-km-svg" viewBox="0 0 1920 220" fill="none" data-layout-ignore="true">
+        <path
+          id="s01-km-1"
+          d="M0 36 H280 V58 H520 V78 H840 V96 H1220 V112 H1920"
+          stroke="#a8c0ff"
+          stroke-width="4"
+        />
+        <path
+          id="s01-km-2"
+          d="M0 36 H180 V88 H380 V128 H640 V162 H980 V184 H1920"
+          stroke="#f8abc1"
+          stroke-width="3.5"
+        />
+      </svg>
+
+      <div class="s01-reveal-inner">
+        <div id="s01-logo-disc" class="s01-logo-disc">
+          <img src="assets/brand/guthub-logo.png" alt="GutHub Logo" />
+        </div>
+        <div class="s01-brand-copy">
+          <div id="s01-brand-kicker" class="s01-brand-kicker">新試驗 × 台灣健保給付 × 手術實證</div>
+          <div id="s01-brand-name" class="s01-brand-name" data-var-text="brandName">GutHub</div>
+          <div id="s01-brand-sub" class="s01-brand-sub">大腸直腸外科實證更新</div>
+          <div id="s01-domain-pill" class="s01-domain-pill" data-var-text="siteDomain">guthub.tw</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    tl.fromTo("#s01-scroll-1", { y: 0 }, { y: -115, duration: 5.0, ease: "power1.inOut" }, 0.2);
+    tl.fromTo("#s01-scroll-2", { y: 0 }, { y: -88, duration: 5.0, ease: "power1.inOut" }, 0.35);
+    tl.fromTo("#s01-scroll-3", { y: 0 }, { y: -72, duration: 5.0, ease: "power1.inOut" }, 0.28);
+
+    tl.fromTo("#s01-merge-btn", { opacity: 0, y: 24, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.42, ease: "expo.out" }, 4.6);
+    tl.fromTo("#s01-cursor", { x: 1580, y: 1080, opacity: 0 }, { x: 990, y: 928, opacity: 1, duration: 0.72, ease: "power3.out" }, 5.15);
+
+    tl.to(["#s01-merge-btn", "#s01-cursor"], { scale: 0.92, duration: 0.1, ease: "none" }, 6.0);
+    tl.to(["#s01-merge-btn", "#s01-cursor"], { scale: 1.0, duration: 0.2, ease: "back.out(1.6)" }, 6.1);
+
+    tl.to("#s01-pane-1", { x: 420, scale: 0.9, opacity: 0.18, duration: 0.45, ease: "power3.in" }, 6.25);
+    tl.to("#s01-pane-3", { x: -420, scale: 0.9, opacity: 0.18, duration: 0.45, ease: "power3.in" }, 6.25);
+    tl.to("#s01-pane-2", { scale: 0.92, opacity: 0.18, duration: 0.45, ease: "power3.in" }, 6.25);
+
+    tl.fromTo(
+      "#s01-reveal",
+      { opacity: 0, clipPath: "circle(0% at 50% 88%)" },
+      { opacity: 1, clipPath: "circle(135% at 50% 88%)", duration: 0.72, ease: "power3.inOut" },
+      6.35
+    );
+
+    const km1 = document.getElementById("s01-km-1");
+    const km2 = document.getElementById("s01-km-2");
+    const len1 = km1 ? km1.getTotalLength() : 2100;
+    const len2 = km2 ? km2.getTotalLength() : 2200;
+    tl.fromTo("#s01-km-1", { strokeDasharray: len1, strokeDashoffset: len1 }, { strokeDashoffset: 0, duration: 1.4, ease: "power2.out" }, 6.9);
+    tl.fromTo("#s01-km-2", { strokeDasharray: len2, strokeDashoffset: len2 }, { strokeDashoffset: 0, duration: 1.5, ease: "power2.out" }, 7.0);
+
+    tl.fromTo("#s01-logo-disc", { scale: 0.78, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.55, ease: "back.out(1.3)" }, 6.9);
+    tl.fromTo("#s01-brand-kicker", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.3, ease: "power4.out" }, 7.1);
+    tl.fromTo("#s01-brand-name", { opacity: 0, x: 36 }, { opacity: 1, x: 0, duration: 0.48, ease: "expo.out" }, 7.2);
+    tl.fromTo("#s01-brand-sub", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.35, ease: "power4.out" }, 7.4);
+    tl.fromTo("#s01-domain-pill", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.36, ease: "power4.out" }, 7.6);
+
+    window.__timelines["s01-hook"] = tl;
+    tl.seek(0);
+  </script>
+</template>

@@ -1,0 +1,63 @@
+{
+  "model": "Minimax-Speech-2.8HD",
+  "targetLoudnessLUFS": -16,
+  "totalDurationSec": 92,
+  "segments": [
+    {
+      "id": "vo-01",
+      "scene": "s01-hook",
+      "file": "assets/audio/vo-01.wav",
+      "startSec": 0.3,
+      "maxDurationSec": 10.4,
+      "text": "mCRC 新試驗每季更新，加上台灣健保給付變動，開會前總要在 PubMed、指引和健保署間反覆翻找。這就是 GutHub。"
+    },
+    {
+      "id": "vo-02",
+      "scene": "s02-paperwatch",
+      "file": "assets/audio/vo-02.wav",
+      "startSec": 11.3,
+      "maxDurationSec": 14.2,
+      "text": "GutHub 是給大腸直腸外科醫師的實證更新站。系統每週掃描 PubMed 與主要期刊，整理 mCRC 與機器手臂手術文獻。每個數據都回查摘要原文，是否經人工審核也直接標示。"
+    },
+    {
+      "id": "vo-03",
+      "scene": "s03-asksite",
+      "file": "assets/audio/vo-03.wav",
+      "startSec": 26.3,
+      "maxDurationSec": 13.2,
+      "text": "門診或查房遇到問題，可以直接用一句話找證據。GutHub 不會自己編答案，也不留存提問，而是直接把你帶回最相關的文獻整理與原始 DOI。"
+    },
+    {
+      "id": "vo-04",
+      "scene": "s04-nhi-drugs",
+      "file": "assets/audio/vo-04.wav",
+      "startSec": 40.3,
+      "maxDurationSec": 12.2,
+      "text": "國外資料庫查不到的台灣給付資訊，這裡直接並排對照。每個方案都標註 TFDA 核准、健保給付條文與生效日，也能從常用藥物反查所有臨床證據。"
+    },
+    {
+      "id": "vo-05",
+      "scene": "s05-tumorboard",
+      "file": "assets/audio/vo-05.wav",
+      "startSec": 53.3,
+      "maxDurationSec": 11.2,
+      "text": "開會前來不及整理投影片？Tumor Board 摘要把各分子型別的治療現況、給付條件與關鍵試驗濃縮成一頁，直接投影或列印就能帶進會議室。"
+    },
+    {
+      "id": "vo-06",
+      "scene": "s06-forum-dark",
+      "file": "assets/audio/vo-06.wav",
+      "startSec": 65.3,
+      "maxDurationSec": 13.2,
+      "text": "站內同時開放驗證大腸直腸外科醫師專屬論壇，可選署名或對其他讀者匿名交流實務經驗。介面支援深色模式與字級調整，公開內容載入後還能離線查閱。"
+    },
+    {
+      "id": "vo-07",
+      "scene": "s07-endcard",
+      "file": "assets/audio/vo-07.wav",
+      "startSec": 79.3,
+      "maxDurationSec": 11.0,
+      "text": "不想每天自己開網頁，歡迎加入 GutHub 的 LINE 官方帳號，接收每日白話重點，或直接前往 guthub.tw，把最新實證送到手上。"
+    }
+  ]
+}

@@ -1,0 +1,407 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Archivo";
+      font-style: normal;
+      font-weight: 100 900;
+      src: url("assets/fonts/archivo-latin.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "GutHubTC";
+      font-style: normal;
+      font-weight: 400 800;
+      src: local("PingFang TC"), local("Heiti TC");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #f6f5f0;
+      font-family: "Archivo", "GutHubTC", sans-serif;
+      color: #111827;
+    }
+    .s02-world {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Real GutHub Top Masthead */
+    .s02-header {
+      height: 82px;
+      background: #ffffff;
+      border-bottom: 1.5px solid #dfddd4;
+      padding: 0 96px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .s02-header-brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .s02-header-brand img {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: block;
+    }
+    .s02-header-name {
+      font-family: "Archivo", sans-serif;
+      font-size: 34px;
+      font-weight: 800;
+      color: #0f1f44;
+      letter-spacing: -0.02em;
+    }
+    .s02-header-nav {
+      display: flex;
+      gap: 36px;
+      font-size: 28px;
+      font-weight: 600;
+      color: #3a4252;
+    }
+    .s02-header-nav .is-active {
+      color: #1a3a7e;
+      font-weight: 700;
+    }
+    /* Real Deep Indigo Lead Band */
+    .s02-lead {
+      background: #0f1f44;
+      color: #ffffff;
+      padding: 46px 96px 52px;
+      display: grid;
+      grid-template-columns: 1.32fr 0.98fr;
+      gap: 52px;
+      align-items: center;
+    }
+    .s02-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+      font-size: 28px;
+      color: #cfd9f2;
+    }
+    .s02-flag {
+      background: #b33054;
+      color: #ffffff;
+      font-weight: 700;
+      padding: 4px 16px;
+      border-radius: 4px;
+    }
+    .s02-headline {
+      font-size: 50px;
+      font-weight: 800;
+      line-height: 1.24;
+      color: #ffffff;
+      margin-bottom: 18px;
+    }
+    .s02-dek {
+      font-size: 29px;
+      line-height: 1.54;
+      color: #cfd9f2;
+      margin-bottom: 24px;
+    }
+    .s02-chips {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .s02-chip-rose {
+      background: rgba(248, 171, 193, 0.16);
+      border: 1.5px solid rgba(248, 171, 193, 0.45);
+      color: #f8abc1;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 6px 18px;
+      border-radius: 4px;
+    }
+    .s02-chip-good {
+      background: rgba(114, 217, 164, 0.14);
+      border: 1.5px solid rgba(114, 217, 164, 0.48);
+      color: #72d9a4;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 6px 18px;
+      border-radius: 4px;
+    }
+    /* 2x2 Real Figure Plate */
+    .s02-figures {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .s02-stat {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      padding: 22px 24px;
+    }
+    .s02-stat-val {
+      font-family: "Archivo", sans-serif;
+      font-size: 62px;
+      font-weight: 800;
+      color: #ffffff;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.05;
+      margin-bottom: 8px;
+    }
+    .s02-stat-unit {
+      font-size: 32px;
+      font-weight: 700;
+      color: #a8c0ff;
+      margin-left: 6px;
+    }
+    .s02-stat-label {
+      font-size: 28px;
+      color: #cfd9f2;
+      line-height: 1.3;
+    }
+    /* Bottom Archival Paper Area: Topics + Provenance Verification */
+    .s02-lower {
+      flex: 1;
+      padding: 36px 96px 46px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+    .s02-topics-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      background: #ffffff;
+      border: 1.5px solid #dfddd4;
+      border-radius: 8px;
+      padding: 18px 28px;
+    }
+    .s02-topics-label {
+      font-size: 28px;
+      font-weight: 700;
+      color: #0f1f44;
+      white-space: nowrap;
+    }
+    .s02-topic-tags {
+      display: flex;
+      gap: 12px;
+      flex-wrap: nowrap;
+    }
+    .s02-topic-tag {
+      background: #edf1f9;
+      color: #1a3a7e;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    /* Provenance Gate Focus Strip */
+    .s02-prov-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: 0.9fr 1.35fr;
+      gap: 88px;
+      align-items: center;
+      margin-top: 24px;
+    }
+    .s02-prov-left {
+      background: #ffffff;
+      border: 2px solid #8f2542;
+      border-radius: 10px;
+      padding: 26px 30px;
+      box-shadow: 0 12px 32px rgba(143, 37, 66, 0.1);
+    }
+    .s02-prov-kicker {
+      font-size: 28px;
+      font-weight: 700;
+      color: #8f2542;
+      margin-bottom: 10px;
+    }
+    .s02-prov-big {
+      font-size: 34px;
+      font-weight: 800;
+      color: #111827;
+      line-height: 1.38;
+    }
+    .s02-prov-right {
+      background: #ffffff;
+      border: 1.5px solid #b6b1a4;
+      border-radius: 10px;
+      padding: 26px 32px;
+      box-shadow: 0 12px 32px rgba(17, 24, 39, 0.08);
+    }
+    .s02-prov-source {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a3a7e;
+      margin-bottom: 10px;
+    }
+    .s02-prov-quote {
+      font-size: 28px;
+      line-height: 1.48;
+      color: #3a4252;
+    }
+    .s02-hl {
+      background: #faf0f2;
+      color: #8f2542;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border-bottom: 2px solid #8f2542;
+    }
+    .s02-link-svg {
+      position: absolute;
+      left: 650px;
+      top: 66px;
+      width: 140px;
+      height: 60px;
+      pointer-events: none;
+    }
+  </style>
+
+  <div id="root" data-composition-id="s02-paperwatch" data-width="1920" data-height="1080">
+    <div id="s02-world" class="s02-world">
+      <header class="s02-header">
+        <div class="s02-header-brand">
+          <img src="assets/brand/guthub-logo.png" alt="GutHub" />
+          <span class="s02-header-name">GutHub</span>
+        </div>
+        <nav class="s02-header-nav">
+          <span class="is-active">最新消息</span>
+          <span>文獻</span>
+          <span>主題</span>
+          <span>Tumor Board</span>
+          <span>論壇</span>
+          <span>訂閱</span>
+        </nav>
+      </header>
+
+      <section id="s02-lead" class="s02-lead">
+        <div>
+          <div class="s02-eyebrow">
+            <span class="s02-flag">頭條</span>
+            <span>MSI-H / dMMR</span>
+            <span>Lancet 2026</span>
+          </div>
+          <h1 id="s02-headline" class="s02-headline">NICHE-2 五年追蹤：術前雙免疫後 111 例無一復發</h1>
+          <p id="s02-dek" class="s02-dek">dMMR 局部進展結腸癌術前給 nivolumab 加 ipilimumab，中位追蹤 58.7 個月無復發。</p>
+          <div class="s02-chips">
+            <span id="s02-chip-1" class="s02-chip-rose">AI 新聞稿</span>
+            <span id="s02-chip-2" class="s02-chip-rose">AI 未審</span>
+            <span id="s02-chip-3" class="s02-chip-good">來源：人工整理</span>
+          </div>
+        </div>
+
+        <div class="s02-figures">
+          <div id="s02-stat-1" class="s02-stat">
+            <div class="s02-stat-val"><span id="s02-num-1">100</span><span class="s02-stat-unit">%</span></div>
+            <div class="s02-stat-label">3 年無病存活率（DFS）</div>
+          </div>
+          <div id="s02-stat-2" class="s02-stat">
+            <div class="s02-stat-val"><span id="s02-num-2">100</span><span class="s02-stat-unit">%</span></div>
+            <div class="s02-stat-label">5 年整體存活率（OS）</div>
+          </div>
+          <div id="s02-stat-3" class="s02-stat">
+            <div class="s02-stat-val"><span id="s02-num-3">111</span><span class="s02-stat-unit">例</span></div>
+            <div class="s02-stat-label">依計畫書分析零復發</div>
+          </div>
+          <div id="s02-stat-4" class="s02-stat">
+            <div class="s02-stat-val"><span id="s02-num-4">58.7</span><span class="s02-stat-unit">個月</span></div>
+            <div class="s02-stat-label">術後中位追蹤時間</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="s02-lower">
+        <div id="s02-topics-strip" class="s02-topics-strip">
+          <span class="s02-topics-label">每週自動掃描 7 大主題</span>
+          <div class="s02-topic-tags">
+            <span id="s02-t1" class="s02-topic-tag">BRAF V600E</span>
+            <span id="s02-t2" class="s02-topic-tag">KRAS G12C</span>
+            <span id="s02-t3" class="s02-topic-tag">MSI-H</span>
+            <span id="s02-t4" class="s02-topic-tag">HER2</span>
+            <span id="s02-t5" class="s02-topic-tag">RAS wt</span>
+            <span id="s02-t6" class="s02-topic-tag">機器手臂手術</span>
+          </div>
+        </div>
+
+        <div id="s02-prov-grid" class="s02-prov-grid">
+          <div id="s02-prov-left" class="s02-prov-left">
+            <div class="s02-prov-kicker">Provenance Gate 數字查核</div>
+            <div class="s02-prov-big">每個數據回查摘要原文，未通過轉人工審核</div>
+          </div>
+
+          <svg class="s02-link-svg" viewBox="0 0 140 60" fill="none" data-layout-ignore="true">
+            <path
+              id="s02-prov-line"
+              d="M4 30 H124"
+              stroke="#8f2542"
+              stroke-width="5"
+              stroke-linecap="round"
+            />
+            <circle id="s02-prov-dot" cx="128" cy="30" r="8" fill="#8f2542" />
+          </svg>
+
+          <div id="s02-prov-right" class="s02-prov-right">
+            <div class="s02-prov-source">Lancet 2026 原始摘要比對通過</div>
+            <div class="s02-prov-quote">
+              3-year DFS <span class="s02-hl">100%</span> · 5-year OS <span class="s02-hl">100%</span> · n = <span class="s02-hl">111</span> · median follow-up <span class="s02-hl">58.7 mo</span>（單臂 Phase 2，無對照組）
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // Seamless entrance from s01's indigo world (zero cream flash at t=0)
+    tl.fromTo("#s02-world", { scale: 1.02, opacity: 1 }, { scale: 1, opacity: 1, duration: 0.4, ease: "power3.out" }, 0);
+    tl.fromTo("#s02-headline", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.32, ease: "power4.out" }, 0.12);
+    tl.fromTo("#s02-dek", { opacity: 0 }, { opacity: 1, duration: 0.32, ease: "power2.out" }, 0.3);
+
+    // 2x2 real stats stagger in with deterministic count-up
+    const stats = ["#s02-stat-1", "#s02-stat-2", "#s02-stat-3", "#s02-stat-4"];
+    tl.fromTo(stats, { opacity: 0, y: 20, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.42, stagger: 0.08, ease: "expo.out" }, 0.38);
+
+    const n1 = { v: 0 }, n2 = { v: 0 }, n3 = { v: 0 }, n4 = { v: 0 };
+    const el1 = document.getElementById("s02-num-1");
+    const el2 = document.getElementById("s02-num-2");
+    const el3 = document.getElementById("s02-num-3");
+    const el4 = document.getElementById("s02-num-4");
+    tl.to(n1, { v: 100, duration: 0.95, ease: "power3.out", onUpdate: () => { if (el1) el1.textContent = String(Math.round(n1.v)); } }, 0.48);
+    tl.to(n2, { v: 100, duration: 0.95, ease: "power3.out", onUpdate: () => { if (el2) el2.textContent = String(Math.round(n2.v)); } }, 0.58);
+    tl.to(n3, { v: 111, duration: 0.95, ease: "power3.out", onUpdate: () => { if (el3) el3.textContent = String(Math.round(n3.v)); } }, 0.68);
+    tl.to(n4, { v: 58.7, duration: 0.95, ease: "power3.out", onUpdate: () => { if (el4) el4.textContent = n4.v.toFixed(1); } }, 0.78);
+
+    // 7 topics strip arrives cleanly when VO mentions PubMed & 7 topics
+    tl.fromTo("#s02-topics-strip", { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out" }, 3.2);
+
+    // Sequential editorial highlight sweep across key topics (4.2s -> 6.4s)
+    tl.to("#s02-t1", { backgroundColor: "#1a3a7e", color: "#ffffff", duration: 0.25 }, 4.2);
+    tl.to("#s02-t3", { backgroundColor: "#1a3a7e", color: "#ffffff", duration: 0.25 }, 5.1);
+    tl.to("#s02-t6", { backgroundColor: "#1a3a7e", color: "#ffffff", duration: 0.25 }, 6.0);
+
+    // Provenance verification chord arrives tightly together (6.8s -> 7.6s)
+    tl.fromTo("#s02-prov-left", { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.42, ease: "expo.out" }, 6.8);
+    tl.fromTo("#s02-prov-line", { strokeDasharray: 120, strokeDashoffset: 120 }, { strokeDashoffset: 0, duration: 0.45, ease: "power3.out" }, 7.1);
+    tl.fromTo("#s02-prov-dot", { scale: 0, opacity: 0, transformOrigin: "center" }, { scale: 1, opacity: 1, duration: 0.22, ease: "back.out(1.8)" }, 7.5);
+    tl.fromTo("#s02-prov-right", { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 0.42, ease: "expo.out" }, 7.4);
+
+    // AI & Human-curated disclosure chips pop crisply at 10.2s
+    tl.fromTo(["#s02-chip-1", "#s02-chip-2", "#s02-chip-3"], { scale: 0.82, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.34, stagger: 0.12, ease: "back.out(1.4)" }, 10.2);
+
+    // Subtle confirmation border before clean cut to AskSite
+    tl.to("#s02-prov-right", { borderColor: "#8f2542", duration: 0.35 }, 12.4);
+
+    window.__timelines["s02-paperwatch"] = tl;
+    tl.seek(0);
+  </script>
+</template>

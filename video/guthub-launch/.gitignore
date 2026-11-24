@@ -1,0 +1,7 @@
+.hyperframes/
+out/
+assets/audio/normalized/
+*.mp4
+*.webm
+*.wav
+*.mp3
