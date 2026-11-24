@@ -152,6 +152,35 @@ def test_story_id_for_sanitizes_and_avoids_collisions() -> None:
     assert news_writer.story_id_for("bw-nejm-2025", {"bw-nejm-2025", "bw-nejm-2025-2"}) == "bw-nejm-2025-3"
 
 
+def test_resolve_story_id_reuses_existing_id_on_redo() -> None:
+    taken = {"bw-nejm-2025", "other-story"}
+    existing = {"bw-nejm-2025": "bw-nejm-2025"}
+    assert news_writer.resolve_story_id("bw-nejm-2025", taken, existing, redo=True) == "bw-nejm-2025"
+    assert news_writer.resolve_story_id("bw-nejm-2025", taken, existing, redo=False) == "bw-nejm-2025-2"
+
+
+def test_interval_figure_requires_source_confirmed_95_ci() -> None:
+    paper_90 = PAPER | {
+        "result": "mPFS 12.8 vs 7.1 mo; mOS 30.3 vs 15.1 mo, HR 0.49 (90% CI 0.38-0.63), ORR 61% vs 40%"
+    }
+    story_90 = _story(
+        figures=[
+            {"kind": "interval", "label": "整體存活 HR", "point": 0.49, "low": 0.38, "high": 0.63, "note": "90% CI"}
+        ],
+        body=[
+            {"heading": "發生了什麼", "text": "收案 479 位的 Phase 3 RCT，mOS 30.3 vs 15.1 個月。"},
+            {"heading": "為什麼重要", "text": "整體存活 HR 0.49（90% CI 0.38–0.63）。"},
+        ],
+    )
+    errs = news_writer.problems(story_90, paper_90)
+    assert any("95% CI" in e for e in errs), errs
+
+    # Even if <entry> mentions 95% CI elsewhere, an interval figure noting 90% CI is refused.
+    paper_mixed = PAPER | {"result": PAPER["result"] + "; 90% CI 0.38-0.63"}
+    errs_mixed = news_writer.problems(story_90, paper_mixed)
+    assert any("90%" in e for e in errs_mixed), errs_mixed
+
+
 def test_draft_retries_once_when_first_attempt_has_unsupported_number(monkeypatch: pytest.MonkeyPatch) -> None:
     attempts: list[list[str] | None] = []
     bad = _story(dek="死亡風險降低 51%。")

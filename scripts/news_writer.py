@@ -41,6 +41,8 @@ REQUIRED_HEADING = "發生了什麼"
 CLINICAL_HEADINGS = ("為什麼重要", "對臨床的意義")
 INTERVAL_MIN = 0.1
 INTERVAL_MAX = 8.0
+CI_95_RE = re.compile(r"\b95\s*%\s*(?:ci|confidence\s+interval)\b", re.I)
+ANY_CI_RE = re.compile(r"\b(\d+(?:\.\d+)?)\s*%\s*(?:ci|confidence\s+interval)\b", re.I)
 
 _STAT_SCHEMA = {
     "type": "object",
@@ -181,7 +183,7 @@ SYSTEM = """你替台灣大腸直腸外科實證知識庫 GutHub 撰寫「近期
 2. 絕對不可以自己換算、加減、相除、四捨五入或補上 <entry> 沒寫的數字——例如不能從 HR 0.49 自己算「風險降低 51%」、不能自己寫「2 組」「第 1 線」「95% CI」（除非 2、1、95 真的出現在 <entry> 裡）、不能自己加上未記載的追蹤年數。
 3. 藥名、試驗縮寫、指標（mOS、mPFS、HR、ORR、pCR、DFS、cCR 等）保留英文；其餘用台灣臨床白話中文，句子短、直接、客觀，不寫宣傳語氣，不給個別病人的治療建議。
 4. 不可使用任何 HTML 標籤。
-5. interval 圖表僅在 <entry> 同時提供點估計與上下界（且數值落在 0.1 到 8.0 之間）時才使用。"""
+5. interval 圖表僅在 <entry> 明確提供 95% CI 的點估計與上下界（且數值落在 0.1 到 8.0 之間）時才使用（若原文是 90% CI 或未寫 95% CI，請改用 numbers 圖表）。"""
 
 
 def is_newsworthy(paper: dict[str, Any], score: int | None = None) -> bool:
@@ -225,6 +227,13 @@ def story_id_for(paper_id: str, taken: set[str]) -> str:
     while f"{base}-{suffix}" in taken:
         suffix += 1
     return f"{base}-{suffix}"
+
+
+def resolve_story_id(paper_id: str, taken: set[str], existing_by_paper: dict[str, str], *, redo: bool) -> str:
+    """Reuse the paper's existing story ID on --redo so published /news/<id>/ links remain valid."""
+    if redo and paper_id in existing_by_paper:
+        return existing_by_paper[paper_id]
+    return story_id_for(paper_id, taken)
 
 
 def _clean_text(value: str) -> str:
@@ -433,6 +442,15 @@ def validate_story(story: dict[str, Any]) -> list[str]:
 def problems(story: dict[str, Any], paper: dict[str, Any]) -> list[str]:
     """Why a generated story cannot be published: shape/bounds errors or numbers absent from the source paper entry."""
     found = validate_story(story)
+    source = entry_text(paper)
+    for idx, fig in enumerate(story.get("figures") or []):
+        if isinstance(fig, dict) and fig.get("kind") == "interval":
+            if not CI_95_RE.search(source):
+                found.append(f"figures[{idx}] interval requires a source-confirmed 95% CI in <entry>")
+            note = str(fig.get("note") or "")
+            non_95 = [lvl for lvl in ANY_CI_RE.findall(note) if float(lvl) != 95.0]
+            if non_95:
+                found.append(f"figures[{idx}] interval cannot label a {', '.join(non_95)}% CI as 95% CI")
     try:
         missing = unsupported(story, paper)
     except KeyError as exc:
@@ -582,7 +600,7 @@ def save(story: dict[str, Any], conn: Any = None, *, replace: bool = False) -> N
         session.record(f"news {story['id']} ({story['paperId']})")
 
 
-def _load_db_state(conn: Any) -> tuple[list[dict[str, Any]], set[str], set[str]]:
+def _load_db_state(conn: Any) -> tuple[list[dict[str, Any]], set[str], dict[str, str]]:
     from psycopg.rows import dict_row
 
     with conn.cursor(row_factory=dict_row) as cur:
@@ -590,12 +608,16 @@ def _load_db_state(conn: Any) -> tuple[list[dict[str, Any]], set[str], set[str]]
             "select id, regimen, study_type, n, endpoint, result, bottom_line, journal, year, summary"
             " from app.papers where withdrawn_at is null order by year desc, id"
         ).fetchall()
-        news_rows = cur.execute("select id, paper_id from app.news").fetchall()
+        news_rows = cur.execute(
+            "select id, paper_id from app.news order by (withdrawn_at is not null), published_at desc, id"
+        ).fetchall()
     names = {"study_type": "studyType", "bottom_line": "bottomLine"}
     papers = [{names.get(str(k), str(k)): v for k, v in row.items()} for row in paper_rows]
     taken_ids = {str(r["id"]) for r in news_rows}
-    covered_papers = {str(r["paper_id"]) for r in news_rows}
-    return papers, taken_ids, covered_papers
+    existing_by_paper: dict[str, str] = {}
+    for r in news_rows:
+        existing_by_paper.setdefault(str(r["paper_id"]), str(r["id"]))
+    return papers, taken_ids, existing_by_paper
 
 
 def run(
@@ -617,17 +639,17 @@ def run(
         mode = row[0] if row else None
         if not dry_run and mode != "postgres":
             raise ValueError(f"content writer is {mode!r}, not 'postgres'; nothing was written")
-        papers, taken_ids, covered_papers = _load_db_state(conn)
+        papers, taken_ids, existing_by_paper = _load_db_state(conn)
         for paper in papers:
             paper_id = paper["id"]
             if only is not None and paper_id not in only:
                 continue
             if only is None and not is_newsworthy(paper):
                 continue
-            if paper_id in covered_papers and not redo:
+            if paper_id in existing_by_paper and not redo:
                 report["skipped"][paper_id] = "already has news story"
                 continue
-            sid = story_id_for(paper_id, taken_ids)
+            sid = resolve_story_id(paper_id, taken_ids, existing_by_paper, redo=redo)
             story, found = draft(client, paper, sid, today_str)
             if dry_run:
                 print(json.dumps({"id": sid, "problems": found, "story": story}, ensure_ascii=False, indent=2))
@@ -637,7 +659,7 @@ def run(
             if not dry_run:
                 save(story, writer, replace=redo)
             taken_ids.add(sid)
-            covered_papers.add(paper_id)
+            existing_by_paper[paper_id] = sid
             report["written"].append({"id": sid, "paperId": paper_id})
     return report | {"at": datetime.now(UTC).isoformat(timespec="seconds"), "dryRun": dry_run}
 
