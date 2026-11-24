@@ -25,23 +25,116 @@ language sql immutable set search_path = '' as $$
 $$;
 
 create or replace function app._k6_clean_html(val text) returns text
-language sql immutable set search_path = '' as $$
-  select case
-    when val is null then null
-    else regexp_replace(
-      regexp_replace(
-        regexp_replace(
-          regexp_replace(
-            regexp_replace(val, '<th>[[:space:]]*</th>', '<td></td>', 'gi'),
-            '<a[[:space:]][^>]*href="docs/[^"]*"[^>]*>(.*?)</a>', '\1', 'gi'
-          ),
-          '[[:space:]]+(target|rel|style)="[^"]*"', '', 'gi'
-        ),
-        '</?(details|summary)([^>]*)>', '', 'gi'
-      ),
-      '(<a[[:space:]][^>]*)(>)', '\1 rel="noopener noreferrer"\2', 'gi'
-    )
-  end;
+language plpgsql immutable set search_path = '' as $$
+declare
+  s text;
+  out text := '';
+  pos int := 1;
+  len int;
+  lt int;
+  gt int;
+  tag_raw text;
+  is_close boolean;
+  tag_name text;
+  attrs text;
+  m text[];
+  href_val text;
+  cls_val text;
+  cs_val text;
+  rs_val text;
+  rebuilt text;
+begin
+  if val is null then
+    return null;
+  end if;
+  -- Strip executable/embedded block elements along with their content.
+  s := regexp_replace(
+    val,
+    '<(script|style|iframe|object|embed|svg|math)([[:space:]][^>]*)?>.*?</\1[[:space:]]*>',
+    '',
+    'gi'
+  );
+  -- Apply legacy sitegen repairs before allowlist filtering.
+  s := regexp_replace(s, '<th>[[:space:]]*</th>', '<td></td>', 'gi');
+  s := regexp_replace(s, '<a[[:space:]][^>]*href="docs/[^"]*"[^>]*>(.*?)</a>', '\1', 'gi');
+
+  len := length(s);
+  while pos <= len loop
+    lt := strpos(substr(s, pos), '<');
+    if lt = 0 then
+      out := out || substr(s, pos);
+      exit;
+    end if;
+    out := out || substr(s, pos, lt - 1);
+    pos := pos + lt - 1;
+    -- Bare '<' not starting a tag or comment (e.g. "p<0.05</p>") is plain text.
+    if pos = len or substr(s, pos + 1, 1) !~ '^[A-Za-z/!]' then
+      out := out || '&lt;';
+      pos := pos + 1;
+      continue;
+    end if;
+    gt := strpos(substr(s, pos), '>');
+    if gt = 0 then
+      out := out || '&lt;' || substr(s, pos + 1);
+      exit;
+    end if;
+    tag_raw := substr(s, pos + 1, gt - 2);
+    pos := pos + gt;
+
+    m := regexp_match(tag_raw, '^[[:space:]]*(/?)[[:space:]]*([A-Za-z][A-Za-z0-9]*)([[:space:]].*)?$');
+    if m is null then
+      continue;
+    end if;
+    is_close := (m[1] = '/');
+    tag_name := lower(m[2]);
+    attrs := coalesce(m[3], '');
+
+    if tag_name not in (
+      'a', 'br', 'div', 'em', 'h3', 'li', 'ol', 'p', 's', 'strong',
+      'table', 'tbody', 'td', 'th', 'thead', 'tr', 'ul'
+    ) then
+      continue;
+    end if;
+
+    if is_close then
+      if tag_name <> 'br' then
+        out := out || '</' || tag_name || '>';
+      end if;
+      continue;
+    end if;
+
+    rebuilt := '<' || tag_name;
+    if tag_name = 'a' then
+      href_val := coalesce(
+        (regexp_match(attrs, '(?:^|[[:space:]])href[[:space:]]*=[[:space:]]*"([^"]*)"', 'i'))[1],
+        (regexp_match(attrs, '(?:^|[[:space:]])href[[:space:]]*=[[:space:]]*''([^'']*)''', 'i'))[1]
+      );
+      if href_val is not null and href_val ~* '^[[:space:]]*(https?://|mailto:|/[^/]|#)' then
+        rebuilt := rebuilt || ' href="' || replace(trim(href_val), '"', '&quot;') || '"';
+      end if;
+      rebuilt := rebuilt || ' rel="noopener noreferrer"';
+    elsif tag_name in ('div', 'p') then
+      cls_val := coalesce(
+        (regexp_match(attrs, '(?:^|[[:space:]])class[[:space:]]*=[[:space:]]*"([^"]*)"', 'i'))[1],
+        (regexp_match(attrs, '(?:^|[[:space:]])class[[:space:]]*=[[:space:]]*''([^'']*)''', 'i'))[1]
+      );
+      if cls_val is not null then
+        rebuilt := rebuilt || ' class="' || replace(cls_val, '"', '&quot;') || '"';
+      end if;
+    elsif tag_name in ('td', 'th') then
+      cs_val := (regexp_match(attrs, '(?:^|[[:space:]])colspan[[:space:]]*=[[:space:]]*"?([0-9]+)"?', 'i'))[1];
+      rs_val := (regexp_match(attrs, '(?:^|[[:space:]])rowspan[[:space:]]*=[[:space:]]*"?([0-9]+)"?', 'i'))[1];
+      if cs_val is not null then
+        rebuilt := rebuilt || ' colspan="' || cs_val || '"';
+      end if;
+      if rs_val is not null then
+        rebuilt := rebuilt || ' rowspan="' || rs_val || '"';
+      end if;
+    end if;
+    out := out || rebuilt || '>';
+  end loop;
+  return out;
+end;
 $$;
 
 -- 1. Decode plain-text fields and clean stored detail_html on app.papers (also refreshes search_text via trigger).

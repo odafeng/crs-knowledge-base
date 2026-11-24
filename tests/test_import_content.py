@@ -309,3 +309,43 @@ def test_dry_run_reports_changes_but_writes_nothing(conn, rows):
     with conn.cursor() as cur:
         cur.execute("select count(*) from app.papers")
         assert cur.fetchone() == (0,)
+
+
+@needs_db
+def test_sanitize_existing_scrubs_legacy_xss_and_entities(conn, rows):
+    from psycopg.types.json import Jsonb
+
+    apply(conn, rows)
+    paper_id = rows.tables["papers"][0]["id"]
+    with conn.cursor() as cur:
+        cur.execute(
+            "update app.papers set result = %s, detail_html = %s where id = %s",
+            (
+                "HR 0.65, p&lt;0.001 &amp; OS",
+                '<p style="color:red"><img src=x onerror=alert(1)><a href="javascript:alert(1)">bad</a>'
+                '<a href="https://example.com" target="_blank">ok</a></p>',
+                paper_id,
+            ),
+        )
+        cur.execute(
+            "update app.topics set standard_of_care = %s where key = 'mCRC-BRAF-V600E'",
+            (Jsonb([{"title": "t", "icon": "i", "body_html": "<img src=x onerror=alert(1)><p>safe</p>"}]),),
+        )
+    updated = import_content.sanitize_existing(conn)
+    assert updated["papers"] == 1
+    assert updated["topics"] == 1
+    with conn.cursor() as cur:
+        cur.execute("select result, detail_html from app.papers where id = %s", (paper_id,))
+        result, detail_html = cur.fetchone()
+        cur.execute("select standard_of_care from app.topics where key = 'mCRC-BRAF-V600E'")
+        soc = cur.fetchone()[0]
+    assert result == "HR 0.65, p<0.001 & OS"
+    assert "<img" not in detail_html
+    assert "onerror" not in detail_html
+    assert "javascript:" not in detail_html
+    assert "style=" not in detail_html
+    assert "target=" not in detail_html
+    assert 'href="https://example.com"' in detail_html
+    assert soc[0]["body_html"] == "<p>safe</p>"
+    # Idempotent on a second pass.
+    assert import_content.sanitize_existing(conn) == {"papers": 0, "research_commentary": 0, "topics": 0}
