@@ -111,10 +111,11 @@ def test_paper_detail_keeps_the_evidence_text(client: TestClient) -> None:
         assert paper["detailHtml"]
         assert "style=" not in paper["detailHtml"]
         assert "target=" not in paper["detailHtml"]
-    # Sanitizing removes markup only: the visible text of every document survives.
+    # Write layer sanitizes HTML once on ingest (K6 #256): stored DB HTML already matches the allowlist.
     assert DB_URL
     with psycopg.connect(DB_URL) as conn:
         for (html,) in conn.execute("select detail_html from app.papers where detail_html <> ''"):
+            assert html == clean(html)
             assert text(clean(html)) == text(html)
 
 

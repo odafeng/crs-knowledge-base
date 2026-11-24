@@ -81,7 +81,7 @@ class TestPublishPaper:
         assert saved["review"] == {"status": "auto", "publishedAt": TODAY}
         assert saved["file"] == "docs/mCRC-MSI-H/Test_NatMed_2026.html"
         assert saved["relations"] == [{"targetId": "niche2", "type": "builds_on"}]  # unknown target dropped
-        assert "<script>" not in saved["regimen"]  # model text escaped for innerHTML
+        assert saved["regimen"] == "Drug A"  # tags stripped at write time; plain text stored unescaped (K6 #256)
 
         page = (kb.root / saved["file"]).read_text()
         assert "AI 自動整理，未經人工審核" in page

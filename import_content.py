@@ -14,6 +14,7 @@ write content.
 
 import argparse
 import hashlib
+import html
 import json
 import os
 import re
@@ -22,6 +23,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, LiteralString
 
+import nh3
 from newsroom.gate import unsupported
 
 
@@ -60,14 +62,56 @@ ROOT = Path(__file__).resolve().parent
 ROBOTIC_TOPIC = {"key": ROBOTIC_KEY, "slug": "robotic", "label": "機器手臂手術", "title": "機器手臂手術"}
 
 
+# Rich-HTML allowlist applied at write time (K6 #256); matches apps/api/src/guthub_api/content.py.
+ALLOWED_TAGS: set[str] = {
+    "a",
+    "br",
+    "div",
+    "em",
+    "h3",
+    "li",
+    "ol",
+    "p",
+    "s",
+    "strong",
+    "table",
+    "tbody",
+    "td",
+    "th",
+    "thead",
+    "tr",
+    "ul",
+}
+ALLOWED_ATTRIBUTES: dict[str, set[str]] = {
+    "a": {"href"},
+    "div": {"class"},
+    "p": {"class"},
+    "td": {"colspan", "rowspan"},
+    "th": {"colspan", "rowspan"},
+}
+
+
+def sanitize_html(raw_html: str) -> str:
+    """Sanitize rich HTML at the write boundary with the site allowlist (K6 #256)."""
+    return nh3.clean(raw_html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES)
+
+
+def plain_text(value: Any) -> Any:
+    """Normalize plain-text fields so PostgreSQL stores raw text without HTML tags or entities (K6 #256)."""
+    if not isinstance(value, str):
+        return value
+    return html.unescape(nh3.clean(html.unescape(value), tags=set())).strip()
+
+
 def _slug(paper_id: str) -> str:
     return paper_id.lower().replace("_", "-")
 
 
-def _clean_html(html: str) -> str:
-    """Drop empty header corner cells and legacy links into docs/ while keeping their text."""
-    html = re.sub(r"<th>\s*</th>", "<td></td>", html)
-    return re.sub(r'<a\b[^>]*href="docs/[^"]*"[^>]*>(.*?)</a>', r"\1", html, flags=re.S)
+def _clean_html(raw_html: str) -> str:
+    """Drop empty header corner cells and legacy links into docs/ while keeping their text, then sanitize."""
+    repaired = re.sub(r"<th>\s*</th>", "<td></td>", raw_html)
+    repaired = re.sub(r'<a\b[^>]*href="docs/[^"]*"[^>]*>(.*?)</a>', r"\1", repaired, flags=re.S)
+    return sanitize_html(repaired)
 
 
 def _detail(root: Path, filename: str | None) -> str:
@@ -205,13 +249,14 @@ def build_rows(root: Path = ROOT) -> Rows:
     for topic in TOPICS:
         block = raw[topic.key]
         soc = block.get("standard_of_care") or {}
+        cards = [{**card, "body_html": _clean_html(card["body_html"])} for card in soc.get("cards", [])]
         rows.tables["topics"].append(
             {
                 "key": topic.key,
                 "slug": topic.slug,
                 "label": topic.label,
                 "title": topic.title,
-                "standard_of_care": soc.get("cards", []),
+                "standard_of_care": cards,
                 "soc_title": soc.get("title"),
                 "robotic_sections": [],
                 "metrics": block.get("metrics", {}),
@@ -228,7 +273,8 @@ def build_rows(root: Path = ROOT) -> Rows:
     robotic = raw[ROBOTIC_KEY]
     robotic_sections = []
     for page in ROBOTIC_PAGES:
-        timeline = robotic[page.timeline_key]
+        timeline = [{**item, "finding": sanitize_html(item["finding"])} for item in robotic[page.timeline_key]]
+        cards = [{**card, "body": _clean_html(card["body"])} for card in robotic[page.cards_key]]
         details = []
         for t in timeline:
             if t.get("file", "").startswith("docs/"):
@@ -241,7 +287,7 @@ def build_rows(root: Path = ROOT) -> Rows:
             {
                 "slug": page.slug,
                 "timeline": timeline,
-                "cards": robotic[page.cards_key],
+                "cards": cards,
                 "detailHtml": details,
             }
         )
@@ -291,13 +337,13 @@ def _paper_rows(rows: Rows, root: Path, topic_key: str, p: dict, detail_html: st
             "slug": _slug(p["id"]),
             "topic_key": topic_key,
             "year": p["year"],
-            "journal": p["journal"],
+            "journal": plain_text(p["journal"]),
             "study_type": p["studyType"],
-            "n": p.get("n"),
-            "regimen": p["regimen"],
-            "endpoint": p["endpoint"],
-            "result": p["result"],
-            "bottom_line": p["bottomLine"],
+            "n": plain_text(p.get("n")),
+            "regimen": plain_text(p["regimen"]),
+            "endpoint": plain_text(p["endpoint"]),
+            "result": plain_text(p["result"]),
+            "bottom_line": plain_text(p["bottomLine"]),
             "doi": p.get("doi") or None,
             "source": p["source"],
             "reviewed_at": p["reviewedAt"],
@@ -320,11 +366,11 @@ def _paper_rows(rows: Rows, root: Path, topic_key: str, p: dict, detail_html: st
                 "paper_id": p["id"],
                 "doi": c.get("doi") or None,
                 "pmid": c.get("pmid") or None,
-                "title": c["title"],
-                "journal": c["journal"],
+                "title": plain_text(c["title"]),
+                "journal": plain_text(c["journal"]),
                 "year": c.get("year"),
                 "type": c["type"],
-                "summary": c["summary"],
+                "summary": plain_text(c["summary"]),
                 "critique": c["critique"],
                 "new_data": c["newData"],
                 "added_at": c["addedAt"],

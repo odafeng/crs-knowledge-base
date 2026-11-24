@@ -15,6 +15,8 @@ from datetime import date
 from pathlib import Path
 from typing import Literal
 
+import nh3
+
 from commentary import apply_commentary
 from provenance import check_evidence, evaluate_paper_gate, evidence_table_markdown, published_fields
 from validate import validate_data
@@ -76,9 +78,11 @@ class KB:
         self.papers_json.write_text(json.dumps(data, ensure_ascii=False, indent=2))
 
 
-def _esc(value):
-    """HTML-escape model-written strings before storing them in the KB."""
-    return html.escape(value, quote=False) if isinstance(value, str) else value
+def _plain(value):
+    """Strip any accidental HTML tags and decode entities so plain-text fields stay raw text (K6 #256)."""
+    if not isinstance(value, str):
+        return value
+    return html.unescape(nh3.clean(html.unescape(value), tags=set())).strip()
 
 
 def _int_or_none(value) -> int | None:
@@ -106,13 +110,13 @@ def build_entry(paper: dict, data: dict, review: ReviewStatus, today: str) -> di
     return {
         "id": entry_id,
         "year": _int_or_none(js.get("year")) or _int_or_none(paper.get("year")),
-        "journal": _esc(js.get("journal") or paper.get("journal", "")),
+        "journal": _plain(js.get("journal") or paper.get("journal", "")),
         "studyType": js.get("studyType", ""),
-        "n": n if isinstance(n, int) else _esc(n) if n else None,
-        "regimen": _esc(js.get("regimen", "")),
-        "endpoint": _esc(js.get("endpoint", "")),
-        "result": _esc(js.get("result", "")),
-        "bottomLine": _esc(published_fields(paper)["bottomLine"]),
+        "n": n if isinstance(n, int) else _plain(n) if n else None,
+        "regimen": _plain(js.get("regimen", "")),
+        "endpoint": _plain(js.get("endpoint", "")),
+        "result": _plain(js.get("result", "")),
+        "bottomLine": _plain(published_fields(paper)["bottomLine"]),
         "doi": paper.get("doi") or js.get("doi") or None,
         "file": f"docs/{paper['topic']}/{filename}",
         "relations": relations,
@@ -160,7 +164,7 @@ def render_doc_page(paper: dict, entry: dict) -> str:
     doi = entry.get("doi") or ""
     doi_html = f'<a href="https://doi.org/{e(doi)}">{e(doi)}</a>' if doi else "—"
     title = e(paper.get("title", entry["id"]))
-    # entry fields are already escaped by build_entry
+    n_text = f"，n={e(str(entry['n']))}" if entry["n"] else ""
     return f"""<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -178,21 +182,21 @@ def render_doc_page(paper: dict, entry: dict) -> str:
 <div class="banner" style="background:{bg};color:{fg}">{banner}</div>
 
 <div class="meta">
-<strong>Journal:</strong> <em>{entry["journal"]}</em> {entry["year"] or ""}<br>
+<strong>Journal:</strong> <em>{e(entry["journal"])}</em> {entry["year"] or ""}<br>
 <strong>DOI:</strong> {doi_html}<br>
 <strong>PMID:</strong> {e(str(paper.get("pmid") or "—"))}<br>
-<strong>Study:</strong> {e(entry["studyType"])}{f"，n={entry['n']}" if entry["n"] else ""}
+<strong>Study:</strong> {e(entry["studyType"])}{n_text}
 </div>
 
 <div class="note">
-<strong>Bottom Line:</strong> {entry["bottomLine"]}
+<strong>Bottom Line:</strong> {e(entry["bottomLine"])}
 </div>
 
 <h2>Key Results</h2>
 <table>
-<tr><th>方案</th><td>{entry["regimen"]}</td></tr>
-<tr><th>主要終點</th><td>{entry["endpoint"]}</td></tr>
-<tr><th>結果</th><td>{entry["result"]}</td></tr>
+<tr><th>方案</th><td>{e(entry["regimen"])}</td></tr>
+<tr><th>主要終點</th><td>{e(entry["endpoint"])}</td></tr>
+<tr><th>結果</th><td>{e(entry["result"])}</td></tr>
 </table>
 
 <h2>AI 分析</h2>
@@ -248,7 +252,7 @@ def publish_commentary(
     kb = kb or KB()
     data = kb.load()
     stamped = [
-        (target, {**{k: _esc(v) for k, v in entry.items()}, "review": {"status": review, "publishedAt": today}})
+        (target, {**{k: _plain(v) for k, v in entry.items()}, "review": {"status": review, "publishedAt": today}})
         for target, entry in items
     ]
     changed = apply_commentary(data, stamped)

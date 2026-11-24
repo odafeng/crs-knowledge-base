@@ -115,9 +115,9 @@ def _validate_review(label: str, item: dict) -> list[str]:
         errors.append(f"{label} has unknown review status: {review.get('status')!r}")
     if not _DATE.match(str(review.get("publishedAt", ""))):
         errors.append(f"{label} review.publishedAt must be YYYY-MM-DD")
-    # Model-written text is escaped on publish; raw markup here means it bypassed that.
+    # Model-written text is sanitized on publish (K6 #256): statistics like "p<0.001" are plain text, tags are not.
     for key, value in item.items():
-        if isinstance(value, str) and "<" in value:
+        if isinstance(value, str) and _TAG.search(value):
             errors.append(f"{label} field {key} contains raw HTML")
     return errors
 

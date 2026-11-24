@@ -56,13 +56,36 @@ def test_topics_keep_treatment_cards_metrics_and_robotic_sections(rows):
     for key, block in RAW.items():
         assert topics[key]["metrics"] == block.get("metrics", {})
         soc = block.get("standard_of_care") or {}
-        assert topics[key]["standard_of_care"] == soc.get("cards", [])
+        expected_cards = [
+            {**card, "body_html": import_content._clean_html(card["body_html"])} for card in soc.get("cards", [])
+        ]
+        assert topics[key]["standard_of_care"] == expected_cards
         assert topics[key]["soc_title"] == soc.get("title")
+        for card in topics[key]["standard_of_care"]:
+            assert card["body_html"] == import_content.sanitize_html(card["body_html"])
+            assert "target=" not in card["body_html"]
+            assert "style=" not in card["body_html"]
     robotic = topics["robotic-surgery"]["robotic_sections"]
     assert [s["slug"] for s in robotic] == ["tme", "anastomosis"]
-    assert robotic[0]["timeline"] == RAW["robotic-surgery"]["tl_tme"]
-    assert robotic[1]["cards"] == RAW["robotic-surgery"]["anast_cards"]
+    assert robotic[0]["timeline"] == [
+        {**item, "finding": import_content.sanitize_html(item["finding"])} for item in RAW["robotic-surgery"]["tl_tme"]
+    ]
+    assert robotic[1]["cards"] == [
+        {**card, "body": import_content._clean_html(card["body"])} for card in RAW["robotic-surgery"]["anast_cards"]
+    ]
     assert any(robotic[0]["detailHtml"])
+
+
+def test_write_layer_sanitizes_html_and_decodes_plain_text():
+    assert import_content.plain_text("HR 0.65, p&lt;.001 &amp; OS") == "HR 0.65, p<.001 & OS"
+    assert import_content.plain_text(42) == 42
+    cleaned = import_content.sanitize_html(
+        '<p style="color:red"><a href="https://example.com" target="_blank">Link</a><script>alert(1)</script></p>'
+    )
+    assert "<script" not in cleaned
+    assert "style=" not in cleaned
+    assert "target=" not in cleaned
+    assert 'href="https://example.com"' in cleaned
 
 
 def test_manifest_is_deterministic_and_tracks_sources(rows):
