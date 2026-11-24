@@ -211,6 +211,21 @@ def test_search_treats_wildcards_literally(client: TestClient) -> None:
     assert get(client, "/search", q="__")["items"] == []
 
 
+def test_search_uses_pg_trgm_indexes(client: TestClient) -> None:
+    """K7 #257: verify the planner uses the partial GIN pg_trgm indexes on app.public_papers and app.public_news."""
+    assert DB_URL
+    with psycopg.connect(API_URL) as conn, conn.transaction():
+        conn.execute("set local enable_seqscan = off")
+        paper_plan = "\n".join(
+            row[0] for row in conn.execute("explain select id from app.public_papers where search_text like '%beacon%'")
+        )
+        news_plan = "\n".join(
+            row[0] for row in conn.execute("explain select id from app.public_news where search_text like '%niche%'")
+        )
+    assert "papers_search_text_trgm_idx" in paper_plan, paper_plan
+    assert "news_search_text_trgm_idx" in news_plan, news_plan
+
+
 # --- withdrawn content ---------------------------------------------------------------------------------------------
 
 
