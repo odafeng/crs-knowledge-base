@@ -4,3 +4,5 @@ openapi-spec-validator==0.9.0
 PyYAML==6.0.3
 # Content import into PostgreSQL (import_content.py, B4).
 psycopg[binary]==3.3.9
+# Web Push sender tests (push/send.py, tests/test_push_send.py).
+pywebpush>=2.0,<3
