@@ -1,0 +1,3 @@
+/* Shared design tokens and typography scales (fonts + light/dark CSS custom properties). */
+@import "../../../../static/styles/fonts.css";
+@import "../../../../static/styles/tokens.css";

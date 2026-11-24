@@ -1,0 +1,78 @@
+/* Print layout (G7 #118): fits each Tumor board sheet cleanly onto one A4 page. */
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+  .site-header,
+  .tabbar,
+  .site-footer,
+  .skip-link,
+  .board__actions {
+    display: none !important;
+  }
+  /* Type sizes are rem-based, so shrink the root; the reader's font-size preference does not apply on paper. */
+  html,
+  html[data-font-size] {
+    font-size: 7.5pt !important;
+  }
+  body {
+    background: #fff !important;
+    display: block !important;
+    min-height: auto !important;
+  }
+  .board {
+    padding: 0;
+    line-height: 1.35;
+  }
+  .board__trials {
+    gap: 0.6mm;
+  }
+  .board__trials li {
+    display: list-item !important;
+    padding: 0;
+    border: 0;
+  }
+  .board__trials li > * {
+    display: inline !important;
+    margin-inline-start: 1.5mm;
+  }
+  .board h1 {
+    font-size: 14pt;
+  }
+  .board h2 {
+    font-size: 10.5pt;
+    margin: 0 0 2mm;
+  }
+  .board h3 {
+    font-size: 9pt;
+    margin: 2mm 0 1mm;
+  }
+  .board section {
+    margin-block-start: 3mm;
+  }
+  .board .page-head {
+    padding: 0;
+    margin: 0;
+    border: 0;
+  }
+  .board table {
+    font-size: 7.5pt;
+  }
+  .board th,
+  .board td {
+    padding: 0.6mm 1.2mm;
+  }
+  .board .table-wrap {
+    overflow: visible;
+  }
+  .scroll-table__hint,
+  .scroll-table::before,
+  .scroll-table::after {
+    display: none !important;
+  }
+  .board a {
+    color: inherit;
+    text-decoration: none;
+  }
+}

@@ -7,6 +7,7 @@ import { AiChip } from "@/components/reading";
 import { needsReview } from "@/lib/review";
 import type { Paper, Topic } from "@/lib/site";
 import { paperLead, paperPath, topicPath } from "@/lib/site";
+import styles from "./drug-evidence.module.css";
 
 export function DrugEvidence({
   papers,
@@ -16,29 +17,29 @@ export function DrugEvidence({
   topicOf: (key: string) => Topic | undefined;
 }) {
   return (
-    <ol className="evidence">
+    <ol className={styles.evidence}>
       {papers.map((paper) => {
         const { summary } = paper;
         const topic = topicOf(paper.topic);
         return (
-          <li className="evidence__study" key={paper.id}>
-            <p className="evidence__when">
-              <span className="evidence__year">{paper.year}</span>
+          <li className={styles.study} key={paper.id}>
+            <p className={styles.when}>
+              <span className={styles.year}>{paper.year}</span>
               <span>{paper.journal}</span>
               <span>{paper.studyType}</span>
               {paper.n != null && <span>n = {paper.n}</span>}
               {topic && <Link href={topicPath(topic)}>{topic.label}</Link>}
             </p>
-            <div className="evidence__body">
-              <h2 className="evidence__title">
+            <div className={styles.body}>
+              <h2 className={styles.title}>
                 <Link href={paperPath(paper)}>{paperLead(paper).title}</Link>
                 {needsReview(paper) && <AiChip label="AI 未審" />}
               </h2>
-              <p className="evidence__takeaway">
+              <p className={styles.takeaway}>
                 <Marked text={paperLead(paper).result} />
               </p>
               {summary ? (
-                <dl className="evidence__facts">
+                <dl className={styles.facts}>
                   <div>
                     <dt>收了誰</dt>
                     <dd>
@@ -49,7 +50,7 @@ export function DrugEvidence({
                     <dt>比什麼</dt>
                     <dd>{summary.comparison}</dd>
                   </div>
-                  <div className="evidence__results">
+                  <div className={styles.results}>
                     <dt>主要結果</dt>
                     <dd>
                       <ul>
@@ -61,7 +62,7 @@ export function DrugEvidence({
                       </ul>
                     </dd>
                   </div>
-                  <div className="evidence__limits">
+                  <div className={styles.limits}>
                     <dt>要小心</dt>
                     <dd>
                       <ul>
@@ -73,7 +74,7 @@ export function DrugEvidence({
                   </div>
                 </dl>
               ) : (
-                <p className="evidence__line">{paper.bottomLine}</p>
+                <p className={styles.line}>{paper.bottomLine}</p>
               )}
             </div>
           </li>

@@ -126,7 +126,7 @@ export default async function PaperPage({ params }: Props) {
                   figures={paperFigures}
                   title="試驗關鍵數據"
                   caption={figureCaption}
-                  className="paper-figure"
+                  spaced
                 />
               )}
               <PaperGlance summary={summary} topic={topic} />
@@ -145,7 +145,7 @@ export default async function PaperPage({ params }: Props) {
                   figures={paperFigures}
                   title="試驗關鍵數據"
                   caption={figureCaption}
-                  className="paper-figure"
+                  spaced
                 />
               )}
             </>

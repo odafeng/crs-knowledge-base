@@ -2,13 +2,14 @@
 // straight from the topic's standardOfCare and regulatory data.
 import { Status } from "@/components/reading";
 import type { TreatmentPathwayModel } from "@/lib/pathway";
+import styles from "./treatment-pathway.module.css";
 
 function Arrow({ label }: { label?: string }) {
   return (
-    <div className="pathway__connector" aria-hidden="true">
-      {label && <span className="pathway__connector-label">{label}</span>}
+    <div className={styles.connector} aria-hidden="true">
+      {label && <span className={styles.connectorLabel}>{label}</span>}
       <svg
-        className="pathway__arrow"
+        className={styles.arrow}
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -22,15 +23,21 @@ function Arrow({ label }: { label?: string }) {
   );
 }
 
+const FLOW_CLASS: Record<TreatmentPathwayModel["flow"], string> = {
+  sequential: styles.sequential,
+  branched: styles.branched,
+  single: styles.single,
+};
+
 export function TreatmentPathway({ model }: { model: TreatmentPathwayModel }) {
   return (
     <section className="page__section" aria-labelledby="pathway">
       <h2 id="pathway">治療路徑與給付節點</h2>
-      <div className={`pathway pathway--${model.flow}`}>
-        <div className="pathway__root">
-          <span className="pathway__root-kicker">分子分型</span>
-          <strong className="pathway__root-name">{model.topicLabel}</strong>
-          <span className="pathway__root-sub">
+      <div className={`${styles.pathway} ${FLOW_CLASS[model.flow]}`}>
+        <div className={styles.root}>
+          <span className={styles.rootKicker}>分子分型</span>
+          <strong className={styles.rootName}>{model.topicLabel}</strong>
+          <span className={styles.rootSub}>
             {model.flow === "branched"
               ? "依分期分流"
               : model.flow === "sequential"
@@ -41,25 +48,25 @@ export function TreatmentPathway({ model }: { model: TreatmentPathwayModel }) {
 
         <Arrow />
 
-        <ol className="pathway__stages">
+        <ol className={styles.stages}>
           {model.stages.map((stage, index) => (
-            <li className="pathway__stage-item" key={stage.id}>
+            <li className={styles.stageItem} key={stage.id}>
               {index > 0 && model.flow === "sequential" && (
                 <Arrow label="惡化／後線" />
               )}
-              <div className="pathway__stage">
-                <div className="pathway__stage-head">
-                  <span className="pathway__badge">{stage.badge}</span>
-                  <a className="pathway__jump" href={`#${stage.id}`}>
+              <div className={styles.stage}>
+                <div className={styles.stageHead}>
+                  <span className={styles.badge}>{stage.badge}</span>
+                  <a className={styles.jump} href={`#${stage.id}`}>
                     看治療說明
                   </a>
                 </div>
-                <h3 className="pathway__stage-title">{stage.title}</h3>
-                <ul className="pathway__regimens">
+                <h3 className={styles.stageTitle}>{stage.title}</h3>
+                <ul className={styles.regimens}>
                   {stage.regimens.map((row) => (
-                    <li className="pathway__regimen" key={row.regimen}>
-                      <p className="pathway__regimen-name">{row.regimen}</p>
-                      <div className="pathway__statuses">
+                    <li className={styles.regimen} key={row.regimen}>
+                      <p className={styles.regimenName}>{row.regimen}</p>
+                      <div className={styles.statuses}>
                         {row.tfda === "none" && row.fda !== "none" && (
                           <Status
                             regulator="fda"
@@ -78,7 +85,7 @@ export function TreatmentPathway({ model }: { model: TreatmentPathwayModel }) {
                           prefix="健保 "
                         />
                         {row.nhiClause && (
-                          <span className="pathway__clause">
+                          <span className={styles.clause}>
                             給付規定 {row.nhiClause}
                           </span>
                         )}
@@ -91,7 +98,7 @@ export function TreatmentPathway({ model }: { model: TreatmentPathwayModel }) {
           ))}
         </ol>
       </div>
-      <p className="pathway__note">
+      <p className={styles.note}>
         路徑與核准／給付狀態取自下方已查核的
         <a href="#reg">核准與給付現況</a>與<a href="#soc">治療現況</a>
         ，臨床決策請依病人個別狀況與現行指引判斷。

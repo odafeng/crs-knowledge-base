@@ -185,7 +185,7 @@ test('Next.js start: reading pages render from the read API', { timeout: 90000 }
     }
     const expectations = {
       '/papers/smoke-beacon/': ['關鍵結果', '試驗設計', '社論', 'https://doi.org/10.1056/x', 'AI 依摘要整理', '收案數'],
-      '/news/smoke-news/': ['二線存活延長', 'class="figure"', 'class="compare"', 'class="meters"', 'interval__point', '看文獻整理'],
+      '/news/smoke-news/': ['二線存活延長', 'data-figure=""', 'data-figure-kind="compare"', 'data-figure-kind="meters"', 'data-figure-part="interval-point"', '看文獻整理'],
       '/mcrc/smoke-braf/': ['核准與給付現況', '有條件給付', '給付規定 9.134', 'BEACON 整理', '二線標準治療'],
       '/robotic/tme/': ['機器手臂 TME', 'ROLARR，轉換率 NS', 'TME 品質', '詳細'],
       '/': ['二線存活延長', '本週新增', '新收錄文獻', '社論標題', '用一句話找證據', '最新核准給付資訊', '2026 年 5 月 1 日', 'DurgFileName=9.134._20260501.pdf', '機器手臂 TME'],

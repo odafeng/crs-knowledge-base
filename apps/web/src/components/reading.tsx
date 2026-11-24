@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PushToggle } from "@/components/push-toggle";
 import { LINE_OA } from "@/lib/line-oa";
 import { pushEnabled } from "@/lib/push";
+import lineStyles from "./line-card.module.css";
 import {
   headline,
   isUnreviewed,
@@ -273,23 +274,23 @@ export function Alerts({ showLine = true }: { showLine?: boolean } = {}) {
       {showLine ? (
         <>
           <h2 id="alerts-title">訂閱新消息</h2>
-          <div className="alerts__line">
+          <div className={lineStyles.alertsLine}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              className="alerts__qr"
+              className={lineStyles.alertsQr}
               src={LINE_OA.qrSrc}
               alt={`掃描加入 GutHub LINE 官方帳號（${LINE_OA.id}）`}
               width={88}
               height={88}
             />
-            <div className="alerts__line-body">
-              <p className="alerts__line-title">LINE 晨間摘要</p>
-              <p className="alerts__line-desc">
+            <div className={lineStyles.alertsLineBody}>
+              <p className={lineStyles.alertsLineTitle}>LINE 晨間摘要</p>
+              <p className={lineStyles.alertsLineDesc}>
                 有新內容才在早上 7 點推一則白話重點（<code>{LINE_OA.id}</code>
                 ）。
               </p>
               <a
-                className="btn btn--primary alerts__line-btn"
+                className={`btn btn--primary ${lineStyles.alertsLineBtn}`}
                 href={LINE_OA.url}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -299,7 +300,9 @@ export function Alerts({ showLine = true }: { showLine?: boolean } = {}) {
               </a>
             </div>
           </div>
-          <div className="alerts__actions alerts__actions--secondary">
+          <div
+            className={`alerts__actions ${lineStyles.alertsActionsSecondary}`}
+          >
             {pushEnabled && <PushToggle icon={<Icon name="bell" />} />}
             <a className="btn btn--secondary" href={NEWS_FEED}>
               <Icon name="rss" />

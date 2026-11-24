@@ -1,0 +1,135 @@
+/* LINE Official Account card on /subscribe/#line and compact QR row inside home Alerts */
+.lineCard {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--brand);
+  border-radius: 2px var(--radius-card) var(--radius-card) 2px;
+  box-shadow: var(--shadow-1);
+}
+.body {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+}
+.kicker {
+  color: var(--brand);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.body h2 {
+  font-size: var(--text-xl);
+  line-height: 1.3;
+}
+.text {
+  max-width: var(--measure);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+}
+.id {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+.id code,
+.alertsLineDesc code {
+  padding: 0.08rem 0.35rem;
+  border-radius: 4px;
+  background: var(--sunken);
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+}
+.qr {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: var(--space-2);
+  justify-self: start;
+  padding: var(--space-3);
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+.qr img {
+  display: block;
+  width: 9.75rem;
+  height: 9.75rem;
+  background: #ffffff;
+  border-radius: 6px;
+}
+.qr figcaption {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+@media (min-width: 640px) {
+  .lineCard {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    padding: var(--space-6);
+  }
+  .qr {
+    justify-self: end;
+  }
+}
+
+.alertsLine {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+}
+.alertsQr {
+  display: block;
+  width: 5.5rem;
+  height: 5.5rem;
+  padding: 0.25rem;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  flex: none;
+}
+.alertsLineBody {
+  display: grid;
+  gap: 0.375rem;
+  min-width: 0;
+}
+.alertsLineTitle {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.3;
+}
+.alertsLineDesc {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: 1.55;
+}
+:global(.btn).alertsLineBtn {
+  justify-self: start;
+  min-height: 2.25rem;
+  padding-inline: var(--space-3);
+  margin-block-start: 0.125rem;
+  font-size: var(--text-xs);
+}
+.alertsActionsSecondary {
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--line);
+}
+@media (max-width: 400px) {
+  .alertsLine {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+  }
+}

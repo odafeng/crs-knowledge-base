@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AiChip } from "@/components/reading";
 import { shortDate, type TickerItem } from "@/lib/daily";
+import styles from "./recent-news-ticker.module.css";
 
 const INTERVAL_MS = 6000;
 
@@ -47,7 +48,7 @@ export function RecentNewsTicker({ items }: { items: readonly TickerItem[] }) {
 
   return (
     <section
-      className="daily"
+      className={`daily ${styles.daily}`}
       aria-labelledby="daily-title"
       onMouseEnter={() => setInteracting(true)}
       onMouseLeave={() => setInteracting(false)}
@@ -58,55 +59,55 @@ export function RecentNewsTicker({ items }: { items: readonly TickerItem[] }) {
         }
       }}
     >
-      <div className="container daily__inner">
-        <h2 className="daily__label" id="daily-title">
-          <span className="daily__dot" aria-hidden="true" />
+      <div className={`container ${styles.inner}`}>
+        <h2 className={styles.label} id="daily-title">
+          <span className={styles.dot} aria-hidden="true" />
           近期新聞
         </h2>
 
-        <div className="daily__stage">
+        <div className={styles.stage}>
           <div
             className={
-              animated ? "daily__main daily__main--enter" : "daily__main"
+              animated ? `${styles.main} ${styles.mainEnter}` : styles.main
             }
             key={active.id}
           >
-            <p className="daily__title">
-              <time className="daily__date" dateTime={active.date}>
+            <p className={styles.title}>
+              <time className={styles.date} dateTime={active.date}>
                 {shortDate(active.date)}
               </time>
               {active.topicLabel && (
-                <span className="daily__topic">{active.topicLabel}</span>
+                <span className={styles.topic}>{active.topicLabel}</span>
               )}
               <Link href={active.url}>{active.title}</Link>
               {active.unreviewed && <AiChip label="AI 未審" />}
             </p>
             {active.summary && (
-              <p className="daily__conclusion">{active.summary}</p>
+              <p className={styles.conclusion}>{active.summary}</p>
             )}
           </div>
         </div>
 
         {count > 1 && (
           <div
-            className="daily__controls"
+            className={styles.controls}
             role="group"
             aria-label="切換近期新聞"
           >
             <button
               type="button"
-              className="daily__ctrl"
+              className={styles.ctrl}
               aria-label="上一則近期新聞"
               onClick={() => step(-1)}
             >
               ‹
             </button>
-            <span className="daily__counter" aria-hidden="true">
+            <span className={styles.counter} aria-hidden="true">
               {safeIndex + 1}/{count}
             </span>
             <button
               type="button"
-              className="daily__ctrl"
+              className={styles.ctrl}
               aria-label="下一則近期新聞"
               onClick={() => step(1)}
             >
@@ -114,7 +115,7 @@ export function RecentNewsTicker({ items }: { items: readonly TickerItem[] }) {
             </button>
             <button
               type="button"
-              className="daily__ctrl daily__ctrl--pause"
+              className={`${styles.ctrl} ${styles.ctrlPause}`}
               aria-label={paused ? "繼續輪播" : "暫停輪播"}
               aria-pressed={paused}
               onClick={() => setPaused((p) => !p)}
