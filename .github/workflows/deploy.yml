@@ -225,9 +225,9 @@ jobs:
 
       # Paper Watch calls a paid model and opens GitHub issues, so it stays off until the maintainer provides its
       # secrets and sets PAPER_WATCH_ENABLED=true in the GitHub environment (E3 #76). Staging runs it as a dry run.
-      # One schedule at 16:00 Taiwan time: --scheduled runs the full scan on Tuesday and Friday and the
-      # conference-season scan on other days, as the paper-watch.yml crons did before cutover. The maintainer's own
-      # LINE notification (not the GutHub reader account) needs its own two secrets and PAPER_WATCH_LINE_NOTIFY=true.
+      # Daily schedule at 16:00 Taiwan time: --scheduled runs the full scan every day (K1 #251), adding conference
+      # abstract supplements automatically during conference season. The maintainer's own LINE notification (not the
+      # GutHub reader account) needs its own two secrets and PAPER_WATCH_LINE_NOTIFY=true.
       - name: Deploy the Paper Watch job
         if: vars.PAPER_WATCH_ENABLED == 'true'
         env:

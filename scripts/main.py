@@ -25,6 +25,7 @@ from create_issues import create_commentary_review_issue, create_issues
 from digest import accepted_digests, create_digest_issue, finish, picked
 from fetch_pubmed import efetch, fetch_pubmed, resolve_dois
 from fetch_rss import AllFeedsFailedError, fetch_rss
+from news_writer import write_news_for_new
 from notify_line import notify_papers
 from paper_summary import summarize_new
 from provenance import abstract_status, evaluate_commentary_gate, evaluate_paper_gate
@@ -290,8 +291,9 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False, r
         published, held = publish_or_hold(classified, today_str, dry_run)
         print(f"\n[Pipeline] {len(published)} published, {len(held)} held for review")
         create_issues(held, dry_run=dry_run)
-        if not dry_run:  # the at-a-glance summary of each new paper (I2 #191)
+        if not dry_run:  # the at-a-glance summary of each new paper (I2 #191) and auto news (K2 #252)
             summarize_new([p["kb_id"] for p in published if p.get("kb_id")])
+            write_news_for_new(published, today=today_str)
 
         # LINE notification for all high-relevance papers
         print()

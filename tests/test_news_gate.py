@@ -50,3 +50,9 @@ def test_a_count_the_writer_made_up_is_reported():
 def test_the_same_number_written_two_ways_matches():
     assert numbers("4.0 個月、4 個月、0.490") == {"4", "0.49"}
     assert unsupported(_story(dek="mOS 30.30 個月。"), PAPER) == []
+
+
+def test_optional_figure_note_may_be_omitted():
+    story = _story()
+    del story["figureNote"]
+    assert unsupported(story, PAPER) == []

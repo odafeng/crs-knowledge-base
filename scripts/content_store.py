@@ -28,7 +28,7 @@ from typing import Any, Literal
 
 from publish import KB, ROOT, WRITER_FILE, PublishError, json_writer_active
 
-Action = Literal["publish_paper", "publish_commentary", "unpublish", "review", "summarize"]
+Action = Literal["publish_paper", "publish_commentary", "publish_news", "unpublish", "review", "summarize"]
 DATABASE_ENV = "GUTHUB_CONTENT_DATABASE_URL"
 
 

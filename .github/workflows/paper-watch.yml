@@ -2,10 +2,8 @@ name: Paper Watch
 
 on:
   schedule:
-    # Regular scan: Tuesday & Friday at UTC 08:00 (Taiwan 16:00)
-    - cron: '0 8 * * 2,5'
-    # Daily scan: for conference season (script auto-skips if not in season)
-    - cron: '0 8 * * 1,3,4,6,0'
+    # Daily full scan at UTC 08:00 (Taiwan 16:00) (K1 #251)
+    - cron: '0 8 * * *'
   workflow_dispatch:
     inputs:
       topic:
@@ -48,20 +46,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r scripts/requirements.txt
 
-      - name: Determine scan mode
-        id: mode
-        run: |
-          # Tuesday & Friday = regular full scan
-          # Other days = daily (conference season only)
-          # Manual runs always do a full scan; otherwise a non-Tue/Fri manual run outside
-          # conference season would skip everything.
-          DOW=$(date +%u)
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$DOW" = "2" ] || [ "$DOW" = "5" ]; then
-            echo "daily=false" >> $GITHUB_OUTPUT
-          else
-            echo "daily=true" >> $GITHUB_OUTPUT
-          fi
-
       - name: Configure git
         run: |
           git config user.name "paper-watch[bot]"
@@ -78,9 +62,6 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           ARGS=""
-          if [ "${{ steps.mode.outputs.daily }}" = "true" ]; then
-            ARGS="$ARGS --daily"
-          fi
           if [ -n "${{ inputs.topic }}" ]; then
             ARGS="$ARGS --topic ${{ inputs.topic }}"
           fi
