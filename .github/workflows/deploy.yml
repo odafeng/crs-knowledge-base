@@ -83,6 +83,16 @@ jobs:
           docker push "$IMAGES/api:$GITHUB_SHA"
           docker push "$IMAGES/worker:$GITHUB_SHA"
 
+      # Re-sanitize existing DB HTML/text with the full nh3 allowlist before the API drops read-time cleaning (K6 #256).
+      - name: Sanitize existing database content
+        run: |
+          PASSWORD=$(gcloud secrets versions access latest --secret=supabase-db-password --project="$PROJECT")
+          echo "::add-mask::$PASSWORD"
+          docker run --rm --entrypoint python \
+            -e GUTHUB_IMPORT_DATABASE_URL="postgresql://postgres.${SUPABASE_REF}:${PASSWORD}@${SUPABASE_POOLER}:5432/postgres?sslmode=require" \
+            "$IMAGES/worker:$GITHUB_SHA" \
+            /app/import_content.py --sanitize-existing
+
       # Public read API; writes need a Supabase session. Small instance limits keep each project inside its budget.
       - name: Deploy the API
         env:

@@ -1,14 +1,13 @@
-"""Public read endpoints for papers, news, topics and search (B5 #62).
+"""Public read endpoints for papers, news, topics and search (B5 #62, K6 #256).
 
-Reads only the app.public_* views, so withdrawn content never leaves the database. Every HTML field is sanitized
-with an allowlist built from the tags the knowledge base actually uses.
+Reads only the app.public_* views, so withdrawn content never leaves the database. Rich HTML fields are sanitized
+at write time with the allowlist below (import_content.py) and plain-text columns are stored unescaped in PostgreSQL.
 """
 
 import base64
 import binascii
 import json
 from datetime import date
-from html import unescape
 from typing import Annotated, Any, Literal, LiteralString, get_args
 
 import nh3
@@ -134,7 +133,7 @@ def _papers(db: Conn, rows: list[dict[str, Any]], *, include_detail: bool = True
             **({"addedAt": _iso(row["added_at"])} if row["added_at"] else {}),
             **_review(row),
             "commentary": commentary.get(row["id"], []),
-            "detailHtml": clean(row["detail_html"]) if include_detail else "",
+            "detailHtml": row["detail_html"] if include_detail else "",
             **({"summary": row["summary"]} if row["summary"] else {}),
         }
         for row in rows
@@ -168,16 +167,8 @@ def _topic(row: dict[str, Any]) -> dict[str, Any]:
         "label": row["label"],
         "title": row["title"],
         "paperCount": row["paper_count"],
-        "standardOfCare": [{**card, "body_html": clean(card["body_html"])} for card in row["standard_of_care"]],
-        "roboticSections": [
-            {
-                **section,
-                "timeline": [{**item, "finding": clean(item["finding"])} for item in section["timeline"]],
-                "cards": [{**card, "body": clean(card["body"])} for card in section["cards"]],
-                "detailHtml": [clean(html) for html in section["detailHtml"]],
-            }
-            for section in row["robotic_sections"]
-        ],
+        "standardOfCare": row["standard_of_care"],
+        "roboticSections": row["robotic_sections"],
     }
 
 
@@ -317,8 +308,8 @@ def search(
             "kind": row["kind"],
             "id": row["id"],
             "path": row["path"],
-            "title": unescape(row["title"]),
-            "summary": unescape(row["summary"]),
+            "title": row["title"],
+            "summary": row["summary"],
         }
         for row in rows
     ]

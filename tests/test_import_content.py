@@ -56,13 +56,36 @@ def test_topics_keep_treatment_cards_metrics_and_robotic_sections(rows):
     for key, block in RAW.items():
         assert topics[key]["metrics"] == block.get("metrics", {})
         soc = block.get("standard_of_care") or {}
-        assert topics[key]["standard_of_care"] == soc.get("cards", [])
+        expected_cards = [
+            {**card, "body_html": import_content._clean_html(card["body_html"])} for card in soc.get("cards", [])
+        ]
+        assert topics[key]["standard_of_care"] == expected_cards
         assert topics[key]["soc_title"] == soc.get("title")
+        for card in topics[key]["standard_of_care"]:
+            assert card["body_html"] == import_content.sanitize_html(card["body_html"])
+            assert "target=" not in card["body_html"]
+            assert "style=" not in card["body_html"]
     robotic = topics["robotic-surgery"]["robotic_sections"]
     assert [s["slug"] for s in robotic] == ["tme", "anastomosis"]
-    assert robotic[0]["timeline"] == RAW["robotic-surgery"]["tl_tme"]
-    assert robotic[1]["cards"] == RAW["robotic-surgery"]["anast_cards"]
+    assert robotic[0]["timeline"] == [
+        {**item, "finding": import_content.sanitize_html(item["finding"])} for item in RAW["robotic-surgery"]["tl_tme"]
+    ]
+    assert robotic[1]["cards"] == [
+        {**card, "body": import_content._clean_html(card["body"])} for card in RAW["robotic-surgery"]["anast_cards"]
+    ]
     assert any(robotic[0]["detailHtml"])
+
+
+def test_write_layer_sanitizes_html_and_decodes_plain_text():
+    assert import_content.plain_text("HR 0.65, p&lt;.001 &amp; OS") == "HR 0.65, p<.001 & OS"
+    assert import_content.plain_text(42) == 42
+    cleaned = import_content.sanitize_html(
+        '<p style="color:red"><a href="https://example.com" target="_blank">Link</a><script>alert(1)</script></p>'
+    )
+    assert "<script" not in cleaned
+    assert "style=" not in cleaned
+    assert "target=" not in cleaned
+    assert 'href="https://example.com"' in cleaned
 
 
 def test_manifest_is_deterministic_and_tracks_sources(rows):
@@ -208,10 +231,17 @@ def test_import_round_trips_every_paper_and_story(conn, rows):
     assert topics.keys() == RAW.keys()
     for key, block in RAW.items():
         soc = block.get("standard_of_care") or {}
-        assert topics[key][:3] == (soc.get("cards", []), soc.get("title"), block.get("metrics")), key
+        expected_cards = [
+            {**card, "body_html": import_content._clean_html(card["body_html"])} for card in soc.get("cards", [])
+        ]
+        assert topics[key][:3] == (expected_cards, soc.get("title"), block.get("metrics")), key
     robotic = {section["slug"]: section for section in topics["robotic-surgery"][3]}
-    assert robotic["tme"]["timeline"] == RAW["robotic-surgery"]["tl_tme"]
-    assert robotic["anastomosis"]["cards"] == RAW["robotic-surgery"]["anast_cards"]
+    assert robotic["tme"]["timeline"] == [
+        {**item, "finding": import_content.sanitize_html(item["finding"])} for item in RAW["robotic-surgery"]["tl_tme"]
+    ]
+    assert robotic["anastomosis"]["cards"] == [
+        {**card, "body": import_content._clean_html(card["body"])} for card in RAW["robotic-surgery"]["anast_cards"]
+    ]
 
 
 @needs_db
@@ -279,3 +309,43 @@ def test_dry_run_reports_changes_but_writes_nothing(conn, rows):
     with conn.cursor() as cur:
         cur.execute("select count(*) from app.papers")
         assert cur.fetchone() == (0,)
+
+
+@needs_db
+def test_sanitize_existing_scrubs_legacy_xss_and_entities(conn, rows):
+    from psycopg.types.json import Jsonb
+
+    apply(conn, rows)
+    paper_id = rows.tables["papers"][0]["id"]
+    with conn.cursor() as cur:
+        cur.execute(
+            "update app.papers set result = %s, detail_html = %s where id = %s",
+            (
+                "HR 0.65, p&lt;0.001 &amp; OS",
+                '<p style="color:red"><img src=x onerror=alert(1)><a href="javascript:alert(1)">bad</a>'
+                '<a href="https://example.com" target="_blank">ok</a></p>',
+                paper_id,
+            ),
+        )
+        cur.execute(
+            "update app.topics set standard_of_care = %s where key = 'mCRC-BRAF-V600E'",
+            (Jsonb([{"title": "t", "icon": "i", "body_html": "<img src=x onerror=alert(1)><p>safe</p>"}]),),
+        )
+    updated = import_content.sanitize_existing(conn)
+    assert updated["papers"] == 1
+    assert updated["topics"] == 1
+    with conn.cursor() as cur:
+        cur.execute("select result, detail_html from app.papers where id = %s", (paper_id,))
+        result, detail_html = cur.fetchone()
+        cur.execute("select standard_of_care from app.topics where key = 'mCRC-BRAF-V600E'")
+        soc = cur.fetchone()[0]
+    assert result == "HR 0.65, p<0.001 & OS"
+    assert "<img" not in detail_html
+    assert "onerror" not in detail_html
+    assert "javascript:" not in detail_html
+    assert "style=" not in detail_html
+    assert "target=" not in detail_html
+    assert 'href="https://example.com"' in detail_html
+    assert soc[0]["body_html"] == "<p>safe</p>"
+    # Idempotent on a second pass.
+    assert import_content.sanitize_existing(conn) == {"papers": 0, "research_commentary": 0, "topics": 0}

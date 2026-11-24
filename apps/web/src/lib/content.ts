@@ -1,7 +1,7 @@
 // Server-side reads for the public pages: ISR fetches against the FastAPI read API (ADR-0015, B5).
 import { apiError } from "./api";
 import type { DailyPick } from "./daily";
-import { decodeEntities, type News, type Paper, type Topic } from "./site";
+import type { News, Paper, Topic } from "./site";
 
 /** Public content cache TTL (1 hour, K3 #253). Writes purge immediately via POST /api/revalidate using CONTENT_TAG. */
 export const REVALIDATE_SECONDS = 3600;
@@ -77,33 +77,12 @@ export async function listAll<T>(
   return items;
 }
 
-// The pipeline stores these fields HTML-escaped (scripts/publish.py), so "p<0.001" arrives as "p&lt;0.001". React
-// escapes text again, so they are decoded here once for every page, feed and the search index, as sitegen's loader
-// does with html.unescape.
-const ESCAPED = [
-  "journal",
-  "regimen",
-  "endpoint",
-  "result",
-  "bottomLine",
-] as const;
-
-export function decodePaper(paper: Paper): Paper {
-  const decoded = { ...paper };
-  for (const field of ESCAPED)
-    if (typeof paper[field] === "string")
-      decoded[field] = decodeEntities(paper[field]);
-  return decoded;
-}
-
-export const listPapers = async (options?: Options) =>
-  (
-    await listAll<Paper>("/papers", {
-      ...options,
-      tags: [CONTENT_TAGS.papers, ...(options?.tags ?? [])],
-      params: { includeDetail: "false", ...(options?.params ?? {}) },
-    })
-  ).map(decodePaper);
+export const listPapers = (options?: Options) =>
+  listAll<Paper>("/papers", {
+    ...options,
+    tags: [CONTENT_TAGS.papers, ...(options?.tags ?? [])],
+    params: { includeDetail: "false", ...(options?.params ?? {}) },
+  });
 export const listNews = (options?: Options) =>
   listAll<News>("/news", {
     ...options,
@@ -147,17 +126,18 @@ export async function getPaperBySlug(
       },
     },
   );
-  if (response.ok) return decodePaper((await response.json()) as Paper);
+  if (response.ok) return (await response.json()) as Paper;
   const error = await apiError(response, "無法載入內容，請稍後再試。");
   if (error.status === 404 && error.code === "not_found") {
     if (error.message === "Not Found") {
-      const legacy = (
-        await listAll<Paper>("/papers", {
-          ...options,
-          tags: [CONTENT_TAGS.papers, `paper:${slug}`, ...(tags ?? [])],
-        })
-      ).find((paper) => paper.slug === slug);
-      return legacy ? decodePaper(legacy) : null;
+      return (
+        (
+          await listAll<Paper>("/papers", {
+            ...options,
+            tags: [CONTENT_TAGS.papers, `paper:${slug}`, ...(tags ?? [])],
+          })
+        ).find((paper) => paper.slug === slug) ?? null
+      );
     }
     return null;
   }

@@ -1421,7 +1421,7 @@
         "n": 800,
         "regimen": "Trifluridine/tipiracil (TAS-102) vs placebo (refractory mCRC)",
         "endpoint": "OS",
-        "result": "mOS 7.1 vs 5.3 mo (HR 0.68, 95% CI 0.58–0.81, p&lt;0.001); neutropenia 38%, febrile neutropenia 4%",
+        "result": "mOS 7.1 vs 5.3 mo (HR 0.68, 95% CI 0.58–0.81, p<0.001); neutropenia 38%, febrile neutropenia 4%",
         "bottomLine": "確立 trifluridine/tipiracil 在難治 mCRC 的 OS 獲益；主要毒性是骨髓抑制，尤其嗜中性球低下。",
         "doi": "10.1056/NEJMoa1414325",
         "file": "docs/generic-CRS/Mayer_NEJM_2015_RECOURSE.html",
@@ -1466,7 +1466,7 @@
         "n": "246 per arm",
         "regimen": "FTD-TPI + bevacizumab vs FTD-TPI (refractory mCRC)",
         "endpoint": "OS",
-        "result": "mOS 10.8 vs 7.5 mo (HR 0.61, 95% CI 0.49–0.77, p&lt;0.001); mPFS 5.6 vs 2.4 mo (HR 0.44)",
+        "result": "mOS 10.8 vs 7.5 mo (HR 0.61, 95% CI 0.49–0.77, p<0.001); mPFS 5.6 vs 2.4 mo (HR 0.44)",
         "bottomLine": "FTD-TPI 加上 bevacizumab 比單用 FTD-TPI 延長 OS 與 PFS，成為三線常用組合。",
         "doi": "10.1056/NEJMoa2214963",
         "file": "docs/generic-CRS/Prager_NEJM_2023_SUNLIGHT.html",
@@ -1491,7 +1491,7 @@
         "n": 416,
         "regimen": "Fruquintinib 5 mg vs placebo (China, after ≥2 lines of chemotherapy)",
         "endpoint": "OS",
-        "result": "mOS 9.3 vs 6.6 mo (HR 0.65, 95% CI 0.51–0.83, p&lt;.001); mPFS 3.7 vs 1.8 mo (HR 0.26); G3–4 TEAE 61.2% vs 19.7%",
+        "result": "mOS 9.3 vs 6.6 mo (HR 0.65, 95% CI 0.51–0.83, p<.001); mPFS 3.7 vs 1.8 mo (HR 0.26); G3–4 TEAE 61.2% vs 19.7%",
         "bottomLine": "中國族群證實 fruquintinib 延長 OS；作者指出需要中國以外的資料，之後由 FRESCO-2 補上。",
         "doi": "10.1001/jama.2018.7855",
         "file": "docs/generic-CRS/Li_JAMA_2018_FRESCO.html",
@@ -1511,7 +1511,7 @@
         "n": 691,
         "regimen": "Fruquintinib 5 mg vs placebo (+BSC, after FTD-TPI and/or regorafenib)",
         "endpoint": "OS",
-        "result": "mOS 7.4 vs 4.8 mo (HR 0.66, 95% CI 0.55–0.80, p&lt;0.0001); median 4 prior lines; G3+ AEs 63% vs 50%",
+        "result": "mOS 7.4 vs 4.8 mo (HR 0.66, 95% CI 0.55–0.80, p<0.0001); median 4 prior lines; G3+ AEs 63% vs 50%",
         "bottomLine": "在用過 FTD-TPI 或 regorafenib 的國際族群，fruquintinib 仍延長 OS，可作為更後線的選項。",
         "doi": "10.1016/S0140-6736(23)00772-9",
         "file": "docs/generic-CRS/Dasari_Lancet_2023_FRESCO2.html",
@@ -1916,7 +1916,7 @@
       {
         "title": "ICA vs ECA Meta-analysis（IJCD 2023, 7 RCTs）",
         "tag": "ICA vs ECA",
-        "body": "\n    <p>7 個 RCT 的統合分析（N=750），比較腹腔內吻合 vs 體外吻合</p>\n    <table>\n      <tr><th>指標</th><th>ICA 優勢？</th><th>效果量</th></tr>\n      <tr><td>術後腸阻塞</td><td>&#x2713;</td><td>RR 0.62, p=0.04</td></tr>\n      <tr><td>切口長度</td><td>&#x2713;</td><td>-1.38 cm, p&lt;0.00001</td></tr>\n      <tr><td>手術時間</td><td>&#x2717;</td><td>+10.7 min, p=0.008</td></tr>\n      <tr><td>滲漏率</td><td>—</td><td>NS</td></tr>\n      <tr><td>住院天數</td><td>—</td><td>NS</td></tr>\n    </table>\n    <p><a href=\"https://doi.org/10.1007/s00384-023-04445-2\" target=\"_blank\" rel=\"noopener noreferrer\">&#x1F4C4; DOI: 10.1007/s00384-023-04445-2</a></p>"
+        "body": "\n    <p>7 個 RCT 的統合分析（N=750），比較腹腔內吻合 vs 體外吻合</p>\n    <table>\n      <tr><th>指標</th><th>ICA 優勢？</th><th>效果量</th></tr>\n      <tr><td>術後腸阻塞</td><td>&#x2713;</td><td>RR 0.62, p=0.04</td></tr>\n      <tr><td>切口長度</td><td>&#x2713;</td><td>-1.38 cm, p<0.00001</td></tr>\n      <tr><td>手術時間</td><td>&#x2717;</td><td>+10.7 min, p=0.008</td></tr>\n      <tr><td>滲漏率</td><td>—</td><td>NS</td></tr>\n      <tr><td>住院天數</td><td>—</td><td>NS</td></tr>\n    </table>\n    <p><a href=\"https://doi.org/10.1007/s00384-023-04445-2\" target=\"_blank\" rel=\"noopener noreferrer\">&#x1F4C4; DOI: 10.1007/s00384-023-04445-2</a></p>"
       },
       {
         "title": "Robotic ICA vs ECA RCT（Ann Surg 2022）",

@@ -35,7 +35,7 @@
     },
     "expected_entry": {
       "id": "contract-paper", "year": 2026, "journal": "Test Journal", "studyType": "Phase 2",
-      "n": 56, "regimen": "Synthetic drug &lt;script&gt;alert('test')&lt;/script&gt;", "endpoint": "pMR",
+      "n": 56, "regimen": "Synthetic drug", "endpoint": "pMR",
       "result": "pMR 36%", "bottomLine": "pMR 36%", "doi": "10.9999/guthub-contract",
       "file": "docs/mCRC-MSI-H/Contract_2026.html", "relations": [{"targetId": "contract-target", "type": "builds_on"}],
       "source": "abstract", "reviewedAt": "2026-11-16", "review": {"status": "auto", "publishedAt": "2026-11-16"}

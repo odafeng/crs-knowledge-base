@@ -2,7 +2,6 @@
 // sitemap.py. Feed IDs must never change: readers would see every old item as new.
 import type { Metadata } from "next";
 import {
-  decodeEntities,
   isUnreviewed,
   NEWS_FEED,
   feedPath,
@@ -141,14 +140,14 @@ const scholarly = (paper: Paper) =>
         sameAs: `https://doi.org/${paper.doi}`,
         isPartOf: {
           "@type": "Periodical",
-          name: decodeEntities(paper.journal),
+          name: paper.journal,
         },
         datePublished: String(paper.year),
       }
     : undefined;
 
 const title = (paper: Paper) =>
-  `${decodeEntities(paper.regimen)}（${decodeEntities(paper.journal)} ${paper.year}）`;
+  `${paper.regimen}（${paper.journal} ${paper.year}）`;
 
 export function paperJsonLd(
   paper: Paper,
@@ -157,7 +156,7 @@ export function paperJsonLd(
 ): Graph {
   const data = pageJsonLd(
     title(paper),
-    decodeEntities(paper.bottomLine),
+    paper.bottomLine,
     paperPath(paper),
     crumbs,
     paper.reviewedAt,
@@ -236,15 +235,7 @@ export function stream(
       summary: item.dek,
       kind: "news" as const,
     }));
-  const rows = [...stories, ...updates(papers)].map((row) =>
-    row.kind === "news"
-      ? row
-      : {
-          ...row,
-          title: decodeEntities(row.title),
-          summary: decodeEntities(row.summary),
-        },
-  );
+  const rows = [...stories, ...updates(papers)];
   // Array.prototype.sort is stable, like Python's sorted(..., reverse=True) on the date alone.
   return rows.sort((a, b) => b.date.localeCompare(a.date));
 }

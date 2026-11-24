@@ -3,7 +3,6 @@ import { ApiError } from "./api";
 import {
   CONTENT_TAG,
   CONTENT_TAGS,
-  decodePaper,
   getNews,
   getPaperBySlug,
   listAll,
@@ -40,7 +39,7 @@ describe("server content reads", () => {
           {
             id: "kn177",
             slug: "kn177",
-            regimen: "A &amp; B",
+            regimen: "A & B",
             detailHtml: "",
           },
         ],
@@ -66,7 +65,7 @@ describe("server content reads", () => {
       Response.json({
         id: "STELLAR303_Lancet_2025",
         slug: "stellar303-lancet-2025",
-        regimen: "A &amp; B",
+        regimen: "A & B",
         detailHtml: "<p>full</p>",
       }),
     );
@@ -191,23 +190,5 @@ describe("server content reads", () => {
     vi.stubEnv("GUTHUB_API_URL", "");
     await expect(getNews("x")).rejects.toThrow("GUTHUB_API_URL is not set");
     vi.unstubAllEnvs();
-  });
-
-  it("decodes the escaped text fields once, as sitegen does", () => {
-    const paper = {
-      id: "fresco",
-      regimen: "A &amp; B",
-      journal: "JAMA",
-      endpoint: "OS",
-      result: "HR 0.65, p&lt;.001",
-      bottomLine: "&lt;5% 差異",
-      detailHtml: "<p>p&lt;.001</p>",
-    } as unknown as Parameters<typeof decodePaper>[0];
-    expect(decodePaper(paper)).toMatchObject({
-      regimen: "A & B",
-      result: "HR 0.65, p<.001",
-      bottomLine: "<5% 差異",
-      detailHtml: "<p>p&lt;.001</p>", // HTML stays HTML
-    });
   });
 });
