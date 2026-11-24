@@ -287,14 +287,12 @@ select * from (
            as title,
          '最新消息 · ' || t.label as summary, 0 as rank, n.published_at as sort_date, n.id as sort_id
   from app.public_news n join app.papers p on p.id = n.paper_id join app.topics t on t.key = p.topic_key
-  where lower(concat_ws(' ', (select string_agg(part, '') from jsonb_array_elements_text(n.headline) part), n.dek,
-                        (select string_agg(s->>'text', ' ') from jsonb_array_elements(n.body) s))) like %(pattern)s
+  where n.search_text like %(pattern)s
   union all
   select 'paper', p.id, '/papers/' || p.slug || '/', p.regimen || '（' || p.journal || ' ' || p.year || '）',
          t.label || ' · ' || p.study_type, 1, make_date(p.year, 1, 1), p.id
   from app.public_papers p join app.topics t on t.key = p.topic_key
-  where lower(concat_ws(' ', p.id, p.regimen, p.journal, p.year::text, t.label, p.study_type, p.endpoint, p.result,
-                        p.bottom_line)) like %(pattern)s
+  where p.search_text like %(pattern)s
 ) hits
 order by rank, sort_date desc, sort_id
 limit %(limit)s offset %(offset)s
