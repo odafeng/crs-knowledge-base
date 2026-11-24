@@ -45,99 +45,96 @@ _PAPERS_JS, _METRICS_JS = _load_papers_json()
 
 _TOPIC_CONTEXTS = {
     "mCRC-BRAF-V600E": """## BRAF V600E mCRC 治療演進
-- BEACON (2019-2021): 確立二線 encorafenib+cetuximab (EC) doublet 為標準
-- BREAKWATER (2025-2026): 一線 EC+化療，mOS 30.3 mo，首次讓 BRAF V600E 追上 wt 的存活
-- 已有 ctDNA dynamics、subsequent therapy、FOLFIRI cohort 的子分析
-- 關鍵問題：最佳化療骨幹選擇、biomarker-driven sequencing、抗藥機制
+- BEACON (2019–2021): 確立二線 encorafenib+cetuximab (EC) doublet 為標準
+- BREAKWATER (NEJM/Nat Med 2025): 一線 EC+mFOLFOX6，mOS 30.3 vs 15.1 mo（HR 0.49），已成一線標準；另已收錄 ctDNA dynamics、subsequent therapy 及 Cohort 3 EC+FOLFIRI（ASCO GI 2026）
+- NCCN Colon Cancer v3.2026 已納入最新一線與後線建議
+- 關鍵問題：最佳化療骨幹選擇（FOLFOX vs FOLFIRI）、biomarker-driven sequencing、抗藥機制、術前／輔助期角色
 
 值得注意的里程碑類型：
-- 新的 BREAKWATER cohort/長期追蹤
-- 非 EC 的 BRAF 標靶（如 dabrafenib/trametinib combo）
-- BRAF V600E 在 neoadjuvant 或 perioperative 場景的應用
-- ctDNA-guided 治療決策的前瞻性驗證""",
+- BREAKWATER Cohort 3 或更長期存活／生物標記追蹤
+- 非 EC 的新世代 BRAF 抑制劑或合併方案（如 paradox breaker、MEK/ERK 組合）
+- BRAF V600E 在 neoadjuvant 或 perioperative 場景的前瞻性數據
+- ctDNA-guided 治療決策與抗藥後接續治療""",
     "mCRC-KRAS-G12C": """## KRAS G12C mCRC 治療演進
-- CodeBreaK 101/300: sotorasib+panitumumab 是首個 Phase 3 陽性結果（PFS HR 0.49）
-- KRYSTAL-1: adagrasib+cetuximab ORR 46%，已獲 FDA 加速核准
-- Divarasib+cetuximab: 早期數據 ORR 62.5%，待 RCT 確認
-- 所有 G12C 抑制劑+anti-EGFR 的組合都優於單藥
-- 關鍵問題：OS 獲益確認、最佳組合、抗藥機制、一線推進
+- CodeBreaK 101/300 (NEJM 2023; 最終 OS 分析 JCO 2025): sotorasib+panitumumab 確認 Phase 3 PFS 獲益（HR 0.49）
+- KRYSTAL-1 (NEJM 2022; 擴大世代 Cancer Discov 2024): adagrasib+cetuximab ORR 46%，獲 FDA 加速核准
+- Divarasib+cetuximab (Nat Med 2023): 早期數據 ORR 62.5%，待 Phase 3 確認
+- Ifebemtinib (FAK 抑制劑) + garsorasib (Lancet Oncol 2026): 探索抗藥克服與合併策略
+- 關鍵問題：OS 獲益確認、一線與化療合併（如 CodeBreaK 301 / KRYSTAL-10）、抗藥機制與新一代抑制劑
 
 值得注意的里程碑類型：
-- CodeBreaK 300 最終 OS 分析
-- Divarasib Phase 3 RCT 結果
-- 新一代共價/非共價 G12C 抑制劑
-- G12C 在一線治療的探索""",
+- KRYSTAL-10 或一線 KRAS G12C + anti-EGFR + 化療 Phase 3 RCT
+- Divarasib / garsorasib / 新一代共價或非共價（ON-state / pan-KRAS）抑制劑 Phase 2/3
+- 克服抗藥的合併療法（FAK、SHP2、SOS1 抑制劑）
+- 跨突變 pan-KRAS / KRAS G12D 臨床突破""",
     "mCRC-MSI-H": """## MSI-H/dMMR CRC 治療演進
-- KEYNOTE-177: pembrolizumab 一線標準（PFS HR 0.60）
-- CheckMate 142: nivo+ipi 雙免疫 ORR 55-69%
-- NICHE/NICHE-2: neoadjuvant 雙免疫 pCR 68%，零復發
-- Dostarlimab: 12/12 dMMR 直腸癌 cCR，免手術
-- 關鍵問題：「watch and wait」長期安全性、雙免疫 vs 單免疫 Phase 3、pMMR 的免疫策略
+- KEYNOTE-177 (NEJM 2020; OS Lancet Oncol 2022): pembrolizumab 確立一線標準（PFS HR 0.60）
+- CheckMate 142 & 8HW: nivolumab+ipilimumab 雙免疫在一線與後線展現優異 PFS 與持久反應
+- NICHE / NICHE-2 (NEJM 2024; 5 年追蹤 Lancet 2026): dMMR 結腸癌術前雙免疫，111 例中位追蹤 58.7 個月 3 年 DFS 與 5 年 OS 皆為 100%
+- Dostarlimab pilot (NEJM 2022) → AZUR-1 (Ann Oncol 2026): 全球 Phase 2（154 例 dMMR 直腸癌）76% 達 cCR12/pCR，2026-10 獲 FDA 加速核准
+- UNICORN (Nat Med 2026): 術前 botensilimab ± balstilimab 探索可切除 pMMR 結腸癌免疫反應
+- 關鍵問題：免手術（watch-and-wait）長期安全性、雙免疫 vs 單免疫 OS 比較、pMMR 免疫治療突破與輔助免疫角色
 
 值得注意的里程碑類型：
-- Dostarlimab 擴大樣本的長期追蹤
-- 雙免疫 vs pembrolizumab 的頭對頭 Phase 3
-- Non-operative management 的前瞻性確認
-- pMMR CRC 的免疫治療突破""",
+- CheckMate 8HW 長期 OS 與各線別雙免疫 vs 單免疫頭對頭數據
+- AZUR-1 / dostarlimab 與其他 dMMR 直腸癌免手術策略的長期追蹤與擴展族群
+- 輔助免疫治療（如 ATOMIC）或可切除期 dMMR 結腸癌隨機試驗
+- pMMR/MSS 結直腸癌具臨床意義的免疫治療突破（如 botensilimab/balstilimab、雙抗、細胞治療）""",
     "mCRC-HER2": """## HER2+ mCRC 治療演進
-- MyPathway/TRIUMPH: pertuzumab+trastuzumab proof of concept
-- DESTINY-CRC01/02: T-DXd ORR 45% (IHC3+/ISH+)，5.4 mg/kg 為最佳劑量
-- MOUNTAINEER: tucatinib+trastuzumab 首個 FDA 核准
-- 突破發現：T-DXd 對 RAS mutant + HER2+ 也有效
-- 關鍵問題：最佳檢測方法（IHC vs ctDNA）、HER2-low 的治療、與化療的組合
+- MyPathway (2019) / TRIUMPH (2021): pertuzumab+trastuzumab 奠定標靶與 ctDNA 篩選概念
+- DESTINY-CRC01/02 (Lancet Oncol 2021/2024): T-DXd 確認 5.4 mg/kg 為最佳劑量（ORR 45%），且對 RAS mutant + HER2+ 仍有效
+- MOUNTAINEER (Lancet Oncol 2023): tucatinib+trastuzumab 獲首個 FDA 核准（RAS wt）
+- 關鍵問題：一線推進（MOUNTAINEER-03）、最佳檢測標準（IHC vs ctDNA）、HER2-low 療效、ADC 抗藥與肺毒性管理
 
 值得注意的里程碑類型：
-- T-DXd Phase 3 RCT
-- HER2 標靶在一線的前瞻性數據
-- 新型 HER2 ADC 或 bispecific
-- HER2-low mCRC 的治療探索""",
-    "generic-CRS": """## 大腸直腸外科通用主題（不屬於特定 biomarker 或手術技術的文獻歸類於此）
+- MOUNTAINEER-03 或其他 HER2 標靶一線 Phase 3 RCT
+- T-DXd Phase 3 確認性試驗或合併方案
+- 新型 HER2 ADC、bispecific（如 zanidatamab）或 TKI 臨床數據
+- HER2-low 或抗藥後接續 HER2 治療的前瞻性證據""",
+    "generic-CRS": """## 大腸直腸外科通用主題（不屬於特定 biomarker 或機器人手術的文獻歸類於此）
 
 ### Biomarker-Agnostic 後線治療
-- Regorafenib (CORRECT, 2013): 首個 3L+ mCRC 標靶，OS HR 0.77，但毒性高
-- TAS-102/Lonsurf (RECOURSE, 2015): 3L+ OS HR 0.68，口服方便，毒性較低
-- TAS-102 + bevacizumab (SUNLIGHT, 2023): OS HR 0.61，成為新的 3L 標準
-- Fruquintinib/Fruzaqla (FRESCO-2, 2023): 選擇性 VEGFR-1/2/3 抑制劑，OS HR 0.66，FDA 2023 核准
-- 關鍵問題：fruquintinib vs regorafenib 頭對頭、fruquintinib + 其他藥物組合、最佳後線序貫策略
+- Regorafenib (CORRECT 2013, CONCUR 2015, ReDOS 2019): 確立 3L+ 標靶與低劑量遞增策略
+- TAS-102/Lonsurf (RECOURSE 2015, TERRA 2018) → SUNLIGHT (NEJM 2023): FTD-TPI + bevacizumab（OS HR 0.61）成為 3L 新標準
+- Fruquintinib/Fruzaqla (FRESCO 2018, FRESCO-2 Lancet 2023): 選擇性 VEGFR-1/2/3 抑制劑（OS HR 0.66）
+- STELLAR-303 (Lancet 2025): zanzalintinib + atezolizumab vs regorafenib；另收錄 regorafenib + sintilimab (Nat Commun 2025)
+- 關鍵問題：後線 TKI/免疫組合驗證、最佳序貫策略、生物標記分層
+
+### 早期治療、直腸癌 TNT 與一般結直腸外科
+- 涵蓋不屬於特定突變主題的重要大腸直腸癌證據：
+  - 直腸癌全程新輔助治療（TNT）、器官保留與 watch-and-wait（非 dMMR 族群）
+  - ctDNA-guided 輔助化療決策（如 DYNAMIC / CIRCULATE / GALAXY 類型隨機與前瞻試驗）
+  - 早期大腸直腸癌輔助化療療程、非特定 biomarker 的 mCRC 一線化療、肝轉移切除策略與篩檢／指引更新
 
 值得注意的里程碑類型：
-- Fruquintinib 組合療法（+ anti-PD-1、+ TAS-102）
-- FRESCO-2 亞組分析和 real-world data
-- 新型 VEGFR 或多靶點 TKI
-- Biomarker-guided 後線選擇（ctDNA、TMB）
-- Regorafenib 低劑量策略（ReDOS）的前瞻性驗證
-
-### 其他
-此主題也接收無法歸類到其他 6 個特定主題的 CRC 相關文獻，例如：
-- 一般性 CRC 流行病學、篩檢、staging
-- 輔助化療（adjuvant chemotherapy）通用方案
-- 非特定 biomarker 的 mCRC 一線化療
-- 手術以外的 CRC 治療總論""",
+- 後線新型 TKI / 免疫組合 Phase 3 RCT 與頭對頭比較
+- 直腸癌 TNT、watch-and-wait 與器官保留的大型 RCT／長期追蹤
+- ctDNA 導引輔助化療升級或降階的前瞻性隨機試驗
+- 重要國際指引（NCCN、ESMO、ASCO、ASCRS）重大修訂""",
     "mCRC-RAS-wt": """## RAS 野生型 Anti-EGFR 治療演進
-- FIRE-3/CALGB 80405: 確立左側 RAS-wt 一線 anti-EGFR 為標準
-- PARADIGM: 唯一達 OS 主要終點的 Phase 3（左側 OS 37.9 mo）
-- Sidedness 是最重要的預測因子（右側無效益）
-- Maintenance: VALENTINO/PanaMa 確認 anti-EGFR+5-FU 維持優於 anti-EGFR 單藥
-- CHRONOS: ctDNA-guided rechallenge proof of concept
-- 關鍵問題：rechallenge 的前瞻性驗證、ctDNA 最佳 cutoff、新型 anti-EGFR
+- FIRE-3 / CALGB 80405 / PEAK: 確立左側 RAS-wt 一線 anti-EGFR 地位與腫瘤側性（sidedness）關鍵預測力
+- PARADIGM (JAMA 2023): 首個達 OS 主要終點的 Phase 3（左側 mOS 37.9 mo）
+- Maintenance: VALENTINO (2019) / PanaMa (2022) 確認 anti-EGFR + 5-FU 維持優於單藥
+- CHRONOS (Nat Med 2022): 證實 ctDNA-guided anti-EGFR rechallenge 概念
+- 關鍵問題：ctDNA rechallenge 的 Phase 3 驗證（PARERE / FIRE-4 / CITRIC）、去強化維持策略、新型 EGFR 雙抗／ADC
 
 值得注意的里程碑類型：
-- ctDNA-guided rechallenge Phase 3
-- Anti-EGFR + 免疫治療組合
-- 新型 EGFR 標靶（bispecific、ADC）
-- Maintenance/de-escalation 的前瞻性策略""",
-    "robotic-surgery": """## 機器人結直腸手術演進
-- ROLARR (2017): robotic vs laparoscopic TME，轉換率 NS（N=471）
-- COLRAR (2023): TME 完整性 NS（N=295）
-- REAL (2025): 首個顯示機器人 TME 局部復發率優於腹腔鏡的 RCT（1.6% vs 4.0%）
-- Network MA (2024): 機器人 TME 在病理指標上優於腹腔鏡
-- 關鍵問題：長期腫瘤學結果、CME 的機器人數據、intracorporeal anastomosis 的安全性
+- ctDNA-guided anti-EGFR rechallenge 隨機試驗（如 PARERE、FIRE-4、PULSE）
+- 新型 EGFR 標靶（bispecific 如 petosemtamab/amivantamab、ADC）在 mCRC 的前瞻數據
+- Anti-EGFR 與免疫治療或三藥化療合併的前瞻性 RCT
+- Maintenance / de-escalation 策略的長期 OS 追蹤""",
+    "robotic-surgery": """## 機器人與微創結直腸手術演進
+- ROLARR (2017): robotic vs laparoscopic TME，轉換率無顯著差異（N=471）
+- COLRAR (2023): TME 完整性無顯著差異（N=295）
+- REAL (2025): 首個顯示機器人 TME 局部復發率顯著低於腹腔鏡的 RCT（1.6% vs 4.0%）
+- Network MA (2024): 機器人 TME 在部分病理與圍術期指標具優勢
+- 關鍵問題：長期腫瘤學結果（OS/DFS）、機器人 CME 的隨機證據、體內吻合（intracorporeal anastomosis）與降低吻合口滲漏、新型機器人平台比較
 
 值得注意的里程碑類型：
-- REAL 試驗長期 OS/DFS 追蹤
-- 機器人 CME 的 RCT
-- TaTME vs Robotic TME 比較
-- AI-assisted 手術的早期數據""",
+- REAL 試驗後續長期存活或亞組分析
+- 機器人 CME vs 腹腔鏡 CME 的 RCT
+- TaTME vs Robotic TME、體內 vs 體外吻合或降低吻合口漏的大型 RCT
+- 新型手術機器人平台（Hugo、Versius、單孔 SP 等）與 AI 手術輔助的臨床數據""",
 }
 
 

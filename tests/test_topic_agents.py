@@ -27,11 +27,19 @@ class TestBuildSystemPrompt:
             "mCRC-MSI-H",
             "mCRC-HER2",
             "mCRC-RAS-wt",
+            "generic-CRS",
             "robotic-surgery",
         ]
         for topic in topics:
             prompt = build_system_prompt(topic)
             assert len(prompt) > 500, f"Prompt too short for {topic}"
+
+    def test_contexts_reflect_recent_kb_milestones(self):
+        assert "AZUR-1" in build_system_prompt("mCRC-MSI-H")
+        assert "CheckMate 8HW" in build_system_prompt("mCRC-MSI-H")
+        assert "STELLAR-303" in build_system_prompt("generic-CRS")
+        assert "ctDNA-guided" in build_system_prompt("generic-CRS")
+        assert "garsorasib" in build_system_prompt("mCRC-KRAS-G12C")
 
     def test_unknown_topic_still_works(self):
         prompt = build_system_prompt("unknown-topic")
