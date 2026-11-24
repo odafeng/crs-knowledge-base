@@ -1,0 +1,53 @@
+name: Backend Deploy Reminder
+
+# Keeps one tracking issue open whenever main has backend, worker, or migration commits that have not yet reached
+# production (K8 #258), and closes it automatically once Deploy production succeeds. Holds no GCP credentials.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api/**'
+      - 'worker/**'
+      - 'scripts/**'
+      - 'sitegen/**'
+      - 'newsroom/**'
+      - 'supabase/**'
+      - 'contracts/openapi.yaml'
+      - 'import_content.py'
+      - 'content_writer.py'
+      - 'requirements-site.txt'
+      - '.github/workflows/deploy.yml'
+      - '.github/workflows/deploy-staging.yml'
+  workflow_run:
+    workflows: ['Deploy production', 'Deploy staging']
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-pending
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+jobs:
+  check:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Check pending backend deploys and sync reminder issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python scripts/deploy_status.py --sync-issue --summary-file "$GITHUB_STEP_SUMMARY"

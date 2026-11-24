@@ -64,7 +64,7 @@ gcloud secrets add-iam-policy-binding supabase-db-password --project=guthub-prod
   --member=serviceAccount:deployer@guthub-prod.iam.gserviceaccount.com --role=roles/secretmanager.secretAccessor
 ```
 
-再到 Settings → Environments → `production` 加上變數 `WEB_ORIGINS`（例如 `["https://guthub.tw"]`）。這個 environment 已經設定好（2026-11-17）：每次部署都要維護者核准，而且只允許從 `main` 部署。這兩條規則存在 GitHub 設定裡，改 workflow 檔案也繞不過。
+再到 Settings → Environments → `production` 加上變數 `WEB_ORIGINS`（例如 `["https://guthub.tw"]`）。這個 environment 已經設定好（2026-11-17）：每次部署都要維護者核准，而且只允許從 `main` 部署。這兩條規則存在 GitHub 設定裡，改 workflow 檔案也繞不過。為避免前端經由 Vercel 自動上線後遺漏手動部署後端，`.github/workflows/deploy-pending.yml`（K8 #258）會在 `main` 有未上線的後端／Worker／Migration 變更時自動維護單張 `[待部署] 正式環境後端有未上線變更` issue（並標示是否需先等待 `Deploy staging` 完成），於 `Deploy production` 成功後自動關閉。
 
 workflow 裡的 `if: github.ref == 'refs/heads/main'` 只是方便，真正的限制有三層：上面的 environment 規則；prod 身分聯合只接受 `refs/heads/main`；以及建議再加上只接受 `production` environment 發出的 token（維護者執行一次）：
 
