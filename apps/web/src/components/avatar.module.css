@@ -1,0 +1,69 @@
+/* Initials avatar badge shared by Forum feed, thread bubbles, and Account dashboard */
+.avatar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  user-select: none;
+  border: 1px solid var(--line);
+}
+.xs {
+  width: 1.625rem;
+  height: 1.625rem;
+  font-size: 0.72rem;
+}
+.sm {
+  width: 2.125rem;
+  height: 2.125rem;
+  font-size: 0.8125rem;
+}
+.md {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 0.9375rem;
+}
+.lg {
+  width: 3.5rem;
+  height: 3.5rem;
+  font-size: 1.375rem;
+}
+.tone0 {
+  background: var(--tint);
+  border-color: color-mix(in srgb, var(--brand) 25%, var(--line));
+  color: var(--brand);
+}
+.tone1 {
+  background: var(--good-bg);
+  border-color: color-mix(in srgb, var(--good) 25%, var(--line));
+  color: var(--good);
+}
+.tone2 {
+  background: var(--warn-bg);
+  border-color: color-mix(in srgb, var(--warn) 25%, var(--line));
+  color: var(--warn);
+}
+.tone3 {
+  background: var(--rose-wash);
+  border-color: var(--rose-line);
+  color: var(--rose);
+}
+.tone4 {
+  background: var(--sunken);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+.anon {
+  background: var(--sunken);
+  border-color: var(--line-strong);
+  color: var(--ink-2);
+}
+.ai {
+  background: var(--rose-wash);
+  border-color: var(--rose-line);
+  color: var(--rose);
+  font-size: 0.75rem;
+}

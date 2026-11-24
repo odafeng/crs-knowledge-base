@@ -1,0 +1,36 @@
+/* Tumor board sheet (G7 #118): screen layout (paired with print.css for one-page A4 print) */
+.board section {
+  margin-block-start: var(--space-8);
+}
+.board__meta {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  margin-block-start: var(--space-2);
+}
+.board__actions {
+  margin-block-start: var(--space-4);
+}
+.board__card h3 {
+  margin-block: var(--space-4) var(--space-2);
+}
+.board__table .note,
+.board__trials .note {
+  display: block;
+}
+/* Source and DOI links are small text; give each a 24px target on screen (WCAG 2.2 target size). */
+.board__table a.note,
+.board__trials a.note {
+  display: flex;
+  align-items: center;
+  min-block-size: 24px;
+}
+.board__trials {
+  display: grid;
+  gap: var(--space-2);
+  padding-inline-start: var(--space-5);
+}
+.board__trials span {
+  display: block;
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}

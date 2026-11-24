@@ -1,0 +1,170 @@
+/* Recent plain-language news ticker above the home hero */
+.daily {
+  border-block-end: 1px solid var(--line);
+  background: var(--sunken);
+}
+.inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "label controls"
+    "stage stage";
+  align-items: center;
+  gap: 0.25rem var(--space-3);
+  padding-block: var(--space-2);
+}
+.label {
+  grid-area: label;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  color: var(--brand);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--rose-fill);
+  flex: none;
+}
+.stage {
+  grid-area: stage;
+  min-width: 0;
+  overflow: hidden;
+}
+.main {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+.mainEnter {
+  animation: dailySlideIn 360ms var(--ease) both;
+}
+.title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.date {
+  color: var(--ink-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.topic {
+  padding: 0 0.4rem;
+  border-radius: var(--radius-chip);
+  background: var(--tint);
+  color: var(--brand);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.title a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.title a:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
+.conclusion {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.controls {
+  grid-area: controls;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex: none;
+}
+.ctrl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+  transition:
+    border-color var(--fast) var(--ease),
+    color var(--fast) var(--ease),
+    background-color var(--fast) var(--ease);
+}
+.ctrlPause {
+  font-size: 0.625rem;
+  letter-spacing: -0.05em;
+}
+.ctrl:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.ctrl[aria-pressed="true"] {
+  border-color: var(--brand);
+  background: var(--tint);
+  color: var(--brand);
+}
+.counter {
+  min-width: 2rem;
+  color: var(--ink-2);
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+@keyframes dailySlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .main {
+    animation: none;
+  }
+}
+@media (min-width: 1024px) {
+  .inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "label stage controls";
+    align-items: center;
+    gap: var(--space-4);
+  }
+  .label {
+    padding-inline-end: var(--space-4);
+    border-inline-end: 1px solid var(--line);
+  }
+  .conclusion {
+    -webkit-line-clamp: 1;
+  }
+}

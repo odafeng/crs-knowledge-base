@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { DrugEvidence } from "@/components/drug-evidence";
+import drugEvidenceStyles from "@/components/drug-evidence.module.css";
 import { Breadcrumb, JsonLd } from "@/components/reading";
 import { listPapers, listTopics } from "@/lib/content";
 import {
@@ -58,7 +59,7 @@ export default async function DrugPage({ params }: Props) {
         <h1>{drug.name}</h1>
         <p className="page-head__lead">{lead}</p>
         {mine.some((p) => p.summary) && (
-          <p className="evidence__note">
+          <p className={drugEvidenceStyles.note}>
             速覽由 AI 依 PubMed 摘要整理，數字都已對過原文；標「AI
             未審」的還沒經過人工審核，解讀請以原文為準。
           </p>

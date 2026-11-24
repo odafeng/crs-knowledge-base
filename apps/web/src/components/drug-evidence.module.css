@@ -1,0 +1,147 @@
+/* A drug's evidence as a chronological clinical record (J2) */
+.evidence {
+  margin-block-start: var(--space-6);
+  padding: 0;
+  list-style: none;
+}
+.study {
+  display: grid;
+  gap: var(--space-3);
+  padding-block: var(--space-6);
+  border-block-start: 1px solid var(--line);
+}
+.when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+.when a {
+  color: var(--brand);
+}
+.year {
+  color: var(--brand);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.body {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  font-size: var(--text-xl);
+  line-height: 1.42;
+}
+.title a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.title a:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
+.takeaway {
+  max-width: var(--measure);
+  font-size: var(--text-base);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.62;
+}
+.facts {
+  display: grid;
+  gap: var(--space-3);
+}
+.facts > div {
+  display: grid;
+  gap: var(--space-1);
+}
+.facts dt {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+.facts dd {
+  max-width: var(--measure);
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.72;
+}
+.facts ul {
+  display: grid;
+  gap: var(--space-1);
+  padding-inline-start: 1.1em;
+}
+.results dd {
+  font-variant-numeric: tabular-nums;
+}
+.results li:first-child {
+  font-weight: 600;
+}
+.limits dt {
+  color: var(--warn);
+}
+.limits dd {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+.line {
+  max-width: var(--measure);
+  color: var(--ink-2);
+  line-height: 1.72;
+}
+.note {
+  max-width: var(--measure);
+  margin-block-start: var(--space-2);
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+}
+@media (min-width: 768px) {
+  .facts > div {
+    grid-template-columns: 5rem minmax(0, 1fr);
+    column-gap: var(--space-4);
+  }
+}
+@media (min-width: 1024px) {
+  .study {
+    grid-template-columns: 10rem minmax(0, 1fr);
+    column-gap: var(--space-10);
+    padding-block: 0;
+    border-block-start: 0;
+  }
+  .when {
+    position: relative;
+    flex-direction: column;
+    align-items: flex-end;
+    padding-block: var(--space-6);
+    padding-inline-end: var(--space-6);
+    border-inline-end: 2px solid var(--line);
+    text-align: end;
+  }
+  .year::after {
+    content: "";
+    position: absolute;
+    inset-block-start: calc(var(--space-6) + 0.5rem);
+    inset-inline-end: -7px;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--brand);
+    border-radius: 50%;
+    background: var(--ground);
+  }
+  .body {
+    padding-block: var(--space-6);
+  }
+  .study + .study .body {
+    border-block-start: 1px solid var(--line);
+  }
+}

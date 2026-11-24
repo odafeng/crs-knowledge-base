@@ -7,6 +7,7 @@ import type { components } from "@/lib/api.generated";
 import { figures } from "@/lib/highlight";
 import type { Topic } from "@/lib/site";
 import { topicPath } from "@/lib/site";
+import styles from "./paper-summary.module.css";
 
 type Summary = components["schemas"]["PaperSummary"];
 
@@ -29,7 +30,7 @@ const WARN =
 function Glyph({ paths }: { paths: string }) {
   return (
     <svg
-      className="glance__glyph"
+      className={styles.glyph}
       viewBox="0 0 24 24"
       aria-hidden="true"
       dangerouslySetInnerHTML={{ __html: paths }}
@@ -46,14 +47,14 @@ export function PaperGlance({
 }) {
   const [lead, ...rest] = summary.findings;
   return (
-    <section className="glance" aria-labelledby="glance-title">
+    <section className={styles.glance} aria-labelledby="glance-title">
       <h2 id="glance-title" className="visually-hidden">
         速覽
       </h2>
-      <div className="glance__flow">
-        <div className="glance__step">
-          <h3 className="glance__heading">
-            <span className="glance__step-num" aria-hidden="true">
+      <div className={styles.flow}>
+        <div className={styles.step}>
+          <h3 className={styles.heading}>
+            <span className={styles.stepNum} aria-hidden="true">
               01
             </span>
             收了誰
@@ -62,23 +63,23 @@ export function PaperGlance({
             <Marked text={summary.population} />
           </p>
         </div>
-        <div className="glance__step">
-          <h3 className="glance__heading">
-            <span className="glance__step-num" aria-hidden="true">
+        <div className={styles.step}>
+          <h3 className={styles.heading}>
+            <span className={styles.stepNum} aria-hidden="true">
               02
             </span>
             比什麼
           </h3>
           <p>{summary.comparison}</p>
         </div>
-        <div className="glance__step glance__step--result">
-          <h3 className="glance__heading">
-            <span className="glance__step-num" aria-hidden="true">
+        <div className={`${styles.step} ${styles.stepResult}`}>
+          <h3 className={styles.heading}>
+            <span className={styles.stepNum} aria-hidden="true">
               03
             </span>
             主要結果
           </h3>
-          <p className="glance__lead-finding">
+          <p className={styles.leadFinding}>
             <Marked text={lead} />
           </p>
           {rest.length > 0 && (
@@ -92,12 +93,12 @@ export function PaperGlance({
           )}
         </div>
       </div>
-      <div className="glance__meaning">
-        <h3 className="glance__heading">代表什麼</h3>
+      <div className={styles.meaning}>
+        <h3 className={styles.heading}>代表什麼</h3>
         <p>{summary.meaning}</p>
       </div>
-      <div className="glance__caution">
-        <h3 className="glance__heading">
+      <div className={styles.caution}>
+        <h3 className={styles.heading}>
           <Glyph paths={WARN} />
           要小心
         </h3>
@@ -108,7 +109,7 @@ export function PaperGlance({
         </ul>
       </div>
       {topic && (
-        <p className="glance__taiwan">
+        <p className={styles.taiwan}>
           台灣的 TFDA 核准與健保給付，看
           <Link href={`${topicPath(topic)}#reg`}>
             {topic.label} 的核准與給付現況
@@ -123,10 +124,10 @@ export function PaperGlance({
 /** The finding in one line, set on the ink-navy field like a clinical journal visual abstract. */
 export function GlanceFinding({ summary }: { summary: Summary }) {
   return (
-    <div className="finding" role="note" aria-label="一句話結論">
-      <p className="finding__kicker">臨床問題與結論</p>
-      <p className="finding__question">{summary.question}</p>
-      <p className="finding__line">
+    <div className={styles.finding} role="note" aria-label="一句話結論">
+      <p className={styles.findingKicker}>臨床問題與結論</p>
+      <p className={styles.findingQuestion}>{summary.question}</p>
+      <p className={styles.findingLine}>
         <Marked text={summary.takeaway} />
       </p>
     </div>

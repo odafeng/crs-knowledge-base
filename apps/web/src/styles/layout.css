@@ -1,0 +1,4 @@
+/* Shared page chrome, grids, cards, tables, and content layouts. */
+@import "../../../../static/styles/layout.css";
+@import "../../../../static/styles/components.css";
+@import "../../../../static/styles/content.css";

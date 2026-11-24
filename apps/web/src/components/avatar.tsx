@@ -1,4 +1,20 @@
 import { authorInitials, avatarTone } from "@/lib/forum";
+import styles from "./avatar.module.css";
+
+const SIZE_CLASS = {
+  xs: styles.xs,
+  sm: styles.sm,
+  md: styles.md,
+  lg: styles.lg,
+} as const;
+
+const TONE_CLASS = {
+  0: styles.tone0,
+  1: styles.tone1,
+  2: styles.tone2,
+  3: styles.tone3,
+  4: styles.tone4,
+} as const;
 
 export function Avatar({
   name,
@@ -13,12 +29,15 @@ export function Avatar({
 }) {
   const initials = authorInitials(name, { anonymous, ai });
   const toneClass = ai
-    ? "avatar--ai"
+    ? styles.ai
     : anonymous
-      ? "avatar--anon"
-      : `avatar--tone-${avatarTone(name ?? "member")}`;
+      ? styles.anon
+      : TONE_CLASS[avatarTone(name ?? "member")];
   return (
-    <span className={`avatar avatar--${size} ${toneClass}`} aria-hidden="true">
+    <span
+      className={`${styles.avatar} ${SIZE_CLASS[size]} ${toneClass}`}
+      aria-hidden="true"
+    >
       {initials}
     </span>
   );
