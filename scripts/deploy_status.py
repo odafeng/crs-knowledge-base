@@ -34,13 +34,11 @@ BACKEND_PATHS: tuple[str, ...] = (
     "apps/api",
     "worker",
     "scripts",
-    "sitegen",
     "newsroom",
     "supabase",
     "contracts/openapi.yaml",
     "import_content.py",
     "content_writer.py",
-    "requirements-site.txt",
     ".github/workflows/deploy.yml",
     ".github/workflows/deploy-staging.yml",
 )

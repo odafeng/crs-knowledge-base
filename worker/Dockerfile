@@ -18,10 +18,9 @@ RUN apt-get update \
  && apt-get purge -y curl && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY scripts/requirements.txt requirements-site.txt ./
-RUN pip install --no-cache-dir -r requirements.txt -r requirements-site.txt "psycopg[binary]==3.3.9"
+COPY scripts/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt "psycopg[binary]==3.3.9"
 COPY scripts ./scripts
-COPY sitegen ./sitegen
 COPY newsroom ./newsroom
 COPY import_content.py content_writer.py ./
 COPY worker ./worker

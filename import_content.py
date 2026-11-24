@@ -16,16 +16,72 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, LiteralString
 
-from sitegen.config import ROBOTIC_KEY, ROBOTIC_PAGES, TOPICS
-from sitegen.load import load_kb
+from newsroom.gate import unsupported
+
+
+@dataclass(frozen=True)
+class Topic:
+    key: str
+    slug: str
+    label: str
+    title: str
+
+
+@dataclass(frozen=True)
+class RoboticPage:
+    slug: str
+    title: str
+    timeline_key: str
+    cards_key: str
+
+
+TOPICS: tuple[Topic, ...] = (
+    Topic("mCRC-BRAF-V600E", "braf-v600e", "BRAF V600E", "BRAF V600E 突變型 mCRC"),
+    Topic("mCRC-KRAS-G12C", "kras-g12c", "KRAS G12C", "KRAS G12C 突變型 mCRC"),
+    Topic("mCRC-MSI-H", "msi-h", "MSI-H / dMMR", "MSI-H / dMMR 大腸直腸癌"),
+    Topic("mCRC-HER2", "her2", "HER2", "HER2 陽性 mCRC"),
+    Topic("mCRC-RAS-wt", "ras-wt", "RAS wild-type", "RAS 野生型 mCRC"),
+    Topic("generic-CRS", "later-line", "後線治療", "mCRC 後線治療與跨分子型"),
+)
+ROBOTIC_KEY = "robotic-surgery"
+ROBOTIC_PAGES: tuple[RoboticPage, ...] = (
+    RoboticPage("tme", "機器手臂 TME", "tl_tme", "tme_cards"),
+    RoboticPage("anastomosis", "機器手臂吻合", "tl_anast", "anast_cards"),
+)
+FIGURE_KINDS = frozenset({"numbers", "compare", "meters", "interval"})
 
 ROOT = Path(__file__).resolve().parent
 ROBOTIC_TOPIC = {"key": ROBOTIC_KEY, "slug": "robotic", "label": "機器手臂手術", "title": "機器手臂手術"}
+
+
+def _slug(paper_id: str) -> str:
+    return paper_id.lower().replace("_", "-")
+
+
+def _clean_html(html: str) -> str:
+    """Drop empty header corner cells and legacy links into docs/ while keeping their text."""
+    html = re.sub(r"<th>\s*</th>", "<td></td>", html)
+    return re.sub(r'<a\b[^>]*href="docs/[^"]*"[^>]*>(.*?)</a>', r"\1", html, flags=re.S)
+
+
+def _detail(root: Path, filename: str | None) -> str:
+    if not filename or not (root / filename).is_file():
+        return ""
+    text = (root / filename).read_text(encoding="utf-8")
+    body = re.search(r"<body[^>]*>(.*?)</body>", text, re.S | re.I)
+    if not body:
+        raise ValueError(f"Missing body in {filename}")
+    text = re.sub(r"</?h1\b", lambda m: m[0].replace("h1", "h3"), body[1])
+    text = re.sub(r"</?h2\b", lambda m: m[0].replace("h2", "h3"), text)
+    text = re.sub(r'\sstyle="[^"]*"', "", text)
+    return _clean_html(text)
+
 
 # Columns per table, in insert order. JSON columns are wrapped as jsonb when written.
 COLUMNS: dict[str, tuple[str, ...]] = {
@@ -120,17 +176,31 @@ def build_rows(root: Path = ROOT) -> Rows:
         "data/papers.json": _sha256(papers_path.read_bytes()),
         "data/news.json": _sha256(news_path.read_bytes()),
     }
-    try:
-        kb = load_kb(papers_path, news_path)
-    except (KeyError, ValueError) as exc:
-        rows.errors.append(f"knowledge base does not load: {exc}")
-        return rows
-    loaded = {p.id: p for p in kb.papers}
-
     known = {t.key for t in TOPICS} | {ROBOTIC_KEY}
     rows.errors += [f"unknown topic in papers.json: {key}" for key in raw if key not in known]
+    for key in known:
+        if key not in raw:
+            rows.errors.append(f"missing topic in papers.json: {key}")
+    if rows.errors:
+        return rows
     if raw.get(ROBOTIC_KEY, {}).get("papers"):
         rows.errors.append(f"{ROBOTIC_KEY} papers are not loaded by the site and cannot be imported")
+
+    sources = {p["id"]: p for block in raw.values() for p in block.get("papers", [])}
+    for story in news:
+        if story["paperId"] not in sources:
+            rows.errors.append(f"knowledge base does not load: Unknown source paper: {story['paperId']}")
+            continue
+        missing = unsupported(story, sources[story["paperId"]])
+        if missing:
+            rows.errors.append(
+                f"knowledge base does not load: Unsupported numbers in {story['id']}: {', '.join(missing)}"
+            )
+        for fig in story.get("figures", []):
+            if fig.get("kind") not in FIGURE_KINDS:
+                rows.errors.append(f"knowledge base does not load: unknown figure kind: {fig.get('kind')}")
+    if rows.errors:
+        return rows
 
     for topic in TOPICS:
         block = raw[topic.key]
@@ -148,23 +218,39 @@ def build_rows(root: Path = ROOT) -> Rows:
             }
         )
         for p in block.get("papers", []):
-            _paper_rows(rows, root, topic.key, p, loaded.get(p["id"]))
+            try:
+                detail_html = _detail(root, p.get("file"))
+            except ValueError as exc:
+                rows.errors.append(f"knowledge base does not load: {exc}")
+                return rows
+            _paper_rows(rows, root, topic.key, p, detail_html)
 
     robotic = raw[ROBOTIC_KEY]
+    robotic_sections = []
+    for page in ROBOTIC_PAGES:
+        timeline = robotic[page.timeline_key]
+        details = []
+        for t in timeline:
+            if t.get("file", "").startswith("docs/"):
+                try:
+                    details.append(_detail(root, t["file"]))
+                except ValueError as exc:
+                    rows.errors.append(f"knowledge base does not load: {exc}")
+                    return rows
+        robotic_sections.append(
+            {
+                "slug": page.slug,
+                "timeline": timeline,
+                "cards": robotic[page.cards_key],
+                "detailHtml": details,
+            }
+        )
     rows.tables["topics"].append(
         {
             **ROBOTIC_TOPIC,
             "standard_of_care": [],
             "soc_title": None,
-            "robotic_sections": [
-                {
-                    "slug": section.page.slug,
-                    "timeline": robotic[section.page.timeline_key],
-                    "cards": robotic[section.page.cards_key],
-                    "detailHtml": list(section.details),
-                }
-                for section in kb.robotic
-            ],
+            "robotic_sections": robotic_sections,
             "metrics": robotic.get("metrics", {}),
         }
     )
@@ -191,7 +277,7 @@ def build_rows(root: Path = ROOT) -> Rows:
     return rows
 
 
-def _paper_rows(rows: Rows, root: Path, topic_key: str, p: dict, loaded: Any) -> None:
+def _paper_rows(rows: Rows, root: Path, topic_key: str, p: dict, detail_html: str) -> None:
     file = p.get("file")
     if file:
         if not (root / file).is_file():
@@ -202,7 +288,7 @@ def _paper_rows(rows: Rows, root: Path, topic_key: str, p: dict, loaded: Any) ->
     rows.tables["papers"].append(
         {
             "id": p["id"],
-            "slug": loaded.slug,
+            "slug": _slug(p["id"]),
             "topic_key": topic_key,
             "year": p["year"],
             "journal": p["journal"],
@@ -217,7 +303,7 @@ def _paper_rows(rows: Rows, root: Path, topic_key: str, p: dict, loaded: Any) ->
             "reviewed_at": p["reviewedAt"],
             "review_status": status,
             "review_published_at": published,
-            "detail_html": loaded.detail_html,
+            "detail_html": detail_html,
             "source_file": file or None,
             "added_at": p.get("addedAt"),
             "summary": p.get("summary"),

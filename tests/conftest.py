@@ -10,17 +10,6 @@ SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 
-@pytest.fixture(scope="session")
-def built_site(tmp_path_factory):
-    from sitegen.load import load_kb
-    from sitegen.render import build_site
-
-    root = SCRIPTS_DIR.parent
-    out = tmp_path_factory.mktemp("sitegen") / "site"
-    stats = build_site(load_kb(root / "data/papers.json", root / "data/news.json"), out)
-    return out, stats
-
-
 @pytest.fixture
 def sample_pubmed_xml():
     """Minimal PubMed efetch XML for one article."""

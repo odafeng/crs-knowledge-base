@@ -1,4 +1,4 @@
-// App icons and favicons from the GutHub logo. Run after changing static/brand/guthub-logo.png: node tools/icons.js
+// App icons and favicons from the GutHub logo. Run after changing apps/web/public/brand/guthub-logo.png: node tools/icons.js
 // The logo is an orange colon above the GutHub wordmark, on a deep navy disc. Small sizes use the colon only: the
 // wordmark is unreadable at 16-64 px. The colon is lifted off the navy (alpha from how far each pixel has moved from
 // navy toward the colon's orange) and redrawn centred on a fresh navy disc or square.
@@ -7,9 +7,8 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const LOGO = path.join(ROOT, 'static', 'brand', 'guthub-logo.png');
-// Both sites serve the same icons: the current site (static/) and the Next.js site (apps/web/public/).
-const SITES = [path.join(ROOT, 'static'), path.join(ROOT, 'apps', 'web', 'public')];
+const LOGO = path.join(ROOT, 'apps', 'web', 'public', 'brand', 'guthub-logo.png');
+const SITES = [path.join(ROOT, 'apps', 'web', 'public')];
 const WORDMARK_TOP = 0.612; // the colon ends above this fraction of the logo's height; the wordmark starts below it
 
 // [file, size, how much of the canvas the colon fills, background]

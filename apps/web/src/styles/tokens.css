@@ -1,3 +1,229 @@
-/* Shared design tokens and typography scales (fonts + light/dark CSS custom properties). */
-@import "../../../../static/styles/fonts.css";
-@import "../../../../static/styles/tokens.css";
+/* Chinese uses the system font. Archivo (Latin, weight and width axes, subset to the characters the site uses) is the only web font. */
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url("./fonts/archivo-latin.woff2") format("woff2-variations");
+  unicode-range:
+    U+0020-007E, U+00A0, U+00B1, U+00B5, U+00B7, U+00D7, U+00E9, U+2013-2014,
+    U+2018-2019, U+201C-201D, U+2022, U+2026, U+2212;
+}
+
+/* Design tokens.
+   Concept: an authoritative Taiwanese clinical-surgical journal and evidence workstation.
+   Warm archival paper grounds long-form reading; deep institutional indigo honors the colorectal
+   cancer awareness ribbon; muted claret/eosin marks AI disclosure and freshness without shouting.
+   Dark mode uses calm neutral obsidian slate rather than saturated blue glow.
+   Components read semantic tokens only. */
+:root {
+  color-scheme: light;
+
+  /* Surfaces and ink: warm archival paper with deep neutral charcoal ink */
+  --ground: #f6f5f0;
+  --surface: #ffffff;
+  --sunken: #eceae2;
+  --ink: #111827;
+  --ink-2: #3a4252;
+  --ink-3: #575f6e;
+  --line: #dfddd4;
+  --line-strong: #b6b1a4;
+
+  /* Brand: deep institutional colorectal indigo-navy */
+  --brand: #1a3a7e;
+  --brand-hover: #12295c;
+  --on-brand: #ffffff;
+  --tint: #edf1f9;
+  --field: #0f1f44; /* the masthead / abstract field */
+  --field-2: #172c5e;
+
+  /* Signal: restrained editorial claret/eosin for "new" and AI disclosure */
+  --rose: #8f2542;
+  --rose-fill: #b33054;
+  --rose-wash: #faf0f2;
+  --rose-line: #e6c7d0;
+
+  /* Chart marks: trial arm in institutional indigo, comparator in slate. Both keep >=3:1 contrast. */
+  --mark: #24489b;
+  --mark-muted: #767e91;
+  --mark-track: #e1e5ef;
+
+  /* Status: regulatory states only, always paired with an icon and a label */
+  --good: #0b5d3c;
+  --good-bg: #e6f4ec;
+  --warn: #734604;
+  --warn-bg: #faf0d8;
+  --bad: #96231e;
+  --bad-bg: #fceceb;
+
+  --focus: #1a3a7e;
+  /* The header's navy logo disc needs no edge on light ground; on dark ground a hairline keeps it crisp. */
+  --mark-ring: rgb(17 24 39 / 0.08);
+  --shadow-1: 0 1px 2px rgb(17 24 39 / 0.04);
+  --shadow-2:
+    0 4px 16px -4px rgb(17 24 39 / 0.1), 0 1px 3px rgb(17 24 39 / 0.05);
+  --scroll-scrim: rgb(17 24 39 / 0.09);
+
+  /* Type: Archivo carries Latin, biomarkers and tabular numerals; Chinese uses the reader's system font */
+  --font-sans:
+    "Archivo", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui,
+    sans-serif;
+  --text-xs: 0.8125rem; /* 13px */
+  --text-sm: 0.9375rem; /* 15px */
+  --text-base: 1.0625rem; /* 17px */
+  --text-lg: 1.1875rem; /* 19px */
+  --text-xl: 1.375rem; /* 22px */
+  --text-2xl: 1.75rem; /* 28px */
+  --text-display: clamp(
+    1.75rem,
+    1.25rem + 2.1vw,
+    2.625rem
+  ); /* 28px at 360, 42px from 1280 */
+  --text-figure: clamp(
+    2.25rem,
+    1.75rem + 2.2vw,
+    3.25rem
+  ); /* structured large numerals */
+  --leading-tight: 1.24;
+  --leading-snug: 1.48;
+  --leading-body: 1.78;
+  --measure: 38em; /* line length cap: 38 full-width characters */
+
+  /* Spacing: 4px base */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  /* Shape: crisp editorial radii by role, never bubbly */
+  --radius-chip: 4px;
+  --radius-control: 6px;
+  --radius-card: 8px;
+  --radius-panel: 10px;
+
+  /* Layout */
+  --gutter: 1.25rem; /* 20px at phone width */
+  --container: 80rem; /* 1280px */
+  --header-h: 3.5rem; /* 56px */
+  --tabbar-h: 3.75rem; /* 60px, phones and tablets only */
+  --target: 2.75rem; /* 44px touch target */
+
+  --fast: 140ms;
+  --base: 220ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --z-header: 100;
+  --z-tabbar: 110;
+  --z-popover: 200;
+  --z-skip: 300;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 2rem;
+    --header-h: 3.875rem;
+  }
+}
+
+/* Dark theme: calm neutral obsidian slate with subtle surface elevation and crisp 1px keylines.
+   System preference applies until toggled, which sets data-theme and wins in both directions. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #0f1217;
+    --surface: #161a22;
+    --sunken: #1d222c;
+    --ink: #f2f4f8;
+    --mark-ring: #475066;
+    --ink-2: #b9c0ce;
+    --ink-3: #959eb1;
+    --line: #272d3a;
+    --line-strong: #4b556b;
+    --brand: #8fb0ff;
+    --brand-hover: #b2c9ff;
+    --on-brand: #0b1220;
+    --tint: #1a2540;
+    --field: #121d38;
+    --field-2: #1a2a50;
+    --rose: #f39bb2;
+    --rose-fill: #e0567d;
+    --rose-wash: #2b151e;
+    --rose-line: #542838;
+    --mark: #84a6ff;
+    --mark-muted: #6c768e;
+    --mark-track: #232c42;
+    --good: #72d9a4;
+    --good-bg: #10291d;
+    --warn: #f0c362;
+    --warn-bg: #2d220b;
+    --bad: #ff9c91;
+    --bad-bg: #381614;
+    --focus: #8fb0ff;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.28);
+    --shadow-2: 0 8px 24px -8px rgb(0 0 0 / 0.55);
+    --scroll-scrim: rgb(0 0 0 / 0.36);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --mark-ring: #475066;
+  --ground: #0f1217;
+  --surface: #161a22;
+  --sunken: #1d222c;
+  --ink: #f2f4f8;
+  --ink-2: #b9c0ce;
+  --ink-3: #959eb1;
+  --line: #272d3a;
+  --line-strong: #4b556b;
+  --brand: #8fb0ff;
+  --brand-hover: #b2c9ff;
+  --on-brand: #0b1220;
+  --tint: #1a2540;
+  --field: #121d38;
+  --field-2: #1a2a50;
+  --rose: #f39bb2;
+  --rose-fill: #e0567d;
+  --rose-wash: #2b151e;
+  --rose-line: #542838;
+  --mark: #84a6ff;
+  --mark-muted: #6c768e;
+  --mark-track: #232c42;
+  --good: #72d9a4;
+  --good-bg: #10291d;
+  --warn: #f0c362;
+  --warn-bg: #2d220b;
+  --bad: #ff9c91;
+  --bad-bg: #381614;
+  --focus: #8fb0ff;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.28);
+  --shadow-2: 0 8px 24px -8px rgb(0 0 0 / 0.55);
+  --scroll-scrim: rgb(0 0 0 / 0.36);
+}
+
+/* Anything set on the ink-navy field reads these instead: high contrast in both themes. */
+.on-field {
+  --ink: #ffffff;
+  --ink-2: #cfd9f2;
+  --ink-3: #bac8e8;
+  --line: rgb(255 255 255 / 0.16);
+  --line-strong: rgb(255 255 255 / 0.45);
+  --surface: rgb(255 255 255 / 0.06);
+  --brand: #ffffff;
+  --brand-hover: #e6ecfa;
+  --on-brand: #0f1f44;
+  --rose: #f8abc1;
+  --rose-wash: rgb(248 171 193 / 0.14);
+  --rose-line: rgb(248 171 193 / 0.32);
+  --mark: #a8c0ff;
+  --mark-muted: rgb(255 255 255 / 0.48);
+  --mark-track: rgb(255 255 255 / 0.15);
+  --focus: #ffffff;
+  color: var(--ink);
+}
