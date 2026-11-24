@@ -241,7 +241,7 @@ jobs:
           [ "$LINE_NOTIFY" = true ] && SECRETS="$SECRETS,LINE_CHANNEL_ACCESS_TOKEN=paper-watch-line-token:latest,LINE_USER_ID=paper-watch-line-user-id:latest"
           if [ "$REVALIDATE" = true ]; then
             SECRETS="$SECRETS,GUTHUB_REVALIDATE_SECRET=revalidate-secret:latest"
-            ENV="$ENV,GUTHUB_REVALIDATE_URL=${SITE_ORIGIN}/api/revalidate"
+            ENV="$ENV,GUTHUB_REVALIDATE_URL=${SITE_ORIGIN%/}/api/revalidate/"
           fi
           gcloud run jobs deploy paper-watch --project="$PROJECT" --region="$REGION" \
             --image="$IMAGES/worker:$GITHUB_SHA" --service-account="$WORKER_RUNTIME" \
@@ -294,7 +294,7 @@ jobs:
           ENV="GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
           if [ "$REVALIDATE" = true ]; then
             SECRETS="$SECRETS,GUTHUB_REVALIDATE_SECRET=revalidate-secret:latest"
-            ENV="$ENV,GUTHUB_REVALIDATE_URL=${SITE_ORIGIN}/api/revalidate"
+            ENV="$ENV,GUTHUB_REVALIDATE_URL=${SITE_ORIGIN%/}/api/revalidate/"
           fi
           gcloud run jobs deploy content-requests --project="$PROJECT" --region="$REGION" \
             --image="$IMAGES/worker:$GITHUB_SHA" --service-account="$WORKER_RUNTIME" \

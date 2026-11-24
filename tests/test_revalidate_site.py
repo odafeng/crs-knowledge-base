@@ -27,7 +27,7 @@ def test_posts_bearer_token_and_default_tag(monkeypatch: pytest.MonkeyPatch) -> 
     with patch("revalidate_site.urllib.request.urlopen", return_value=resp) as urlopen:
         assert revalidate_site.revalidate_site() is True
         req = urlopen.call_args.args[0]
-        assert req.full_url == "https://guthub.tw/api/revalidate"
+        assert req.full_url == "https://guthub.tw/api/revalidate/"
         assert req.get_method() == "POST"
         assert req.get_header("Authorization") == "Bearer secret-123"
         assert json.loads(req.data.decode("utf-8")) == {"tags": ["guthub-content"]}

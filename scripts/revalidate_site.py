@@ -28,6 +28,9 @@ def revalidate_site(
     token = (secret if secret is not None else os.environ.get(SECRET_ENV, "")).strip()
     if not target or not token:
         return False
+    # Next.js sets trailingSlash: true and answers 308 on POST without a trailing slash, which urllib does not follow.
+    if "?" not in target and not target.endswith("/"):
+        target += "/"
 
     payload: dict[str, list[str]] = {"tags": tags if tags is not None else DEFAULT_TAGS}
     if paths:
