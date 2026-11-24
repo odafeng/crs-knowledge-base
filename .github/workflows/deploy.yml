@@ -232,13 +232,20 @@ jobs:
         if: vars.PAPER_WATCH_ENABLED == 'true'
         env:
           LINE_NOTIFY: ${{ vars.PAPER_WATCH_LINE_NOTIFY }}
+          REVALIDATE: ${{ vars.REVALIDATE_ENABLED }}
+          SITE_ORIGIN: ${{ vars.LINE_SITE_ORIGIN || 'https://guthub.tw' }}
         run: |
           ARGS=--scheduled; [ "$GUTHUB_ENV_NAME" = staging ] && ARGS=--scheduled,--dry-run
           SECRETS=GUTHUB_CONTENT_DATABASE_URL=guthub-content-database-url:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,GH_TOKEN=paper-watch-github-token:latest
+          ENV="GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
           [ "$LINE_NOTIFY" = true ] && SECRETS="$SECRETS,LINE_CHANNEL_ACCESS_TOKEN=paper-watch-line-token:latest,LINE_USER_ID=paper-watch-line-user-id:latest"
+          if [ "$REVALIDATE" = true ]; then
+            SECRETS="$SECRETS,GUTHUB_REVALIDATE_SECRET=revalidate-secret:latest"
+            ENV="$ENV,GUTHUB_REVALIDATE_URL=${SITE_ORIGIN%/}/api/revalidate/"
+          fi
           gcloud run jobs deploy paper-watch --project="$PROJECT" --region="$REGION" \
             --image="$IMAGES/worker:$GITHUB_SHA" --service-account="$WORKER_RUNTIME" \
-            --set-secrets="$SECRETS" --set-env-vars=GITHUB_REPOSITORY="$GITHUB_REPOSITORY" --args="$ARGS" \
+            --set-secrets="$SECRETS" --set-env-vars="$ENV" --args="$ARGS" \
             --max-retries=0 --task-timeout=3600 --parallelism=1
           gcloud run jobs add-iam-policy-binding paper-watch --project="$PROJECT" --region="$REGION" \
             --member="serviceAccount:$WORKER_RUNTIME" --role=roles/run.invoker --format=none
@@ -279,12 +286,20 @@ jobs:
       # the requests from the issues, so GitHub cannot change what it does. Production only: CONTENT_REQUESTS_ENABLED.
       - name: Deploy the content requests job
         if: vars.CONTENT_REQUESTS_ENABLED == 'true'
+        env:
+          REVALIDATE: ${{ vars.REVALIDATE_ENABLED }}
+          SITE_ORIGIN: ${{ vars.LINE_SITE_ORIGIN || 'https://guthub.tw' }}
         run: |
+          SECRETS=GUTHUB_CONTENT_DATABASE_URL=guthub-content-database-url:latest,GH_TOKEN=paper-watch-github-token:latest
+          ENV="GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
+          if [ "$REVALIDATE" = true ]; then
+            SECRETS="$SECRETS,GUTHUB_REVALIDATE_SECRET=revalidate-secret:latest"
+            ENV="$ENV,GUTHUB_REVALIDATE_URL=${SITE_ORIGIN%/}/api/revalidate/"
+          fi
           gcloud run jobs deploy content-requests --project="$PROJECT" --region="$REGION" \
             --image="$IMAGES/worker:$GITHUB_SHA" --service-account="$WORKER_RUNTIME" \
             --command=python --args=/app/worker/content_requests.py \
-            --set-secrets=GUTHUB_CONTENT_DATABASE_URL=guthub-content-database-url:latest,GH_TOKEN=paper-watch-github-token:latest \
-            --set-env-vars=GITHUB_REPOSITORY="$GITHUB_REPOSITORY" \
+            --set-secrets="$SECRETS" --set-env-vars="$ENV" \
             --max-retries=1 --task-timeout=600 --parallelism=1
           gcloud run jobs add-iam-policy-binding content-requests --project="$PROJECT" --region="$REGION" \
             --member="serviceAccount:content-trigger@${PROJECT}.iam.gserviceaccount.com" --role=roles/run.invoker \

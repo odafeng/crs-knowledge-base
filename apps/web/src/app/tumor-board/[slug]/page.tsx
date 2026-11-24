@@ -8,7 +8,7 @@ import { pageMetadata } from "@/lib/seo";
 import { byTopic, doiUrl, topicPath } from "@/lib/site";
 import { boardPath, boardTopics, tumorBoard } from "@/lib/tumor-board";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 export async function generateStaticParams() {
   return [];
 }

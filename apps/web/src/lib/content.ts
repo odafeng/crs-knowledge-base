@@ -3,16 +3,29 @@ import { apiError } from "./api";
 import type { DailyPick } from "./daily";
 import { decodeEntities, type News, type Paper, type Topic } from "./site";
 
-/** Matches the API's `Cache-Control: public, max-age=300`. Pages export the same value as `revalidate`. */
-export const REVALIDATE_SECONDS = 300;
+/** Public content cache TTL (1 hour, K3 #253). Writes purge immediately via POST /api/revalidate using CONTENT_TAG. */
+export const REVALIDATE_SECONDS = 3600;
+export const CONTENT_TAG = "guthub-content";
+export const CONTENT_TAGS = {
+  all: CONTENT_TAG,
+  papers: "papers",
+  news: "news",
+  topics: "topics",
+  daily: "daily",
+} as const;
 
 type Page<T> = { items: T[]; nextCursor: string | null };
 type Options = {
   fetcher?: typeof fetch;
   baseUrl?: string;
   params?: Record<string, string>;
+  tags?: readonly string[];
 };
 const PAPER_SLUG = /^[a-z0-9][a-z0-9-]*$/;
+
+function cacheTags(tags?: readonly string[]): string[] {
+  return tags?.length ? [CONTENT_TAG, ...tags] : [CONTENT_TAG];
+}
 
 function apiBase(baseUrl = process.env.GUTHUB_API_URL): string {
   if (!baseUrl)
@@ -24,11 +37,11 @@ function apiBase(baseUrl = process.env.GUTHUB_API_URL): string {
 
 async function get<T>(
   path: string,
-  { fetcher = fetch, baseUrl }: Options = {},
+  { fetcher = fetch, baseUrl, tags }: Options = {},
 ): Promise<T | null> {
   const response = await fetcher(`${apiBase(baseUrl)}${path}`, {
     headers: { accept: "application/json" },
-    next: { revalidate: REVALIDATE_SECONDS },
+    next: { revalidate: REVALIDATE_SECONDS, tags: cacheTags(tags) },
   });
   if (!response.ok) {
     const error = await apiError(response, "無法載入內容，請稍後再試。");
@@ -87,15 +100,26 @@ export const listPapers = async (options?: Options) =>
   (
     await listAll<Paper>("/papers", {
       ...options,
+      tags: [CONTENT_TAGS.papers, ...(options?.tags ?? [])],
       params: { includeDetail: "false", ...(options?.params ?? {}) },
     })
   ).map(decodePaper);
-export const listNews = (options?: Options) => listAll<News>("/news", options);
+export const listNews = (options?: Options) =>
+  listAll<News>("/news", {
+    ...options,
+    tags: [CONTENT_TAGS.news, ...(options?.tags ?? [])],
+  });
 export const listTopics = (options?: Options) =>
-  listAll<Topic>("/topics", options);
+  listAll<Topic>("/topics", {
+    ...options,
+    tags: [CONTENT_TAGS.topics, ...(options?.tags ?? [])],
+  });
 
 export const getNews = (id: string, options?: Options) =>
-  get<News>(`/news/${encodeURIComponent(id)}`, options);
+  get<News>(`/news/${encodeURIComponent(id)}`, {
+    ...options,
+    tags: [CONTENT_TAGS.news, `news:${id}`, ...(options?.tags ?? [])],
+  });
 
 /**
  * Fetches one full paper (including sanitized detailHtml) by slug (K4 #254).
@@ -108,21 +132,31 @@ export async function getPaperBySlug(
   options: Options = {},
 ): Promise<Paper | null> {
   if (!PAPER_SLUG.test(slug)) return null;
-  const { fetcher = fetch, baseUrl } = options;
+  const { fetcher = fetch, baseUrl, tags } = options;
   const response = await fetcher(
     `${apiBase(baseUrl)}/papers/by-slug/${encodeURIComponent(slug)}`,
     {
       headers: { accept: "application/json" },
-      next: { revalidate: REVALIDATE_SECONDS },
+      next: {
+        revalidate: REVALIDATE_SECONDS,
+        tags: cacheTags([
+          CONTENT_TAGS.papers,
+          `paper:${slug}`,
+          ...(tags ?? []),
+        ]),
+      },
     },
   );
   if (response.ok) return decodePaper((await response.json()) as Paper);
   const error = await apiError(response, "無法載入內容，請稍後再試。");
   if (error.status === 404 && error.code === "not_found") {
     if (error.message === "Not Found") {
-      const legacy = (await listAll<Paper>("/papers", options)).find(
-        (paper) => paper.slug === slug,
-      );
+      const legacy = (
+        await listAll<Paper>("/papers", {
+          ...options,
+          tags: [CONTENT_TAGS.papers, `paper:${slug}`, ...(tags ?? [])],
+        })
+      ).find((paper) => paper.slug === slug);
       return legacy ? decodePaper(legacy) : null;
     }
     return null;
@@ -143,5 +177,8 @@ export async function getTopicBySlug(
 export async function getDailyPick(
   options?: Options,
 ): Promise<DailyPick | null> {
-  return get<DailyPick>("/daily-pick?recent=true", options).catch(() => null);
+  return get<DailyPick>("/daily-pick?recent=true", {
+    ...options,
+    tags: [CONTENT_TAGS.daily, ...(options?.tags ?? [])],
+  }).catch(() => null);
 }

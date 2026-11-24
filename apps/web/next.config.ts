@@ -16,6 +16,7 @@ const PUBLIC_DYNAMIC_PAGES = [
   "/topics/",
   "/mcrc/",
   "/robotic/",
+  "/drugs/",
   "/subscribe/",
 ];
 

@@ -10,7 +10,7 @@ import {
   ROBOTIC_PAGES,
 } from "@/lib/site";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 export async function generateStaticParams() {
   return [];
 }
