@@ -114,7 +114,7 @@
     ]
   },
   "generic-CRS": {
-    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (fruquintinib OR Fruzaqla OR FRESCO OR regorafenib OR trifluridine OR TAS-102 OR lonsurf OR bevacizumab) AND (metastatic OR advanced) AND (third-line OR refractory OR later-line OR salvage)",
+    "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (((fruquintinib OR Fruzaqla OR FRESCO OR regorafenib OR trifluridine OR TAS-102 OR lonsurf OR zanzalintinib OR STELLAR-303 OR bevacizumab) AND (metastatic OR advanced) AND (third-line OR refractory OR later-line OR salvage)) OR ((total neoadjuvant OR watch-and-wait OR nonoperative management OR ctDNA-guided OR circulating tumor DNA OR adjuvant chemotherapy) AND (randomized OR randomised OR phase 3 OR phase III OR phase 2 OR phase II OR guideline)))",
     "keywords": [
       "fruquintinib",
       "Fruzaqla",
@@ -123,20 +123,28 @@
       "TAS-102",
       "trifluridine",
       "lonsurf",
-      "later-line"
+      "zanzalintinib",
+      "STELLAR-303",
+      "later-line",
+      "total neoadjuvant",
+      "ctDNA-guided",
+      "adjuvant chemotherapy"
     ],
     "rss_filter_terms": [
       "fruquintinib",
       "regorafenib",
       "trifluridine",
       "TAS-102",
+      "zanzalintinib",
       "colorectal"
     ],
     "conference_terms": [
       "fruquintinib colorectal",
       "FRESCO colorectal",
       "regorafenib colorectal",
-      "TAS-102 colorectal refractory"
+      "TAS-102 colorectal refractory",
+      "total neoadjuvant rectal cancer",
+      "ctDNA adjuvant colon cancer"
     ]
   },
   "robotic-surgery": {
@@ -171,12 +179,20 @@
       "pubmed_journal": "N Engl J Med"
     },
     {
+      "name": "The Lancet",
+      "pubmed_journal": "Lancet"
+    },
+    {
       "name": "JCO",
       "pubmed_journal": "J Clin Oncol"
     },
     {
       "name": "Lancet Oncol",
       "pubmed_journal": "Lancet Oncol"
+    },
+    {
+      "name": "Lancet Gastroenterol Hepatol",
+      "pubmed_journal": "Lancet Gastroenterol Hepatol"
     },
     {
       "name": "Nature Medicine",
@@ -191,12 +207,20 @@
       "pubmed_journal": "JAMA Oncol"
     },
     {
+      "name": "JAMA Surgery",
+      "pubmed_journal": "JAMA Surg"
+    },
+    {
       "name": "Annals of Surgery",
       "pubmed_journal": "Ann Surg"
     },
     {
       "name": "BJS",
       "pubmed_journal": "Br J Surg"
+    },
+    {
+      "name": "DCR",
+      "pubmed_journal": "Dis Colon Rectum"
     }
   ],
   "conference_seasons": {

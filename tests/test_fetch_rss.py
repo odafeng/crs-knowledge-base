@@ -169,3 +169,17 @@ class TestJournalRouting:
         results = fetch_rss(topic="mCRC-HER2")
         assert {r["doi"] for r in results} == {"10.1/her2"}
         assert all(r["topic"] == "mCRC-HER2" for r in results)
+
+    def test_journal_list_and_generic_query_cover_major_crc_and_surgical_venues(self):
+        from config import load_queries
+
+        queries = load_queries()
+        journals = {f["pubmed_journal"] for f in queries["rss_feeds"]}
+        for expected in ("Lancet", "Lancet Gastroenterol Hepatol", "JAMA Surg", "Dis Colon Rectum"):
+            assert expected in journals
+
+        generic_q = queries["generic-CRS"]["pubmed_query"].lower()
+        assert "total neoadjuvant" in generic_q
+        assert "ctdna-guided" in generic_q
+        assert "adjuvant chemotherapy" in generic_q
+        assert "zanzalintinib" in generic_q
