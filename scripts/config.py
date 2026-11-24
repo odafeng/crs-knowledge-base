@@ -159,3 +159,105 @@ def load_tracked_abstracts():
 
 def save_tracked_abstracts(data):
     _save_state("tracked-abstracts", TRACKED_ABSTRACTS_FILE, data)
+
+
+def load_kb_data_from_conn(conn) -> dict:
+    """Read active topics, papers, relations, and commentary directly from PostgreSQL (K9 #259, ADR-0027)."""
+    from psycopg.rows import dict_row
+
+    with conn.cursor(row_factory=dict_row) as cur:
+        topic_rows = cur.execute("select key, standard_of_care, soc_title, metrics from app.topics").fetchall()
+        paper_rows = cur.execute(
+            "select id, topic_key, year, journal, study_type, n, regimen, endpoint, result, bottom_line,"
+            " doi, source, reviewed_at, added_at, source_file, review_status, review_published_at, summary"
+            " from app.papers where withdrawn_at is null order by year desc, id"
+        ).fetchall()
+        rel_rows = cur.execute(
+            "select paper_id, target_id, type from app.paper_relations order by paper_id, target_id, type"
+        ).fetchall()
+        comm_rows = cur.execute(
+            "select paper_id, doi, pmid, title, journal, year, type, summary, critique, new_data,"
+            " added_at, review_status, review_published_at"
+            " from app.research_commentary order by paper_id, added_at, coalesce(doi, pmid, title)"
+        ).fetchall()
+
+    relations: dict[str, list[dict]] = {}
+    for r in rel_rows:
+        relations.setdefault(r["paper_id"], []).append({"targetId": r["target_id"], "type": r["type"]})
+
+    commentary: dict[str, list[dict]] = {}
+    for c in comm_rows:
+        item = {k: v for k, v in (("doi", c["doi"]), ("pmid", c["pmid"])) if v}
+        item |= {
+            "title": c["title"],
+            "journal": c["journal"],
+            "type": c["type"],
+            "summary": c["summary"],
+            "critique": c["critique"],
+            "newData": c["new_data"],
+            "addedAt": c["added_at"].isoformat(),
+        }
+        if c["year"] is not None:
+            item["year"] = c["year"]
+        if c["review_status"]:
+            review = {"status": c["review_status"]}
+            if c["review_published_at"]:
+                review["publishedAt"] = c["review_published_at"].isoformat()
+            item["review"] = review
+        commentary.setdefault(c["paper_id"], []).append(item)
+
+    data: dict[str, dict] = {}
+    for t in topic_rows:
+        block: dict = {"papers": [], "metrics": t["metrics"] or {}}
+        if t["soc_title"] is not None or t["standard_of_care"]:
+            soc: dict = {"cards": t["standard_of_care"] or []}
+            if t["soc_title"] is not None:
+                soc["title"] = t["soc_title"]
+            block["standard_of_care"] = soc
+        data[t["key"]] = block
+
+    for p in paper_rows:
+        entry: dict = {
+            "id": p["id"],
+            "year": p["year"],
+            "journal": p["journal"],
+            "studyType": p["study_type"],
+            "n": p["n"],
+            "regimen": p["regimen"],
+            "endpoint": p["endpoint"],
+            "result": p["result"],
+            "bottomLine": p["bottom_line"],
+            "doi": p["doi"] or "",
+            "relations": relations.get(p["id"], []),
+            "source": p["source"],
+            "reviewedAt": p["reviewed_at"].isoformat(),
+        }
+        if p["added_at"]:
+            entry["addedAt"] = p["added_at"].isoformat()
+        if p["source_file"]:
+            entry["file"] = p["source_file"]
+        if p["id"] in commentary:
+            entry["commentary"] = commentary[p["id"]]
+        if p["summary"]:
+            entry["summary"] = p["summary"]
+        if p["review_status"]:
+            review = {"status": p["review_status"]}
+            if p["review_published_at"]:
+                review["publishedAt"] = p["review_published_at"].isoformat()
+            entry["review"] = review
+        data.setdefault(p["topic_key"], {"papers": [], "metrics": {}})["papers"].append(entry)
+
+    return data
+
+
+def load_kb_data() -> dict:
+    """Load KB data from PostgreSQL when GUTHUB_CONTENT_DATABASE_URL is set, else local data/papers.json."""
+    url = os.environ.get(CONTENT_DATABASE_ENV)
+    if url:
+        import psycopg
+
+        with psycopg.connect(url) as conn:
+            return load_kb_data_from_conn(conn)
+    if PAPERS_JSON.exists():
+        return json.loads(PAPERS_JSON.read_text(encoding="utf-8"))
+    return {}

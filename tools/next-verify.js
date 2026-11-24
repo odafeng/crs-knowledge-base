@@ -1,13 +1,17 @@
 // Accessibility (axe-core), layout and the main reading flow on the running Next.js site (C2d #93).
 // Usage: node tools/next-verify.js <Next.js origin>
-// Same axe tags and representative pages as verify.js uses for the current site.
 const { chromium } = require('playwright');
 const fs = require('fs');
-const { PAGES } = require('./serve');
 
 const ORIGIN = (process.argv[2] || 'http://127.0.0.1:3000').replace(/\/$/, '');
 const axeSrc = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
-// Pages only the Next.js site has (D1 #67), checked as a visitor sees them.
+// Representative reading pages covering short and long variants of each page type.
+const PAGES = [
+  '', 'news/', 'news/niche2-five-year/', 'news/ifebemtinib-garsorasib/', 'updates/', 'topics/', 'mcrc/',
+  'mcrc/braf-v600e/', 'mcrc/msi-h/', 'papers/beacon-2019/', 'papers/stellar303-lancet-2025/', 'robotic/',
+  'robotic/tme/', 'robotic/anastomosis/', 'subscribe/', 'about/',
+];
+// Pages added by the Next.js site (D1 #67+), checked as a visitor sees them.
 const NEXT_ONLY = ['login/', 'account/', 'auth/callback/', 'admin/comments/', 'tumor-board/', 'tumor-board/ras-wt/', 'privacy/', 'drugs/', 'drugs/regorafenib/'];
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 

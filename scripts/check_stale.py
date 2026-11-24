@@ -7,12 +7,11 @@ nothing in the KB is changed automatically.
 """
 
 import argparse
-import json
 import sys
 from dataclasses import dataclass
 from datetime import date
 
-from config import PAPERS_JSON, STALE_PAPER_DAYS, STALE_REGULATORY_DAYS, STALE_SOC_DAYS
+from config import STALE_PAPER_DAYS, STALE_REGULATORY_DAYS, STALE_SOC_DAYS, load_kb_data
 from gh_cli import ensure_labels, run_gh
 
 ISSUE_TITLE = "[Stale] 內容複查清單"
@@ -103,7 +102,7 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="print the report, don't touch issues")
     args = parser.parse_args()
     today = date.today()
-    items = find_stale(json.loads(PAPERS_JSON.read_text()), today)
+    items = find_stale(load_kb_data(), today)
     body = format_report(items, today)
     print(body)
     if not args.dry_run:

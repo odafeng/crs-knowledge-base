@@ -19,7 +19,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install -r scripts/requirements.txt -r requirements-site.txt -r requirements-dev.txt -r pilot/requirements.txt
+        run: pip install -r scripts/requirements.txt -r requirements-dev.txt -r pilot/requirements.txt
 
       - name: Validate data integrity
         run: python scripts/validate.py --ci
@@ -39,42 +39,6 @@ jobs:
         env:
           GUTHUB_REQUIRE_DB: '1'
         run: python -m pytest tests/ -v
-
-      - name: Build replacement site
-        env:
-          PUSH_PUBLIC_KEY: ${{ vars.PUSH_PUBLIC_KEY }}
-          PUSH_API: ${{ vars.PUSH_API }}
-          PUSH_API_KEY: ${{ vars.PUSH_API_KEY }}
-        run: python build.py
-
-      - name: Check generated links
-        run: python tools/check_links.py site
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: tools/package-lock.json
-
-      - name: Install browser test tools
-        working-directory: tools
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium
-
-      - name: Test reader flows and offline use
-        working-directory: tools
-        run: npm test
-
-      - name: Check accessibility and responsive layouts
-        working-directory: tools
-        run: npm run verify
-
-      - name: Save built site
-        uses: actions/upload-artifact@v7
-        with:
-          name: built-site
-          path: site
 
   web:
     runs-on: ubuntu-latest
@@ -181,8 +145,7 @@ jobs:
           docker build -q -f worker/Dockerfile -t guthub-worker:ci .
           docker run --rm guthub-worker:ci --help | grep -q -- --dry-run
 
-  # The whole new stack against the current site (C2d #93): Supabase -> import -> FastAPI -> Next.js, compared
-  # with sitegen's output from the same data, then axe and the reading flow in a browser.
+  # Full-stack Next.js E2E against local Supabase + FastAPI (C2d #93, K9 #259): axe, reading flow, auth, comments, forum.
   e2e:
     runs-on: ubuntu-latest
     env:
@@ -195,11 +158,8 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install uv and site build dependencies
-        run: pip install uv==0.10.12 -r scripts/requirements.txt -r requirements-site.txt
-
-      - name: Build the current site as the reference
-        run: python build.py --out "$RUNNER_TEMP/current-site"
+      - name: Install uv and pipeline dependencies
+        run: pip install uv==0.10.12 -r scripts/requirements.txt
 
       - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
         with:
@@ -252,9 +212,6 @@ jobs:
           for i in $(seq 1 60); do curl -sf "http://127.0.0.1:$WEB_PORT/api/health" && exit 0; sleep 1; done
           cat "$RUNNER_TEMP/web.log"; exit 1
 
-      - name: Compare pages, links, feeds, sitemap and JSON-LD with the current site
-        run: python tools/check_next_parity.py "$RUNNER_TEMP/current-site" "http://127.0.0.1:$WEB_PORT"
-
       - name: Install browser test tools
         working-directory: tools
         run: |
@@ -288,36 +245,3 @@ jobs:
       # DATABASE_URL reads the follows and the digest token a real digest would carry in its links.
       - name: Following papers and the digest's unsubscribe links
         run: node tools/next-follows.js "http://127.0.0.1:$WEB_PORT"
-
-  deploy:
-    needs: [test, web, api, e2e]
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/download-artifact@v8
-        with:
-          name: built-site
-          path: site
-
-      - name: Verify Actions publishing source
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: test "$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .build_type)" = workflow
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v6
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: site
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5

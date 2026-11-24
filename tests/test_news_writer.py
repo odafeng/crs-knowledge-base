@@ -4,8 +4,8 @@ import copy
 import json
 from typing import Any
 
+import import_content
 import pytest
-from sitegen.load import load_kb
 
 import news_writer
 from publish import KB, PublishError, mark_reviewed, publish_news, unpublish_story
@@ -219,8 +219,9 @@ def test_publish_news_integrates_with_load_kb_review_and_unpublish(kb: KB) -> No
         ],
     )
     publish_news(story, kb)
-    loaded = load_kb(kb.papers_json, kb.news_json)
-    assert any(n.id == "kn177-auto-test" and n.unreviewed for n in loaded.news)
+    built = import_content.build_rows(kb.root)
+    assert built.errors == []
+    assert any(n["id"] == "kn177-auto-test" and n["review_status"] == "auto" for n in built.tables["news"])
 
     # Duplicate paperId is refused unless replace=True
     with pytest.raises(PublishError, match="已有對應新聞"):

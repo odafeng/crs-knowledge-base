@@ -5,27 +5,19 @@ treatment landscape) so it can explain WHY a new finding matters in context.
 """
 
 import json
+import os
 
-from config import PROJECT_ROOT
-
-PAPERS_JSON = PROJECT_ROOT / "data" / "papers.json"
+from config import CONTENT_DATABASE_ENV, load_kb_data
 
 # ---------------------------------------------------------------------------
-# Load existing papers from data/papers.json (single source of truth)
+# Load existing papers from PostgreSQL (when configured) or local data/papers.json
 # ---------------------------------------------------------------------------
 
 
-def _load_papers_json():
-    """Load papers data from JSON. Returns dict keyed by topic."""
-    if not PAPERS_JSON.exists():
-        return {}, {}
-
-    with open(PAPERS_JSON) as f:
-        data = json.load(f)
-
-    # Papers as formatted strings for system prompt injection
-    papers_by_topic = {}
-    metrics_by_topic = {}
+def _format_kb_context(data: dict) -> tuple[dict[str, str], dict[str, str]]:
+    """Format topic papers and metrics as JSON strings for system prompt injection."""
+    papers_by_topic: dict[str, str] = {}
+    metrics_by_topic: dict[str, str] = {}
     for topic, topic_data in data.items():
         papers = topic_data.get("papers", [])
         if papers:
@@ -33,11 +25,27 @@ def _load_papers_json():
         metrics = topic_data.get("metrics")
         if metrics:
             metrics_by_topic[topic] = json.dumps(metrics, indent=2, ensure_ascii=False)
-
     return papers_by_topic, metrics_by_topic
 
 
+def _load_papers_json() -> tuple[dict[str, str], dict[str, str]]:
+    """Load papers context from PostgreSQL (if configured) or local data/papers.json."""
+    return _format_kb_context(load_kb_data())
+
+
 _PAPERS_JS, _METRICS_JS = _load_papers_json()
+_LOADED_DB_URL: str | None = os.environ.get(CONTENT_DATABASE_ENV)
+
+
+def _current_kb_context() -> tuple[dict[str, str], dict[str, str]]:
+    """Reload KB context if GUTHUB_CONTENT_DATABASE_URL changed after module import."""
+    global _PAPERS_JS, _METRICS_JS, _LOADED_DB_URL
+    current_url = os.environ.get(CONTENT_DATABASE_ENV)
+    if current_url != _LOADED_DB_URL:
+        _PAPERS_JS, _METRICS_JS = _load_papers_json()
+        _LOADED_DB_URL = current_url
+    return _PAPERS_JS, _METRICS_JS
+
 
 # ---------------------------------------------------------------------------
 # Topic-specific system prompts
@@ -141,8 +149,9 @@ _TOPIC_CONTEXTS = {
 def build_system_prompt(topic):
     """Build a topic-specific system prompt for the Claude API classifier."""
     context = _TOPIC_CONTEXTS.get(topic, "")
-    existing_js = _PAPERS_JS.get(topic, "")
-    existing_metrics = _METRICS_JS.get(topic, "")
+    papers_js, metrics_js = _current_kb_context()
+    existing_js = papers_js.get(topic, "")
+    existing_metrics = metrics_js.get(topic, "")
 
     return f"""你是一位大腸直腸癌（CRC）臨床研究專家 AI agent，專精於「{topic}」領域。
 你的角色是**主動研究**新發表的文獻，判斷其臨床重要性，並以該領域的既有知識脈絡解釋新發現的意義。

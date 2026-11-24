@@ -224,9 +224,10 @@ def _tool_lookup_existing(input_data):
     }
 
     # Also get the JS paper objects from topic_agents
-    from topic_agents import _PAPERS_JS
+    from topic_agents import _current_kb_context
 
-    js_context = _PAPERS_JS.get(topic, "")
+    papers_js, _ = _current_kb_context()
+    js_context = papers_js.get(topic, "")
 
     return json.dumps(
         {

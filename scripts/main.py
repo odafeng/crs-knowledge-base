@@ -1,7 +1,6 @@
 """Main entry point: orchestrate Layer 1 → 2 → 3 pipeline."""
 
 import argparse
-import json
 import sys
 from datetime import date, datetime
 
@@ -11,9 +10,9 @@ from classify import classify_all
 from commentary import CommentaryProposal, kb_papers, split_commentary, triage_commentary
 from config import (
     ANTHROPIC_API_KEY,
-    PAPERS_JSON,
     RELEVANCE_THRESHOLD,
     is_conference_season,
+    load_kb_data,
     load_tracked_abstracts,
     load_tracked_dois,
     save_tracked_abstracts,
@@ -58,7 +57,7 @@ def triage_all_commentary(commentary: list[dict], dry_run: bool) -> list[tuple[d
         print(f"[Commentary] Skipping triage of {len(commentary)} commentary item(s) (dry run or no API key)")
         return []
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
-    kb = kb_papers(json.loads(PAPERS_JSON.read_text()))
+    kb = kb_papers(load_kb_data())
     results = []
     for c in commentary:
         print(f"[Commentary] {c.get('title', '')[:70]}")

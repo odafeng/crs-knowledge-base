@@ -1,4 +1,4 @@
-"""Paper Watch as a Cloud Run job (E3 #76, ADR-0021; daily full scan K1 #251).
+"""Paper Watch as a Cloud Run job (E3 #76, ADR-0021; daily full scan K1 #251; direct PG reads K9 #259).
 
 python worker/run.py [main.py arguments, e.g. --daily or --topic mCRC-MSI-H --dry-run]
 python worker/run.py --scheduled [--dry-run]   # the daily 16:00 schedule
@@ -6,10 +6,9 @@ python worker/run.py --scheduled [--dry-run]   # the daily 16:00 schedule
 --scheduled runs the full scan every day at 16:00 Taiwan time (PubMed + key journals; during conference season
 fetch_pubmed.py also searches conference abstract supplements automatically).
 
-With GUTHUB_CONTENT_DATABASE_URL set, the job first exports the database's content into this container's data/ and
-docs/: the agents read papers.json for their prompts and triage. That copy is read-only in practice: data/WRITER says
-postgres, so the JSON writer refuses, and every publish goes through content_session into the database. Tracking
-state is read and written in app.paper_watch_state (scripts/config.py).
+With GUTHUB_CONTENT_DATABASE_URL set, scripts read KB context and tracking state directly from PostgreSQL
+(scripts/config.py::load_kb_data and app.paper_watch_state), and every publish writes through content_session into
+PostgreSQL without exporting the database to disk at startup (ADR-0027).
 """
 
 import os
@@ -31,16 +30,6 @@ def main_args(args: list[str], today: date | None = None) -> list[str]:
 
 
 def main() -> None:
-    url = os.environ.get("GUTHUB_CONTENT_DATABASE_URL")
-    if url:
-        sys.path.insert(0, str(ROOT))
-        import import_content
-        import psycopg
-
-        with psycopg.connect(url) as conn:
-            import_content.export_kb(conn, ROOT)
-        (ROOT / "data/WRITER").write_text("postgres\n", encoding="utf-8")
-        print("worker: exported the database content for the agents' context", flush=True)
     scripts = ROOT / "scripts"
     os.chdir(scripts)
     sys.path.insert(0, str(scripts))

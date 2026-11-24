@@ -1,8 +1,10 @@
-/* Global stylesheet manifest (K5 #255): ordered design layers + print rules.
+/* Global stylesheet manifest (K5 #255, K9 #259): ordered design layers + print rules.
    Self-contained widgets live in co-located CSS Modules (*.module.css). */
 @import "../styles/tokens.css";
 @import "../styles/base.css";
 @import "../styles/layout.css";
+@import "../styles/components.css";
+@import "../styles/content.css";
 @import "../styles/auth-account.css";
 @import "../styles/comments-forum.css";
 @import "../styles/tumor-board.css";

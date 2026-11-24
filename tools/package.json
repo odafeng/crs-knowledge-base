@@ -1,13 +1,9 @@
 {
   "name": "site-tools",
   "private": true,
-  "description": "Browser checks for the generated site. Not shipped to readers.",
+  "description": "Browser and smoke checks for the Next.js site. Not shipped to readers.",
   "scripts": {
-    "test": "node --test page-errors.test.js e2e.test.js",
-    "test:web": "node --test web-smoke.test.js",
-    "verify": "node verify.js",
-    "measure": "node measure.js",
-    "lighthouse": "node lighthouse.mjs ../site"
+    "test:web": "node --test web-smoke.test.js"
   },
   "devDependencies": {
     "@fontsource-variable/noto-sans-tc": "^5.3.1",
