@@ -5,6 +5,7 @@ import {
   getNews,
   getPaperBySlug,
   listAll,
+  listPapers,
   REVALIDATE_SECONDS,
 } from "./content";
 
@@ -30,23 +31,107 @@ describe("server content reads", () => {
     });
   });
 
-  it("resolves a paper by its slug, not its ID", async () => {
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockImplementation(async () =>
-        page(
-          [{ id: "STELLAR303_Lancet_2025", slug: "stellar303-lancet-2025" }],
-          null,
-        ),
-      );
+  it("requests slim paper lists without detailHtml", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(
+      page(
+        [
+          {
+            id: "kn177",
+            slug: "kn177",
+            regimen: "A &amp; B",
+            detailHtml: "",
+          },
+        ],
+        null,
+      ),
+    );
+    await expect(listPapers({ fetcher, baseUrl })).resolves.toMatchObject([
+      { id: "kn177", regimen: "A & B", detailHtml: "" },
+    ]);
+    expect(fetcher.mock.calls[0][0]).toBe(
+      "http://api.test/api/v1/papers?limit=100&includeDetail=false",
+    );
+  });
+
+  it("resolves a paper directly via /papers/by-slug/{slug} and rejects non-slug IDs", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(
+      Response.json({
+        id: "STELLAR303_Lancet_2025",
+        slug: "stellar303-lancet-2025",
+        regimen: "A &amp; B",
+        detailHtml: "<p>full</p>",
+      }),
+    );
     await expect(
       getPaperBySlug("stellar303-lancet-2025", { fetcher, baseUrl }),
     ).resolves.toMatchObject({
       id: "STELLAR303_Lancet_2025",
+      regimen: "A & B",
+      detailHtml: "<p>full</p>",
     });
+    expect(fetcher.mock.calls[0][0]).toBe(
+      "http://api.test/api/v1/papers/by-slug/stellar303-lancet-2025",
+    );
+    // Uppercase / underscore IDs are never valid slugs and return null without fetching.
     await expect(
       getPaperBySlug("STELLAR303_Lancet_2025", { fetcher, baseUrl }),
     ).resolves.toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns null on endpoint 404 and falls back to /papers if an older API lacks the route", async () => {
+    const missingPaper = vi.fn<typeof fetch>().mockResolvedValueOnce(
+      Response.json(
+        {
+          error: {
+            code: "not_found",
+            message: "Paper not found",
+            requestId: "r",
+          },
+        },
+        { status: 404 },
+      ),
+    );
+    await expect(
+      getPaperBySlug("missing-slug", { fetcher: missingPaper, baseUrl }),
+    ).resolves.toBeNull();
+    expect(missingPaper).toHaveBeenCalledTimes(1);
+
+    const legacyApi = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json(
+          {
+            error: {
+              code: "not_found",
+              message: "Not Found",
+              requestId: "r",
+            },
+          },
+          { status: 404 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        page(
+          [
+            {
+              id: "STELLAR303_Lancet_2025",
+              slug: "stellar303-lancet-2025",
+              detailHtml: "<p>legacy</p>",
+            },
+          ],
+          null,
+        ),
+      );
+    await expect(
+      getPaperBySlug("stellar303-lancet-2025", { fetcher: legacyApi, baseUrl }),
+    ).resolves.toMatchObject({
+      id: "STELLAR303_Lancet_2025",
+      detailHtml: "<p>legacy</p>",
+    });
+    expect(legacyApi.mock.calls[1][0]).toBe(
+      "http://api.test/api/v1/papers?limit=100",
+    );
   });
 
   it("raises the contract error for failures", async () => {

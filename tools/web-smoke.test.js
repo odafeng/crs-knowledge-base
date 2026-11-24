@@ -61,9 +61,11 @@ function mockApi() {
   const page = items => ({ items, nextCursor: null });
   const notFound = { error: { code: 'not_found', message: 'Not found', requestId: 'mock' } };
   return http.createServer((req, res) => {
-    const { pathname } = new URL(req.url, 'http://mock');
+    const { pathname, searchParams } = new URL(req.url, 'http://mock');
+    const slimPaper = searchParams.get('includeDetail') === 'false' ? { ...paper, detailHtml: '' } : paper;
     const routes = {
-      '/api/v1/papers': page([paper]),
+      '/api/v1/papers': page([slimPaper]),
+      [`/api/v1/papers/by-slug/${paper.slug}`]: paper,
       '/api/v1/news': page([story]),
       '/api/v1/topics': page([topic, robotic]),
       [`/api/v1/news/${story.id}`]: story,

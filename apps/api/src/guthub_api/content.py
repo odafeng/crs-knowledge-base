@@ -12,7 +12,7 @@ from html import unescape
 from typing import Annotated, Any, Literal, LiteralString, get_args
 
 import nh3
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
 
 from guthub_api.db import Conn, get_conn
 
@@ -83,7 +83,7 @@ def _review(row: dict[str, Any]) -> dict[str, Any]:
     return {"review": review}
 
 
-def _papers(db: Conn, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _papers(db: Conn, rows: list[dict[str, Any]], *, include_detail: bool = True) -> list[dict[str, Any]]:
     ids = [row["id"] for row in rows]
     relations: dict[str, list[dict[str, str]]] = {}
     commentary: dict[str, list[dict[str, Any]]] = {}
@@ -134,7 +134,7 @@ def _papers(db: Conn, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             **({"addedAt": _iso(row["added_at"])} if row["added_at"] else {}),
             **_review(row),
             "commentary": commentary.get(row["id"], []),
-            "detailHtml": clean(row["detail_html"]),
+            "detailHtml": clean(row["detail_html"]) if include_detail else "",
             **({"summary": row["summary"]} if row["summary"] else {}),
         }
         for row in rows
@@ -184,17 +184,40 @@ def _topic(row: dict[str, Any]) -> dict[str, Any]:
 # --- papers --------------------------------------------------------------------------------------------------------
 
 
+PAPER_LIST_QUERY_FULL: LiteralString = (
+    "select * from app.public_papers where %(topic)s::text is null or topic_key = %(topic)s"
+    " order by year desc, id limit %(limit)s offset %(offset)s"
+)
+PAPER_LIST_QUERY_SLIM: LiteralString = (
+    "select id, slug, topic_key, year, journal, study_type, n, regimen, endpoint, result, bottom_line, doi, source,"
+    " reviewed_at, added_at, review_status, review_published_at, summary from app.public_papers"
+    " where %(topic)s::text is null or topic_key = %(topic)s order by year desc, id limit %(limit)s offset %(offset)s"
+)
+type PaperSlug = Annotated[str, Path(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")]
+
+
 @router.get("/papers")
 def list_papers(
-    db: Db, response: Response, limit: Limit = 20, cursor: Cursor = None, topic: TopicKey | None = None
+    db: Db,
+    response: Response,
+    limit: Limit = 20,
+    cursor: Cursor = None,
+    topic: TopicKey | None = None,
+    include_detail: Annotated[bool, Query(alias="includeDetail")] = True,
 ) -> dict[str, Any]:
     offset = _offset(cursor)
-    rows = db.execute(
-        "select * from app.public_papers where %(topic)s::text is null or topic_key = %(topic)s"
-        " order by year desc, id limit %(limit)s offset %(offset)s",
-        {"topic": topic, "limit": limit + 1, "offset": offset},
-    ).fetchall()
-    return _page(response, _papers(db, rows), offset, limit)
+    query = PAPER_LIST_QUERY_FULL if include_detail else PAPER_LIST_QUERY_SLIM
+    rows = db.execute(query, {"topic": topic, "limit": limit + 1, "offset": offset}).fetchall()
+    return _page(response, _papers(db, rows, include_detail=include_detail), offset, limit)
+
+
+@router.get("/papers/by-slug/{slug}")
+def get_paper_by_slug(slug: PaperSlug, db: Db, response: Response) -> dict[str, Any]:
+    row = db.execute("select * from app.public_papers where slug = %s", (slug,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Paper not found")
+    response.headers["Cache-Control"] = PUBLIC_CACHE
+    return _papers(db, [row])[0]
 
 
 @router.get("/papers/{paper_id}")

@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/papers/by-slug/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getPaperBySlug */
+        get: operations["getPaperBySlug"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/papers/{paperId}": {
         parameters: {
             query?: never;
@@ -1681,6 +1698,7 @@ export interface components {
         Limit: number;
         Cursor: string;
         PaperId: string;
+        PaperSlug: string;
         AccountId: string;
         CommentId: string;
         ThreadId: string;
@@ -1721,6 +1739,8 @@ export interface operations {
                 limit?: components["parameters"]["Limit"];
                 cursor?: components["parameters"]["Cursor"];
                 topic?: components["schemas"]["TopicKey"];
+                /** @description When false, omits detailHtml (returned as an empty string) to keep list responses small. */
+                includeDetail?: boolean;
             };
             header?: never;
             path?: never;
@@ -1737,6 +1757,32 @@ export interface operations {
                     "application/json": components["schemas"]["PaperPage"];
                 };
             };
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    getPaperBySlug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: components["parameters"]["PaperSlug"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Paper"];
+                };
+            };
+            404: components["responses"]["NotFound"];
             422: components["responses"]["InvalidRequest"];
             429: components["responses"]["RateLimited"];
             503: components["responses"]["Unavailable"];
