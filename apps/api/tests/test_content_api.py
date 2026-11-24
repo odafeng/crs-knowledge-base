@@ -125,6 +125,24 @@ def test_topic_filter_and_ordering(client: TestClient) -> None:
     assert [p["year"] for p in papers] == sorted((p["year"] for p in papers), reverse=True)
 
 
+def test_slim_paper_list_omits_detail_html_and_by_slug_returns_full_paper(client: TestClient) -> None:
+    slim = all_pages(client, "/papers", includeDetail="false", limit=100)
+    assert len(slim) == len(RAW_PAPERS)
+    validator = schema("Paper")
+    for paper in slim:
+        validator.validate(paper)
+        assert paper["detailHtml"] == ""
+
+    with_detail = next(pid for pid, raw in RAW_PAPERS.items() if raw.get("file"))
+    slug = with_detail.lower().replace("_", "-")
+    full = get(client, f"/papers/by-slug/{slug}")
+    validator.validate(full)
+    assert full["id"] == with_detail
+    assert full["detailHtml"]
+    assert client.get(f"{API_PREFIX}/papers/by-slug/no-such-slug").status_code == 404
+    assert client.get(f"{API_PREFIX}/papers/by-slug/INVALID_SLUG").status_code == 422
+
+
 # --- news ----------------------------------------------------------------------------------------------------------
 
 
@@ -207,6 +225,7 @@ def test_withdrawn_paper_disappears_everywhere(client: TestClient) -> None:
         conn.execute("update app.papers set withdrawn_at = now() where id = %s", (target,))
         try:
             assert client.get(f"{API_PREFIX}/papers/{target}").status_code == 404
+            assert client.get(f"{API_PREFIX}/papers/by-slug/{target.lower().replace('_', '-')}").status_code == 404
             papers = all_pages(client, "/papers", limit=100)
             assert target not in {p["id"] for p in papers}
             assert all(r["targetId"] != target for p in papers for r in p["relations"])

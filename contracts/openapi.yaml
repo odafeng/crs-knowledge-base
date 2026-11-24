@@ -38,6 +38,27 @@ paths:
       - name: topic
         in: query
         schema: {$ref: '#/components/schemas/TopicKey'}
+      - name: includeDetail
+        in: query
+        description: When false, omits detailHtml (returned as an empty string) to keep list responses small.
+        schema: {type: boolean, default: true}
+  /papers/by-slug/{slug}:
+    get:
+      operationId: getPaperBySlug
+      summary: getPaperBySlug
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Paper'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/PaperSlug'}
   /papers/{paperId}:
     get:
       operationId: getPaper
@@ -1229,6 +1250,11 @@ components:
       in: path
       required: true
       schema: {type: string, minLength: 1}
+    PaperSlug:
+      name: slug
+      in: path
+      required: true
+      schema: {type: string, minLength: 1, pattern: '^[a-z0-9][a-z0-9-]*$'}
     AccountId:
       name: accountId
       in: path

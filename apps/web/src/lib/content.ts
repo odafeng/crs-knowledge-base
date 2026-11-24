@@ -7,7 +7,12 @@ import { decodeEntities, type News, type Paper, type Topic } from "./site";
 export const REVALIDATE_SECONDS = 300;
 
 type Page<T> = { items: T[]; nextCursor: string | null };
-type Options = { fetcher?: typeof fetch; baseUrl?: string };
+type Options = {
+  fetcher?: typeof fetch;
+  baseUrl?: string;
+  params?: Record<string, string>;
+};
+const PAPER_SLUG = /^[a-z0-9][a-z0-9-]*$/;
 
 function apiBase(baseUrl = process.env.GUTHUB_API_URL): string {
   if (!baseUrl)
@@ -45,6 +50,7 @@ export async function listAll<T>(
   do {
     const query: URLSearchParams = new URLSearchParams({
       limit: "100",
+      ...(options.params ?? {}),
       ...(cursor ? { cursor } : {}),
     });
     const page: Page<T> | null = await get<Page<T>>(
@@ -78,7 +84,12 @@ export function decodePaper(paper: Paper): Paper {
 }
 
 export const listPapers = async (options?: Options) =>
-  (await listAll<Paper>("/papers", options)).map(decodePaper);
+  (
+    await listAll<Paper>("/papers", {
+      ...options,
+      params: { includeDetail: "false", ...(options?.params ?? {}) },
+    })
+  ).map(decodePaper);
 export const listNews = (options?: Options) => listAll<News>("/news", options);
 export const listTopics = (options?: Options) =>
   listAll<Topic>("/topics", options);
@@ -86,16 +97,37 @@ export const listTopics = (options?: Options) =>
 export const getNews = (id: string, options?: Options) =>
   get<News>(`/news/${encodeURIComponent(id)}`, options);
 
-// The site addresses papers and topics by slug, which the API cannot look up: slugs are derived from IDs
-// (lower case, "_" -> "-") and cannot be reversed. The full lists are small and cached by ISR, so pages resolve
-// slugs from them. If content grows, add a slug filter to the contract instead.
+/**
+ * Fetches one full paper (including sanitized detailHtml) by slug (K4 #254).
+ * Falls back to full list pagination only when talking to an older API revision
+ * that has not yet deployed `/papers/by-slug/{slug}` (FastAPI's missing-route
+ * 404 returns message "Not Found", whereas the endpoint returns "Paper not found").
+ */
 export async function getPaperBySlug(
   slug: string,
-  options?: Options,
+  options: Options = {},
 ): Promise<Paper | null> {
-  return (
-    (await listPapers(options)).find((paper) => paper.slug === slug) ?? null
+  if (!PAPER_SLUG.test(slug)) return null;
+  const { fetcher = fetch, baseUrl } = options;
+  const response = await fetcher(
+    `${apiBase(baseUrl)}/papers/by-slug/${encodeURIComponent(slug)}`,
+    {
+      headers: { accept: "application/json" },
+      next: { revalidate: REVALIDATE_SECONDS },
+    },
   );
+  if (response.ok) return decodePaper((await response.json()) as Paper);
+  const error = await apiError(response, "無法載入內容，請稍後再試。");
+  if (error.status === 404 && error.code === "not_found") {
+    if (error.message === "Not Found") {
+      const legacy = (await listAll<Paper>("/papers", options)).find(
+        (paper) => paper.slug === slug,
+      );
+      return legacy ? decodePaper(legacy) : null;
+    }
+    return null;
+  }
+  throw error;
 }
 
 export async function getTopicBySlug(
