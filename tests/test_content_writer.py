@@ -154,6 +154,29 @@ def test_an_auto_paper_is_published_once_per_request(db_writer):
     assert count(db_writer, "select count(*) from app.publish_events") == 1
 
 
+def test_robotic_surgery_paper_publishes_and_round_trips_export(db_writer, tmp_path):
+    paper = _paper(id="color-iii-2026")
+    paper["topic"] = "robotic-surgery"
+    paper["doi"] = "10.1016/test-color-iii-db"
+    paper["pmid"] = "99990999"
+    paper["ai_suggested_filename"] = "COLOR_III_2026.html"
+    with content_session("publish_paper", paper["doi"], key="k-robotic-1", conn=db_writer) as session:
+        entry = publish_paper(paper, "auto", TODAY, **session.kb_args)
+        session.record(f"publish {entry['id']}")
+    assert (
+        count(
+            db_writer,
+            "select count(*) from app.public_papers where id = 'color-iii-2026' and topic_key = 'robotic-surgery'",
+        )
+        == 1
+    )
+    out = tmp_path / "exported"
+    export_kb(db_writer, out)
+    exported = json.loads((out / "data/papers.json").read_text(encoding="utf-8"))
+    assert [p["id"] for p in exported["robotic-surgery"]["papers"]] == ["color-iii-2026"]
+    assert build_rows(out).errors == []
+
+
 def test_a_failed_publish_leaves_nothing_behind(db_writer):
     publish_auto(db_writer, "k-1")
     before = manifest_of(db_writer)

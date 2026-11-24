@@ -131,18 +131,20 @@ _TOPIC_CONTEXTS = {
 - 新型 EGFR 標靶（bispecific 如 petosemtamab/amivantamab、ADC）在 mCRC 的前瞻數據
 - Anti-EGFR 與免疫治療或三藥化療合併的前瞻性 RCT
 - Maintenance / de-escalation 策略的長期 OS 追蹤""",
-    "robotic-surgery": """## 機器人與微創結直腸手術演進
+    "robotic-surgery": """## 機器人與微創結直腸手術演進（涵蓋微創 TME / TaTME / CME、吻合技術與術後併發症預防）
 - ROLARR (2017): robotic vs laparoscopic TME，轉換率無顯著差異（N=471）
 - COLRAR (2023): TME 完整性無顯著差異（N=295）
 - REAL (2025): 首個顯示機器人 TME 局部復發率顯著低於腹腔鏡的 RCT（1.6% vs 4.0%）
 - Network MA (2024): 機器人 TME 在部分病理與圍術期指標具優勢
-- 關鍵問題：長期腫瘤學結果（OS/DFS）、機器人 CME 的隨機證據、體內吻合（intracorporeal anastomosis）與降低吻合口滲漏、新型機器人平台比較
+- 關鍵問題：長期腫瘤學結果（OS/DFS）、TaTME vs 腹腔鏡／機器人 TME（如 COLOR III）、微創與機器人 CME（右半結腸 D3/CME 隨機證據）、體內 vs 體外吻合（intracorporeal anastomosis）、降低吻合口滲漏（ICG 螢光灌流評估、吻合補強、保護性造口選擇）、器官保留經肛門局部切除，以及新型手術機器人平台比較
 
 值得注意的里程碑類型：
-- REAL 試驗後續長期存活或亞組分析
-- 機器人 CME vs 腹腔鏡 CME 的 RCT
-- TaTME vs Robotic TME、體內 vs 體外吻合或降低吻合口漏的大型 RCT
-- 新型手術機器人平台（Hugo、Versius、單孔 SP 等）與 AI 手術輔助的臨床數據""",
+- REAL 或其他機器人 vs 腹腔鏡 TME 試驗的長期腫瘤學追蹤或亞組分析
+- TaTME vs 腹腔鏡／機器人 TME（如 COLOR III）與微創／機器人 CME 的大型 Phase 3 RCT
+- 體內 vs 體外吻合、ICG 螢光或吻合口滲漏預防（anastomotic leak）的高品質多中心 RCT
+- 經肛門微創手術（TAMIS/TEM）與器官保留手術策略的前瞻性隨機證據
+- 新型手術機器人平台（Hugo、Versius、單孔 SP 等）與 AI 手術輔助的臨床數據
+- 注意：小型單中心回溯性病例系列或學習曲線報告（無對照或樣本數過小）應給予低分（score <= 2）""",
 }
 
 

@@ -35,6 +35,7 @@ import {
   newsPath,
   paperPath,
   paperTitle,
+  ROBOTIC,
   SOURCE_LABELS,
   topicPath,
 } from "@/lib/site";
@@ -85,8 +86,12 @@ export default async function PaperPage({ params }: Props) {
     : "";
   const pmid = paper.detailHtml ? extractPmid(paper.detailHtml) : null;
   const crumbs = [
-    ...MCRC,
-    ...(topic ? ([[topic.label, topicPath(topic)]] as const) : []),
+    ...(topic?.roboticSections.length
+      ? ROBOTIC
+      : [
+          ...MCRC,
+          ...(topic ? ([[topic.label, topicPath(topic)]] as const) : []),
+        ]),
     [paper.regimen, paperPath(paper)] as const,
   ];
 

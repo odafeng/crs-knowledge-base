@@ -73,7 +73,8 @@ export const NEWS: Crumbs = [...HOME, ["最新消息", "/news/"]];
 export const paperPath = (paper: Pick<Paper, "slug">) =>
   `/papers/${paper.slug}/`;
 export const newsPath = (item: Pick<News, "id">) => `/news/${item.id}/`;
-export const topicPath = (topic: Pick<Topic, "slug">) => `/mcrc/${topic.slug}/`;
+export const topicPath = (topic: Pick<Topic, "slug">) =>
+  topic.slug === "robotic" ? "/robotic/" : `/mcrc/${topic.slug}/`;
 export const doiUrl = (doi: string) => `https://doi.org/${doi}`;
 
 export const isUnreviewed = (item: { review?: { status: string } }) =>
@@ -372,8 +373,7 @@ export function feedList(
       news.some(
         (n) => papers.find((p) => p.id === n.paperId)?.topic === topic.key,
       );
-    if (has && topic.roboticSections.length === 0)
-      feeds.push({ label: topic.label, path: feedPath(topic.slug) });
+    if (has) feeds.push({ label: topic.label, path: feedPath(topic.slug) });
   }
   return feeds;
 }

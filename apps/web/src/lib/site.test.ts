@@ -8,6 +8,7 @@ import {
   formatWeekSummary,
   plateKicker,
   TABS,
+  topicPath,
   updates,
   weekStats,
   findingText,
@@ -366,5 +367,18 @@ describe("navigation, reading log and feeds mirrored from sitegen", () => {
       "/feed/news.xml",
       "/feed/msi-h.xml",
     ]);
+    const withSurgery = feedList(
+      [paper("a", "mCRC-MSI-H", 2025), paper("r", "robotic-surgery", 2026)],
+      [story("n", "a")],
+      topics,
+    );
+    expect(withSurgery.map((f) => f.path)).toEqual([
+      "/rss.xml",
+      "/feed/news.xml",
+      "/feed/msi-h.xml",
+      "/feed/robotic.xml",
+    ]);
+    expect(topicPath({ slug: "msi-h" })).toBe("/mcrc/msi-h/");
+    expect(topicPath({ slug: "robotic" })).toBe("/robotic/");
   });
 });

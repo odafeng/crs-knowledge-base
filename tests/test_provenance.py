@@ -175,8 +175,15 @@ class TestPaperGate:
         assert not result.passed
 
     def test_unsupported_topic_is_held(self):
-        result = evaluate_paper_gate(_paper(topic="robotic-surgery"), AUTO_TOPICS)
+        result = evaluate_paper_gate(_paper(topic="unknown-topic"), AUTO_TOPICS)
         assert any("不支援自動發布" in r for r in result.reasons)
+
+    def test_robotic_surgery_passes_when_auto_publish_enabled(self):
+        from publish import AUTO_PUBLISH_TOPICS
+
+        assert "robotic-surgery" in AUTO_PUBLISH_TOPICS
+        result = evaluate_paper_gate(_paper(topic="robotic-surgery"), AUTO_PUBLISH_TOPICS)
+        assert result.passed, result.reasons
 
     def test_parse_failure_is_held(self):
         result = evaluate_paper_gate(_paper(ai_parse_failed=True, ai_suggested_js=None, ai_evidence=[]), AUTO_TOPICS)

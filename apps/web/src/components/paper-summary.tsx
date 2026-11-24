@@ -108,7 +108,7 @@ export function PaperGlance({
           ))}
         </ul>
       </div>
-      {topic && (
+      {topic && topic.standardOfCare.length > 0 && (
         <p className={styles.taiwan}>
           台灣的 TFDA 核准與健保給付，看
           <Link href={`${topicPath(topic)}#reg`}>

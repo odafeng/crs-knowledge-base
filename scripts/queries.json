@@ -148,29 +148,47 @@
     ]
   },
   "robotic-surgery": {
-    "pubmed_query": "(rectal cancer[MeSH] OR colon cancer[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (robotic OR robot-assisted) AND (total mesorectal excision OR TME OR complete mesocolic excision OR CME OR anastomosis OR intracorporeal)",
+    "pubmed_query": "(rectal cancer[MeSH] OR colon cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (robotic[tiab] OR robot-assisted[tiab] OR laparoscopic[tiab] OR minimally invasive[tiab] OR TaTME[tiab] OR transanal[tiab]) AND (total mesorectal excision[tiab] OR TME[tiab] OR complete mesocolic excision[tiab] OR CME[tiab] OR intracorporeal[tiab] OR anastomotic leak[tiab] OR colorectal anastomosis[tiab] OR ileocolic anastomosis[tiab] OR sphincter-preserving[tiab] OR local excision[tiab])",
     "keywords": [
       "robotic",
       "robot-assisted",
+      "laparoscopic",
+      "minimally invasive",
       "TME",
+      "TaTME",
       "CME",
       "intracorporeal anastomosis",
+      "anastomotic leak",
+      "transanal",
       "REAL trial",
-      "ROLARR"
+      "ROLARR",
+      "COLOR III"
     ],
     "rss_filter_terms": [
       "robotic",
       "robot-assisted",
-      "rectal",
-      "colon",
+      "laparoscopic",
       "TME",
-      "CME"
+      "TaTME",
+      "CME",
+      "mesorectal",
+      "mesocolic",
+      "intracorporeal",
+      "anastomosis",
+      "anastomotic leak",
+      "colectomy",
+      "proctectomy",
+      "transanal"
     ],
     "conference_terms": [
       "robotic rectal surgery",
       "robotic TME",
+      "TaTME rectal cancer",
       "robotic CME",
-      "intracorporeal anastomosis"
+      "complete mesocolic excision",
+      "intracorporeal anastomosis",
+      "anastomotic leak colorectal",
+      "minimally invasive rectal surgery"
     ]
   },
   "rss_feeds": [

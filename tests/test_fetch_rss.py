@@ -143,6 +143,15 @@ class TestJournalRouting:
             ("Sotorasib plus panitumumab in KRAS G12C colorectal cancer", "mCRC-KRAS-G12C"),
             ("Encorafenib in BRAF V600E colorectal cancer", "mCRC-BRAF-V600E"),
             ("Robotic TME versus laparoscopic surgery for rectal cancer", "robotic-surgery"),
+            ("Intracorporeal versus extracorporeal anastomosis in laparoscopic right colectomy", "robotic-surgery"),
+            (
+                "Transanal total mesorectal excision versus laparoscopic TME for rectal cancer (COLOR III)",
+                "robotic-surgery",
+            ),
+            (
+                "Indocyanine green fluorescence angiography to prevent anastomotic leak in rectal surgery",
+                "robotic-surgery",
+            ),
             # No specific term: the catch-all topic, not whichever topic is listed first.
             ("Adjuvant chemotherapy duration in stage III colorectal cancer", "generic-CRS"),
             # "treatment" contains "tme"; it must not read as the robotic term TME.
@@ -183,3 +192,9 @@ class TestJournalRouting:
         assert "ctdna-guided" in generic_q
         assert "adjuvant chemotherapy" in generic_q
         assert "zanzalintinib" in generic_q
+
+        surgery_q = queries["robotic-surgery"]["pubmed_query"].lower()
+        assert "laparoscopic" in surgery_q
+        assert "tatme" in surgery_q
+        assert "anastomotic leak" in surgery_q
+        assert "complete mesocolic excision" in surgery_q

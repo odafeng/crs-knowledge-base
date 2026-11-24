@@ -40,6 +40,9 @@ class TestBuildSystemPrompt:
         assert "STELLAR-303" in build_system_prompt("generic-CRS")
         assert "ctDNA-guided" in build_system_prompt("generic-CRS")
         assert "garsorasib" in build_system_prompt("mCRC-KRAS-G12C")
+        surgery_prompt = build_system_prompt("robotic-surgery")
+        assert "TaTME" in surgery_prompt
+        assert "anastomotic leak" in surgery_prompt
 
     def test_unknown_topic_still_works(self):
         prompt = build_system_prompt("unknown-topic")

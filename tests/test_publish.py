@@ -115,9 +115,19 @@ class TestPublishPaper:
         paper["ai_suggested_filename"] = "../index.html"
         assert publish_paper(paper, "auto", TODAY, kb)["file"] == "docs/mCRC-MSI-H/test-auto-2026.html"
 
-    def test_robotic_topic_refused(self, kb):
-        paper = _paper()
+    def test_robotic_topic_publishes(self, kb):
+        paper = _paper(id="real-tme-2026")
         paper["topic"] = "robotic-surgery"
+        paper["ai_suggested_filename"] = "REAL_TME_2026.html"
+        entry = publish_paper(paper, "auto", TODAY, kb)
+        assert entry["file"] == "docs/robotic-surgery/REAL_TME_2026.html"
+        assert (kb.root / entry["file"]).exists()
+        assert any(p["id"] == "real-tme-2026" for p in kb.load()["robotic-surgery"]["papers"])
+        assert validate_data(kb.load(), kb.root) == []
+
+    def test_unknown_topic_refused(self, kb):
+        paper = _paper()
+        paper["topic"] = "nonexistent-topic"
         with pytest.raises(PublishError):
             publish_paper(paper, "auto", TODAY, kb)
 
