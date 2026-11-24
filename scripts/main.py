@@ -30,6 +30,7 @@ from notify_line import notify_papers
 from paper_summary import summarize_new
 from provenance import abstract_status, evaluate_commentary_gate, evaluate_paper_gate
 from publish import AUTO_PUBLISH_TOPICS, PublishError, publish_commentary, publish_paper
+from revalidate_site import revalidate_site
 from usage import USAGE
 
 
@@ -112,6 +113,7 @@ def publish_or_hold_commentary(
                     changed = publish_commentary(items, "auto", today, **session.kb_args)
                     session.record(f"commentary on {', '.join(changed) or 'nothing new'}")
             print(f"  [Publish] {session.done or session.summary}")
+            revalidate_site()
         except PublishError as e:
             print(f"  [WARN] Commentary publish failed, sending to review: {e}", file=sys.stderr)
             held += auto
@@ -291,9 +293,10 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False, r
         published, held = publish_or_hold(classified, today_str, dry_run)
         print(f"\n[Pipeline] {len(published)} published, {len(held)} held for review")
         create_issues(held, dry_run=dry_run)
-        if not dry_run:  # the at-a-glance summary of each new paper (I2 #191) and auto news (K2 #252)
+        if not dry_run and published:  # summary (I2 #191), auto news (K2 #252), and cache purge (K3 #253)
             summarize_new([p["kb_id"] for p in published if p.get("kb_id")])
             write_news_for_new(published, today=today_str)
+            revalidate_site()
 
         # LINE notification for all high-relevance papers
         print()

@@ -40,6 +40,7 @@ from content_store import DATABASE_ENV, content_session  # noqa: E402
 from digest import is_digest  # noqa: E402
 from issue_data import extract  # noqa: E402
 from publish import PublishError, mark_reviewed, unpublish, unpublish_story  # noqa: E402
+from revalidate_site import revalidate_site  # noqa: E402
 
 ACCEPTED = "accepted"
 UNPUBLISH = "unpublish-request"
@@ -149,6 +150,8 @@ def run(gh: Gh, repo: str, today: str, conn: Any = None, store: Any = None) -> i
     results = [accept_request(issue, today, gh, repo, conn) for issue in accepts]
     results += [unpublish_request(issue, gh, repo, conn) for issue in unpublishes]
     site = site_requests(store, conn) if store is not None else []
+    if any(results + site):
+        revalidate_site()
     print(json.dumps({"job": "content-requests", "accept": len(accepts), "unpublish": len(unpublishes),
                       "site": len(site), "failed": (results + site).count(False)}))  # fmt: skip
     return 0 if all(results + site) else 1

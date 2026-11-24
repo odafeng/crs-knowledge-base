@@ -14,7 +14,7 @@ import {
 } from "@/lib/drugs";
 import { pageJsonLd, pageMetadata } from "@/lib/seo";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 export async function generateStaticParams() {
   return [];
 }

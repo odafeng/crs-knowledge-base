@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "./api";
 import {
+  CONTENT_TAG,
+  CONTENT_TAGS,
   decodePaper,
   getNews,
   getPaperBySlug,
@@ -27,11 +29,11 @@ describe("server content reads", () => {
       "http://api.test/api/v1/news?limit=100&cursor=next",
     ]);
     expect(fetcher.mock.calls[0][1]).toMatchObject({
-      next: { revalidate: REVALIDATE_SECONDS },
+      next: { revalidate: REVALIDATE_SECONDS, tags: [CONTENT_TAG] },
     });
   });
 
-  it("requests slim paper lists without detailHtml", async () => {
+  it("requests slim paper lists without detailHtml and tags caches for on-demand revalidation", async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(
       page(
         [
@@ -51,6 +53,12 @@ describe("server content reads", () => {
     expect(fetcher.mock.calls[0][0]).toBe(
       "http://api.test/api/v1/papers?limit=100&includeDetail=false",
     );
+    expect(fetcher.mock.calls[0][1]).toMatchObject({
+      next: {
+        revalidate: REVALIDATE_SECONDS,
+        tags: [CONTENT_TAG, CONTENT_TAGS.papers],
+      },
+    });
   });
 
   it("resolves a paper directly via /papers/by-slug/{slug} and rejects non-slug IDs", async () => {
