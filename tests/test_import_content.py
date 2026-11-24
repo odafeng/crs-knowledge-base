@@ -231,10 +231,17 @@ def test_import_round_trips_every_paper_and_story(conn, rows):
     assert topics.keys() == RAW.keys()
     for key, block in RAW.items():
         soc = block.get("standard_of_care") or {}
-        assert topics[key][:3] == (soc.get("cards", []), soc.get("title"), block.get("metrics")), key
+        expected_cards = [
+            {**card, "body_html": import_content._clean_html(card["body_html"])} for card in soc.get("cards", [])
+        ]
+        assert topics[key][:3] == (expected_cards, soc.get("title"), block.get("metrics")), key
     robotic = {section["slug"]: section for section in topics["robotic-surgery"][3]}
-    assert robotic["tme"]["timeline"] == RAW["robotic-surgery"]["tl_tme"]
-    assert robotic["anastomosis"]["cards"] == RAW["robotic-surgery"]["anast_cards"]
+    assert robotic["tme"]["timeline"] == [
+        {**item, "finding": import_content.sanitize_html(item["finding"])} for item in RAW["robotic-surgery"]["tl_tme"]
+    ]
+    assert robotic["anastomosis"]["cards"] == [
+        {**card, "body": import_content._clean_html(card["body"])} for card in RAW["robotic-surgery"]["anast_cards"]
+    ]
 
 
 @needs_db
