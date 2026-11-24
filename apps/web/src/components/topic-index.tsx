@@ -1,6 +1,6 @@
 // The topic index pages (templates/topics.html.j2): /topics/ shows both groups, /mcrc/ and /robotic/ one each.
 import Link from "next/link";
-import { Breadcrumb } from "@/components/reading";
+import { Breadcrumb, PaperCard } from "@/components/reading";
 import { listPapers, listTopics } from "@/lib/content";
 import { byTopic, ROBOTIC_PAGES, topicPath, type Crumbs } from "@/lib/site";
 
@@ -20,14 +20,18 @@ export async function TopicIndex({
   const [topics, papers] = await Promise.all([listTopics(), listPapers()]);
   const heading = crumbs[crumbs.length - 1][0];
   const mcrc = topics.filter((t) => t.roboticSections.length === 0);
+  const roboticTopic = topics.find((t) => t.roboticSections.length > 0);
   const sections = topics.flatMap((t) => t.roboticSections);
+  const roboticPapers = roboticTopic ? byTopic(papers, roboticTopic.key) : [];
   return (
     <div className="container page">
       <Breadcrumb crumbs={crumbs} />
       <header className="page-head">
         <h1>{heading}</h1>
         <p className="page-head__lead">
-          每個主題有核准與給付現況、治療現況與全部文獻。
+          {groups.length === 1 && groups[0] === "robotic"
+            ? "機器手臂 TME、吻合技術與微創大腸直腸外科試驗實證。"
+            : "每個主題有核准與給付現況、治療現況與全部文獻。"}
         </p>
       </header>
       {groups.map((group) => (
@@ -39,32 +43,36 @@ export async function TopicIndex({
           <h2 id={`group-${group}`}>
             {groups.length > 1 ? (
               <Link href={GROUPS[group][1]}>{GROUPS[group][0]}</Link>
+            ) : group === "robotic" ? (
+              "實證總覽"
             ) : (
               "主題"
             )}
           </h2>
           <ul className="tile-grid">
-            {group === "mcrc"
-              ? mcrc.map((topic) => {
-                  const mine = byTopic(papers, topic.key);
-                  return (
-                    <li className="tile" key={topic.key}>
-                      <p className="tile__count">
-                        <span className="num">{mine.length}</span>篇文獻
+            {group === "mcrc" ? (
+              mcrc.map((topic) => {
+                const mine = byTopic(papers, topic.key);
+                return (
+                  <li className="tile" key={topic.key}>
+                    <p className="tile__count">
+                      <span className="num">{mine.length}</span>篇文獻
+                    </p>
+                    <h3 className="tile__title">
+                      <Link href={topicPath(topic)}>{topic.label}</Link>
+                    </h3>
+                    {mine[0] && (
+                      <p className="tile__text">
+                        最新：{mine[0].regimen}（{mine[0].journal}{" "}
+                        {mine[0].year}）
                       </p>
-                      <h3 className="tile__title">
-                        <Link href={topicPath(topic)}>{topic.label}</Link>
-                      </h3>
-                      {mine[0] && (
-                        <p className="tile__text">
-                          最新：{mine[0].regimen}（{mine[0].journal}{" "}
-                          {mine[0].year}）
-                        </p>
-                      )}
-                    </li>
-                  );
-                })
-              : sections.map((section) => (
+                    )}
+                  </li>
+                );
+              })
+            ) : (
+              <>
+                {sections.map((section) => (
                   <li className="tile" key={section.slug}>
                     <p className="tile__count">
                       <span className="num">{section.cards.length}</span>
@@ -80,9 +88,41 @@ export async function TopicIndex({
                     </p>
                   </li>
                 ))}
+                {groups.length > 1 && roboticPapers.length > 0 && (
+                  <li className="tile" key="robotic-papers">
+                    <p className="tile__count">
+                      <span className="num">{roboticPapers.length}</span>篇文獻
+                    </p>
+                    <h3 className="tile__title">
+                      <Link href="/robotic/#robotic-papers">
+                        最新收錄外科文獻
+                      </Link>
+                    </h3>
+                    <p className="tile__text">
+                      最新：{roboticPapers[0].regimen}（
+                      {roboticPapers[0].journal} {roboticPapers[0].year}）
+                    </p>
+                  </li>
+                )}
+              </>
+            )}
           </ul>
         </section>
       ))}
+      {groups.length === 1 &&
+        groups[0] === "robotic" &&
+        roboticPapers.length > 0 && (
+          <section className="page__section" aria-labelledby="robotic-papers">
+            <h2 id="robotic-papers">
+              最新收錄外科文獻（{roboticPapers.length} 篇）
+            </h2>
+            <ul className="paper-list">
+              {roboticPapers.map((paper) => (
+                <PaperCard paper={paper} key={paper.id} />
+              ))}
+            </ul>
+          </section>
+        )}
       {groups.length > 1 && (
         <section className="page__section" aria-labelledby="group-drugs">
           <h2 id="group-drugs">

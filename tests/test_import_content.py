@@ -116,6 +116,41 @@ def test_unknown_topic_is_reported_not_dropped(tmp_path):
     assert "unknown topic in papers.json: mCRC-NEW" in build_rows(root).errors
 
 
+def test_robotic_surgery_papers_are_imported(tmp_path):
+    root = copy_repo(tmp_path)
+    raw = copy.deepcopy(RAW)
+    doc = root / "docs/robotic-surgery/COLOR_III_2026.html"
+    doc.parent.mkdir(parents=True, exist_ok=True)
+    doc.write_text(
+        "<!doctype html><html><body><h2>COLOR III</h2><p>TaTME vs Lap TME</p></body></html>", encoding="utf-8"
+    )
+    raw["robotic-surgery"]["papers"].append(
+        {
+            "id": "color-iii-2026",
+            "year": 2026,
+            "journal": "Lancet",
+            "studyType": "Phase 3 RCT",
+            "n": 1100,
+            "regimen": "TaTME vs Laparoscopic TME",
+            "endpoint": "3-yr LRR",
+            "result": "3-yr LRR 4.0% vs 4.5%",
+            "bottomLine": "TaTME 非劣於腹腔鏡 TME",
+            "doi": "10.1016/test-color-iii",
+            "file": "docs/robotic-surgery/COLOR_III_2026.html",
+            "relations": [],
+            "source": "abstract",
+            "reviewedAt": "2026-11-24",
+            "review": {"status": "auto", "publishedAt": "2026-11-24"},
+        }
+    )
+    (root / "data/papers.json").write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+    built = build_rows(root)
+    assert built.errors == []
+    robotic_papers = [p for p in built.tables["papers"] if p["topic_key"] == "robotic-surgery"]
+    assert [p["id"] for p in robotic_papers] == ["color-iii-2026"]
+    assert "<h3>COLOR III</h3>" in robotic_papers[0]["detail_html"]
+
+
 def test_cli_dry_run_without_database_does_not_need_psycopg(capsys):
     assert import_content.main(["--dry-run"]) == 0
     assert '"papers"' in capsys.readouterr().out

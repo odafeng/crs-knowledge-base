@@ -106,6 +106,26 @@ describe("feeds keep the current site's identifiers", () => {
     const list = feeds(many, [], topics);
     expect(list.map((f) => f.path)).toEqual(["/rss.xml", "/feed/msi-h.xml"]);
     expect(list[0].items).toHaveLength(30);
+
+    const roboticTopic = {
+      key: "robotic-surgery",
+      slug: "robotic",
+      label: "機器手臂手術",
+      title: "機器手臂手術",
+      roboticSections: [{ slug: "tme" }],
+    } as unknown as Topic;
+    const roboticPaper: Paper = {
+      ...paper("REAL_2026"),
+      topic: "robotic-surgery",
+      commentary: [],
+    };
+    const withSurgery = feeds([roboticPaper], [], [...topics, roboticTopic]);
+    expect(withSurgery.map((f) => f.path)).toEqual([
+      "/rss.xml",
+      "/feed/robotic.xml",
+    ]);
+    const pages = sitemapPages([roboticPaper], [], [...topics, roboticTopic]);
+    expect(pages).toContainEqual(["/robotic/", "2026-03-01"]);
   });
 
   it("follows the configured origin for links but not for IDs", () => {

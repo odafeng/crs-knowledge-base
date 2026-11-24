@@ -23,7 +23,7 @@ from validate import validate_data
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# robotic-surgery renders hand-written HTML cards (tme_cards), not a papers list.
+# All seven KB topics support standard papers lists and provenance-gated auto-publish (ADR-0013, ADR-0028).
 AUTO_PUBLISH_TOPICS = {
     "mCRC-BRAF-V600E",
     "mCRC-KRAS-G12C",
@@ -31,6 +31,7 @@ AUTO_PUBLISH_TOPICS = {
     "mCRC-HER2",
     "mCRC-RAS-wt",
     "generic-CRS",
+    "robotic-surgery",
 }
 
 # Must match validate.REVIEW_STATUSES.

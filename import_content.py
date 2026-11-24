@@ -227,8 +227,6 @@ def build_rows(root: Path = ROOT) -> Rows:
             rows.errors.append(f"missing topic in papers.json: {key}")
     if rows.errors:
         return rows
-    if raw.get(ROBOTIC_KEY, {}).get("papers"):
-        rows.errors.append(f"{ROBOTIC_KEY} papers are not loaded by the site and cannot be imported")
 
     sources = {p["id"]: p for block in raw.values() for p in block.get("papers", [])}
     for story in news:
@@ -300,6 +298,13 @@ def build_rows(root: Path = ROOT) -> Rows:
             "metrics": robotic.get("metrics", {}),
         }
     )
+    for p in robotic.get("papers", []):
+        try:
+            detail_html = _detail(root, p.get("file"))
+        except ValueError as exc:
+            rows.errors.append(f"knowledge base does not load: {exc}")
+            return rows
+        _paper_rows(rows, root, ROBOTIC_KEY, p, detail_html)
 
     for story in news:
         status, published = _review(story)
@@ -548,6 +553,19 @@ def export_kb(conn: Any, root: Path) -> None:
             }
         block["metrics"] = t["metrics"] if t else {}
         raw[topic.key] = block
+
+    robotic = topics.get(ROBOTIC_KEY) or {"robotic_sections": [], "metrics": {}}
+    robotic_block: dict[str, Any] = {"papers": [], "metrics": robotic.get("metrics", {})}
+    sections = {s["slug"]: s for s in robotic["robotic_sections"]}
+    for page in ROBOTIC_PAGES:
+        section = sections.get(page.slug, {"timeline": [], "cards": [], "detailHtml": []})
+        robotic_block[page.timeline_key], robotic_block[page.cards_key] = section["timeline"], section["cards"]
+        details = iter(section["detailHtml"])
+        for item in section["timeline"]:
+            if item.get("file", "").startswith("docs/"):
+                document(item["file"], next(details, ""))
+    raw[ROBOTIC_KEY] = robotic_block
+
     for p in rows("select * from app.papers where withdrawn_at is null order by year desc, id"):
         entry: dict[str, Any] = {
             "id": p["id"],
@@ -575,18 +593,6 @@ def export_kb(conn: Any, root: Path) -> None:
             entry["summary"] = p["summary"]
         entry |= review(p["review_status"], p["review_published_at"])
         raw[p["topic_key"]]["papers"].append(entry)
-
-    robotic = topics.get(ROBOTIC_KEY) or {"robotic_sections": [], "metrics": {}}
-    block = {"papers": [], "metrics": robotic.get("metrics", {})}
-    sections = {s["slug"]: s for s in robotic["robotic_sections"]}
-    for page in ROBOTIC_PAGES:
-        section = sections.get(page.slug, {"timeline": [], "cards": [], "detailHtml": []})
-        block[page.timeline_key], block[page.cards_key] = section["timeline"], section["cards"]
-        details = iter(section["detailHtml"])
-        for item in section["timeline"]:
-            if item.get("file", "").startswith("docs/"):
-                document(item["file"], next(details, ""))
-    raw[ROBOTIC_KEY] = block
 
     news = []
     for n in rows(

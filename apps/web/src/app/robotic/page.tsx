@@ -7,7 +7,7 @@ import { ROBOTIC } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata(
   "機器手臂手術",
-  "機器手臂 TME 與吻合的試驗實證。",
+  "機器手臂 TME、吻合技術與微創大腸直腸外科試驗實證。",
   "/robotic/",
 );
 
@@ -19,7 +19,7 @@ export default async function Page() {
       <JsonLd
         data={pageJsonLd(
           "機器手臂手術",
-          "機器手臂 TME 與吻合的試驗實證。",
+          "機器手臂 TME、吻合技術與微創大腸直腸外科試驗實證。",
           "/robotic/",
           ROBOTIC,
         )}

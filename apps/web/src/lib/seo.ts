@@ -262,7 +262,7 @@ export function feeds(
       path: NEWS_FEED,
       items: stories,
     });
-  for (const topic of topics.filter((t) => t.roboticSections.length === 0)) {
+  for (const topic of topics) {
     const mine = all.filter((u) => u.paper.topic === topic.key);
     if (mine.length) {
       list.push({
@@ -411,13 +411,21 @@ export function sitemapPages(
       .sort()
       .at(-1) ?? null;
   const mcrc = topics.filter((t) => t.roboticSections.length === 0);
+  const roboticTopic = topics.find((t) => t.roboticSections.length > 0);
+  const roboticReviewed = roboticTopic
+    ? (papers
+        .filter((p) => p.topic === roboticTopic.key)
+        .map((p) => p.reviewedAt)
+        .sort()
+        .at(-1) ?? null)
+    : null;
   return [
     ["/", last],
     ["/news/", last],
     ["/updates/", last],
     ["/topics/", null],
     ["/mcrc/", null],
-    ["/robotic/", null],
+    ["/robotic/", roboticReviewed],
     ["/subscribe/", null],
     ["/about/", null],
     ...mcrc.map((topic): [string, string | null] => {
