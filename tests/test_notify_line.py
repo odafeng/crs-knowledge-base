@@ -6,19 +6,20 @@ from notify_line import _format_paper_message, format_digest, send_line
 
 
 class TestFormatPaperMessage:
-    def test_score_5_shows_practice_changing(self, sample_classified_paper):
+    def test_score_5_shows_major_advance(self, sample_classified_paper):
         msg = _format_paper_message(sample_classified_paper)
-        assert "Practice-Changing" in msg
-        assert "Score 5/5" in msg
+        assert "重大臨床進展（5/5）" in msg
+        assert "BRAF V600E" in msg
         assert "GitHub Issue" in msg
 
-    def test_score_4_shows_high_impact(self, sample_candidate):
+    def test_score_4_shows_high_impact_and_auto_publish_status(self, sample_candidate):
         sample_candidate["ai_score"] = 4
-        sample_candidate["ai_bottom_line"] = "Important finding"
+        sample_candidate["ai_bottom_line"] = "一線合併治療顯著延長存活"
+        sample_candidate["publish_status"] = "auto"
         msg = _format_paper_message(sample_candidate)
-        assert "High-Impact" in msg
-        assert "Score 4/5" in msg
-        assert "GitHub Issue" in msg
+        assert "重要新文獻（4/5）" in msg
+        assert "重點：一線合併治療顯著延長存活" in msg
+        assert "已自動發布上站（待審）" in msg
 
     def test_includes_doi_link(self, sample_classified_paper):
         msg = _format_paper_message(sample_classified_paper)
@@ -29,10 +30,11 @@ class TestFormatDigest:
     def test_empty_returns_empty(self):
         assert format_digest([]) == ""
 
-    def test_includes_header_and_counts(self, sample_classified_paper):
+    def test_includes_guthub_header_and_counts(self, sample_classified_paper):
         msg = format_digest([sample_classified_paper])
-        assert "Paper Watch" in msg
-        assert "Practice-changing: 1" in msg
+        assert "GutHub｜Paper Watch 掃描通知" in msg
+        assert "Seminar Hegemon" not in msg
+        assert "重大進展 1｜重要文獻 0" in msg
 
     def test_truncates_long_message(self, sample_classified_paper):
         papers = [sample_classified_paper] * 50

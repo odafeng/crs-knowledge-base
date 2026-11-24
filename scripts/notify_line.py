@@ -9,55 +9,61 @@ from config import LINE_CHANNEL_ACCESS_TOKEN, LINE_USER_ID
 LINE_API_URL = "https://api.line.me/v2/bot/message/push"
 MAX_LENGTH = 5000
 
+TOPIC_LABELS = {
+    "mCRC-BRAF-V600E": "BRAF V600E",
+    "mCRC-KRAS-G12C": "KRAS G12C",
+    "mCRC-MSI-H": "MSI-H / dMMR",
+    "mCRC-HER2": "HER2+",
+    "mCRC-RAS-wt": "RAS 野生型",
+    "generic-CRS": "大腸直腸癌通用",
+    "robotic-surgery": "機器人手術",
+}
+
 
 def _format_paper_message(paper):
-    """Format a single paper into a LINE-friendly text block."""
+    """Format a single paper into a plain Traditional Chinese LINE summary block (K13 #265)."""
     score = paper.get("ai_score", "?")
-    topic = paper.get("topic", "")
+    topic_key = paper.get("topic", "")
+    topic = TOPIC_LABELS.get(topic_key, topic_key)
     title = paper.get("title", "Untitled")
     journal = paper.get("journal", "")
     year = paper.get("year", "")
     doi = paper.get("doi", "")
     bottom_line = paper.get("ai_bottom_line", "")
-    action = "已自動發布到網站" if paper.get("publish_status") == "auto" else "待審，已開 GitHub Issue"
+    action = "已自動發布上站（待審）" if paper.get("publish_status") == "auto" else "待人工審核，已開 GitHub Issue"
 
     lines = []
-    if score and score >= 5:
-        lines.append(f"🔥 Practice-Changing (Score {score}/5)")
+    if isinstance(score, int) and score >= 5:
+        lines.append(f"🔥 重大臨床進展（{score}/5）｜{topic}")
     else:
-        lines.append(f"📄 High-Impact (Score {score}/5)")
+        lines.append(f"📄 重要新文獻（{score}/5）｜{topic}")
 
-    lines.append(f"📌 {topic}")
-    lines.append("")
     lines.append(title)
-    lines.append(f"{journal} {year}")
+    if journal or year:
+        lines.append(f"出處：{' '.join(str(x) for x in (journal, year) if x)}")
 
     if bottom_line:
-        lines.append("")
-        lines.append(f"💡 {bottom_line}")
+        lines.append(f"重點：{bottom_line}")
 
     if doi:
-        lines.append("")
-        lines.append(f"🔗 https://doi.org/{doi}")
+        lines.append(f"連結：https://doi.org/{doi}")
 
-    lines.append("")
-    lines.append(f"→ {action}")
+    lines.append(f"狀態：{action}")
 
     return "\n".join(lines)
 
 
 def format_digest(papers):
-    """Format all papers into a single LINE digest message."""
+    """Format all high-relevance papers into a single maintainer LINE digest message."""
     if not papers:
         return ""
 
-    score_5 = [p for p in papers if p.get("ai_score") and p["ai_score"] >= 5]
+    score_5 = [p for p in papers if isinstance(p.get("ai_score"), int) and p["ai_score"] >= 5]
     score_4 = [p for p in papers if p not in score_5]
 
     lines = [
-        "📚 Seminar Hegemon — Paper Watch",
-        f"Found {len(papers)} relevant paper(s)",
-        f"🔥 Practice-changing: {len(score_5)} | 📄 High-impact: {len(score_4)}",
+        "GutHub｜Paper Watch 掃描通知",
+        f"本次篩出 {len(papers)} 篇高相關文獻（重大進展 {len(score_5)}｜重要文獻 {len(score_4)}）",
         "─" * 20,
     ]
 
