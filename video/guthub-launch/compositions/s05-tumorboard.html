@@ -1,0 +1,289 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Archivo";
+      font-style: normal;
+      font-weight: 100 900;
+      src: url("assets/fonts/archivo-latin.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "GutHubTC";
+      font-style: normal;
+      font-weight: 400 800;
+      src: local("PingFang TC"), local("Heiti TC");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #e5e2d8;
+      font-family: "Archivo", "GutHubTC", sans-serif;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .s05-desk-label {
+      position: absolute;
+      top: 44px;
+      left: 104px;
+      right: 104px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 28px;
+      font-weight: 700;
+      color: #3a4252;
+    }
+    .s05-desk-pill {
+      background: #0f1f44;
+      color: #ffffff;
+      padding: 8px 22px;
+      border-radius: 6px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .s05-sheet {
+      width: 1680px;
+      background: #ffffff;
+      border: 1.5px solid #c9c5b9;
+      border-radius: 10px;
+      box-shadow: 0 28px 72px rgba(15, 31, 68, 0.18);
+      padding: 46px 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+    .s05-sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 3px solid #0f1f44;
+      padding-bottom: 20px;
+    }
+    .s05-sheet-kicker {
+      font-size: 32px;
+      font-weight: 700;
+      color: #8f2542;
+      margin-bottom: 6px;
+    }
+    .s05-sheet-title {
+      font-size: 48px;
+      font-weight: 800;
+      color: #0f1f44;
+    }
+    .s05-print-btn {
+      background: #1a3a7e;
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 700;
+      padding: 16px 34px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      white-space: nowrap;
+    }
+    .s05-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+    }
+    .s05-card {
+      background: #f6f5f0;
+      border: 1.5px solid #dfddd4;
+      border-radius: 8px;
+      padding: 26px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .s05-card-line {
+      font-size: 32px;
+      font-weight: 700;
+      color: #1a3a7e;
+    }
+    .s05-card-regimen {
+      font-size: 38px;
+      font-weight: 800;
+      color: #0f1f44;
+    }
+    .s05-metrics {
+      display: flex;
+      gap: 24px;
+      border-top: 1px solid #dfddd4;
+      border-bottom: 1px solid #dfddd4;
+      padding: 14px 0;
+    }
+    .s05-metric-val {
+      font-family: "Archivo", sans-serif;
+      font-size: 40px;
+      font-weight: 800;
+      color: #0f1f44;
+      font-variant-numeric: tabular-nums;
+    }
+    .s05-metric-lbl {
+      font-size: 32px;
+      color: #575f6e;
+    }
+    .s05-card-foot {
+      font-size: 32px;
+      color: #0b5d3c;
+      font-weight: 700;
+    }
+    .s05-card-foot-warn {
+      font-size: 32px;
+      color: #734604;
+      font-weight: 700;
+    }
+    .s05-trials {
+      background: #edf1f9;
+      border-radius: 8px;
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .s05-trials-label {
+      font-size: 32px;
+      font-weight: 800;
+      color: #0f1f44;
+      white-space: nowrap;
+    }
+    .s05-trials-list {
+      font-size: 32px;
+      font-weight: 600;
+      color: #3a4252;
+    }
+    .s05-print-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1.5px solid #dfddd4;
+      padding-top: 16px;
+      font-size: 32px;
+      color: #575f6e;
+    }
+    .s05-cursor {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 56px;
+      height: 56px;
+      pointer-events: none;
+      filter: drop-shadow(0 6px 12px rgba(15, 31, 68, 0.35));
+    }
+  </style>
+
+  <div id="root" data-composition-id="s05-tumorboard" data-width="1920" data-height="1080">
+    <div id="s05-desk-label" class="s05-desk-label">
+      <span>單頁可列印版面 · Print CSS 自動對齊 A4</span>
+      <span class="s05-desk-pill">guthub.tw/tumor-board/braf-v600e</span>
+    </div>
+
+    <div id="s05-sheet" class="s05-sheet" data-hold="true">
+      <div class="s05-sheet-head">
+        <div>
+          <div class="s05-sheet-kicker">Tumor Board 一頁摘要</div>
+          <div class="s05-sheet-title">BRAF V600E 突變 mCRC 治療現況與台灣給付</div>
+        </div>
+        <div id="s05-print-btn" class="s05-print-btn">列印一頁摘要</div>
+      </div>
+
+      <div class="s05-grid">
+        <div id="s05-c1" class="s05-card">
+          <div class="s05-card-line">第一線治療（1L）首選</div>
+          <div class="s05-card-regimen">EC + mFOLFOX6</div>
+          <div class="s05-metrics">
+            <div>
+              <div class="s05-metric-val">65.7%</div>
+              <div class="s05-metric-lbl">ORR</div>
+            </div>
+            <div>
+              <div class="s05-metric-val">12.8 mo</div>
+              <div class="s05-metric-lbl">mPFS</div>
+            </div>
+            <div>
+              <div class="s05-metric-val">30.3 mo</div>
+              <div class="s05-metric-lbl">mOS</div>
+            </div>
+          </div>
+          <div class="s05-card-foot">✓ FDA 正式核准（2026/02 · BREAKWATER）</div>
+        </div>
+
+        <div id="s05-c2" class="s05-card">
+          <div class="s05-card-line">第二線以上（2L+）標準</div>
+          <div class="s05-card-regimen">Encorafenib + Cetuximab</div>
+          <div class="s05-metrics">
+            <div>
+              <div class="s05-metric-val">19.5%</div>
+              <div class="s05-metric-lbl">ORR</div>
+            </div>
+            <div>
+              <div class="s05-metric-val">9.3 mo</div>
+              <div class="s05-metric-lbl">mOS</div>
+            </div>
+            <div>
+              <div class="s05-metric-val">0.61</div>
+              <div class="s05-metric-lbl">OS HR</div>
+            </div>
+          </div>
+          <div class="s05-card-foot-warn">⏱ 台灣健保 2026/05/01 給付（條文 9.134）</div>
+        </div>
+      </div>
+
+      <div id="s05-trials" class="s05-trials">
+        <span class="s05-trials-label">關鍵引用試驗</span>
+        <span class="s05-trials-list">BREAKWATER（Phase 3） · BEACON（NEJM 2019 · DOI 10.1056/NEJMoa1908075）</span>
+      </div>
+
+      <div class="s05-print-footer">
+        <span>GutHub｜大腸直腸外科實證更新 · 僅供醫療專業人員參考</span>
+        <span>可直接投影或列印帶進會議室</span>
+      </div>
+    </div>
+
+    <svg id="s05-cursor" class="s05-cursor" viewBox="0 0 48 48" fill="none" data-layout-ignore="true">
+      <path
+        d="M8 5L39 22.5L23.5 26.2L17.2 41.5L8 5Z"
+        fill="#0f1f44"
+        stroke="#ffffff"
+        stroke-width="3.2"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // Sheet arrives full-scale from Scene 4 CTA click (visible immediately at t=0)
+    tl.fromTo("#s05-sheet", { scale: 0.96, opacity: 1 }, { scale: 1, opacity: 1, duration: 0.4, ease: "expo.out" }, 0);
+    tl.fromTo(["#s05-c1", "#s05-c2"], { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.42, stagger: 0.12, ease: "expo.out" }, 0.28);
+    tl.fromTo("#s05-trials", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.38, ease: "power3.out" }, 0.65);
+
+    // Editorial border focus sweeps 1L -> 2L+ as VO describes both lines (2.5s -> 4.0s)
+    tl.to("#s05-c1", { borderColor: "#1a3a7e", duration: 0.25 }, 2.5);
+    tl.to("#s05-c2", { borderColor: "#734604", duration: 0.25 }, 3.4);
+
+    // Cursor moves to Print button and clicks (4.4s -> 5.3s)
+    tl.fromTo("#s05-cursor", { x: 1840, y: 780, opacity: 0 }, { x: 1620, y: 208, opacity: 1, duration: 0.65, ease: "power3.out" }, 4.4);
+    tl.to(["#s05-print-btn", "#s05-cursor"], { scale: 0.92, duration: 0.09, ease: "none" }, 5.15);
+    tl.to(["#s05-print-btn", "#s05-cursor"], { scale: 1.0, duration: 0.18, ease: "back.out(1.6)" }, 5.24);
+    tl.to("#s05-print-btn", { backgroundColor: "#0b5d3c", duration: 0.18 }, 5.2);
+
+    // Payoff: sheet smoothly lifts/pulls back into crisp A4 print preview on archival desk (5.4s)
+    tl.to("#s05-sheet", { scale: 0.89, y: 34, duration: 0.65, ease: "power3.out" }, 5.4);
+    tl.fromTo("#s05-desk-label", { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.42, ease: "expo.out" }, 5.7);
+    tl.to("#s05-cursor", { opacity: 0, duration: 0.25 }, 5.6);
+
+    // Subtle trial highlight at 8.6s while holding A4 preview cleanly right into Scene 6 cut
+    tl.to("#s05-trials", { backgroundColor: "#dce6fa", duration: 0.35 }, 8.6);
+
+    window.__timelines["s05-tumorboard"] = tl;
+    tl.seek(0);
+  </script>
+</template>

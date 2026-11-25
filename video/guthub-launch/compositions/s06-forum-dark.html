@@ -1,0 +1,465 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Archivo";
+      font-style: normal;
+      font-weight: 100 900;
+      src: url("assets/fonts/archivo-latin.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "GutHubTC";
+      font-style: normal;
+      font-weight: 400 800;
+      src: local("PingFang TC"), local("Heiti TC");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #f6f5f0;
+      font-family: "Archivo", "GutHubTC", sans-serif;
+    }
+    .s06-theme-layer {
+      position: absolute;
+      inset: 0;
+      padding: 68px 104px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    .s06-light {
+      background: #f6f5f0;
+      color: #111827;
+    }
+    .s06-dark {
+      background: #0f1217;
+      color: #f2f4f8;
+      opacity: 0;
+    }
+    .s06-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 18px;
+      border-bottom: 2px solid #dfddd4;
+    }
+    .s06-dark .s06-topbar {
+      border-bottom-color: #272d3a;
+    }
+    .s06-title-group {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .s06-page-title {
+      font-size: 44px;
+      font-weight: 800;
+      color: #0f1f44;
+    }
+    .s06-dark .s06-page-title {
+      color: #f2f4f8;
+    }
+    .s06-verified-pill {
+      background: #e6f4ec;
+      color: #0b5d3c;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 6px 18px;
+      border-radius: 6px;
+    }
+    .s06-dark .s06-verified-pill {
+      background: #10291d;
+      color: #72d9a4;
+    }
+    .s06-controls {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .s06-ctrl-btn {
+      font-size: 28px;
+      font-weight: 700;
+      padding: 10px 22px;
+      border-radius: 6px;
+      border: 1.5px solid #b6b1a4;
+      background: #ffffff;
+      color: #111827;
+    }
+    .s06-dark .s06-ctrl-btn {
+      background: #161a22;
+      border-color: #4b556b;
+      color: #f2f4f8;
+    }
+    .s06-dark .s06-ctrl-btn-active {
+      background: #1a2540;
+      border-color: #8fb0ff;
+      color: #8fb0ff;
+    }
+    .s06-main-row {
+      display: flex;
+      gap: 36px;
+      flex: 1;
+      align-items: stretch;
+    }
+    .s06-forum-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .s06-thread {
+      background: #ffffff;
+      border: 1.5px solid #dfddd4;
+      border-radius: 10px;
+      padding: 32px 36px;
+      box-shadow: 0 12px 32px rgba(17, 24, 39, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .s06-dark .s06-thread {
+      background: #161a22;
+      border-color: #272d3a;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+    }
+    .s06-thread-meta {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .s06-tag-topic {
+      background: #edf1f9;
+      color: #1a3a7e;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 4px 16px;
+      border-radius: 4px;
+    }
+    .s06-dark .s06-tag-topic {
+      background: #1a2540;
+      color: #8fb0ff;
+    }
+    .s06-tag-anon {
+      background: #faf0f2;
+      color: #8f2542;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 4px 16px;
+      border-radius: 4px;
+    }
+    .s06-dark .s06-tag-anon {
+      background: #2b151e;
+      color: #f39bb2;
+    }
+    .s06-thread-title {
+      font-size: 38px;
+      font-weight: 800;
+      line-height: 1.32;
+      color: #0f1f44;
+    }
+    .s06-dark .s06-thread-title {
+      color: #f2f4f8;
+    }
+    .s06-thread-body {
+      font-size: 29px;
+      line-height: 1.54;
+      color: #3a4252;
+    }
+    .s06-dark .s06-thread-body {
+      color: #b9c0ce;
+    }
+    .s06-composer {
+      background: #ffffff;
+      border: 1.5px solid #b6b1a4;
+      border-radius: 10px;
+      padding: 22px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .s06-dark .s06-composer {
+      background: #161a22;
+      border-color: #272d3a;
+    }
+    .s06-composer-note {
+      font-size: 28px;
+      font-weight: 600;
+      color: #575f6e;
+    }
+    .s06-dark .s06-composer-note {
+      color: #959eb1;
+    }
+    .s06-mode-switch {
+      display: flex;
+      gap: 12px;
+    }
+    .s06-mode-opt {
+      font-size: 28px;
+      font-weight: 700;
+      padding: 8px 20px;
+      border-radius: 6px;
+      background: #eceae2;
+      color: #3a4252;
+    }
+    .s06-dark .s06-mode-opt {
+      background: #1d222c;
+      color: #959eb1;
+    }
+    .s06-mode-opt-on {
+      background: #1a3a7e;
+      color: #ffffff;
+    }
+    .s06-dark .s06-mode-opt-on {
+      background: #8fb0ff;
+      color: #0b1220;
+    }
+    /* Offline PWA Companion Stage (Slides cleanly into center-right while forum exits left) */
+    .s06-offline-stage {
+      position: absolute;
+      inset: 168px 104px 72px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.85fr;
+      gap: 60px;
+      align-items: center;
+      opacity: 0;
+    }
+    .s06-offline-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      color: #f2f4f8;
+    }
+    .s06-offline-kicker {
+      font-size: 30px;
+      font-weight: 700;
+      color: #72d9a4;
+    }
+    .s06-offline-heading {
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 1.24;
+      color: #f2f4f8;
+    }
+    .s06-offline-bullets {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      font-size: 32px;
+      color: #b9c0ce;
+      line-height: 1.48;
+    }
+    .s06-phone {
+      width: 540px;
+      justify-self: end;
+      background: #161a22;
+      border: 6px solid #475066;
+      border-radius: 38px;
+      box-shadow: 0 28px 72px rgba(0, 0, 0, 0.58);
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      color: #f2f4f8;
+    }
+    .s06-phone-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 28px;
+      font-weight: 700;
+      color: #959eb1;
+    }
+    .s06-offline-pill {
+      background: #10291d;
+      border: 1.5px solid #72d9a4;
+      color: #72d9a4;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 10px 18px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .s06-phone-card {
+      background: #1d222c;
+      border: 1px solid #272d3a;
+      border-radius: 10px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .s06-phone-kicker {
+      font-size: 28px;
+      font-weight: 700;
+      color: #8fb0ff;
+    }
+    .s06-phone-title {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1.32;
+      color: #f2f4f8;
+    }
+    .s06-phone-desc {
+      font-size: 28px;
+      line-height: 1.45;
+      color: #b9c0ce;
+    }
+    .s06-cursor {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 56px;
+      height: 56px;
+      pointer-events: none;
+      filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+    }
+  </style>
+
+  <div id="root" data-composition-id="s06-forum-dark" data-width="1920" data-height="1080">
+    <!-- Light Theme Base Layer -->
+    <div id="s06-light" class="s06-theme-layer s06-light">
+      <div class="s06-topbar">
+        <div class="s06-title-group">
+          <div class="s06-page-title">大腸直腸外科論壇</div>
+          <span class="s06-verified-pill">✓ 驗證醫師專屬</span>
+        </div>
+        <div class="s06-controls">
+          <span class="s06-ctrl-btn">字級 A+</span>
+          <span id="s06-dark-btn-light" class="s06-ctrl-btn">深色模式</span>
+        </div>
+      </div>
+
+      <div id="s06-forum-light-col" class="s06-forum-col">
+        <article class="s06-thread">
+          <div class="s06-thread-meta">
+            <span class="s06-tag-topic">MSI-H / dMMR</span>
+            <span class="s06-tag-anon">匿名發文 · 僅對其他讀者隱藏身分</span>
+          </div>
+          <div class="s06-thread-title">dMMR 直腸癌，大家現在真的會讓病人不開刀嗎？</div>
+          <div class="s06-thread-body">
+            AZUR-1（Ann Oncol 2026）dostarlimab 達 cCR / pCR 76%（110/144），但健保 9.69 僅給付子宮內膜癌。MDT 實務怎麼討論？
+          </div>
+        </article>
+
+        <div class="s06-composer">
+          <span class="s06-composer-note">貼文屬個人臨床經驗交流，與站上實證文獻分開標示</span>
+          <div class="s06-mode-switch">
+            <span id="s06-opt-signed" class="s06-mode-opt">署名發表</span>
+            <span id="s06-opt-anon" class="s06-mode-opt s06-mode-opt-on">匿名發表</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pixel-Identical Dark Theme Layer for In-Place Theme Crossfade Morph -->
+    <div id="s06-dark" class="s06-theme-layer s06-dark">
+      <div class="s06-topbar">
+        <div class="s06-title-group">
+          <div class="s06-page-title">大腸直腸外科論壇</div>
+          <span class="s06-verified-pill">✓ 驗證醫師專屬</span>
+        </div>
+        <div class="s06-controls">
+          <span id="s06-font-btn-dark" class="s06-ctrl-btn s06-ctrl-btn-active">字級 A+</span>
+          <span class="s06-ctrl-btn s06-ctrl-btn-active">深色模式：開</span>
+        </div>
+      </div>
+
+      <div id="s06-forum-dark-col" class="s06-forum-col">
+        <article class="s06-thread">
+          <div class="s06-thread-meta">
+            <span class="s06-tag-topic">MSI-H / dMMR</span>
+            <span class="s06-tag-anon">匿名發文 · 僅對其他讀者隱藏身分</span>
+          </div>
+          <div class="s06-thread-title">dMMR 直腸癌，大家現在真的會讓病人不開刀嗎？</div>
+          <div class="s06-thread-body">
+            AZUR-1（Ann Oncol 2026）dostarlimab 達 cCR / pCR 76%（110/144），但健保 9.69 僅給付子宮內膜癌。MDT 實務怎麼討論？
+          </div>
+        </article>
+
+        <div class="s06-composer">
+          <span class="s06-composer-note">貼文屬個人臨床經驗交流，與站上實證文獻分開標示</span>
+          <div class="s06-mode-switch">
+            <span class="s06-mode-opt">署名發表</span>
+            <span class="s06-mode-opt s06-mode-opt-on">匿名發表</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Offline PWA Stage (replaces forum cleanly without overlap or scaling text down) -->
+      <div id="s06-offline-stage" class="s06-offline-stage">
+        <div class="s06-offline-copy">
+          <div class="s06-offline-kicker">PWA 離線閱讀 × 臨床閱讀偏好</div>
+          <div class="s06-offline-heading">深色模式、字級調整，無訊號也能查閱</div>
+          <div class="s06-offline-bullets">
+            <div id="s06-b1">✓ 首次完整載入自動快取公開文獻與搜尋索引</div>
+            <div id="s06-b2">✓ 開刀房休息室、地下室收訊死角即時秒開</div>
+            <div id="s06-b3">✓ 獨立保存深色模式與放大字級偏好</div>
+          </div>
+        </div>
+
+        <aside id="s06-phone" class="s06-phone">
+          <div class="s06-phone-status">
+            <span>07:28</span>
+            <span>PWA 離線模式</span>
+          </div>
+          <div id="s06-offline-pill" class="s06-offline-pill">✓ 已離線快取 53 篇公開文獻</div>
+          <div class="s06-phone-card">
+            <div class="s06-phone-kicker">開刀房休息室 · 無訊號可查</div>
+            <div class="s06-phone-title">mCRC 治療與機器手臂實證</div>
+            <div class="s06-phone-desc">不用重連網路，直接搜尋文獻與台灣給付對照。</div>
+          </div>
+          <div class="s06-phone-card">
+            <div class="s06-phone-kicker">閱讀偏好已保存</div>
+            <div class="s06-phone-desc">深色模式：開 · 放大字級 A+</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <svg id="s06-cursor" class="s06-cursor" viewBox="0 0 48 48" fill="none" data-layout-ignore="true">
+      <path
+        d="M8 5L39 22.5L23.5 26.2L17.2 41.5L8 5Z"
+        fill="#0f1f44"
+        stroke="#ffffff"
+        stroke-width="3.2"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // Initial entrance (visible cleanly at t=0)
+    tl.fromTo("#s06-light", { y: 16 }, { y: 0, duration: 0.38, ease: "expo.out" }, 0);
+
+    // Beat 1: Cursor toggles Anonymous pill so surgeons see signed/anonymous choice (2.2s -> 3.4s)
+    tl.fromTo("#s06-cursor", { x: 1840, y: 920, opacity: 0 }, { x: 1695, y: 698, opacity: 1, duration: 0.65, ease: "power3.out" }, 2.2);
+    tl.to(["#s06-opt-anon", "#s06-cursor"], { scale: 0.92, duration: 0.09, ease: "none" }, 2.95);
+    tl.to(["#s06-opt-anon", "#s06-cursor"], { scale: 1.0, duration: 0.18, ease: "back.out(1.6)" }, 3.04);
+
+    // Beat 2: Cursor glides up to Dark Mode toggle and clicks (4.6s -> 5.7s)
+    tl.to("#s06-cursor", { x: 1715, y: 98, duration: 0.75, ease: "power2.inOut" }, 4.6);
+    tl.to(["#s06-dark-btn-light", "#s06-cursor"], { scale: 0.92, duration: 0.09, ease: "none" }, 5.45);
+    tl.to(["#s06-dark-btn-light", "#s06-cursor"], { scale: 1.0, duration: 0.16, ease: "back.out(1.6)" }, 5.54);
+
+    // In-place Theme Crossfade Morph: dark fades IN while light fades OUT cleanly (zero overlap!)
+    tl.fromTo("#s06-dark", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power2.inOut" }, 5.6);
+    tl.to("#s06-light", { opacity: 0, duration: 0.45, ease: "power2.inOut" }, 5.6);
+    tl.to("#s06-cursor", { opacity: 0, duration: 0.25 }, 6.05);
+
+    // Beat 3: Forum smoothly glides off-left and Offline PWA Stage takes full stage at 100% scale (7.8s)
+    tl.to("#s06-forum-dark-col", { x: -120, opacity: 0, duration: 0.45, ease: "power3.in" }, 7.8);
+    tl.fromTo("#s06-offline-stage", { opacity: 0, x: 90 }, { opacity: 1, x: 0, duration: 0.55, ease: "expo.out" }, 8.15);
+    tl.fromTo(["#s06-b1", "#s06-b2", "#s06-b3"], { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.6, ease: "power3.out" }, 8.65);
+
+    // Offline cache confirmation badge subtle highlight at 11.4s (holds cleanly right into Scene 7 cut)
+    tl.to("#s06-offline-pill", { backgroundColor: "#143d28", duration: 0.3 }, 11.4);
+
+    window.__timelines["s06-forum-dark"] = tl;
+    tl.seek(0);
+  </script>
+</template>

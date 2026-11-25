@@ -3,7 +3,16 @@
 import json
 from unittest.mock import MagicMock, patch
 
-from classify import FALLBACK_BETA, MAX_AGENT_TURNS, RESCUE_OUTPUT_SCHEMA, classify_all, classify_paper
+from classify import (
+    FALLBACK_BETA,
+    MAX_AGENT_TURNS,
+    RESCUE_OUTPUT_SCHEMA,
+    SUBMIT_CLASSIFICATION_TOOL,
+    can_repair,
+    classify_all,
+    classify_paper,
+    repair_paper,
+)
 from config import CLASSIFY_MODEL
 
 
@@ -238,3 +247,52 @@ def test_rescue_schema_is_structured_output_compatible():
     """Structured outputs require additionalProperties: false on every object."""
     _assert_strict_objects(RESCUE_OUTPUT_SCHEMA)
     assert set(RESCUE_OUTPUT_SCHEMA["required"]) == set(RESCUE_OUTPUT_SCHEMA["properties"])
+
+
+class TestRepairPaper:
+    """ADR-0029: bounded AI self-repair against verbatim PubMed abstracts."""
+
+    def test_can_repair_rejects_unrepairable_cases(self, sample_candidate):
+        topics = {"mCRC-BRAF-V600E"}
+        assert can_repair({**sample_candidate, "abstract_status": "full"}, topics) is True
+        assert can_repair({**sample_candidate, "abstract_status": "truncated"}, topics) is False
+        assert can_repair({**sample_candidate, "abstract_status": "missing"}, topics) is False
+        assert can_repair({**sample_candidate, "abstract_status": "full", "ai_parse_failed": True}, topics) is False
+        assert can_repair({**sample_candidate, "abstract_status": "full", "topic": "unknown"}, topics) is False
+
+    @patch("classify.ANTHROPIC_API_KEY", "test-key")
+    def test_repair_paper_applies_submission_with_submit_tool_only(self, sample_candidate):
+        paper = {**sample_candidate, "ai_score": 4, "ai_suggested_js": {"id": "old", "n": 999}}
+        mock_client = MagicMock()
+        mock_client.beta.messages.create.side_effect = _mock_submit_classification(
+            {
+                "relevance_score": 4,
+                "contextual_analysis": "Repaired analysis",
+                "bottom_line": "Repaired line",
+                "suggested_js": {"id": "fixed-2026", "n": 200},
+                "suggested_filename": "Fixed_2026.html",
+                "evidence": [{"claim": "n=200", "source": "abstract", "quote": "200 patients", "url": None}],
+            }
+        )
+        assert repair_paper(mock_client, paper, ["KB 條目中這些數字在摘要裡找不到：999"]) is True
+        assert paper["ai_suggested_js"]["id"] == "fixed-2026"
+        assert paper["ai_suggested_js"]["n"] == 200
+        # Research tools must be disabled during repair so only the verbatim abstract can be cited.
+        assert mock_client.beta.messages.create.call_args.kwargs["tools"] == [SUBMIT_CLASSIFICATION_TOOL]
+
+    @patch("classify.ANTHROPIC_API_KEY", "test-key")
+    def test_repair_paper_nudges_once_on_end_turn(self, sample_candidate):
+        end = MagicMock(stop_reason="end_turn", content=[MagicMock(type="text", text="Let me fix it")])
+        mock_client = MagicMock()
+        mock_client.beta.messages.create.side_effect = [
+            end,
+            *_mock_submit_classification({"relevance_score": 4, "contextual_analysis": "ok", "evidence": []}),
+        ]
+        assert repair_paper(mock_client, dict(sample_candidate), ["沒有數字出處"]) is True
+        assert mock_client.beta.messages.create.call_count == 2
+
+    @patch("classify.ANTHROPIC_API_KEY", "test-key")
+    def test_repair_paper_handles_api_error_gracefully(self, sample_candidate):
+        mock_client = MagicMock()
+        mock_client.beta.messages.create.side_effect = RuntimeError("timeout")
+        assert repair_paper(mock_client, dict(sample_candidate), ["沒有數字出處"]) is False

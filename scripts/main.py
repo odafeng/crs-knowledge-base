@@ -6,7 +6,7 @@ from datetime import date, datetime
 
 from anthropic import Anthropic
 
-from classify import classify_all
+from classify import MAX_REPAIR_ATTEMPTS, can_repair, classify_all, repair_paper
 from commentary import CommentaryProposal, kb_papers, split_commentary, triage_commentary
 from config import (
     ANTHROPIC_API_KEY,
@@ -20,8 +20,8 @@ from config import (
     tracking_key,
 )
 from content_store import content_session
-from create_issues import create_commentary_review_issue, create_issues
-from digest import accepted_digests, create_digest_issue, finish, picked
+from create_issues import create_issues
+from digest import accepted_digests, finish, picked
 from fetch_pubmed import efetch, fetch_pubmed, resolve_dois
 from fetch_rss import AllFeedsFailedError, fetch_rss
 from news_writer import write_news_for_new
@@ -68,29 +68,59 @@ def triage_all_commentary(commentary: list[dict], dry_run: bool) -> list[tuple[d
     return results
 
 
-def publish_or_hold(classified: list[dict], today: str, dry_run: bool) -> tuple[list[dict], list[dict]]:
-    """Publish papers that pass the provenance gate; hold the rest for review (ADR-0013)."""
+def publish_or_hold(
+    classified: list[dict],
+    today: str,
+    dry_run: bool,
+    *,
+    max_repairs: int = MAX_REPAIR_ATTEMPTS,
+) -> tuple[list[dict], list[dict]]:
+    """Publish papers that pass the provenance gate, auto-repairing fixable failures up to max_repairs (ADR-0029)."""
     published, held = [], []
+    client: Anthropic | None = None
     for paper in classified:
-        reasons = evaluate_paper_gate(paper, AUTO_PUBLISH_TOPICS).reasons
-        if not reasons and not dry_run:
-            try:
-                target = paper.get("doi") or f"pmid:{paper.get('pmid')}"
-                with content_session("publish_paper", target) as session:
-                    if session.done is None:
-                        entry = publish_paper(paper, "auto", today, **session.kb_args)
-                        session.record(f"publish {entry['id']} ({entry['file']})")
-                        paper["kb_id"] = entry["id"]
-                print(f"  [Publish] {session.done or session.summary}")
-            except PublishError as e:
-                reasons = e.reasons
-        if reasons:
+        reasons: list[str] = []
+        ok = False
+        for attempt in range(max_repairs + 1):
+            reasons = evaluate_paper_gate(paper, AUTO_PUBLISH_TOPICS).reasons
+            if not reasons and not dry_run:
+                try:
+                    target = paper.get("doi") or f"pmid:{paper.get('pmid')}"
+                    with content_session("publish_paper", target) as session:
+                        if session.done is None:
+                            entry = publish_paper(paper, "auto", today, **session.kb_args)
+                            session.record(f"publish {entry['id']} ({entry['file']})")
+                            paper["kb_id"] = entry["id"]
+                    print(f"  [Publish] {session.done or session.summary}")
+                    ok = True
+                    break
+                except PublishError as e:
+                    reasons = e.reasons
+            elif not reasons:
+                ok = True
+                break
+
+            if attempt >= max_repairs or dry_run or not ANTHROPIC_API_KEY or not can_repair(paper, AUTO_PUBLISH_TOPICS):
+                break
+
+            if client is None:
+                client = Anthropic(api_key=ANTHROPIC_API_KEY)
+            title = paper.get("title", "")[:60]
+            print(f"  [Repair] Attempt {attempt + 1}/{max_repairs} for {title}: {'; '.join(reasons)}")
+            if not repair_paper(client, paper, reasons):
+                break
+            score = paper.get("ai_score")
+            if isinstance(score, int) and score < RELEVANCE_THRESHOLD:
+                reasons = [f"AI 重修後調降評分至 {score}/5（低於門檻 {RELEVANCE_THRESHOLD}）"]
+                break
+
+        if ok:
+            paper["publish_status"] = "auto"
+            published.append(paper)
+        else:
             paper["gate_reasons"] = reasons
             paper["publish_status"] = "held"
             held.append(paper)
-        else:
-            paper["publish_status"] = "auto"
-            published.append(paper)
     return published, held
 
 
@@ -271,35 +301,38 @@ def run_pipeline(topic=None, dry_run=False, daily_mode=False, bootstrap=False, r
     research, commentary = split_commentary(candidates)
     print(f"[Pipeline] {len(research)} research, {len(commentary)} commentary")
 
-    # Commentary: lightweight triage. Never a new-paper issue. Items PubMed links to
-    # a KB trial are published; other mapped items go to one review issue; unmapped
-    # ones are only tracked.
+    # Commentary: lightweight triage. Items PubMed links to a KB trial pass the gate
+    # and auto-publish; unverified items are skipped without opening review issues (ADR-0029).
     triaged = triage_all_commentary(commentary, dry_run)
     held_commentary = publish_or_hold_commentary(triaged, today_str, dry_run)
-    create_commentary_review_issue(held_commentary, today_str, dry_run=dry_run)
+    if held_commentary:
+        print(f"[Commentary] Skipped {len(held_commentary)} unverified commentary item(s) (auto-review mode)")
 
     # Layer 2: AI classification with topic-specific sub-agents
     print()
     classified = classify_all(research, dry_run=dry_run)
     print(f"[Pipeline] Papers passing relevance threshold: {len(classified)}")
-    # One under the threshold: listed for the maintainer to pick from (#218)
     near_miss = [p for p in research if p.get("ai_score") == RELEVANCE_THRESHOLD - 1]
-    create_digest_issue(near_miss, today_str, dry_run=dry_run)
+    if near_miss:
+        print(f"[Pipeline] Skipped {len(near_miss)} score-{RELEVANCE_THRESHOLD - 1} paper(s) (no digest issue)")
 
     if classified:
-        # Layer 3: papers passing the provenance gate are published; the rest get
-        # a review issue with the reasons (ADR-0013)
+        # Layer 3: papers passing the provenance gate (including up to 2 AI self-repair
+        # passes) publish automatically; anything still unpublishable is logged and skipped (ADR-0029).
         published, held = publish_or_hold(classified, today_str, dry_run)
-        print(f"\n[Pipeline] {len(published)} published, {len(held)} held for review")
-        create_issues(held, dry_run=dry_run)
+        print(f"\n[Pipeline] {len(published)} published, {len(held)} skipped after auto-review")
+        for skipped in held:
+            reasons = "; ".join(skipped.get("gate_reasons") or [])
+            print(f"  [Skip] {skipped.get('title', '')[:80]} — {reasons}")
         if not dry_run and published:  # summary (I2 #191), auto news (K2 #252), and cache purge (K3 #253)
             summarize_new([p["kb_id"] for p in published if p.get("kb_id")])
             write_news_for_new(published, today=today_str)
             revalidate_site()
 
-        # LINE notification for all high-relevance papers
-        print()
-        notify_papers(classified, dry_run=dry_run)
+        # LINE notification for published high-relevance papers
+        if published:
+            print()
+            notify_papers(published, dry_run=dry_run)
     else:
         print("[Pipeline] No high-relevance papers.")
 

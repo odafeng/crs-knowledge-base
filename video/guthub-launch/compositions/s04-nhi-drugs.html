@@ -1,0 +1,305 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Archivo";
+      font-style: normal;
+      font-weight: 100 900;
+      src: url("assets/fonts/archivo-latin.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "GutHubTC";
+      font-style: normal;
+      font-weight: 400 800;
+      src: local("PingFang TC"), local("Heiti TC");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #f6f5f0;
+      font-family: "Archivo", "GutHubTC", sans-serif;
+      color: #111827;
+    }
+    .s04-wrap {
+      position: absolute;
+      inset: 0;
+      padding: 68px 104px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .s04-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      border-bottom: 2px solid #0f1f44;
+      padding-bottom: 16px;
+    }
+    .s04-title {
+      font-size: 46px;
+      font-weight: 800;
+      color: #0f1f44;
+    }
+    .s04-sub {
+      font-size: 28px;
+      font-weight: 600;
+      color: #575f6e;
+    }
+    .s04-board {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .s04-row {
+      background: #ffffff;
+      border: 1.5px solid #dfddd4;
+      border-radius: 8px;
+      padding: 20px 28px;
+      display: grid;
+      grid-template-columns: 1.45fr 0.72fr 0.78fr 0.62fr;
+      align-items: center;
+      gap: 18px;
+      box-shadow: 0 6px 18px rgba(17, 24, 39, 0.04);
+    }
+    .s04-row-highlight {
+      border: 2px solid #1a3a7e;
+      background: #ffffff;
+    }
+    .s04-regimen {
+      font-size: 31px;
+      font-weight: 800;
+      color: #0f1f44;
+      line-height: 1.28;
+    }
+    .s04-topic-sub {
+      font-size: 28px;
+      font-weight: 600;
+      color: #575f6e;
+      margin-top: 2px;
+    }
+    .s04-badge-good {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #e6f4ec;
+      color: #0b5d3c;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .s04-badge-warn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #faf0d8;
+      color: #734604;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .s04-clause {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a3a7e;
+      text-align: right;
+      white-space: nowrap;
+    }
+    /* Drug Cross-Reference Bar + Anchored Drawer */
+    .s04-drugs-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 6px;
+    }
+    .s04-drugs-label {
+      font-size: 29px;
+      font-weight: 800;
+      color: #0f1f44;
+      white-space: nowrap;
+    }
+    .s04-drug-chip {
+      background: #ffffff;
+      border: 1.5px solid #b6b1a4;
+      color: #111827;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 10px 22px;
+      border-radius: 6px;
+    }
+    .s04-drug-chip-active {
+      background: #1a3a7e;
+      border-color: #1a3a7e;
+      color: #ffffff;
+    }
+    .s04-drawer-mask {
+      overflow: hidden;
+      border-radius: 10px;
+    }
+    .s04-drawer {
+      background: #0f1f44;
+      color: #ffffff;
+      padding: 24px 32px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+    }
+    .s04-drawer-left {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .s04-drawer-kicker {
+      font-size: 28px;
+      font-weight: 700;
+      color: #f8abc1;
+    }
+    .s04-drawer-text {
+      font-size: 31px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.38;
+    }
+    .s04-drawer-cta {
+      background: #ffffff;
+      color: #0f1f44;
+      font-size: 28px;
+      font-weight: 800;
+      padding: 14px 28px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+    .s04-cursor {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 56px;
+      height: 56px;
+      pointer-events: none;
+      filter: drop-shadow(0 6px 12px rgba(15, 31, 68, 0.35));
+    }
+  </style>
+
+  <div id="root" data-composition-id="s04-nhi-drugs" data-width="1920" data-height="1080">
+    <div id="s04-wrap" class="s04-wrap">
+      <div id="s04-head" class="s04-head">
+        <div class="s04-title">最新核准與台灣健保給付對照</div>
+        <div class="s04-sub">依健保署藥品給付規定條文與生效日</div>
+      </div>
+
+      <div class="s04-board">
+        <div id="s04-r1" class="s04-row s04-row-highlight">
+          <div>
+            <div class="s04-regimen">Encorafenib + cetuximab（2L+）</div>
+            <div class="s04-topic-sub">BRAF V600E · 2026 年 5 月 1 日生效</div>
+          </div>
+          <span class="s04-badge-good">✓ TFDA 已核准</span>
+          <span class="s04-badge-warn">⏱ 健保有條件給付</span>
+          <span class="s04-clause">給付規定 9.134</span>
+        </div>
+
+        <div id="s04-r2" class="s04-row">
+          <div>
+            <div class="s04-regimen">Panitumumab + FOLFOX／FOLFIRI（1L）</div>
+            <div class="s04-topic-sub">RAS wt · 2026 年 2 月 1 日生效</div>
+          </div>
+          <span class="s04-badge-good">✓ TFDA 已核准</span>
+          <span class="s04-badge-warn">⏱ 健保有條件給付</span>
+          <span class="s04-clause">給付規定 9.53 1.</span>
+        </div>
+
+        <div id="s04-r3" class="s04-row">
+          <div>
+            <div class="s04-regimen">Cetuximab + FOLFIRI／FOLFOX（1L）</div>
+            <div class="s04-topic-sub">RAS wt · 2026 年 2 月 1 日生效</div>
+          </div>
+          <span class="s04-badge-good">✓ TFDA 已核准</span>
+          <span class="s04-badge-warn">⏱ 健保有條件給付</span>
+          <span class="s04-clause">給付規定 9.27 1.(1)</span>
+        </div>
+
+        <div id="s04-r4" class="s04-row">
+          <div>
+            <div class="s04-regimen">Pembrolizumab（1L MSI-H / dMMR）</div>
+            <div class="s04-topic-sub">MSI-H · 2025 年 6 月 1 日生效</div>
+          </div>
+          <span class="s04-badge-good">✓ TFDA 已核准</span>
+          <span class="s04-badge-warn">⏱ 健保有條件給付</span>
+          <span class="s04-clause">給付規定 9.69 1.(11)</span>
+        </div>
+      </div>
+
+      <div id="s04-drugs-bar" class="s04-drugs-bar">
+        <span class="s04-drugs-label">常用藥物反查：</span>
+        <span id="s04-chip-enco" class="s04-drug-chip">Encorafenib · 8 篇</span>
+        <span class="s04-drug-chip">Cetuximab · 14 篇</span>
+        <span class="s04-drug-chip">Panitumumab · 9 篇</span>
+        <span class="s04-drug-chip">Pembrolizumab · 6 篇</span>
+      </div>
+
+      <div class="s04-drawer-mask">
+        <div id="s04-drawer" class="s04-drawer">
+          <div class="s04-drawer-left">
+            <div class="s04-drawer-kicker">BRAF V600E 藥物反查結果</div>
+            <div class="s04-drawer-text">1L BREAKWATER（EC + mFOLFOX6） · 2L+ BEACON（EC 雙標靶 · 健保 9.134）</div>
+          </div>
+          <div id="s04-drawer-cta" class="s04-drawer-cta">開啟 Tumor Board 摘要 →</div>
+        </div>
+      </div>
+    </div>
+
+    <svg id="s04-cursor" class="s04-cursor" viewBox="0 0 48 48" fill="none" data-layout-ignore="true">
+      <path
+        d="M8 5L39 22.5L23.5 26.2L17.2 41.5L8 5Z"
+        fill="#0f1f44"
+        stroke="#ffffff"
+        stroke-width="3.2"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // Clean entrance from right (visible immediately at t=0)
+    tl.fromTo("#s04-head", { opacity: 1, x: 36 }, { opacity: 1, x: 0, duration: 0.38, ease: "expo.out" }, 0);
+    tl.fromTo(["#s04-r1", "#s04-r2", "#s04-r3", "#s04-r4"], { opacity: 0, x: 56 }, { opacity: 1, x: 0, duration: 0.42, stagger: 0.09, ease: "expo.out" }, 0.15);
+
+    // Subtle focus highlight moves through rows while VO explains TFDA / NHI rules
+    tl.to("#s04-r2", { borderColor: "#1a3a7e", duration: 0.25 }, 2.5);
+    tl.to("#s04-r2", { borderColor: "#dfddd4", duration: 0.25 }, 3.7);
+    tl.to("#s04-r4", { borderColor: "#1a3a7e", duration: 0.25 }, 3.7);
+    tl.to("#s04-r4", { borderColor: "#dfddd4", duration: 0.25 }, 4.8);
+
+    tl.fromTo("#s04-drugs-bar", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 4.5);
+
+    // Cursor sweeps to Encorafenib chip and clicks (6.0s -> 6.9s)
+    tl.fromTo("#s04-cursor", { x: 1620, y: 1040, opacity: 0 }, { x: 455, y: 782, opacity: 1, duration: 0.65, ease: "power3.out" }, 6.0);
+    tl.to(["#s04-chip-enco", "#s04-cursor"], { scale: 0.92, duration: 0.09, ease: "none" }, 6.75);
+    tl.to(["#s04-chip-enco", "#s04-cursor"], { scale: 1.0, duration: 0.18, ease: "back.out(1.6)" }, 6.84);
+    tl.to("#s04-chip-enco", { backgroundColor: "#1a3a7e", color: "#ffffff", borderColor: "#1a3a7e", duration: 0.15 }, 6.8);
+
+    // Anchored drawer slides smoothly into view (7.0s)
+    tl.fromTo("#s04-drawer", { y: -120, opacity: 0 }, { y: 0, opacity: 1, duration: 0.48, ease: "expo.out" }, 7.0);
+
+    // Cursor glides across drawer to CTA and clicks (9.2s -> 11.8s)
+    tl.to("#s04-cursor", { x: 1580, y: 905, duration: 0.85, ease: "power2.inOut" }, 9.2);
+    tl.to("#s04-drawer-cta", { backgroundColor: "#edf1f9", duration: 0.25 }, 10.1);
+    tl.to(["#s04-drawer-cta", "#s04-cursor"], { scale: 0.92, duration: 0.09, ease: "none" }, 11.45);
+    tl.to(["#s04-drawer-cta", "#s04-cursor"], { scale: 1.0, duration: 0.16, ease: "back.out(1.6)" }, 11.54);
+
+    // Crisp handoff right at the cut
+    tl.to("#s04-cursor", { opacity: 0, duration: 0.18 }, 12.65);
+
+    window.__timelines["s04-nhi-drugs"] = tl;
+    tl.seek(0);
+  </script>
+</template>

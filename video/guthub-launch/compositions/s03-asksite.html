@@ -1,0 +1,308 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Archivo";
+      font-style: normal;
+      font-weight: 100 900;
+      src: url("assets/fonts/archivo-latin.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "GutHubTC";
+      font-style: normal;
+      font-weight: 400 800;
+      src: local("PingFang TC"), local("Heiti TC");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #f6f5f0;
+      font-family: "Archivo", "GutHubTC", sans-serif;
+      color: #111827;
+    }
+    .s03-wrap {
+      position: absolute;
+      inset: 0;
+      padding: 76px 116px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    .s03-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .s03-kicker {
+      font-size: 32px;
+      font-weight: 800;
+      color: #0f1f44;
+    }
+    .s03-honesty {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: #faf0f2;
+      border: 1.5px solid #e6c7d0;
+      color: #8f2542;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 10px 24px;
+      border-radius: 6px;
+    }
+    .s03-search-shell {
+      background: #ffffff;
+      border: 2.5px solid #1a3a7e;
+      border-radius: 10px;
+      padding: 18px 22px 18px 30px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 18px 44px rgba(15, 31, 68, 0.12);
+    }
+    .s03-search-icon {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      color: #1a3a7e;
+    }
+    .s03-query-area {
+      flex: 1;
+      font-size: 38px;
+      font-weight: 700;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      min-height: 54px;
+    }
+    .s03-caret {
+      display: inline-block;
+      width: 4px;
+      height: 44px;
+      background: #1a3a7e;
+      margin-left: 6px;
+    }
+    .s03-btn {
+      background: #1a3a7e;
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 700;
+      padding: 16px 38px;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .s03-results-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #dfddd4;
+      padding-bottom: 12px;
+    }
+    .s03-results-label {
+      font-size: 30px;
+      font-weight: 800;
+      color: #0f1f44;
+    }
+    .s03-results-note {
+      font-size: 28px;
+      color: #575f6e;
+    }
+    .s03-list {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .s03-card {
+      background: #ffffff;
+      border: 1.5px solid #dfddd4;
+      border-radius: 10px;
+      padding: 28px 34px;
+      box-shadow: 0 10px 28px rgba(17, 24, 39, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .s03-card-primary {
+      border: 2px solid #1a3a7e;
+      background: #ffffff;
+    }
+    .s03-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .s03-kind-badge {
+      background: #edf1f9;
+      color: #1a3a7e;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 4px 16px;
+      border-radius: 4px;
+    }
+    .s03-journal {
+      font-family: "Archivo", sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: #3a4252;
+    }
+    .s03-source-good {
+      background: #e6f4ec;
+      color: #0b5d3c;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 4px 16px;
+      border-radius: 4px;
+    }
+    .s03-card-title {
+      font-size: 36px;
+      font-weight: 800;
+      color: #0f1f44;
+      line-height: 1.3;
+    }
+    .s03-card-body {
+      font-size: 29px;
+      color: #3a4252;
+      line-height: 1.48;
+    }
+    .s03-doi-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #edf1f9;
+      border-radius: 6px;
+      padding: 12px 20px;
+      margin-top: 4px;
+    }
+    .s03-doi-text {
+      font-family: "Archivo", sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a3a7e;
+    }
+    .s03-doi-cta {
+      font-size: 28px;
+      font-weight: 700;
+      color: #0f1f44;
+    }
+    .s03-cursor {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 56px;
+      height: 56px;
+      pointer-events: none;
+      filter: drop-shadow(0 6px 12px rgba(15, 31, 68, 0.35));
+    }
+  </style>
+
+  <div id="root" data-composition-id="s03-asksite" data-width="1920" data-height="1080">
+    <div id="s03-wrap" class="s03-wrap">
+      <div class="s03-top">
+        <div id="s03-kicker" class="s03-kicker">用一句話找證據</div>
+        <div id="s03-honesty" class="s03-honesty">不產生答案 · 不留存提問 · 直接回到原文</div>
+      </div>
+
+      <div id="s03-search-shell" class="s03-search-shell">
+        <svg class="s03-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" data-layout-ignore="true">
+          <circle cx="11" cy="11" r="7.5" />
+          <path d="M17 17L21.5 21.5" stroke-linecap="round" />
+        </svg>
+        <div class="s03-query-area">
+          <span id="s03-typed"></span><span id="s03-caret" class="s03-caret"></span>
+        </div>
+        <div id="s03-btn" class="s03-btn">搜尋</div>
+      </div>
+
+      <div id="s03-results-head" class="s03-results-head">
+        <span class="s03-results-label">語意檢索結果：證據</span>
+        <span class="s03-results-note">直接對應站上結構化文獻與 DOI</span>
+      </div>
+
+      <div class="s03-list">
+        <article id="s03-card-1" class="s03-card s03-card-primary" data-hold="true">
+          <div class="s03-card-meta">
+            <span class="s03-kind-badge">文獻</span>
+            <span class="s03-journal">PARADIGM · JAMA 2023 · Phase 3 RCT</span>
+            <span class="s03-source-good">來源：人工整理</span>
+          </div>
+          <div class="s03-card-title">Panitumumab vs Bevacizumab + mFOLFOX6（左側 RAS 野生型 1L）</div>
+          <div class="s03-card-body">左側原發腫瘤 mOS 37.9 vs 34.3 個月（HR 0.82）；R0 切除率 18.3% vs 11.6%。</div>
+          <div id="s03-doi-bar" class="s03-doi-bar">
+            <span class="s03-doi-text">DOI: 10.1001/jama.2023.4428</span>
+            <span class="s03-doi-cta">查看完整證據與原始論文 →</span>
+          </div>
+        </article>
+
+        <article id="s03-card-2" class="s03-card">
+          <div class="s03-card-meta">
+            <span class="s03-kind-badge">文獻</span>
+            <span class="s03-journal">FIRE-3 · Lancet Oncol 2014 · Phase 3 RCT</span>
+            <span class="s03-source-good">來源：人工整理</span>
+          </div>
+          <div class="s03-card-title">FOLFIRI + Cetuximab vs FOLFIRI + Bevacizumab（1L）</div>
+          <div class="s03-card-body">ORR / PFS 無差異但 OS 顯著優於 bevacizumab；DOI: 10.1016/S1470-2045(14)70330-4</div>
+        </article>
+      </div>
+    </div>
+
+    <svg id="s03-cursor" class="s03-cursor" viewBox="0 0 48 48" fill="none" data-layout-ignore="true">
+      <path
+        d="M8 5L39 22.5L23.5 26.2L17.2 41.5L8 5Z"
+        fill="#0f1f44"
+        stroke="#ffffff"
+        stroke-width="3.2"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const fullQuery = "左側 RAS 野生型一線用哪個標靶？";
+    const typedEl = document.getElementById("s03-typed");
+    const caretEl = document.getElementById("s03-caret");
+    const typeProxy = { n: 0 };
+
+    // Initial states (search bar visible cleanly at t=0)
+    tl.fromTo("#s03-search-shell", { scaleX: 0.86, opacity: 1 }, { scaleX: 1, opacity: 1, duration: 0.4, ease: "expo.out" }, 0);
+    tl.fromTo("#s03-kicker", { opacity: 1, x: -16 }, { opacity: 1, x: 0, duration: 0.32, ease: "power4.out" }, 0);
+    tl.fromTo("#s03-honesty", { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.3)" }, 4.6);
+
+    // Deterministic stepped typing (0.55s -> 2.75s)
+    tl.to(typeProxy, {
+      n: fullQuery.length,
+      duration: 2.2,
+      ease: "none",
+      onUpdate: () => {
+        if (typedEl) typedEl.textContent = fullQuery.slice(0, Math.round(typeProxy.n));
+        if (caretEl) caretEl.style.opacity = (tl.time() % 0.5) < 0.28 ? "1" : "0";
+      }
+    }, 0.55);
+
+    // Cursor enters and clicks Search button (2.7s -> 3.45s)
+    tl.fromTo("#s03-cursor", { x: 1820, y: 520, opacity: 0 }, { x: 1710, y: 205, opacity: 1, duration: 0.55, ease: "power3.out" }, 2.7);
+    tl.to(["#s03-btn", "#s03-cursor"], { scale: 0.91, duration: 0.09, ease: "none" }, 3.3);
+    tl.to(["#s03-btn", "#s03-cursor"], { scale: 1.0, duration: 0.18, ease: "back.out(1.6)" }, 3.39);
+    tl.to("#s03-caret", { opacity: 0, duration: 0.05 }, 3.4);
+
+    // Results land cleanly with tight editorial stagger (3.6s)
+    tl.fromTo("#s03-results-head", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 3.55);
+    tl.fromTo("#s03-card-1", { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out" }, 3.72);
+    tl.fromTo("#s03-card-2", { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out" }, 3.92);
+
+    // Cursor moves smoothly to PARADIGM card & highlights DOI bar across the hold (6.4s -> 11.6s)
+    tl.to("#s03-cursor", { x: 1120, y: 695, duration: 0.72, ease: "power2.inOut" }, 6.4);
+    tl.to("#s03-doi-bar", { backgroundColor: "#dce6fa", duration: 0.3, ease: "power2.out" }, 7.2);
+    tl.to(["#s03-doi-bar", "#s03-cursor"], { scale: 0.97, duration: 0.1, ease: "none" }, 9.8);
+    tl.to(["#s03-doi-bar", "#s03-cursor"], { scale: 1.0, duration: 0.2, ease: "back.out(1.5)" }, 9.9);
+    tl.to("#s03-card-1", { boxShadow: "0 18px 46px rgba(26, 58, 126, 0.18)", duration: 0.35 }, 10.1);
+    tl.to("#s03-cursor", { x: 1580, y: 695, duration: 0.6, ease: "power2.inOut" }, 11.8);
+    tl.to("#s03-cursor", { opacity: 0, duration: 0.2 }, 13.6);
+
+    window.__timelines["s03-asksite"] = tl;
+    tl.seek(0);
+  </script>
+</template>

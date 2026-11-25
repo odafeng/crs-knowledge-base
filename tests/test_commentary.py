@@ -251,7 +251,7 @@ class TestValidateCommentary:
 
 
 class TestPipelineRouting:
-    """Commentary never reaches full classification or new-paper issues."""
+    """Commentary never reaches full classification or review issues (ADR-0029)."""
 
     def _run(self, candidates, proposal):
         with (
@@ -262,7 +262,7 @@ class TestPipelineRouting:
             patch("main.triage_commentary", return_value=proposal) as triage,
             patch("main.classify_all", return_value=[]) as classify,
             patch("main.create_issues") as create_issues,
-            patch("main.create_commentary_review_issue") as review_issue,
+            patch("main.publish_commentary") as publish_comm,
             patch("main.notify_papers"),
             patch("main.load_tracked_dois", return_value={}),
             patch("main.load_tracked_abstracts", return_value={}),
@@ -272,23 +272,23 @@ class TestPipelineRouting:
             from main import run_pipeline
 
             run_pipeline()
-        return triage, classify, create_issues, review_issue, save_dois
+        return triage, classify, create_issues, publish_comm, save_dois
 
-    def test_mapped_commentary_goes_to_review_issue(self, editorial):
+    def test_unverified_mapped_commentary_is_skipped_and_tracked(self, editorial):
         proposal = _proposal()
-        triage, classify, create_issues, review_issue, save_dois = self._run([editorial], proposal)
+        triage, classify, create_issues, publish_comm, save_dois = self._run([editorial], proposal)
         assert triage.call_count == 1
         assert classify.call_args.args[0] == []  # not sent to the full agent
         create_issues.assert_not_called()
-        assert review_issue.call_args.args[0] == [proposal]
+        publish_comm.assert_not_called()  # AI-only match does not auto-publish
         tracked = save_dois.call_args.args[0]
         assert tracked[editorial["doi"]]["kind"] == "commentary"
         assert tracked[editorial["doi"]]["target"] == "STELLAR303_Lancet_2025"
 
     def test_unmapped_commentary_only_tracked(self, editorial):
         before = PAPERS_JSON.read_text()
-        _, classify, create_issues, review_issue, save_dois = self._run([editorial], _proposal(target_id=None))
-        assert review_issue.call_args.args[0] == []  # nothing to review
+        _, classify, create_issues, publish_comm, save_dois = self._run([editorial], _proposal(target_id=None))
+        publish_comm.assert_not_called()
         create_issues.assert_not_called()
         assert classify.call_args.args[0] == []
         tracked = save_dois.call_args.args[0]
@@ -313,7 +313,6 @@ class TestPipelineRouting:
             patch("main.fetch_rss", return_value=[]),
             patch("main.classify_all", side_effect=classify),
             patch("main.create_issues") as create_issues,
-            patch("main.create_commentary_review_issue"),
             patch("main.notify_papers"),
             patch("main.load_tracked_dois", return_value={}),
             patch("main.load_tracked_abstracts", return_value={}),
