@@ -50,7 +50,8 @@ def harness(tmp_path, monkeypatch):
     # Fail closed if a future refactor accidentally escapes the fixture boundaries.
     monkeypatch.setattr(socket, "create_connection", Mock(side_effect=AssertionError("network forbidden")))
     monkeypatch.setattr(socket.socket, "connect", Mock(side_effect=AssertionError("network forbidden")))
-    for name in ("create_issues", "create_commentary_review_issue", "create_digest_issue", "notify_papers"):
+    monkeypatch.setattr(pipeline, "repair_paper", Mock(return_value=False))
+    for name in ("create_issues", "notify_papers"):
         monkeypatch.setattr(pipeline, name, Mock())
     return kb
 
@@ -94,8 +95,7 @@ def test_research_migration_round_trip(harness, monkeypatch, case):
     classified = classifier.call_args.args[1]
     assert classified["source"] == "pubmed"
     assert classified["abstract"] == candidate["abstract"]
-    held = pipeline.create_issues.call_args.args[0] if pipeline.create_issues.called else []
-    assert pipeline.create_commentary_review_issue.call_args.args[0] == []
+    pipeline.create_issues.assert_not_called()
 
     tracked = config.load_tracked_dois()
     key = case.get("tracking_key", "10.9999/guthub-contract")
@@ -117,12 +117,11 @@ def test_research_migration_round_trip(harness, monkeypatch, case):
         assert len(entries(kb)) == 1
         assert not (kb.root / "docs").exists()
         pipeline.notify_papers.assert_not_called()
-        pipeline.create_issues.assert_not_called()
         return
 
-    assert pipeline.notify_papers.call_args.args[0] == [classified]
     if case["outcome"] == "auto":
-        assert held == []
+        assert pipeline.notify_papers.call_args.args[0] == [classified]
+        assert classified["publish_status"] == "auto"
         saved = entries(kb)["contract-paper"]
         expected = {**deepcopy(FIXTURE["research"]["expected_entry"]), **case.get("entry", {})}
         expected["doi"] = candidate["doi"] or None
@@ -134,9 +133,10 @@ def test_research_migration_round_trip(harness, monkeypatch, case):
     else:
         assert len(entries(kb)) == 1
         assert not (kb.root / "docs").exists()
-        assert len(held) == 1 and held[0]["publish_status"] == "held"
-        assert any(case["reason"] in reason for reason in held[0]["gate_reasons"])
-        body = format_issue_body(held[0])
+        pipeline.notify_papers.assert_not_called()
+        assert classified["publish_status"] == "held"
+        assert any(case["reason"] in reason for reason in classified["gate_reasons"])
+        body = format_issue_body(classified)
         if not case.get("accept", True):
             with pytest.raises(PublishError, match="沒有可發布的資料"):
                 accept(body, TODAY, kb)
@@ -182,11 +182,20 @@ def test_commentary_migration_round_trip(harness, monkeypatch, case):
     monkeypatch.setattr(pipeline, "resolve_dois", resolver)
     monkeypatch.setattr(pipeline, "fetch_pubmed", Mock(return_value=[candidate]))
     monkeypatch.setattr(pipeline, "fetch_rss", Mock(return_value=[]))
+    held_capture: list = []
+    real_pub_commentary = pipeline.publish_or_hold_commentary
+
+    def capture_commentary(*args, **kwargs):
+        out = real_pub_commentary(*args, **kwargs)
+        held_capture.extend(out)
+        return out
+
+    monkeypatch.setattr(pipeline, "publish_or_hold_commentary", capture_commentary)
     assert pipeline.run_pipeline() is False
     client.beta.messages.create.assert_called_once()
     pipeline.create_issues.assert_not_called()
     pipeline.notify_papers.assert_not_called()
-    held = pipeline.create_commentary_review_issue.call_args.args[0]
+    held = held_capture
     tracked = config.load_tracked_dois()
     if case.get("tracked", True):
         assert tracked == {
@@ -236,5 +245,5 @@ def test_dry_run_never_changes_kb_or_tracking(harness, monkeypatch):
     assert harness.papers_json.read_bytes() == before
     assert not list((harness.root / "data").glob("tracked-*.json"))
     assert not (harness.root / "docs").exists()
-    assert pipeline.create_issues.call_args.kwargs == {"dry_run": True}
-    assert pipeline.notify_papers.call_args.kwargs == {"dry_run": True}
+    pipeline.create_issues.assert_not_called()
+    pipeline.notify_papers.assert_not_called()

@@ -12,10 +12,12 @@ from anthropic import Anthropic
 
 from agent_tools import AGENT_TOOLS, execute_tool
 from config import ANTHROPIC_API_KEY, CLASSIFY_EFFORT, CLASSIFY_MODEL, FALLBACK_BETA, RELEVANCE_THRESHOLD
+from provenance import abstract_status
 from topic_agents import build_paper_prompt, build_system_prompt
 from usage import USAGE
 
 MAX_AGENT_TURNS = 8  # Max tool-use rounds per paper
+MAX_REPAIR_ATTEMPTS = 2  # Max self-repair passes when a score >= 4 paper fails the provenance gate (ADR-0029)
 MAX_OUTPUT_TOKENS = 16000  # Thinking is always on and counts toward max_tokens
 
 # Nudge sent when the agent runs out of turns (or stops) without submitting.
@@ -367,6 +369,90 @@ def classify_paper(client: Anthropic, paper: dict, all_candidates: list[dict] | 
     # Mark as parse failure — NOT as score 0. This goes to a review queue.
     print("    [WARN] Classification parse failed — marking for manual review", file=sys.stderr)
     return _mark_for_review(paper, "(Agent did not produce structured classification — needs manual review)")
+
+
+def can_repair(paper: dict, auto_topics: set[str]) -> bool:
+    """Whether a gate-failing paper can be repaired strictly from its verbatim PubMed abstract (ADR-0029)."""
+    if paper.get("ai_parse_failed"):
+        return False
+    if paper.get("topic") not in auto_topics:
+        return False
+    status = paper.get("abstract_status") or abstract_status(paper.get("abstract", ""))
+    return status == "full"
+
+
+def _build_repair_prompt(paper: dict, reasons: list[str]) -> str:
+    """Build a focused prompt asking the model to fix provenance/validation failures from the verbatim abstract."""
+    reasons_text = "\n".join(f"- {r}" for r in reasons)
+    draft = {
+        "relevance_score": paper.get("ai_score"),
+        "contextual_analysis": paper.get("ai_analysis", ""),
+        "bottom_line": paper.get("ai_bottom_line", ""),
+        "suggested_js": paper.get("ai_suggested_js"),
+        "suggested_filename": paper.get("ai_suggested_filename", ""),
+        "relations": paper.get("ai_relations", []),
+        "evidence": paper.get("ai_evidence", []),
+    }
+    return f"""你先前對以下論文提交的知識庫條目未通過自動查核（Provenance Gate / 驗證），請嚴格依據標題與 PubMed 摘要原文修正後，重新呼叫 `submit_classification` 提交。
+
+## 未通過原因（必須全部修正）
+{reasons_text}
+
+## 論文原始資料（唯一可引用的數字來源）
+- **Topic**: {paper.get("topic", "")}
+- **Title**: {paper.get("title", "")}
+- **Journal / Year**: {paper.get("journal", "")} ({paper.get("year", "")})
+- **PMID**: {paper.get("pmid", "")}
+- **DOI**: {paper.get("doi", "")}
+
+### PubMed 摘要原文
+{paper.get("abstract", "")}
+
+## 先前草稿
+```json
+{json.dumps(draft, ensure_ascii=False, indent=2)}
+```
+
+## 修正規則
+1. `suggested_js` 的 `n`、`regimen`、`endpoint`、`result`、`bottomLine`（以及 `bottom_line`）中出現的**每一個數字**，都必須在上方「PubMed 摘要原文」找得到；禁止推算數字（例如把兩組相加）或引用外部網頁數字。若摘要未提供某數字（例如收案數），將 `n` 設為 `null` 或改寫為不帶該數字的敘述。
+2. `evidence` 中每筆都必須使用 `source: "abstract"`，且 `quote` 必須直接逐字複製「PubMed 摘要原文」的片段（不可改寫、不可翻譯），並涵蓋上述欄位中的每一個數字。
+3. `studyType` 必須嚴格符合標題與摘要寫明的設計（未寫隨機分派不得標 `RCT`、未寫期別不得標 `Phase`），且使用系統允許的 studyType 值（如 `Phase 3 RCT`、`Phase 2 RCT`、`Phase 2`、`Meta-analysis`、`Prospective cohort`、`Retrospective cohort`、`Guideline` 等）。
+4. 若失敗原因為 `Duplicate id` 或 `詳細頁已存在`，請更換不衝突的新 `id` 與 `suggested_filename`。
+5. 保持原本的 `relevance_score` 與 `contextual_analysis`（除非核對後認為不達門檻，可下調分數）。
+6. 請直接呼叫 `submit_classification` 提交修正結果，不要輸出純文字。"""
+
+
+def repair_paper(client: Anthropic, paper: dict, reasons: list[str]) -> bool:
+    """Ask the classifier to fix provenance/validation failures strictly from the verbatim abstract (ADR-0029).
+
+    Returns True when a new submit_classification payload was applied onto `paper`, False otherwise.
+    """
+    system_prompt = build_system_prompt(paper.get("topic", ""))
+    messages: list[dict] = [{"role": "user", "content": _build_repair_prompt(paper, reasons)}]
+
+    for _turn in range(2):
+        try:
+            response = _create_message(client, system_prompt, messages, tools=[SUBMIT_CLASSIFICATION_TOOL])
+        except Exception as exc:
+            print(f"    [Repair] API call failed: {exc}", file=sys.stderr)
+            return False
+
+        if response.stop_reason == "refusal":
+            print(f"    [Repair] {_refusal_note(response)}", file=sys.stderr)
+            return False
+
+        submission = _extract_submission(response)
+        if submission is not None:
+            _apply_submission(paper, submission)
+            return True
+
+        if response.stop_reason == "end_turn":
+            messages.append({"role": "assistant", "content": response.content})
+            _append_user_text(messages, FORCE_SUBMIT_PROMPT)
+            continue
+        break
+
+    return False
 
 
 def classify_all(candidates: list[dict], dry_run: bool = False) -> list[dict]:

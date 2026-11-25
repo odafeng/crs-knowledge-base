@@ -48,19 +48,22 @@ class TestPipelineContract:
         assert "create_prs" not in code, "main.py must not use create_prs — all papers go to Issues only"
         assert "from create_pr" not in code, "main.py must not import from create_pr"
 
-    def test_layer_3_is_gate_then_issues(self):
-        """ADR-0013: papers publish only through the provenance gate; the rest become issues. Never PRs."""
+    def test_layer_3_auto_repairs_and_opens_no_review_issues(self):
+        """ADR-0013 + ADR-0029: papers publish only through the provenance gate (with bounded self-repair); no routine issues or PRs."""
         import inspect
 
         from main import publish_or_hold, run_pipeline
 
         pipeline = inspect.getsource(run_pipeline)
         assert "publish_or_hold" in pipeline
-        assert "create_issues(held" in pipeline
+        assert "create_issues(" not in pipeline
+        assert "create_digest_issue(" not in pipeline
+        assert "create_commentary_review_issue(" not in pipeline
         assert "create_prs" not in pipeline
 
         gate = inspect.getsource(publish_or_hold)
         assert "evaluate_paper_gate" in gate
+        assert "repair_paper" in gate
         assert '"auto"' in gate  # pipeline-published entries are always marked unreviewed
 
 
@@ -224,29 +227,33 @@ class TestReviewPicks:
             assert review_picks() is False
 
 
-def test_three_point_papers_are_listed_after_classification():
+def test_pipeline_opens_no_issues_for_score_three_or_unpublishable_papers():
     from unittest.mock import patch
 
     research = [
-        {"pmid": "1", "title": "a", "topic": "generic-CRS", "abstract": "x"},
-        {"pmid": "2", "title": "b", "topic": "generic-CRS", "abstract": "y"},
-        {"pmid": "3", "title": "c", "topic": "generic-CRS", "abstract": "z"},
+        {"pmid": "1", "title": "score 3 paper", "topic": "generic-CRS", "abstract": "Full abstract text."},
+        {"pmid": "2", "title": "score 2 paper", "topic": "generic-CRS", "abstract": "Full abstract text."},
+        {"pmid": "3", "title": "unpublishable score 4", "topic": "generic-CRS", "abstract": ""},
     ]
 
     def classify(papers, dry_run=False):
-        for p, score in zip(papers, (3, 2, 3), strict=True):
-            p.update(ai_score=score, ai_parse_failed=False)
-        return []
+        scores = (3, 2, 4)
+        for p, score in zip(papers, scores, strict=True):
+            p.update(ai_score=score, ai_parse_failed=False, ai_suggested_js={}, ai_evidence=[])
+        return [papers[2]]
 
     with (
         patch("main.fetch_pubmed", return_value=research),
         patch("main.fetch_rss", return_value=[]),
         patch("main.classify_all", side_effect=classify),
-        patch("main.create_digest_issue") as listed,
-        patch("main.update_tracking"),
+        patch("main.create_issues") as issues,
+        patch("main.notify_papers") as notify,
+        patch("main.update_tracking") as tracking,
         patch("main.USAGE"),
     ):
         from main import run_pipeline
 
         run_pipeline()
-    assert [p["pmid"] for p in listed.call_args.args[0]] == ["1", "3"]
+    issues.assert_not_called()
+    notify.assert_not_called()
+    tracking.assert_called_once()

@@ -206,6 +206,7 @@ class TestPipelineGate:
     def json_writer(self, monkeypatch):
         # The pipeline's JSON path, whichever writer the repository itself has now (postgres since cutover, #79).
         monkeypatch.setattr(content_store, "json_writer_active", lambda: True)
+        monkeypatch.setattr("main.ANTHROPIC_API_KEY", "")
 
     def test_publish_or_hold(self):
         from main import publish_or_hold
@@ -236,6 +237,104 @@ class TestPipelineGate:
         with patch("main.publish_paper") as publish:
             publish_or_hold([_paper()], TODAY, dry_run=True)
         publish.assert_not_called()
+
+    def test_auto_repair_fixes_gate_failure_and_publishes(self):
+        from main import publish_or_hold
+
+        paper = _paper(n=51)  # 51 is not in ABSTRACT (which states 56); triggers gate failure
+
+        def fake_repair(_client, target, reasons):
+            assert any("51" in r for r in reasons)
+            target["ai_suggested_js"]["n"] = 56
+            return True
+
+        with (
+            patch("main.ANTHROPIC_API_KEY", "test-key"),
+            patch("main.Anthropic"),
+            patch("main.repair_paper", side_effect=fake_repair) as repair,
+            patch("main.publish_paper", return_value={"id": "test-auto-2026", "file": "f"}) as publish,
+        ):
+            published, held = publish_or_hold([paper], TODAY, dry_run=False)
+        assert published == [paper] and held == []
+        assert paper["publish_status"] == "auto"
+        assert repair.call_count == 1
+        assert publish.call_count == 1
+
+    def test_auto_repair_caps_at_two_attempts_then_skips(self):
+        from main import publish_or_hold
+
+        paper = _paper(n=51)
+        with (
+            patch("main.ANTHROPIC_API_KEY", "test-key"),
+            patch("main.Anthropic"),
+            patch("main.repair_paper", return_value=True) as repair,
+            patch("main.publish_paper") as publish,
+        ):
+            published, held = publish_or_hold([paper], TODAY, dry_run=False)
+        assert published == [] and held == [paper]
+        assert repair.call_count == 2
+        publish.assert_not_called()
+
+    def test_auto_repair_skips_unrepairable_truncated_abstract(self):
+        from main import publish_or_hold
+
+        paper = _paper()
+        paper["abstract_status"] = "truncated"
+        with (
+            patch("main.ANTHROPIC_API_KEY", "test-key"),
+            patch("main.Anthropic"),
+            patch("main.repair_paper") as repair,
+            patch("main.publish_paper") as publish,
+        ):
+            published, held = publish_or_hold([paper], TODAY, dry_run=False)
+        assert published == [] and held == [paper]
+        repair.assert_not_called()
+        publish.assert_not_called()
+
+    def test_auto_repair_stops_when_model_downgrades_score(self):
+        from main import publish_or_hold
+
+        paper = _paper(n=51)
+
+        def downgrade(_client, target, _reasons):
+            target["ai_score"] = 3
+            return True
+
+        with (
+            patch("main.ANTHROPIC_API_KEY", "test-key"),
+            patch("main.Anthropic"),
+            patch("main.repair_paper", side_effect=downgrade) as repair,
+            patch("main.publish_paper") as publish,
+        ):
+            published, held = publish_or_hold([paper], TODAY, dry_run=False)
+        assert published == [] and held == [paper]
+        assert repair.call_count == 1
+        assert any("調降評分" in r for r in paper["gate_reasons"])
+        publish.assert_not_called()
+
+    def test_auto_repair_retries_on_publish_error(self):
+        from main import publish_or_hold
+
+        paper = _paper()
+
+        def fix_id(_client, target, reasons):
+            assert reasons == ["Duplicate id"]
+            target["ai_suggested_js"]["id"] = "test-auto-2026-v2"
+            return True
+
+        with (
+            patch("main.ANTHROPIC_API_KEY", "test-key"),
+            patch("main.Anthropic"),
+            patch("main.repair_paper", side_effect=fix_id) as repair,
+            patch(
+                "main.publish_paper",
+                side_effect=[PublishError(["Duplicate id"]), {"id": "test-auto-2026-v2", "file": "f"}],
+            ) as publish,
+        ):
+            published, held = publish_or_hold([paper], TODAY, dry_run=False)
+        assert published == [paper] and held == []
+        assert repair.call_count == 1
+        assert publish.call_count == 2
 
 
 class TestWorkflowContract:
@@ -280,7 +379,7 @@ class TestReviewFindings:
 
         paper = _paper(bottomLine="")
         paper["ai_bottom_line"] = "OS 999 months"
-        with patch("main.publish_paper") as publish:
+        with patch("main.ANTHROPIC_API_KEY", ""), patch("main.publish_paper") as publish:
             published, held = publish_or_hold([paper], TODAY, dry_run=False)
         publish.assert_not_called()
         assert published == [] and held == [paper]
