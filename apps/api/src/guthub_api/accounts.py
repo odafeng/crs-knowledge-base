@@ -14,6 +14,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstra
 from guthub_api.auth import User, current_user
 from guthub_api.content import TOPIC_ORDER, TopicKey
 from guthub_api.db import Conn, get_conn
+from guthub_api.taxonomy import DOMAIN_ORDER, DomainSlug
 
 PRIVATE = {"Cache-Control": "private, no-store", "Vary": "Authorization"}
 
@@ -122,3 +123,50 @@ def set_topics(update: TopicSubscriptions, user: SignedIn, db: Db, response: Res
         except errors.ForeignKeyViolation as exc:  # a known key whose topic is not in the database yet
             raise HTTPException(status_code=422, detail="Unknown topic") from exc
     return _topics(db, user)
+
+
+# --- followed specialty domains (T1 #282, ADR-0030) ------------------------------------------------------------------
+
+
+class DomainSubscriptions(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    domains: Annotated[list[DomainSlug], AfterValidator(_distinct)]
+
+
+def _domains(db: Conn, user: User) -> dict[str, list[str]]:
+    rows = db.execute("select domain_slug from app.domain_subscriptions where account_id = %s", (user.id,)).fetchall()
+    chosen = {row["domain_slug"] for row in rows}
+    return {"domains": [slug for slug in DOMAIN_ORDER if slug in chosen]}
+
+
+@router.get("/me/domains")
+def get_domains(user: SignedIn, db: Db, response: Response) -> dict[str, list[str]]:
+    """The specialty domains this reader follows; private, and never part of a shared page."""
+    response.headers.update(PRIVATE)
+    return _domains(db, user)
+
+
+@router.put("/me/domains")
+def set_domains(update: DomainSubscriptions, user: SignedIn, db: Db, response: Response) -> dict[str, list[str]]:
+    """Replaces the whole set of followed specialty domains; keeps legacy /me/topics intact."""
+    response.headers.update(PRIVATE)
+    with db.transaction():
+        account = db.execute(
+            "select 1 from app.accounts where id = %s and deleted_at is null for update", (user.id,)
+        ).fetchone()
+        if account is None:
+            raise HTTPException(status_code=403, detail="Choose a display name first")
+        db.execute(
+            "delete from app.domain_subscriptions where account_id = %s and not (domain_slug = any(%s))",
+            (user.id, list(update.domains)),
+        )
+        try:
+            for slug in update.domains:
+                db.execute(
+                    "insert into app.domain_subscriptions (account_id, domain_slug) values (%s, %s)"
+                    " on conflict do nothing",
+                    (user.id, slug),
+                )
+        except errors.ForeignKeyViolation as exc:
+            raise HTTPException(status_code=422, detail="Unknown domain") from exc
+    return _domains(db, user)

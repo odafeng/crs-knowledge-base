@@ -1,0 +1,402 @@
+// Auto-generated from contracts/taxonomy.json by scripts/generate-taxonomy.mjs.
+// Do not edit by hand; run `npm run contract:generate` after updating contracts/taxonomy.json.
+
+export const TAXONOMY_VERSION = "1.0" as const;
+
+export const DOMAIN_SLUGS = [
+  "colorectal-oncology",
+  "anorectal-diseases",
+  "benign-colorectal-diseases",
+  "pelvic-floor-functional",
+  "minimally-invasive-surgery",
+  "perioperative-care-nutrition",
+  "endoscopy",
+  "surgical-intelligence"
+] as const;
+
+export type DomainSlug = (typeof DOMAIN_SLUGS)[number];
+
+export interface TaxonomyDomain {
+  readonly slug: DomainSlug;
+  readonly order: number;
+  readonly labelZh: string;
+  readonly labelEn: string;
+  readonly descriptionZh: string;
+  readonly status: "active" | "deprecated";
+}
+
+export interface TaxonomySubtopic {
+  readonly id: string;
+  readonly parentDomain: DomainSlug;
+  readonly slug: string;
+  readonly labelZh: string;
+  readonly labelEn: string;
+  readonly legacyTopicKey: string | null;
+  readonly routePath: string | null;
+  readonly order: number;
+  readonly status: "active" | "legacy_compat" | "deprecated";
+}
+
+export const TAXONOMY_DOMAINS: readonly TaxonomyDomain[] = [
+  {
+    "slug": "colorectal-oncology",
+    "order": 1,
+    "labelZh": "大腸直腸腫瘤",
+    "labelEn": "Colorectal Oncology",
+    "descriptionZh": "mCRC 分子精準治療、局部大腸直腸癌、TNT、器官保留、ctDNA、輔助治療與肛門癌。",
+    "status": "active"
+  },
+  {
+    "slug": "anorectal-diseases",
+    "order": 2,
+    "labelZh": "肛門疾病",
+    "labelEn": "Anorectal Diseases",
+    "descriptionZh": "痔瘡、肛瘻、肛裂、肛門膿瘍、肛門狹窄與藏毛竇。",
+    "status": "active"
+  },
+  {
+    "slug": "benign-colorectal-diseases",
+    "order": 3,
+    "labelZh": "良性大腸疾病",
+    "labelEn": "Benign Colorectal Diseases",
+    "descriptionZh": "IBD、克隆氏症、潰瘍性結腸炎、憩室疾病、大腸扭轉與非腫瘤性大腸急症。",
+    "status": "active"
+  },
+  {
+    "slug": "pelvic-floor-functional",
+    "order": 4,
+    "labelZh": "骨盆底與功能性疾病",
+    "labelEn": "Pelvic Floor & Functional Disorders",
+    "descriptionZh": "便秘、糞便失禁、直腸脫垂、排便障礙、LARS 與肛門直腸生理檢查。",
+    "status": "active"
+  },
+  {
+    "slug": "minimally-invasive-surgery",
+    "order": 5,
+    "labelZh": "微創手術",
+    "labelEn": "Minimally Invasive Surgery",
+    "descriptionZh": "腹腔鏡、機器手臂、TaTME、TME、CME、ICG 螢光導引與手術平台器械。",
+    "status": "active"
+  },
+  {
+    "slug": "perioperative-care-nutrition",
+    "order": 6,
+    "labelZh": "圍手術期照護與營養",
+    "labelEn": "Perioperative Care & Nutrition",
+    "descriptionZh": "ERAS、術前預復健、營養與肌少症、感染預防、疼痛控制、吻合口滲漏與造口照護。",
+    "status": "active"
+  },
+  {
+    "slug": "endoscopy",
+    "order": 7,
+    "labelZh": "內視鏡",
+    "labelEn": "Endoscopy",
+    "descriptionZh": "大腸鏡、EMR、ESD、EFTR、息肉切除、內視鏡併發症與 AI 輔助內視鏡。",
+    "status": "active"
+  },
+  {
+    "slug": "surgical-intelligence",
+    "order": 8,
+    "labelZh": "外科智慧",
+    "labelEn": "Surgical Intelligence",
+    "descriptionZh": "術前風險與難度預測、CT 骨盆測量、術中影像辨識、外科資料科學與醫療 AI 安全。",
+    "status": "active"
+  }
+];
+
+export const TAXONOMY_SUBTOPICS: readonly TaxonomySubtopic[] = [
+  {
+    "id": "mcrc-braf-v600e",
+    "parentDomain": "colorectal-oncology",
+    "slug": "braf-v600e",
+    "labelZh": "BRAF V600E",
+    "labelEn": "BRAF V600E mCRC",
+    "legacyTopicKey": "mCRC-BRAF-V600E",
+    "routePath": "/mcrc/braf-v600e/",
+    "order": 1,
+    "status": "active"
+  },
+  {
+    "id": "mcrc-kras-g12c",
+    "parentDomain": "colorectal-oncology",
+    "slug": "kras-g12c",
+    "labelZh": "KRAS G12C",
+    "labelEn": "KRAS G12C mCRC",
+    "legacyTopicKey": "mCRC-KRAS-G12C",
+    "routePath": "/mcrc/kras-g12c/",
+    "order": 2,
+    "status": "active"
+  },
+  {
+    "id": "mcrc-msi-h",
+    "parentDomain": "colorectal-oncology",
+    "slug": "msi-h",
+    "labelZh": "MSI-H / dMMR",
+    "labelEn": "MSI-H / dMMR CRC",
+    "legacyTopicKey": "mCRC-MSI-H",
+    "routePath": "/mcrc/msi-h/",
+    "order": 3,
+    "status": "active"
+  },
+  {
+    "id": "mcrc-her2",
+    "parentDomain": "colorectal-oncology",
+    "slug": "her2",
+    "labelZh": "HER2",
+    "labelEn": "HER2-Positive mCRC",
+    "legacyTopicKey": "mCRC-HER2",
+    "routePath": "/mcrc/her2/",
+    "order": 4,
+    "status": "active"
+  },
+  {
+    "id": "mcrc-ras-wt",
+    "parentDomain": "colorectal-oncology",
+    "slug": "ras-wt",
+    "labelZh": "RAS wild-type",
+    "labelEn": "RAS Wild-Type mCRC",
+    "legacyTopicKey": "mCRC-RAS-wt",
+    "routePath": "/mcrc/ras-wt/",
+    "order": 5,
+    "status": "active"
+  },
+  {
+    "id": "mcrc-later-line",
+    "parentDomain": "colorectal-oncology",
+    "slug": "later-line",
+    "labelZh": "後線治療",
+    "labelEn": "Later-Line & Cross-Biomarker mCRC",
+    "legacyTopicKey": "generic-CRS",
+    "routePath": "/mcrc/later-line/",
+    "order": 6,
+    "status": "legacy_compat"
+  },
+  {
+    "id": "colorectal-tnt-organ-preservation",
+    "parentDomain": "colorectal-oncology",
+    "slug": "tnt-organ-preservation",
+    "labelZh": "直腸癌 TNT 與器官保留",
+    "labelEn": "Rectal Cancer TNT & Organ Preservation",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 7,
+    "status": "active"
+  },
+  {
+    "id": "colorectal-ctdna-adjuvant",
+    "parentDomain": "colorectal-oncology",
+    "slug": "ctdna-adjuvant",
+    "labelZh": "ctDNA 與輔助治療",
+    "labelEn": "ctDNA & Adjuvant Therapy",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 8,
+    "status": "active"
+  },
+  {
+    "id": "anal-cancer",
+    "parentDomain": "colorectal-oncology",
+    "slug": "anal-cancer",
+    "labelZh": "肛門癌",
+    "labelEn": "Anal Cancer",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 9,
+    "status": "active"
+  },
+  {
+    "id": "anorectal-benign-procedures",
+    "parentDomain": "anorectal-diseases",
+    "slug": "anorectal-benign",
+    "labelZh": "痔瘡、肛瘻與肛裂",
+    "labelEn": "Hemorrhoids, Fistula & Fissure",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 1,
+    "status": "active"
+  },
+  {
+    "id": "anorectal-sepsis-pilonidal",
+    "parentDomain": "anorectal-diseases",
+    "slug": "sepsis-pilonidal",
+    "labelZh": "肛門膿瘍與藏毛竇",
+    "labelEn": "Anorectal Sepsis & Pilonidal Disease",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 2,
+    "status": "active"
+  },
+  {
+    "id": "ibd-surgery",
+    "parentDomain": "benign-colorectal-diseases",
+    "slug": "ibd-surgery",
+    "labelZh": "發炎性腸道疾病外科",
+    "labelEn": "IBD Surgery",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 1,
+    "status": "active"
+  },
+  {
+    "id": "diverticular-emergency",
+    "parentDomain": "benign-colorectal-diseases",
+    "slug": "diverticular-emergency",
+    "labelZh": "憩室疾病與大腸急症",
+    "labelEn": "Diverticular Disease & Colorectal Emergencies",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 2,
+    "status": "active"
+  },
+  {
+    "id": "lars-incontinence",
+    "parentDomain": "pelvic-floor-functional",
+    "slug": "lars-incontinence",
+    "labelZh": "LARS 與糞便失禁",
+    "labelEn": "LARS & Fecal Incontinence",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 1,
+    "status": "active"
+  },
+  {
+    "id": "prolapse-constipation",
+    "parentDomain": "pelvic-floor-functional",
+    "slug": "prolapse-constipation",
+    "labelZh": "直腸脫垂與排便障礙",
+    "labelEn": "Rectal Prolapse & Obstructed Defecation",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 2,
+    "status": "active"
+  },
+  {
+    "id": "robotic-mis",
+    "parentDomain": "minimally-invasive-surgery",
+    "slug": "robotic",
+    "labelZh": "機器手臂與微創手術",
+    "labelEn": "Robotic & Minimally Invasive Colorectal Surgery",
+    "legacyTopicKey": "robotic-surgery",
+    "routePath": "/robotic/",
+    "order": 1,
+    "status": "active"
+  },
+  {
+    "id": "eras-prehab-nutrition",
+    "parentDomain": "perioperative-care-nutrition",
+    "slug": "eras-nutrition",
+    "labelZh": "ERAS、營養與預復健",
+    "labelEn": "ERAS, Nutrition & Prehabilitation",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 1,
+    "status": "active"
+  },
+  {
+    "id": "anastomotic-leak-stoma",
+    "parentDomain": "perioperative-care-nutrition",
+    "slug": "leak-stoma",
+    "labelZh": "吻合口滲漏與造口照護",
+    "labelEn": "Anastomotic Leakage & Stoma Care",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 2,
+    "status": "active"
+  },
+  {
+    "id": "esd-emr-polypectomy",
+    "parentDomain": "endoscopy",
+    "slug": "esd-emr",
+    "labelZh": "ESD、EMR 與 EFTR",
+    "labelEn": "ESD, EMR, EFTR & Polypectomy",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 1,
+    "status": "active"
+  },
+  {
+    "id": "ai-endoscopy",
+    "parentDomain": "endoscopy",
+    "slug": "ai-endoscopy",
+    "labelZh": "AI 輔助內視鏡",
+    "labelEn": "AI-Assisted Endoscopy",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 2,
+    "status": "active"
+  },
+  {
+    "id": "surgical-risk-prediction",
+    "parentDomain": "surgical-intelligence",
+    "slug": "risk-prediction",
+    "labelZh": "術前風險與影像預測",
+    "labelEn": "Risk Prediction & CT Pelvimetry",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 1,
+    "status": "active"
+  },
+  {
+    "id": "intraoperative-vision-ai",
+    "parentDomain": "surgical-intelligence",
+    "slug": "intraoperative-ai",
+    "labelZh": "術中影像與外科資料科學",
+    "labelEn": "Intraoperative Vision & Surgical Data Science",
+    "legacyTopicKey": null,
+    "routePath": null,
+    "order": 2,
+    "status": "active"
+  }
+];
+
+export const TAXONOMY_TAGS: readonly string[] = [
+  "adjuvant-therapy",
+  "ai-endoscopy",
+  "anal-cancer",
+  "anastomotic-leakage",
+  "anti-egfr",
+  "braf-v600e",
+  "cme",
+  "colonoscopy",
+  "crohns-disease",
+  "ct-pelvimetry",
+  "ctdna",
+  "deep-learning",
+  "diverticulitis",
+  "eftr",
+  "emr",
+  "eras",
+  "esd",
+  "fecal-incontinence",
+  "fistula-in-ano",
+  "hemorrhoids",
+  "her2",
+  "ibd",
+  "icg",
+  "immunonutrition",
+  "immunotherapy",
+  "intracorporeal-anastomosis",
+  "kras-g12c",
+  "laparoscopy",
+  "lars",
+  "later-line",
+  "mcrc",
+  "msi-h",
+  "nhi-taiwan",
+  "organ-preservation",
+  "phase-recognition",
+  "prehabilitation",
+  "ras-wt",
+  "rectal-prolapse",
+  "risk-prediction",
+  "robotic-tme",
+  "sarcopenia",
+  "stoma",
+  "surgical-ai-safety",
+  "tatme",
+  "tfda",
+  "tme",
+  "tnt",
+  "ulcerative-colitis",
+  "watch-and-wait"
+];

@@ -140,6 +140,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/domains": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the eight clinical specialty domains in registry order with active paper counts and subtopics. */
+        get: operations["listDomains"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/domains/{domainSlug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get one clinical specialty domain with its subtopics and active paper count. */
+        get: operations["getDomain"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/search": {
         parameters: {
             query?: never;
@@ -606,6 +640,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/domains": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The clinical specialty domains the signed-in reader follows.
+         * @description Requires a verified session. Set Cache-Control: private, no-store. Pages never contain it.
+         */
+        get: operations["getDomainSubscriptions"];
+        /**
+         * Replace the set of followed specialty domains; 403 until the reader has chosen a display name.
+         * @description Requires a verified session. Set Cache-Control: private, no-store.
+         */
+        put: operations["setDomainSubscriptions"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/follows": {
         parameters: {
             query?: never;
@@ -948,6 +1006,30 @@ export interface components {
     schemas: {
         /** @enum {string} */
         TopicKey: "mCRC-BRAF-V600E" | "mCRC-KRAS-G12C" | "mCRC-MSI-H" | "mCRC-HER2" | "mCRC-RAS-wt" | "generic-CRS" | "robotic-surgery";
+        /** @enum {string} */
+        DomainSlug: "colorectal-oncology" | "anorectal-diseases" | "benign-colorectal-diseases" | "pelvic-floor-functional" | "minimally-invasive-surgery" | "perioperative-care-nutrition" | "endoscopy" | "surgical-intelligence";
+        SubtopicRef: {
+            id: string;
+            slug: string;
+            labelZh: string;
+            labelEn: string;
+            legacyTopicKey: string | null;
+            routePath: string | null;
+            /** @enum {string} */
+            status: "active" | "legacy_compat" | "deprecated";
+        };
+        Domain: {
+            slug: components["schemas"]["DomainSlug"];
+            order: number;
+            labelZh: string;
+            labelEn: string;
+            descriptionZh: string;
+            /** @enum {string} */
+            status: "active" | "deprecated";
+            registryVersion: string;
+            paperCount: number;
+            subtopics: components["schemas"]["SubtopicRef"][];
+        };
         Review: {
             /** @enum {string} */
             status: "auto" | "accepted";
@@ -1011,6 +1093,9 @@ export interface components {
             /** @description Detailed evidence retained from the source document; the API must sanitize HTML before returning it. */
             detailHtml: string;
             summary?: components["schemas"]["PaperSummary"];
+            primaryDomain?: components["schemas"]["DomainSlug"];
+            secondaryDomains?: components["schemas"]["DomainSlug"][];
+            subtopics?: string[];
         };
         /** @description At-a-glance Traditional Chinese summary (I1 #190, ADR-0025). AI-written from the abstract with every number traced to the sources; reviewedAt is null until the maintainer reviews it. Plain text, never HTML. */
         PaperSummary: {
@@ -1324,6 +1409,9 @@ export interface components {
         TopicSubscriptions: {
             topics: ("mCRC-BRAF-V600E" | "mCRC-KRAS-G12C" | "mCRC-MSI-H" | "mCRC-HER2" | "mCRC-RAS-wt" | "generic-CRS" | "robotic-surgery")[];
         };
+        DomainSubscriptions: {
+            domains: components["schemas"]["DomainSlug"][];
+        };
         AccountUpdate: {
             /** @description Leading and trailing spaces are removed. */
             displayName: string;
@@ -1604,6 +1692,10 @@ export interface components {
             items: components["schemas"]["Topic"][];
             nextCursor: string | null;
         };
+        DomainPage: {
+            items: components["schemas"]["Domain"][];
+            nextCursor: string | null;
+        };
         SearchHitPage: {
             items: components["schemas"]["SearchHit"][];
             nextCursor: string | null;
@@ -1705,6 +1797,7 @@ export interface components {
         PostId: string;
         NewsId: string;
         TopicKey: components["schemas"]["TopicKey"];
+        DomainSlug: components["schemas"]["DomainSlug"];
     };
     requestBodies: never;
     headers: never;
@@ -1739,6 +1832,8 @@ export interface operations {
                 limit?: components["parameters"]["Limit"];
                 cursor?: components["parameters"]["Cursor"];
                 topic?: components["schemas"]["TopicKey"];
+                /** @description Filter papers assigned to this clinical specialty domain (primary or secondary). */
+                domain?: components["schemas"]["DomainSlug"];
                 /** @description When false, omits detailHtml (returned as an empty string) to keep list responses small. */
                 includeDetail?: boolean;
             };
@@ -1910,6 +2005,58 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Topic"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    listDomains: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DomainPage"];
+                };
+            };
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    getDomain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                domainSlug: components["parameters"]["DomainSlug"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Domain"];
                 };
             };
             404: components["responses"]["NotFound"];
@@ -2734,6 +2881,58 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TopicSubscriptions"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    getDomainSubscriptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DomainSubscriptions"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    setDomainSubscriptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DomainSubscriptions"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DomainSubscriptions"];
                 };
             };
             401: components["responses"]["Unauthorized"];

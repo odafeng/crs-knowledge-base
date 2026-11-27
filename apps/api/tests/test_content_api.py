@@ -27,6 +27,7 @@ from psycopg.types.json import Jsonb
 from guthub_api.content import TOPIC_ORDER, clean
 from guthub_api.main import API_PREFIX, create_app
 from guthub_api.settings import Settings
+from guthub_api.taxonomy import DOMAIN_ORDER
 
 ROOT = Path(__file__).resolve().parents[3]
 SPEC = yaml.safe_load((ROOT / "contracts/openapi.yaml").read_text())
@@ -187,6 +188,46 @@ def test_empty_topic_has_zero_papers(client: TestClient) -> None:
     assert get(client, "/papers", topic="robotic-surgery") == {"items": [], "nextCursor": None}
 
 
+# --- domains (T1 #282, ADR-0030) -----------------------------------------------------------------------------------
+
+
+def test_domains_follow_registry_order_and_filter_multi_domain_papers(client: TestClient) -> None:
+    domains = all_pages(client, "/domains")
+    assert tuple(d["slug"] for d in domains) == DOMAIN_ORDER
+    assert tuple(SPEC["components"]["schemas"]["DomainSlug"]["enum"]) == DOMAIN_ORDER
+    for domain in domains:
+        schema("Domain").validate(domain)
+
+    oncology = get(client, "/domains/colorectal-oncology")
+    schema("Domain").validate(oncology)
+    assert any(s["legacyTopicKey"] == "mCRC-BRAF-V600E" for s in oncology["subtopics"])
+
+    target = next(iter(RAW_PAPERS))
+    assert DB_URL
+    with psycopg.connect(DB_URL, autocommit=True) as conn:
+        conn.execute(
+            "insert into app.paper_domains"
+            " (paper_id, domain_slug, is_primary, subtopic_id, taxonomy_version, assigned_by) values"
+            " (%s, 'colorectal-oncology', true, 'mcrc-braf-v600e', '1.0', 'test'),"
+            " (%s, 'surgical-intelligence', false, 'surgical-risk-prediction', '1.0', 'test')"
+            " on conflict do nothing",
+            (target, target),
+        )
+        try:
+            paper = get(client, f"/papers/{target}")
+            schema("Paper").validate(paper)
+            assert paper["primaryDomain"] == "colorectal-oncology"
+            assert paper["secondaryDomains"] == ["surgical-intelligence"]
+            assert paper["subtopics"] == ["mcrc-braf-v600e", "surgical-risk-prediction"]
+
+            for slug in ("colorectal-oncology", "surgical-intelligence"):
+                listed = all_pages(client, "/papers", domain=slug, limit=100)
+                assert [p["id"] for p in listed if p["id"] == target] == [target]
+                assert get(client, f"/domains/{slug}")["paperCount"] >= 1
+        finally:
+            conn.execute("delete from app.paper_domains where paper_id = %s and assigned_by = 'test'", (target,))
+
+
 # --- search --------------------------------------------------------------------------------------------------------
 
 
@@ -280,6 +321,8 @@ def test_a_paper_summary_is_returned_as_written(client: TestClient) -> None:
         ("/news/does-not-exist", 404, "not_found"),
         ("/topics/not-a-topic", 422, "validation_error"),
         ("/papers?topic=not-a-topic", 422, "validation_error"),
+        ("/domains/not-a-domain", 422, "validation_error"),
+        ("/papers?domain=not-a-domain", 422, "validation_error"),
         ("/papers?limit=0", 422, "validation_error"),
         ("/papers?limit=101", 422, "validation_error"),
         ("/papers?cursor=not-base64!", 422, "validation_error"),
