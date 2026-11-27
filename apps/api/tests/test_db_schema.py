@@ -57,8 +57,25 @@ TABLES = [
     "subtopics",
     "paper_domains",
     "domain_subscriptions",
+    "news_source_registry",
+    "news_ingest_batches",
+    "news_candidates",
+    "news_events",
+    "news_revisions",
+    "news_event_domains",
+    "news_event_sources",
+    "news_claims",
+    "news_review_actions",
+    "news_runs",
 ]
-VIEWS = ["public_papers", "public_news", "public_comments", "visible_forum_posts"]
+VIEWS = [
+    "public_papers",
+    "public_news",
+    "public_comments",
+    "visible_forum_posts",
+    "public_news_events",
+    "public_news_source_health",
+]
 CLIENT_ROLES = ["anon", "authenticated", "service_role"]
 
 
