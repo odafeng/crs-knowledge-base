@@ -106,6 +106,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/news-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List published event-centric Newsroom briefs with optional domain, category, and geography filters, plus degraded source status. */
+        get: operations["listNewsEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/news-events/{eventId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get one published event-centric Newsroom brief; draft, pending, rejected, and withdrawn events return 404. */
+        get: operations["getNewsEvent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/topics": {
         parameters: {
             query?: never;
@@ -1188,6 +1222,60 @@ export interface components {
             body: components["schemas"]["NewsSection"][];
             review: components["schemas"]["NewsReview"];
         };
+        /** @enum {string} */
+        NewsEventCategory: "regulatory" | "guideline" | "trial" | "society" | "device" | "safety" | "clinical";
+        /** @enum {string} */
+        NewsEventGeography: "taiwan" | "us" | "eu" | "global";
+        /** @enum {string} */
+        NewsEventEvidenceStatus: "approved" | "guideline" | "peer_reviewed" | "conference" | "preprint" | "registry" | "press_release";
+        /** @enum {string} */
+        NewsEventReviewStatus: "auto" | "reviewed" | "revised";
+        NewsEventSource: {
+            /** Format: uri */
+            url: string;
+            title: string;
+            publisher: string;
+            sourceKind: string;
+            /** Format: date */
+            publishedAt: string | null;
+        };
+        NewsSourceHealth: {
+            id: string;
+            name: string;
+            sourceType: string;
+            degraded: boolean;
+            /** Format: date-time */
+            lastSuccessAt: string | null;
+            /** Format: date-time */
+            lastErrorAt: string | null;
+        };
+        NewsEvent: {
+            id: string;
+            category: components["schemas"]["NewsEventCategory"];
+            geography: components["schemas"]["NewsEventGeography"];
+            evidenceStatus: components["schemas"]["NewsEventEvidenceStatus"];
+            reviewStatus: components["schemas"]["NewsEventReviewStatus"];
+            /** Format: date */
+            eventDate: string | null;
+            /** Format: date */
+            publishedAt: string;
+            /** Format: date */
+            effectiveDate: string | null;
+            /** Format: date-time */
+            firstPublishedAt: string | null;
+            /** Format: date-time */
+            updatedAt: string;
+            revisionNumber: number;
+            headline: string;
+            whatHappened: string;
+            whyItMatters: string;
+            clinicalRelevance: string;
+            evidenceLimitations: string;
+            correctionNote: string | null;
+            primaryDomain: components["schemas"]["DomainSlug"] | null;
+            secondaryDomains: components["schemas"]["DomainSlug"][];
+            sources: components["schemas"]["NewsEventSource"][];
+        };
         RegulatoryRow: {
             regimen: string;
             /** @enum {string} */
@@ -1252,7 +1340,7 @@ export interface components {
         };
         SearchHit: {
             /** @enum {string} */
-            kind: "paper" | "news";
+            kind: "paper" | "news" | "news_event";
             id: string;
             path: string;
             title: string;
@@ -1377,7 +1465,7 @@ export interface components {
             /** @description Up to 8 public passages, then up to 4 forum threads (members only), each group best first. */
             results: {
                 /** @enum {string} */
-                kind: "paper" | "news" | "card" | "forum";
+                kind: "paper" | "news" | "news_event" | "card" | "forum";
                 path: string;
                 title: string;
                 snippet: string;
@@ -1690,6 +1778,11 @@ export interface components {
             items: components["schemas"]["News"][];
             nextCursor: string | null;
         };
+        NewsEventPage: {
+            items: components["schemas"]["NewsEvent"][];
+            nextCursor: string | null;
+            degradedSources: components["schemas"]["NewsSourceHealth"][];
+        };
         TopicPage: {
             items: components["schemas"]["Topic"][];
             nextCursor: string | null;
@@ -1798,6 +1891,7 @@ export interface components {
         ThreadId: string;
         PostId: string;
         NewsId: string;
+        NewsEventId: string;
         TopicKey: components["schemas"]["TopicKey"];
         DomainSlug: components["schemas"]["DomainSlug"];
     };
@@ -1955,6 +2049,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["News"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    listNewsEvents: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+                domain?: components["schemas"]["DomainSlug"];
+                category?: components["schemas"]["NewsEventCategory"];
+                geography?: components["schemas"]["NewsEventGeography"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewsEventPage"];
+                };
+            };
+            422: components["responses"]["InvalidRequest"];
+            429: components["responses"]["RateLimited"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    getNewsEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["NewsEventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewsEvent"];
                 };
             };
             404: components["responses"]["NotFound"];

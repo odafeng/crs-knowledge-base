@@ -1,7 +1,15 @@
 // Recent plain-language news ticker on the home page (replaces the static single-line daily banner).
 import type { components } from "./api.generated";
-import { headline, isUnreviewed, newsPath, paperPath } from "./site";
-import type { News, Paper, Topic } from "./site";
+import {
+  domainBySlug,
+  headline,
+  isUnreviewed,
+  isUnreviewedEvent,
+  newsEventPath,
+  newsPath,
+  paperPath,
+} from "./site";
+import type { News, NewsEvent, Paper, Topic } from "./site";
 
 export type DailyPick = components["schemas"]["DailyPick"];
 
@@ -33,6 +41,7 @@ export function buildRecentTicker(
   topics: readonly Topic[],
   daily: DailyPick | null,
   limit = 5,
+  events: readonly NewsEvent[] = [],
 ): TickerItem[] {
   const paperById = new Map(papers.map((p) => [p.id, p]));
   const paperByPath = new Map(papers.map((p) => [paperPath(p), p]));
@@ -49,7 +58,7 @@ export function buildRecentTicker(
     const summaryTakeaway = matchedPaper?.summary?.takeaway?.trim();
     // Only include a paper pick ahead of news when it has a plain-Chinese summary (or when there are no news stories).
     const isPlainPaper = pick.kind !== "paper" || Boolean(summaryTitle);
-    if (isPlainPaper || news.length === 0) {
+    if (isPlainPaper || (news.length === 0 && events.length === 0)) {
       items.push({
         id: `pick:${pick.url}`,
         date: pick.date,
@@ -63,6 +72,24 @@ export function buildRecentTicker(
       });
       seenUrls.add(pick.url);
     }
+  }
+
+  for (const event of events) {
+    const url = newsEventPath(event);
+    if (seenUrls.has(url)) continue;
+    const domain = event.primaryDomain
+      ? domainBySlug(event.primaryDomain)
+      : undefined;
+    items.push({
+      id: `news-event:${event.id}`,
+      date: event.publishedAt,
+      title: event.headline,
+      summary: event.whatHappened,
+      url,
+      unreviewed: isUnreviewedEvent(event),
+      topicLabel: domain?.labelZh,
+    });
+    seenUrls.add(url);
   }
 
   for (const story of news) {

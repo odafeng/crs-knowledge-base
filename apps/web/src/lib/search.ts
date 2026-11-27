@@ -3,11 +3,14 @@
 import {
   domainBySlug,
   domainsOfPaper,
+  EVENT_CATEGORY_LABELS,
   headline,
+  newsEventPath,
   newsPath,
   paperPath,
   paperTitle,
   type News,
+  type NewsEvent,
   type Paper,
   type Topic,
 } from "./site";
@@ -31,15 +34,51 @@ function domainTerms(paper: Paper | undefined): string[] {
   return terms;
 }
 
+function eventDomainTerms(event: NewsEvent): string[] {
+  const slugs = [
+    ...(event.primaryDomain ? [event.primaryDomain] : []),
+    ...event.secondaryDomains,
+  ];
+  const terms: string[] = [];
+  for (const slug of slugs) {
+    const domain = domainBySlug(slug);
+    if (domain) {
+      terms.push(domain.labelZh, domain.labelEn);
+    }
+  }
+  return terms;
+}
+
 export function searchIndex(
   papers: readonly Paper[],
   news: readonly News[],
   topics: readonly Topic[],
+  events: readonly NewsEvent[] = [],
 ): SearchEntry[] {
   const label = (key: string) => topics.find((t) => t.key === key)?.label;
   const paperById = (id: string) => papers.find((p) => p.id === id);
   const topicOfPaper = (id: string) => label(paperById(id)?.topic ?? "");
   return [
+    ...events.map((event) => {
+      const primary = event.primaryDomain
+        ? domainBySlug(event.primaryDomain)?.labelZh
+        : undefined;
+      return {
+        path: newsEventPath(event),
+        title: event.headline,
+        meta: `事件快訊 · ${primary ?? EVENT_CATEGORY_LABELS[event.category]}`,
+        text: [
+          event.headline,
+          event.whatHappened,
+          event.whyItMatters,
+          event.clinicalRelevance,
+          event.evidenceLimitations,
+          ...eventDomainTerms(event),
+        ]
+          .join(" ")
+          .toLowerCase(),
+      };
+    }),
     ...news.map((n) => ({
       path: newsPath(n),
       title: headline(n),

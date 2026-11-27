@@ -182,6 +182,7 @@ def semantic_search(query: Query, db: Db, request: Request, response: Response) 
         " from app.search_chunks c where c.kind = 'card'"
         " or (c.kind = 'paper' and exists (select 1 from app.public_papers p where p.id = c.ref))"
         " or (c.kind = 'news' and exists (select 1 from app.public_news n where n.id = c.ref))"
+        " or (c.kind = 'news_event' and exists (select 1 from app.public_news_events e where e.id = c.ref))"
         " order by embedding operator(extensions.<=>) %s::extensions.vector limit %s",
         (literal, literal, LIMIT),
     ).fetchall()

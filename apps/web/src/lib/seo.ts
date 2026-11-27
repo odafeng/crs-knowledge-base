@@ -3,15 +3,20 @@
 import type { Metadata } from "next";
 import {
   byDomain,
+  domainBySlug,
+  EVENT_CATEGORY_LABELS,
   isUnreviewed,
+  isUnreviewedEvent,
   NEWS_FEED,
   feedPath,
+  newsEventPath,
   newsPath,
   paperPath,
   specialtyPath,
   updates,
   type Crumbs,
   type News,
+  type NewsEvent,
   type Paper,
   type Topic,
   type Update,
@@ -205,9 +210,52 @@ export function newsJsonLd(
   };
 }
 
+export function newsEventJsonLd(event: NewsEvent, crumbs: Crumbs): Graph {
+  const path = newsEventPath(event);
+  const primary = event.primaryDomain
+    ? domainBySlug(event.primaryDomain)
+    : undefined;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      website(),
+      {
+        "@type": "NewsArticle",
+        "@id": absolute(path),
+        url: absolute(path),
+        headline: event.headline,
+        description: event.whatHappened,
+        datePublished: event.publishedAt,
+        dateModified: event.updatedAt,
+        inLanguage: LANG,
+        isPartOf: { "@id": websiteId() },
+        author: { "@type": "Organization", name: SITE_NAME },
+        audience: { "@type": "MedicalAudience", audienceType: "Clinician" },
+        ...(primary
+          ? { about: { "@type": "Thing", name: primary.labelZh } }
+          : {}),
+        mainEntityOfPage: absolute(path),
+        ...(event.sources.length > 0
+          ? { citation: event.sources.map((source) => source.url) }
+          : {}),
+      },
+      breadcrumbs(crumbs),
+    ],
+  };
+}
+
 // --- feeds (sitegen/feeds.py and render._feeds) --------------------------------------------------------------
 
-export type FeedItem = Omit<Update, "kind"> & { kind: Update["kind"] | "news" };
+export type FeedItem =
+  | (Omit<Update, "kind"> & { kind: Update["kind"] | "news" })
+  | {
+      id: string;
+      date: string;
+      title: string;
+      summary: string;
+      kind: "news_event";
+      event: NewsEvent;
+    };
 export type Feed = {
   title: string;
   description: string;
@@ -223,7 +271,16 @@ export type Feed = {
 export function stream(
   papers: readonly Paper[],
   news: readonly News[],
+  events: readonly NewsEvent[] = [],
 ): FeedItem[] {
+  const eventStories: FeedItem[] = events.map((event) => ({
+    id: `news-event/${event.id}`,
+    date: event.publishedAt,
+    title: event.headline,
+    summary: event.whatHappened,
+    kind: "news_event" as const,
+    event,
+  }));
   const stories: FeedItem[] = news
     .map((item) => ({ item, paper: papers.find((p) => p.id === item.paperId) }))
     .filter(
@@ -238,7 +295,7 @@ export function stream(
       summary: item.dek,
       kind: "news" as const,
     }));
-  const rows = [...stories, ...updates(papers)];
+  const rows = [...eventStories, ...stories, ...updates(papers)];
   // Array.prototype.sort is stable, like Python's sorted(..., reverse=True) on the date alone.
   return rows.sort((a, b) => b.date.localeCompare(a.date));
 }
@@ -247,8 +304,9 @@ export function feeds(
   papers: readonly Paper[],
   news: readonly News[],
   topics: readonly Topic[],
+  events: readonly NewsEvent[] = [],
 ): Feed[] {
-  const all = stream(papers, news);
+  const all = stream(papers, news, events);
   const list: Feed[] = [
     {
       title: `${SITE_NAME}｜全部更新`,
@@ -257,16 +315,20 @@ export function feeds(
       items: all,
     },
   ];
-  const stories = all.filter((u) => u.kind === "news");
+  const stories = all.filter(
+    (u) => u.kind === "news" || u.kind === "news_event",
+  );
   if (stories.length)
     list.push({
       title: `${SITE_NAME}｜最新消息`,
-      description: "新文獻的新聞稿。",
+      description: "新文獻的新聞稿與臨床事件快訊。",
       path: NEWS_FEED,
       items: stories,
     });
   for (const topic of topics) {
-    const mine = all.filter((u) => u.paper.topic === topic.key);
+    const mine = all.filter(
+      (u) => u.kind !== "news_event" && u.paper.topic === topic.key,
+    );
     if (mine.length) {
       list.push({
         title: `${SITE_NAME}｜${topic.label}`,
@@ -284,11 +346,23 @@ export function feeds(
 
 const guid = (item: FeedItem) => `${FEED_TAG}:${item.id}`;
 const itemPath = (item: FeedItem) =>
-  item.kind === "news"
-    ? `/news/${item.id.slice("news/".length)}/`
-    : paperPath(item.paper);
+  item.kind === "news_event"
+    ? newsEventPath(item.event)
+    : item.kind === "news"
+      ? `/news/${item.id.slice("news/".length)}/`
+      : paperPath(item.paper);
 
 function categories(item: FeedItem, topics: readonly Topic[]): string[] {
+  if (item.kind === "news_event") {
+    const primary = item.event.primaryDomain
+      ? domainBySlug(item.event.primaryDomain)
+      : undefined;
+    return [
+      primary?.slug ?? "",
+      primary?.labelZh ?? "",
+      EVENT_CATEGORY_LABELS[item.event.category] ?? "事件快訊",
+    ];
+  }
   const topic = topics.find((t) => t.key === item.paper.topic);
   const kind = {
     news: "最新消息",
@@ -298,11 +372,16 @@ function categories(item: FeedItem, topics: readonly Topic[]): string[] {
   return [topic?.slug ?? "", topic?.label ?? "", kind];
 }
 
-/** A paper entry counts as changed when it is re-reviewed; a story or commentary does not change. */
-const modified = (item: FeedItem) =>
-  item.kind === "paper" && item.paper.reviewedAt > item.date
+/** A paper entry counts as changed when it is re-reviewed; a revised event uses its updated date. */
+const modified = (item: FeedItem) => {
+  if (item.kind === "news_event") {
+    const updated = item.event.updatedAt.slice(0, 10);
+    return updated > item.date ? updated : item.date;
+  }
+  return item.kind === "paper" && item.paper.reviewedAt > item.date
     ? item.paper.reviewedAt
     : item.date;
+};
 
 const xml = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -401,13 +480,14 @@ export function toJsonFeed(feed: Feed, topics: readonly Topic[]): string {
 
 // --- sitemap and robots (sitegen/sitemap.py, render.build_site) ----------------------------------------------
 
-/** Indexable pages in the order the current site renders them; AI-unreviewed papers and news are left out. */
+/** Indexable pages in the order the current site renders them; AI-unreviewed papers, news, and events are left out. */
 export function sitemapPages(
   papers: readonly Paper[],
   news: readonly News[],
   topics: readonly Topic[],
+  events: readonly NewsEvent[] = [],
 ): [path: string, modified: string | null][] {
-  const all = stream(papers, news);
+  const all = stream(papers, news, events);
   const last =
     all
       .map((u) => u.date)
@@ -455,6 +535,12 @@ export function sitemapPages(
     ...news
       .filter((n) => !isUnreviewed(n))
       .map((n): [string, string] => [newsPath(n), n.publishedAt]),
+    ...events
+      .filter((e) => !isUnreviewedEvent(e))
+      .map((e): [string, string] => [
+        newsEventPath(e),
+        e.updatedAt.slice(0, 10) || e.publishedAt,
+      ]),
   ];
 }
 
