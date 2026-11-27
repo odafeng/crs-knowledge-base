@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, Query, Response
 from psycopg import Connection
 from psycopg.rows import dict_row
 
-from guthub_api.content import PUBLIC_CACHE
+from guthub_api.content import PUBLIC_CACHE, _news, _news_event, _papers, _source_health
 from guthub_api.db import Conn, get_conn
 
 router = APIRouter()
@@ -105,8 +105,13 @@ def _paper_copy(row: dict[str, Any]) -> tuple[str, str, str, bool]:
 
 
 def collect(conn: Connection[Any], day: date) -> list[Candidate]:
-    """News and papers that went public on `day`, by the same dates the site lists them with."""
+    """Published Newsroom events, legacy news, and papers for `day`, by the same dates the site lists them with."""
     cur = conn.cursor(row_factory=dict_row)  # the API pool and the job may hand over connections with any row factory
+    events = cur.execute(
+        "select id, category, headline, what_happened, why_it_matters, review_status"
+        " from app.public_news_events where published_at = %s order by id",
+        (day,),
+    ).fetchall()
     news = cur.execute(
         "select n.id, n.headline, n.dek, n.body, n.review_status, p.bottom_line"
         " from app.public_news n join app.public_papers p on p.id = n.paper_id where n.published_at = %s",
@@ -118,6 +123,19 @@ def collect(conn: Connection[Any], day: date) -> list[Candidate]:
         " where coalesce(p.review_published_at, p.added_at, p.reviewed_at) = %s",
         (day,),
     ).fetchall()
+    event_candidates: list[Candidate] = [
+        Candidate(
+            "regulatory" if r["category"] in ("regulatory", "safety") else "news",
+            f"news-event:{r['id']}",
+            r["headline"],
+            r["what_happened"],
+            f"/news/events/{r['id']}/",
+            day,
+            r["review_status"] == "auto",
+            r["why_it_matters"],
+        )
+        for r in events
+    ]
     paper_candidates: list[Candidate] = []
     for r in papers:
         title, conclusion, meaning, unreviewed = _paper_copy(r)
@@ -134,6 +152,7 @@ def collect(conn: Connection[Any], day: date) -> list[Candidate]:
             )
         )
     return [
+        *event_candidates,
         *(
             Candidate(
                 "news",
@@ -157,7 +176,8 @@ def latest_day(conn: Connection[Any], before: date) -> date | None:
         conn.cursor(row_factory=dict_row)
         .execute(
             "select max(day) as day from ("
-            " select published_at as day from app.public_news where published_at < %(before)s"
+            " select published_at as day from app.public_news_events where published_at < %(before)s"
+            " union all select published_at as day from app.public_news where published_at < %(before)s"
             " union all select coalesce(review_published_at, added_at, reviewed_at) from app.public_papers"
             "  where coalesce(review_published_at, added_at, reviewed_at) < %(before)s) as days",
             {"before": before},
@@ -165,6 +185,44 @@ def latest_day(conn: Connection[Any], before: date) -> date | None:
         .fetchone()
     )
     return row["day"] if row else None
+
+
+@router.get("/daily-brief")
+def daily_brief(
+    db: Db,
+    response: Response,
+    day: Annotated[date | None, Query(alias="date")] = None,
+) -> dict[str, Any]:
+    """Published Newsroom events, legacy news, and papers for `date` (default: today in Taiwan). Empty on quiet days."""
+    day = day or datetime.now(TAIPEI).date()
+    response.headers["Cache-Control"] = PUBLIC_CACHE
+    event_rows = db.execute(
+        "select * from app.public_news_events where published_at = %s order by id",
+        (day,),
+    ).fetchall()
+    news_rows = db.execute(
+        "select * from app.public_news where published_at = %s order by id",
+        (day,),
+    ).fetchall()
+    paper_rows = db.execute(
+        "select p.id, p.slug, p.topic_key, p.year, p.journal, p.study_type, p.n, p.regimen, p.endpoint, p.result,"
+        " p.bottom_line, p.doi, p.source, p.reviewed_at, p.added_at, p.review_status, p.review_published_at, p.summary"
+        " from app.public_papers p"
+        " where coalesce(p.review_published_at, p.added_at, p.reviewed_at) = %s"
+        " order by p.year desc, p.id",
+        (day,),
+    ).fetchall()
+    degraded_rows = db.execute(
+        "select id, name, source_type, degraded, last_success_at, last_error_at"
+        " from app.public_news_source_health where degraded = true order by id"
+    ).fetchall()
+    return {
+        "date": day.isoformat(),
+        "events": [_news_event(row) for row in event_rows],
+        "news": [_news(row) for row in news_rows],
+        "papers": _papers(db, paper_rows, include_detail=False) if paper_rows else [],
+        "degradedSources": [_source_health(row) for row in degraded_rows],
+    }
 
 
 @router.get("/daily-pick")

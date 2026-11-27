@@ -202,3 +202,49 @@ def test_the_job_needs_a_token_unless_dry_run(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.delenv("GUTHUB_LINE_CHANNEL_ACCESS_TOKEN", raising=False)
     assert maintenance.main(["line-daily"]) == 1
     assert maintenance.main(["line-daily", "--dry-run", "--date", "2001-01-01"]) == 0
+
+
+def test_single_line_job_broadcasts_published_news_event_once_with_regulatory_priority(
+    line: tuple[str, MockLine],
+) -> None:
+    """N7 #292: published Newsroom events flow through the single existing line-daily job with idempotency."""
+    run = uuid.uuid4().hex[:8]
+    the_day = date(2032, 3, 1 + int(run, 16) % 28)
+    event_id = f"n7-reg-{run}"
+    draft_id = f"n7-draft-{run}"
+    try:
+        for eid, status, headline in (
+            (event_id, "published", "TFDA 核准大腸直腸癌新標靶"),
+            (draft_id, "draft", "不可推播的草稿事件"),
+        ):
+            sql(
+                "insert into app.news_events"
+                " (id, dedup_key, category, geography, evidence_status, risk_tier, status, review_status, published_at)"
+                " values (%s, %s, 'regulatory', 'taiwan', 'approved', 'low', %s, 'reviewed', %s)",
+                (eid, f"dedup-{eid}", status, the_day),
+            )
+            [(rev_id,)] = sql(
+                "insert into app.news_revisions"
+                " (event_id, revision_number, headline, what_happened, why_it_matters,"
+                "  clinical_relevance, evidence_limitations, created_by)"
+                " values (%s, 1, %s, 'TFDA 正式公告核准', '提供病患新選擇', '臨床適用', '需確認基因型', 'test')"
+                " returning id",
+                (eid, headline),
+            )
+            sql("update app.news_events set current_revision_id = %s where id = %s", (rev_id, eid))
+
+        base, mock = line
+        first = broadcast_daily(API_DB_URL, the_day, ORIGIN, TOKEN, base)
+        assert first == {"status": "sent", "url": f"/news/events/{event_id}/"}
+        assert len(mock.requests) == 1
+        [text] = mock.requests[0]["body"]["messages"]
+        assert "TFDA 核准大腸直腸癌新標靶" in text["text"]
+        assert f"https://guthub.tw/news/events/{event_id}/" in text["text"]
+        assert "不可推播的草稿事件" not in text["text"]
+
+        # Rerun on the same day never broadcasts a second message.
+        assert broadcast_daily(API_DB_URL, the_day, ORIGIN, TOKEN, base) == {"status": "already-sent"}
+        assert len(mock.requests) == 1
+    finally:
+        sql("delete from app.line_broadcasts where day = %s", (the_day,))
+        sql("delete from app.news_events where id = any(%s)", ([event_id, draft_id],))

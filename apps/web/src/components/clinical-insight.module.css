@@ -1,0 +1,66 @@
+/* Daily Clinical Insight card on the home page (N7 #292, rule-based rotation). */
+
+.card {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--mark);
+  border-radius: 2px var(--radius-card) var(--radius-card) 2px;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.0625rem 0.5rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-chip);
+  background: var(--sunken);
+  color: var(--ink-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.title {
+  font-size: var(--text-lg);
+  line-height: 1.4;
+}
+
+.title a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.title a:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
+
+.takeaway {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.note {
+  max-width: var(--measure);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  line-height: 1.65;
+}
+
+.meta {
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+}

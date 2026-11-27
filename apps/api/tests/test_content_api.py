@@ -498,3 +498,48 @@ def test_daily_pick_can_fall_back_to_the_latest_day_with_one(client: TestClient)
     assert client.get(f"{API_PREFIX}/daily-pick", params={"date": later}).json()["pick"] is None
     first = client.get(f"{API_PREFIX}/daily-pick", params={"date": "2001-01-01", "recent": "true"}).json()
     assert first["pick"] is None
+
+
+# --- daily brief (N7 #292, ADR-0031) -------------------------------------------------------------------------------
+
+
+def test_daily_brief_returns_published_events_only_and_empty_on_quiet_days(client: TestClient) -> None:
+    quiet = client.get(f"{API_PREFIX}/daily-brief", params={"date": "2001-01-01"})
+    assert quiet.status_code == 200
+    assert quiet.headers["cache-control"] == "public, max-age=300"
+    quiet_body = quiet.json()
+    schema("DailyBrief").validate(quiet_body)
+    assert quiet_body["date"] == "2001-01-01"
+    assert quiet_body["events"] == [] and quiet_body["news"] == [] and quiet_body["papers"] == []
+
+    assert DB_URL
+    pub_id = "n7-brief-pub"
+    draft_id = "n7-brief-draft"
+    day = "2032-04-12"
+    with psycopg.connect(DB_URL, autocommit=True) as conn:
+        try:
+            for eid, status in ((pub_id, "published"), (draft_id, "draft")):
+                conn.execute(
+                    "insert into app.news_events"
+                    " (id, dedup_key, category, geography, evidence_status, risk_tier, status, review_status, published_at)"
+                    " values (%s, %s, 'regulatory', 'taiwan', 'approved', 'low', %s, 'reviewed', %s)",
+                    (eid, f"dedup-{eid}", status, day),
+                )
+                rev = conn.execute(
+                    "insert into app.news_revisions"
+                    " (event_id, revision_number, headline, what_happened, why_it_matters,"
+                    "  clinical_relevance, evidence_limitations, created_by)"
+                    " values (%s, 1, '健保擴大給付', '健保署公告擴大適應症', '減輕病患負擔',"
+                    "  '適用一線治療', '需事前審查', 'test') returning id",
+                    (eid,),
+                ).fetchone()
+                assert rev is not None
+                conn.execute("update app.news_events set current_revision_id = %s where id = %s", (rev[0], eid))
+
+            resp = client.get(f"{API_PREFIX}/daily-brief", params={"date": day})
+            assert resp.status_code == 200
+            body = resp.json()
+            schema("DailyBrief").validate(body)
+            assert [e["id"] for e in body["events"]] == [pub_id]
+        finally:
+            conn.execute("delete from app.news_events where id = any(%s)", ([pub_id, draft_id],))

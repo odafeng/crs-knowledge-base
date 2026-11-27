@@ -867,6 +867,26 @@ paths:
         '503': {$ref: '#/components/responses/Unavailable'}
       description: 'Public; Cache-Control: public, max-age=300. Order: coverage or approval changes, news, papers;
         reviewed before unreviewed. The conclusion is an existing bottom line, never new wording.'
+  /daily-brief:
+    get:
+      operationId: getDailyBrief
+      summary: Published Newsroom events, legacy news stories, and papers for one calendar day (empty lists on quiet days; never fabricates news).
+      security: []
+      parameters:
+      - name: date
+        in: query
+        required: false
+        schema: {type: string, format: date}
+        description: Defaults to today in Asia/Taipei.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DailyBrief'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Public; Cache-Control: public, max-age=300. Reads only public views so draft, pending, rejected, and withdrawn content never leaves the database.'
   /me/topics:
     get:
       operationId: getTopicSubscriptions
@@ -2033,6 +2053,24 @@ components:
               url: {type: string, description: Path on the site.}
               date: {type: string, format: date}
               unreviewed: {type: boolean, description: True for AI-written entries not yet reviewed.}
+    DailyBrief:
+      type: object
+      additionalProperties: false
+      required: [date, events, news, papers, degradedSources]
+      properties:
+        date: {type: string, format: date}
+        events:
+          type: array
+          items: {$ref: '#/components/schemas/NewsEvent'}
+        news:
+          type: array
+          items: {$ref: '#/components/schemas/News'}
+        papers:
+          type: array
+          items: {$ref: '#/components/schemas/Paper'}
+        degradedSources:
+          type: array
+          items: {$ref: '#/components/schemas/NewsSourceHealth'}
     ContentRequest:
       type: object
       additionalProperties: false

@@ -670,6 +670,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/daily-brief": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Published Newsroom events, legacy news stories, and papers for one calendar day (empty lists on quiet days; never fabricates news).
+         * @description Public; Cache-Control: public, max-age=300. Reads only public views so draft, pending, rejected, and withdrawn content never leaves the database.
+         */
+        get: operations["getDailyBrief"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/topics": {
         parameters: {
             query?: never;
@@ -1434,6 +1454,14 @@ export interface components {
                 /** @description True for AI-written entries not yet reviewed. */
                 unreviewed: boolean;
             };
+        };
+        DailyBrief: {
+            /** Format: date */
+            date: string;
+            events: components["schemas"]["NewsEvent"][];
+            news: components["schemas"]["News"][];
+            papers: components["schemas"]["Paper"][];
+            degradedSources: components["schemas"]["NewsSourceHealth"][];
         };
         ContentRequest: {
             /** @enum {string} */
@@ -3065,6 +3093,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DailyPick"];
+                };
+            };
+            422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    getDailyBrief: {
+        parameters: {
+            query?: {
+                /** @description Defaults to today in Asia/Taipei. */
+                date?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyBrief"];
                 };
             };
             422: components["responses"]["InvalidRequest"];
