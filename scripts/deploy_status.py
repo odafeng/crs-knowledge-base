@@ -37,6 +37,7 @@ BACKEND_PATHS: tuple[str, ...] = (
     "newsroom",
     "supabase",
     "contracts/openapi.yaml",
+    "contracts/taxonomy.json",
     "import_content.py",
     "content_writer.py",
     ".github/workflows/deploy.yml",

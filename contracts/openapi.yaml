@@ -38,6 +38,10 @@ paths:
       - name: topic
         in: query
         schema: {$ref: '#/components/schemas/TopicKey'}
+      - name: domain
+        in: query
+        description: Filter papers assigned to this clinical specialty domain (primary or secondary).
+        schema: {$ref: '#/components/schemas/DomainSlug'}
       - name: includeDetail
         in: query
         description: When false, omits detailHtml (returned as an empty string) to keep list responses small.
@@ -144,6 +148,40 @@ paths:
         '503': {$ref: '#/components/responses/Unavailable'}
       parameters:
       - {$ref: '#/components/parameters/TopicKey'}
+  /domains:
+    get:
+      operationId: listDomains
+      summary: List the eight clinical specialty domains in registry order with active paper counts and subtopics.
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DomainPage'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/Limit'}
+      - {$ref: '#/components/parameters/Cursor'}
+  /domains/{domainSlug}:
+    get:
+      operationId: getDomain
+      summary: Get one clinical specialty domain with its subtopics and active paper count.
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Domain'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/DomainSlug'}
   /search:
     get:
       operationId: search
@@ -792,6 +830,44 @@ paths:
           application/json:
             schema: {$ref: '#/components/schemas/TopicSubscriptions'}
       description: 'Requires a verified session. Set Cache-Control: private, no-store.'
+  /me/domains:
+    get:
+      operationId: getDomainSubscriptions
+      summary: The clinical specialty domains the signed-in reader follows.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DomainSubscriptions'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store. Pages never contain it.'
+    put:
+      operationId: setDomainSubscriptions
+      summary: Replace the set of followed specialty domains; 403 until the reader has chosen a display name.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DomainSubscriptions'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DomainSubscriptions'}
+      description: 'Requires a verified session. Set Cache-Control: private, no-store.'
   /me/follows:
     get:
       operationId: getPaperFollows
@@ -1285,10 +1361,53 @@ components:
       in: path
       required: true
       schema: {$ref: '#/components/schemas/TopicKey'}
+    DomainSlug:
+      name: domainSlug
+      in: path
+      required: true
+      schema: {$ref: '#/components/schemas/DomainSlug'}
   schemas:
     TopicKey:
       type: string
       enum: [mCRC-BRAF-V600E, mCRC-KRAS-G12C, mCRC-MSI-H, mCRC-HER2, mCRC-RAS-wt, generic-CRS, robotic-surgery]
+    DomainSlug:
+      type: string
+      enum: [colorectal-oncology, anorectal-diseases, benign-colorectal-diseases, pelvic-floor-functional,
+        minimally-invasive-surgery, perioperative-care-nutrition, endoscopy, surgical-intelligence]
+    SubtopicRef:
+      type: object
+      additionalProperties: false
+      required: [id, slug, labelZh, labelEn, legacyTopicKey, routePath, status]
+      properties:
+        id: {type: string, pattern: '^[a-z0-9][a-z0-9-]*$'}
+        slug: {type: string, pattern: '^[a-z0-9][a-z0-9-]*$'}
+        labelZh: {type: string, minLength: 1}
+        labelEn: {type: string, minLength: 1}
+        legacyTopicKey:
+          type: [string, 'null']
+        routePath:
+          type: [string, 'null']
+        status:
+          type: string
+          enum: [active, legacy_compat, deprecated]
+    Domain:
+      type: object
+      additionalProperties: false
+      required: [slug, order, labelZh, labelEn, descriptionZh, status, registryVersion, paperCount, subtopics]
+      properties:
+        slug: {$ref: '#/components/schemas/DomainSlug'}
+        order: {type: integer, minimum: 1}
+        labelZh: {type: string, minLength: 1}
+        labelEn: {type: string, minLength: 1}
+        descriptionZh: {type: string, minLength: 1}
+        status:
+          type: string
+          enum: [active, deprecated]
+        registryVersion: {type: string, minLength: 1}
+        paperCount: {type: integer, minimum: 0}
+        subtopics:
+          type: array
+          items: {$ref: '#/components/schemas/SubtopicRef'}
     Review:
       type: object
       additionalProperties: false
@@ -1376,6 +1495,15 @@ components:
         detailHtml: {type: string, description: Detailed evidence retained from the source document; the API must
             sanitize HTML before returning it.}
         summary: {$ref: '#/components/schemas/PaperSummary'}
+        primaryDomain: {$ref: '#/components/schemas/DomainSlug'}
+        secondaryDomains:
+          type: array
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/DomainSlug'}
+        subtopics:
+          type: array
+          uniqueItems: true
+          items: {type: string, pattern: '^[a-z0-9][a-z0-9-]*$'}
     PaperSummary:
       type: object
       additionalProperties: false
@@ -1874,6 +2002,15 @@ components:
           items:
             type: string
             enum: [mCRC-BRAF-V600E, mCRC-KRAS-G12C, mCRC-MSI-H, mCRC-HER2, mCRC-RAS-wt, generic-CRS, robotic-surgery]
+    DomainSubscriptions:
+      type: object
+      additionalProperties: false
+      required: [domains]
+      properties:
+        domains:
+          type: array
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/DomainSlug'}
     AccountUpdate:
       type: object
       additionalProperties: false
@@ -2344,6 +2481,16 @@ components:
         items:
           type: array
           items: {$ref: '#/components/schemas/Topic'}
+        nextCursor:
+          type: [string, 'null']
+    DomainPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Domain'}
         nextCursor:
           type: [string, 'null']
     SearchHitPage:

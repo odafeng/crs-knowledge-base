@@ -10,5 +10,6 @@ export default defineConfig([
     "out/**",
     "next-env.d.ts",
     "src/lib/api.generated.ts",
+    "src/lib/taxonomy.generated.ts",
   ]),
 ]);

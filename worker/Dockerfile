@@ -22,6 +22,7 @@ COPY scripts/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt "psycopg[binary]==3.3.9"
 COPY scripts ./scripts
 COPY newsroom ./newsroom
+COPY contracts/taxonomy.json ./contracts/taxonomy.json
 COPY import_content.py content_writer.py ./
 COPY worker ./worker
 RUN mkdir -p data docs && chown -R 65532:65532 data docs

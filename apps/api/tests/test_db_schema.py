@@ -53,6 +53,10 @@ TABLES = [
     "forum_moderation_events",
     "paper_follows",
     "comment_digests",
+    "domains",
+    "subtopics",
+    "paper_domains",
+    "domain_subscriptions",
 ]
 VIEWS = ["public_papers", "public_news", "public_comments", "visible_forum_posts"]
 CLIENT_ROLES = ["anon", "authenticated", "service_role"]
@@ -214,6 +218,10 @@ def test_withdrawn_content_is_not_public(cur: psycopg.Cursor) -> None:
         "delete from app.accounts",
         "update app.papers set result = 'tampered'",
         "update app.comment_reports set reason = 'edited'",
+        "update app.domains set label_zh = 'tampered'",
+        "delete from app.subtopics",
+        "insert into app.paper_domains (paper_id, domain_slug, is_primary, taxonomy_version, assigned_by)"
+        " values ('keynote-177', 'colorectal-oncology', true, '1.0', 'api')",
     ],
 )
 def test_guthub_api_cannot_rewrite_history_or_content(cur: psycopg.Cursor, statement: LiteralString) -> None:
@@ -386,3 +394,21 @@ def test_first_forum_post_waits_and_visible_posts_hide_the_author(cur: psycopg.C
     cur.execute("select * from app.visible_forum_posts")
     columns = {c.name for c in cur.description or ()}
     assert "author_id" not in columns and "pinned_at" in columns and len(cur.fetchall()) == 2
+
+
+def test_paper_domains_enforces_single_primary_and_foreign_keys(cur: psycopg.Cursor) -> None:
+    cur.execute(
+        "insert into app.paper_domains (paper_id, domain_slug, is_primary, subtopic_id, taxonomy_version, assigned_by)"
+        " values ('keynote-177', 'colorectal-oncology', true, 'mcrc-msi-h', '1.0', 'test')"
+    )
+    # Secondary domain on the same canonical paper is allowed.
+    cur.execute(
+        "insert into app.paper_domains (paper_id, domain_slug, is_primary, taxonomy_version, assigned_by)"
+        " values ('keynote-177', 'surgical-intelligence', false, '1.0', 'test')"
+    )
+    # A second primary domain on the same paper must fail at the DB level.
+    with pytest.raises(errors.UniqueViolation):
+        cur.execute(
+            "insert into app.paper_domains (paper_id, domain_slug, is_primary, taxonomy_version, assigned_by)"
+            " values ('keynote-177', 'endoscopy', true, '1.0', 'test')"
+        )

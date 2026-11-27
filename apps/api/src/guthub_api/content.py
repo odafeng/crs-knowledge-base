@@ -14,6 +14,7 @@ import nh3
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
 
 from guthub_api.db import Conn, get_conn
+from guthub_api.taxonomy import DOMAIN_ORDER, DomainSlug
 
 # Contract TopicKey enum, in the contract's (and site's) display order.
 type TopicKey = Literal[
@@ -86,6 +87,7 @@ def _papers(db: Conn, rows: list[dict[str, Any]], *, include_detail: bool = True
     ids = [row["id"] for row in rows]
     relations: dict[str, list[dict[str, str]]] = {}
     commentary: dict[str, list[dict[str, Any]]] = {}
+    paper_domains: dict[str, list[dict[str, Any]]] = {}
     # Relations to withdrawn papers are dropped: their targets are not public.
     for r in db.execute(
         "select r.paper_id, r.target_id, r.type::text from app.paper_relations r"
@@ -113,6 +115,27 @@ def _papers(db: Conn, rows: list[dict[str, Any]], *, include_detail: bool = True
                 **_review(c),
             }
         )
+    for d in db.execute(
+        "select paper_id, domain_slug, is_primary, subtopic_id from app.paper_domains"
+        " where paper_id = any(%s) order by paper_id, is_primary desc, array_position(%s::text[], domain_slug)",
+        (ids, list(DOMAIN_ORDER)),
+    ):
+        paper_domains.setdefault(d["paper_id"], []).append(d)
+
+    def _taxonomy_fields(paper_id: str) -> dict[str, Any]:
+        links = paper_domains.get(paper_id)
+        if not links:
+            return {}
+        primary = next((link["domain_slug"] for link in links if link["is_primary"]), None)
+        secondaries = [link["domain_slug"] for link in links if not link["is_primary"]]
+        subtopics = list(dict.fromkeys(link["subtopic_id"] for link in links if link["subtopic_id"]))
+        fields: dict[str, Any] = {}
+        if primary is not None:
+            fields["primaryDomain"] = primary
+            fields["secondaryDomains"] = secondaries
+            fields["subtopics"] = subtopics
+        return fields
+
     return [
         {
             "id": row["id"],
@@ -135,6 +158,7 @@ def _papers(db: Conn, rows: list[dict[str, Any]], *, include_detail: bool = True
             "commentary": commentary.get(row["id"], []),
             "detailHtml": row["detail_html"] if include_detail else "",
             **({"summary": row["summary"]} if row["summary"] else {}),
+            **_taxonomy_fields(row["id"]),
         }
         for row in rows
     ]
@@ -176,13 +200,20 @@ def _topic(row: dict[str, Any]) -> dict[str, Any]:
 
 
 PAPER_LIST_QUERY_FULL: LiteralString = (
-    "select * from app.public_papers where %(topic)s::text is null or topic_key = %(topic)s"
-    " order by year desc, id limit %(limit)s offset %(offset)s"
+    "select * from app.public_papers p"
+    " where (%(topic)s::text is null or p.topic_key = %(topic)s)"
+    " and (%(domain)s::text is null or exists ("
+    "   select 1 from app.paper_domains pd where pd.paper_id = p.id and pd.domain_slug = %(domain)s))"
+    " order by p.year desc, p.id limit %(limit)s offset %(offset)s"
 )
 PAPER_LIST_QUERY_SLIM: LiteralString = (
-    "select id, slug, topic_key, year, journal, study_type, n, regimen, endpoint, result, bottom_line, doi, source,"
-    " reviewed_at, added_at, review_status, review_published_at, summary from app.public_papers"
-    " where %(topic)s::text is null or topic_key = %(topic)s order by year desc, id limit %(limit)s offset %(offset)s"
+    "select p.id, p.slug, p.topic_key, p.year, p.journal, p.study_type, p.n, p.regimen, p.endpoint, p.result,"
+    " p.bottom_line, p.doi, p.source, p.reviewed_at, p.added_at, p.review_status, p.review_published_at, p.summary"
+    " from app.public_papers p"
+    " where (%(topic)s::text is null or p.topic_key = %(topic)s)"
+    " and (%(domain)s::text is null or exists ("
+    "   select 1 from app.paper_domains pd where pd.paper_id = p.id and pd.domain_slug = %(domain)s))"
+    " order by p.year desc, p.id limit %(limit)s offset %(offset)s"
 )
 type PaperSlug = Annotated[str, Path(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")]
 
@@ -194,11 +225,12 @@ def list_papers(
     limit: Limit = 20,
     cursor: Cursor = None,
     topic: TopicKey | None = None,
+    domain: DomainSlug | None = None,
     include_detail: Annotated[bool, Query(alias="includeDetail")] = True,
 ) -> dict[str, Any]:
     offset = _offset(cursor)
     query = PAPER_LIST_QUERY_FULL if include_detail else PAPER_LIST_QUERY_SLIM
-    rows = db.execute(query, {"topic": topic, "limit": limit + 1, "offset": offset}).fetchall()
+    rows = db.execute(query, {"topic": topic, "domain": domain, "limit": limit + 1, "offset": offset}).fetchall()
     return _page(response, _papers(db, rows, include_detail=include_detail), offset, limit)
 
 
@@ -253,7 +285,8 @@ TOPIC_QUERY: LiteralString = (
 def list_topics(db: Db, response: Response, limit: Limit = 20, cursor: Cursor = None) -> dict[str, Any]:
     offset = _offset(cursor)
     rows = db.execute(
-        TOPIC_QUERY + " order by array_position(%s::text[], t.key), t.key limit %s offset %s",
+        TOPIC_QUERY
+        + " where t.kind = 'legacy_subtopic' order by array_position(%s::text[], t.key), t.key limit %s offset %s",
         (list(TOPIC_ORDER), limit + 1, offset),
     ).fetchall()
     return _page(response, [_topic(row) for row in rows], offset, limit)
@@ -266,6 +299,70 @@ def get_topic(topic_key: TopicKey, db: Db, response: Response) -> dict[str, Any]
         raise HTTPException(status_code=404, detail="Topic not found")
     response.headers["Cache-Control"] = PUBLIC_CACHE
     return _topic(row)
+
+
+# --- domains (T1 #282, ADR-0030) -----------------------------------------------------------------------------------
+
+DOMAIN_QUERY: LiteralString = (
+    "select d.*, (select count(distinct pd.paper_id) from app.paper_domains pd"
+    " join app.public_papers p on p.id = pd.paper_id where pd.domain_slug = d.slug)::int as paper_count"
+    " from app.domains d"
+)
+
+
+def _domains(db: Conn, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    slugs = [row["slug"] for row in rows]
+    subtopics: dict[str, list[dict[str, Any]]] = {}
+    if slugs:
+        for s in db.execute(
+            "select id, parent_domain, slug, label_zh, label_en, legacy_topic_key, route_path, status"
+            " from app.subtopics where parent_domain = any(%s) order by parent_domain, sort_order, id",
+            (slugs,),
+        ):
+            subtopics.setdefault(s["parent_domain"], []).append(
+                {
+                    "id": s["id"],
+                    "slug": s["slug"],
+                    "labelZh": s["label_zh"],
+                    "labelEn": s["label_en"],
+                    "legacyTopicKey": s["legacy_topic_key"],
+                    "routePath": s["route_path"],
+                    "status": s["status"],
+                }
+            )
+    return [
+        {
+            "slug": row["slug"],
+            "order": row["sort_order"],
+            "labelZh": row["label_zh"],
+            "labelEn": row["label_en"],
+            "descriptionZh": row["description_zh"],
+            "status": row["status"],
+            "registryVersion": row["registry_version"],
+            "paperCount": row["paper_count"],
+            "subtopics": subtopics.get(row["slug"], []),
+        }
+        for row in rows
+    ]
+
+
+@router.get("/domains")
+def list_domains(db: Db, response: Response, limit: Limit = 20, cursor: Cursor = None) -> dict[str, Any]:
+    offset = _offset(cursor)
+    rows = db.execute(
+        DOMAIN_QUERY + " order by d.sort_order, d.slug limit %s offset %s",
+        (limit + 1, offset),
+    ).fetchall()
+    return _page(response, _domains(db, rows), offset, limit)
+
+
+@router.get("/domains/{domain_slug}")
+def get_domain(domain_slug: DomainSlug, db: Db, response: Response) -> dict[str, Any]:
+    row = db.execute(DOMAIN_QUERY + " where d.slug = %s", (domain_slug,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Domain not found")
+    response.headers["Cache-Control"] = PUBLIC_CACHE
+    return _domains(db, [row])[0]
 
 
 # --- search --------------------------------------------------------------------------------------------------------

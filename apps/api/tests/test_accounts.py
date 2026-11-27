@@ -151,6 +151,57 @@ def test_token_for_a_deleted_auth_user_cannot_create_an_account(client: TestClie
     assert response.status_code == 401
 
 
+def test_domain_subscriptions_require_display_name_and_preserve_order(
+    client: TestClient, users: list[uuid.UUID]
+) -> None:
+    empty = client.get(f"{API_PREFIX}/me/domains", headers=bearer(users[0]))
+    assert empty.status_code == 200
+    assert empty.headers["Cache-Control"] == "private, no-store"
+    schema("DomainSubscriptions").validate(empty.json())
+    assert empty.json() == {"domains": []}
+
+    # Before choosing a display name, saving subscriptions returns 403.
+    denied = client.put(
+        f"{API_PREFIX}/me/domains",
+        headers=bearer(users[0]),
+        json={"domains": ["endoscopy"]},
+    )
+    assert denied.status_code == 403
+
+    client.put(f"{API_PREFIX}/me", headers=bearer(users[0]), json={"displayName": "Surgeon A"})
+    saved = client.put(
+        f"{API_PREFIX}/me/domains",
+        headers=bearer(users[0]),
+        json={"domains": ["surgical-intelligence", "endoscopy", "colorectal-oncology"]},
+    )
+    assert saved.status_code == 200, saved.text
+    assert saved.headers["Cache-Control"] == "private, no-store"
+    schema("DomainSubscriptions").validate(saved.json())
+    assert saved.json() == {"domains": ["colorectal-oncology", "endoscopy", "surgical-intelligence"]}
+
+    # Duplicate or unknown domain slugs fail closed with 422.
+    assert (
+        client.put(
+            f"{API_PREFIX}/me/domains",
+            headers=bearer(users[0]),
+            json={"domains": ["endoscopy", "endoscopy"]},
+        ).status_code
+        == 422
+    )
+    assert (
+        client.put(
+            f"{API_PREFIX}/me/domains",
+            headers=bearer(users[0]),
+            json={"domains": ["not-a-domain"]},
+        ).status_code
+        == 422
+    )
+
+    # Replacing with empty clears subscriptions cleanly.
+    cleared = client.put(f"{API_PREFIX}/me/domains", headers=bearer(users[0]), json={"domains": []})
+    assert cleared.status_code == 200 and cleared.json() == {"domains": []}
+
+
 # --- local Supabase Auth: a real magic-link session, verified through the real JWKS ---------------------------------
 
 AUTH_URL = os.environ.get("GUTHUB_TEST_SUPABASE_URL")
