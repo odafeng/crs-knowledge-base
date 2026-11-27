@@ -120,3 +120,35 @@ def test_a_job_that_cannot_start_leaves_the_request_waiting(
 
 def test_no_job_configured_means_nothing_is_started() -> None:
     assert content_requests.start_job(None) is False
+
+
+def test_news_event_review_request_and_admin_queue_require_admin(
+    client: TestClient,
+    admin: uuid.UUID,
+    users: list[uuid.UUID],  # noqa: F811
+    started: list[str],
+) -> None:
+    # Non-admin and unauthenticated callers get 401/403 on admin news-events queue.
+    client.put(f"{API_PREFIX}/me", headers=bearer(users[1]), json={"displayName": "Reader"})
+    assert client.get(f"{API_PREFIX}/admin/news-events").status_code == 401
+    assert client.get(f"{API_PREFIX}/admin/news-events", headers=bearer(users[1])).status_code == 403
+
+    res = client.get(f"{API_PREFIX}/admin/news-events", headers=bearer(admin))
+    assert res.status_code == 200
+    assert res.headers["Cache-Control"] == "private, no-store"
+    assert isinstance(res.json()["items"], list)
+
+    # Admin can queue news_event approve/reject/withdraw/revise; mismatched kind/action gets 422.
+    bad = client.post(
+        URL, headers=bearer(admin), json={"action": "approve", "kind": "paper", "target": "breakwater-os"}
+    )
+    assert bad.status_code == 422
+
+    ok = client.post(
+        URL,
+        headers=bearer(admin),
+        json={"action": "approve", "kind": "news_event", "target": "azur1", "reason": "verified"},
+    )
+    assert ok.status_code == 202
+    assert started == [JOB]
+    assert rows("azur1") == [("approve", "news_event", admin, None)]

@@ -630,6 +630,38 @@ paths:
       description: 'Requires a verified session. Set Cache-Control: private, no-store. Requires the comments:moderate
         permission. The API never writes content itself (ADR-0021).'
       x-required-permission: comments:moderate
+  /admin/news-events:
+    get:
+      operationId: listAdminNewsEvents
+      summary: Admin-only Newsroom event review queue with sources, claims, and risk tiers (N5 #290).
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: status
+        in: query
+        schema: {type: string, enum: [draft, pending_review, published, rejected, withdrawn]}
+      - name: limit
+        in: query
+        schema: {type: integer, minimum: 1, maximum: 100, default: 50}
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/AdminNewsEvent'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      description: 'Admin-only view of Newsroom events for editorial review. Set Cache-Control: private, no-store.'
+      x-required-permission: comments:moderate
   /me/surgeon:
     get:
       operationId: getSurgeonMembership
@@ -1877,9 +1909,39 @@ components:
       additionalProperties: false
       required: [action, kind, target]
       properties:
-        action: {type: string, enum: [review, unpublish]}
-        kind: {type: string, enum: [paper, news]}
-        target: {type: string, minLength: 1, maxLength: 200, description: Paper or story id.}
+        action: {type: string, enum: [review, unpublish, approve, reject, withdraw, revise]}
+        kind: {type: string, enum: [paper, news, news_event]}
+        target: {type: string, minLength: 1, maxLength: 200, description: Paper, story, or news_event id.}
+        reason: {type: [string, 'null'], minLength: 1, maxLength: 500}
+        payload: {type: [object, 'null'], additionalProperties: true}
+    AdminNewsEvent:
+      type: object
+      additionalProperties: false
+      required: [id, category, geography, evidenceStatus, riskTier, status, reviewStatus, eventDate, publishedAt,
+        effectiveDate, revisionNumber, headline, whatHappened, whyItMatters, clinicalRelevance, evidenceLimitations,
+        correctionNote, primaryDomain, secondaryDomains, sources, claims]
+      properties:
+        id: {type: string}
+        category: {type: string}
+        geography: {type: string}
+        evidenceStatus: {type: string}
+        riskTier: {type: string, enum: [low, medium, high, reject]}
+        status: {type: string, enum: [draft, pending_review, published, rejected, withdrawn]}
+        reviewStatus: {type: string, enum: [auto, reviewed, revised]}
+        eventDate: {type: [string, 'null']}
+        publishedAt: {type: string}
+        effectiveDate: {type: [string, 'null']}
+        revisionNumber: {type: integer}
+        headline: {type: string}
+        whatHappened: {type: string}
+        whyItMatters: {type: string}
+        clinicalRelevance: {type: string}
+        evidenceLimitations: {type: string}
+        correctionNote: {type: [string, 'null']}
+        primaryDomain: {type: [string, 'null']}
+        secondaryDomains: {type: array, items: {type: string}}
+        sources: {type: array, items: {type: object, additionalProperties: true}}
+        claims: {type: array, items: {type: object, additionalProperties: true}}
     ContentRequestQueued:
       type: object
       additionalProperties: false
