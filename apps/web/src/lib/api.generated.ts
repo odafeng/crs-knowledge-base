@@ -488,6 +488,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/news-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin-only Newsroom event review queue with sources, claims, and risk tiers (N5
+         * @description Admin-only view of Newsroom events for editorial review. Set Cache-Control: private, no-store.
+         */
+        get: operations["listAdminNewsEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/surgeon": {
         parameters: {
             query?: never;
@@ -1329,11 +1349,45 @@ export interface components {
         };
         ContentRequest: {
             /** @enum {string} */
-            action: "review" | "unpublish";
+            action: "review" | "unpublish" | "approve" | "reject" | "withdraw" | "revise";
             /** @enum {string} */
-            kind: "paper" | "news";
-            /** @description Paper or story id. */
+            kind: "paper" | "news" | "news_event";
+            /** @description Paper */
             target: string;
+            reason?: string | null;
+            payload?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        AdminNewsEvent: {
+            id: string;
+            category: string;
+            geography: string;
+            evidenceStatus: string;
+            /** @enum {string} */
+            riskTier: "low" | "medium" | "high" | "reject";
+            /** @enum {string} */
+            status: "draft" | "pending_review" | "published" | "rejected" | "withdrawn";
+            /** @enum {string} */
+            reviewStatus: "auto" | "reviewed" | "revised";
+            eventDate: string | null;
+            publishedAt: string;
+            effectiveDate: string | null;
+            revisionNumber: number;
+            headline: string;
+            whatHappened: string;
+            whyItMatters: string;
+            clinicalRelevance: string;
+            evidenceLimitations: string;
+            correctionNote: string | null;
+            primaryDomain: string | null;
+            secondaryDomains: string[];
+            sources: {
+                [key: string]: unknown;
+            }[];
+            claims: {
+                [key: string]: unknown;
+            }[];
         };
         ContentRequestQueued: {
             id: number;
@@ -2630,6 +2684,34 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             422: components["responses"]["InvalidRequest"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    listAdminNewsEvents: {
+        parameters: {
+            query?: {
+                status?: "draft" | "pending_review" | "published" | "rejected" | "withdrawn";
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["AdminNewsEvent"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             503: components["responses"]["Unavailable"];
         };
     };

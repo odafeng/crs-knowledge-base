@@ -35,6 +35,8 @@ for path in (ROOT, ROOT / "scripts"):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
+from newsroom.publisher import PublisherError, apply_review_action  # noqa: E402
+
 from accept_issue import accept  # noqa: E402
 from content_store import DATABASE_ENV, content_session  # noqa: E402
 from digest import is_digest  # noqa: E402
@@ -128,8 +130,25 @@ def unpublish_request(issue: Issue, gh: Gh, repo: str, conn: Any = None) -> bool
 
 
 def site_request(row: dict[str, Any], conn: Any = None) -> tuple[bool, str]:
-    """An admin's button on the site (E6 #159), recorded by the API in app.content_requests."""
+    """An admin's button on the site (E6 #159, N5 #290), recorded by the API in app.content_requests."""
     action, kind, target = row["action"], row["kind"], row["target"]
+    if kind == "news_event":
+        payload = row.get("payload") or {}
+        reason = str(payload.get("reason") or f"admin {action} via /admin/review").strip()
+        try:
+            res = apply_review_action(
+                conn,
+                event_id=target,
+                action=action,
+                actor_id=row.get("requested_by"),
+                actor_label="admin",
+                reason=reason,
+                idempotency_key=f"news:{action}:request-{row['id']}",
+                revision_payload=payload if action == "revise" else None,
+            )
+            return True, str(res["summary"])
+        except PublisherError as error:
+            return False, str(error)
     try:
         with content_session(action, target, key=f"{action}:request-{row['id']}", conn=conn) as session:
             if session.done:
@@ -144,11 +163,13 @@ def site_request(row: dict[str, Any], conn: Any = None) -> tuple[bool, str]:
 
 def site_requests(store: Any, conn: Any = None) -> list[bool]:
     rows = store.execute(
-        "select id, action, kind, target from app.content_requests where done_at is null order by id"
+        "select id, action, kind, target, requested_by, payload from app.content_requests"
+        " where done_at is null order by id"
     ).fetchall()
     results = []
     for row in rows:
-        ok, result = site_request(dict(zip(("id", "action", "kind", "target"), row, strict=True)), conn)
+        item = dict(zip(("id", "action", "kind", "target", "requested_by", "payload"), row, strict=True))
+        ok, result = site_request(item, conn or store)
         store.execute(
             "update app.content_requests set done_at = now(), ok = %s, result = %s where id = %s", (ok, result, row[0])
         )

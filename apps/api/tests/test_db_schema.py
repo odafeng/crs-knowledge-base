@@ -75,6 +75,7 @@ VIEWS = [
     "visible_forum_posts",
     "public_news_events",
     "public_news_source_health",
+    "admin_news_review_queue",
 ]
 CLIENT_ROLES = ["anon", "authenticated", "service_role"]
 
