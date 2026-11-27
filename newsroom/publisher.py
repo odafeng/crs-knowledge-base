@@ -201,8 +201,8 @@ def apply_review_action(
             (event_id, new_rev_id, actor_id, actor_label, audit_action, clean_reason),
         )
         cur.execute(
-            "insert into app.publish_events (key, action, target, summary) values (%s, %s, %s, %s)",
-            (idempotency_key, pub_action, event_id, summary),
+            "insert into app.publish_events (key, action, summary) values (%s, %s, %s)",
+            (idempotency_key, pub_action, summary),
         )
 
     if changed_public and revalidate_fn is not None:

@@ -18,7 +18,7 @@ grant insert (action, kind, target, requested_by, payload) on app.content_reques
 alter table app.publish_events drop constraint publish_events_action_check;
 alter table app.publish_events add constraint publish_events_action_check
   check (action in (
-    'publish_paper', 'publish_commentary', 'unpublish', 'review',
+    'publish_paper', 'publish_commentary', 'publish_news', 'unpublish', 'review', 'summarize',
     'news_approve', 'news_reject', 'news_withdraw', 'news_revise', 'news_auto_publish'
   ));
 
