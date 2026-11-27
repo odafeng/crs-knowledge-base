@@ -268,6 +268,10 @@ test('Next.js start: reading pages render from the read API', { timeout: 90000 }
     const page = await browser.newPage({ viewport: { width: 360, height: 812 } });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
+    await page.goto(`${origin}/news/`);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, '/news/ overflow');
+    await page.goto(`${origin}/news/events/smoke-event/`);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, '/news/events/smoke-event/ overflow');
     await page.goto(`${origin}/news/smoke-news/`);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.getByRole('link', { name: '看文獻整理' }).click();
