@@ -34,17 +34,39 @@ from usage import USAGE
 
 
 def deduplicate_candidates(candidates):
-    """Remove duplicates across sources (prefer PubMed > RSS)."""
+    """Remove duplicates across sources (prefer PubMed > RSS) while unioning cross-specialty domains."""
     seen = {}
-    source_priority = {"pubmed": 0, "pubmed_supplement": 0, "rss": 1}
+    source_priority = {"pubmed": 0, "pubmed_supplement": 0, "rss": 1, "journal": 1}
+
+    def _collect_domains(item: dict) -> list[str]:
+        found: list[str] = []
+        if item.get("primary_domain"):
+            found.append(item["primary_domain"])
+        for sec in item.get("secondary_domains") or []:
+            if sec and sec not in found:
+                found.append(sec)
+        return found
 
     for c in candidates:
         key = c.get("doi") or c.get("pmid") or c.get("title", "")
         if not key:
             continue
         priority = source_priority.get(c.get("source", ""), 2)
-        if key not in seen or priority < source_priority.get(seen[key].get("source", ""), 2):
+        if key not in seen:
             seen[key] = c
+            continue
+        existing = seen[key]
+        existing_priority = source_priority.get(existing.get("source", ""), 2)
+        winner, loser = (c, existing) if priority < existing_priority else (existing, c)
+        merged_domains = _collect_domains(winner)
+        for d in _collect_domains(loser):
+            if d not in merged_domains:
+                merged_domains.append(d)
+        if merged_domains:
+            winner = dict(winner)
+            winner["primary_domain"] = merged_domains[0]
+            winner["secondary_domains"] = merged_domains[1:]
+        seen[key] = winner
 
     return list(seen.values())
 

@@ -54,8 +54,6 @@ def _extract_doi(text):
 # counted, any paper mentioning "colorectal" went to whichever topic was listed first
 # (BRAF), whose agent then scored it as off-topic.
 GENERIC_TERMS = frozenset({"colorectal", "colon", "rectal"})
-# The designed catch-all for CRC papers that fit no specific topic (see its agent context).
-FALLBACK_TOPIC = "generic-CRS"
 
 
 def _term_hits(entry, terms) -> int:
@@ -79,23 +77,46 @@ def _specific_terms(cfg) -> list[str]:
     return [t for t in terms if t.lower() not in GENERIC_TERMS]
 
 
+def _matching_topics(article, topics_config) -> list[tuple[str, int]]:
+    """All configured packs with >=1 specific-term hit, ordered by hit count descending."""
+    hits = [(t, _term_hits(article, _specific_terms(cfg))) for t, cfg in topics_config.items()]
+    return sorted(((t, count) for t, count in hits if count > 0), key=lambda pair: -pair[1])
+
+
 def _assign_topic(article, topics_config):
     """Topic whose specific terms match best (first listed wins a tie).
 
-    A paper matching no topic's specific terms goes to the catch-all topic when it is
-    configured, else ''.
+    Per ADR-0030 (T4 #285), papers matching no topic's specific terms return ''
+    instead of being blindly dumped into generic-CRS.
     """
-    best, best_hits = "", 0
-    for t, cfg in topics_config.items():
-        hits = _term_hits(article, _specific_terms(cfg))
-        if hits > best_hits:
-            best, best_hits = t, hits
-    if best:
-        return best
-    return FALLBACK_TOPIC if FALLBACK_TOPIC in topics_config else ""
+    matches = _matching_topics(article, topics_config)
+    return matches[0][0] if matches else ""
 
 
-def fetch_rss(topic=None, dry_run=False, reldate=PUBMED_RELDATE):
+def _domains_for_matches(matches: list[tuple[str, int]], topics_config: dict) -> tuple[str | None, list[str]]:
+    """Derive primary_domain and deduplicated secondary_domains from all matched packs."""
+    seen: list[str] = []
+    for topic_key, _ in matches:
+        domain = (topics_config.get(topic_key) or {}).get("domain")
+        if domain and domain not in seen:
+            seen.append(domain)
+    if not seen:
+        return None, []
+    return seen[0], seen[1:]
+
+
+def _active_topics(queries: dict, *, topic: str | None = None, include_shadow: bool = False) -> dict:
+    """Topic query packs enabled for this run (shadow_only packs stay off unless explicitly requested)."""
+    return {
+        k: v
+        for k, v in queries.items()
+        if k not in ("rss_feeds", "conference_seasons")
+        and isinstance(v, dict)
+        and (include_shadow or topic == k or not v.get("shadow_only", False))
+    }
+
+
+def fetch_rss(topic=None, dry_run=False, reldate=PUBMED_RELDATE, *, include_shadow=False, unmatched_out=None):
     """Fetch new colorectal papers from high-impact journals via PubMed.
 
     Returns list of candidate dicts. Raises AllFeedsFailedError if every
@@ -105,9 +126,10 @@ def fetch_rss(topic=None, dry_run=False, reldate=PUBMED_RELDATE):
     queries = load_queries()
     tracked_dois, tracked_pmids = tracked_ids(load_tracked_dois())
     feeds = queries.get("rss_feeds", [])
-    topics_config = {k: v for k, v in queries.items() if k not in ("rss_feeds", "conference_seasons")}
+    topics_config = _active_topics(queries, topic=topic, include_shadow=include_shadow)
 
     candidates = []
+    unmatched = []
     seen_ids = set()
     attempted = 0
     errored = 0
@@ -138,10 +160,17 @@ def fetch_rss(topic=None, dry_run=False, reldate=PUBMED_RELDATE):
 
             # With a topic filter, keep only papers that belong to that topic; assigning
             # the requested topic to every colorectal paper sent them to the wrong agent.
-            t = _assign_topic(art, topics_config)
-            if not t or (topic and t != topic):
+            matches = _matching_topics(art, topics_config)
+            t = matches[0][0] if matches else ""
+            if not t:
+                unmatched.append(
+                    {"pmid": art.get("pmid", ""), "doi": doi, "journal": name, "title": art.get("title", "")}
+                )
+                continue
+            if topic and t != topic:
                 continue
 
+            primary_domain, secondary_domains = _domains_for_matches(matches, topics_config)
             candidate = {
                 "pmid": art.get("pmid", ""),
                 "doi": doi,
@@ -153,12 +182,19 @@ def fetch_rss(topic=None, dry_run=False, reldate=PUBMED_RELDATE):
                 "publication_types": art.get("publication_types", []),
                 "comment_on_pmids": art.get("comment_on_pmids", []),
                 "topic": t,
+                "primary_domain": primary_domain,
+                "secondary_domains": secondary_domains,
                 "source": "journal",
                 "link": f"https://doi.org/{doi}" if doi else "",
             }
             candidates.append(candidate)
             if uid:
                 seen_ids.add(uid)
+
+    if unmatched_out is not None:
+        unmatched_out.extend(unmatched)
+    if unmatched:
+        print(f"  [Journal] {len(unmatched)} unmatched article(s) skipped (not dumped into generic-CRS).")
 
     # Health check: if we tried feeds and every single one errored, that's an
     # outage (e.g. NCBI down). Fail loudly rather than pretend everything's fine.
