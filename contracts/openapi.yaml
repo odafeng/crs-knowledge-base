@@ -114,6 +114,49 @@ paths:
         '503': {$ref: '#/components/responses/Unavailable'}
       parameters:
       - {$ref: '#/components/parameters/NewsId'}
+  /news-events:
+    get:
+      operationId: listNewsEvents
+      summary: List published event-centric Newsroom briefs with optional domain, category, and geography filters, plus degraded source status.
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NewsEventPage'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/Limit'}
+      - {$ref: '#/components/parameters/Cursor'}
+      - name: domain
+        in: query
+        schema: {$ref: '#/components/schemas/DomainSlug'}
+      - name: category
+        in: query
+        schema: {$ref: '#/components/schemas/NewsEventCategory'}
+      - name: geography
+        in: query
+        schema: {$ref: '#/components/schemas/NewsEventGeography'}
+  /news-events/{eventId}:
+    get:
+      operationId: getNewsEvent
+      summary: Get one published event-centric Newsroom brief; draft, pending, rejected, and withdrawn events return 404.
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NewsEvent'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/InvalidRequest'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+      parameters:
+      - {$ref: '#/components/parameters/NewsEventId'}
   /topics:
     get:
       operationId: listTopics
@@ -1388,6 +1431,11 @@ components:
       in: path
       required: true
       schema: {type: string, minLength: 1}
+    NewsEventId:
+      name: eventId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1, pattern: '^[a-z0-9][a-z0-9-]*$'}
     TopicKey:
       name: topicKey
       in: path
@@ -1687,6 +1735,87 @@ components:
           type: array
           items: {$ref: '#/components/schemas/NewsSection'}
         review: {$ref: '#/components/schemas/NewsReview'}
+    NewsEventCategory:
+      type: string
+      enum: [regulatory, guideline, trial, society, device, safety, clinical]
+    NewsEventGeography:
+      type: string
+      enum: [taiwan, us, eu, global]
+    NewsEventEvidenceStatus:
+      type: string
+      enum: [approved, guideline, peer_reviewed, conference, preprint, registry, press_release]
+    NewsEventReviewStatus:
+      type: string
+      enum: [auto, reviewed, revised]
+    NewsEventSource:
+      type: object
+      additionalProperties: false
+      required: [url, title, publisher, sourceKind, publishedAt]
+      properties:
+        url: {type: string, format: uri}
+        title: {type: string, minLength: 1}
+        publisher: {type: string, minLength: 1}
+        sourceKind: {type: string, minLength: 1}
+        publishedAt:
+          type: [string, 'null']
+          format: date
+    NewsSourceHealth:
+      type: object
+      additionalProperties: false
+      required: [id, name, sourceType, degraded, lastSuccessAt, lastErrorAt]
+      properties:
+        id: {type: string, minLength: 1}
+        name: {type: string, minLength: 1}
+        sourceType: {type: string, minLength: 1}
+        degraded: {type: boolean}
+        lastSuccessAt:
+          type: [string, 'null']
+          format: date-time
+        lastErrorAt:
+          type: [string, 'null']
+          format: date-time
+    NewsEvent:
+      type: object
+      additionalProperties: false
+      required: [id, category, geography, evidenceStatus, reviewStatus, eventDate, publishedAt, effectiveDate,
+        firstPublishedAt, updatedAt, revisionNumber, headline, whatHappened, whyItMatters, clinicalRelevance,
+        evidenceLimitations, correctionNote, primaryDomain, secondaryDomains, sources]
+      properties:
+        id: {type: string, pattern: '^[a-z0-9][a-z0-9-]*$'}
+        category: {$ref: '#/components/schemas/NewsEventCategory'}
+        geography: {$ref: '#/components/schemas/NewsEventGeography'}
+        evidenceStatus: {$ref: '#/components/schemas/NewsEventEvidenceStatus'}
+        reviewStatus: {$ref: '#/components/schemas/NewsEventReviewStatus'}
+        eventDate:
+          type: [string, 'null']
+          format: date
+        publishedAt: {type: string, format: date}
+        effectiveDate:
+          type: [string, 'null']
+          format: date
+        firstPublishedAt:
+          type: [string, 'null']
+          format: date-time
+        updatedAt: {type: string, format: date-time}
+        revisionNumber: {type: integer, minimum: 1}
+        headline: {type: string, minLength: 1}
+        whatHappened: {type: string, minLength: 1}
+        whyItMatters: {type: string, minLength: 1}
+        clinicalRelevance: {type: string, minLength: 1}
+        evidenceLimitations: {type: string, minLength: 1}
+        correctionNote:
+          type: [string, 'null']
+        primaryDomain:
+          anyOf:
+          - {$ref: '#/components/schemas/DomainSlug'}
+          - {type: 'null'}
+        secondaryDomains:
+          type: array
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/DomainSlug'}
+        sources:
+          type: array
+          items: {$ref: '#/components/schemas/NewsEventSource'}
     RegulatoryRow:
       type: object
       additionalProperties: false
@@ -1792,7 +1921,7 @@ components:
       properties:
         kind:
           type: string
-          enum: [paper, news]
+          enum: [paper, news, news_event]
         id: {type: string}
         path: {type: string, pattern: ^/}
         title: {type: string}
@@ -2010,7 +2139,7 @@ components:
             additionalProperties: false
             required: [kind, path, title, snippet, score]
             properties:
-              kind: {type: string, enum: [paper, news, card, forum]}
+              kind: {type: string, enum: [paper, news, news_event, card, forum]}
               path: {type: string, pattern: '^/'}
               title: {type: string}
               snippet: {type: string}
@@ -2540,6 +2669,19 @@ components:
           items: {$ref: '#/components/schemas/News'}
         nextCursor:
           type: [string, 'null']
+    NewsEventPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor, degradedSources]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/NewsEvent'}
+        nextCursor:
+          type: [string, 'null']
+        degradedSources:
+          type: array
+          items: {$ref: '#/components/schemas/NewsSourceHealth'}
     TopicPage:
       type: object
       additionalProperties: false

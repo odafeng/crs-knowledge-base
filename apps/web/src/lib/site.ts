@@ -11,6 +11,9 @@ import {
 
 export type Paper = components["schemas"]["Paper"];
 export type News = components["schemas"]["News"];
+export type NewsEvent = components["schemas"]["NewsEvent"];
+export type NewsEventSource = components["schemas"]["NewsEventSource"];
+export type NewsSourceHealth = components["schemas"]["NewsSourceHealth"];
 export type Topic = components["schemas"]["Topic"];
 export type Domain = components["schemas"]["Domain"];
 export type SubtopicRef = components["schemas"]["SubtopicRef"];
@@ -90,10 +93,51 @@ export const NEWS: Crumbs = [...HOME, ["最新消息", "/news/"]];
 export const paperPath = (paper: Pick<Paper, "slug">) =>
   `/papers/${paper.slug}/`;
 export const newsPath = (item: Pick<News, "id">) => `/news/${item.id}/`;
+export const newsEventPath = (item: Pick<NewsEvent, "id">) =>
+  `/news/events/${item.id}/`;
 export const topicPath = (topic: Pick<Topic, "slug">) =>
   topic.slug === "robotic" ? "/robotic/" : `/mcrc/${topic.slug}/`;
 export const specialtyPath = (slug: string) => `/specialties/${slug}/`;
 export const doiUrl = (doi: string) => `https://doi.org/${doi}`;
+
+export const EVENT_CATEGORY_LABELS: Record<NewsEvent["category"], string> = {
+  regulatory: "監管與給付",
+  guideline: "指引更新",
+  trial: "臨床試驗",
+  society: "學會動態",
+  device: "醫材與技術",
+  safety: "安全警訊",
+  clinical: "臨床快訊",
+};
+
+export const EVENT_EVIDENCE_LABELS: Record<
+  NewsEvent["evidenceStatus"],
+  string
+> = {
+  approved: "主管機關核准／公告",
+  guideline: "臨床指引",
+  peer_reviewed: "同儕審查文獻",
+  conference: "醫學年會發表",
+  preprint: "預印本（未經同儕審查）",
+  registry: "臨床試驗登錄",
+  press_release: "官方新聞稿",
+};
+
+export const EVENT_GEOGRAPHY_LABELS: Record<NewsEvent["geography"], string> = {
+  taiwan: "台灣",
+  us: "美國",
+  eu: "歐盟",
+  global: "國際",
+};
+
+export const EVENT_REVIEW_LABELS: Record<NewsEvent["reviewStatus"], string> = {
+  auto: "AI 未審",
+  reviewed: "人工已審",
+  revised: "已更正",
+};
+
+export const isUnreviewedEvent = (item: Pick<NewsEvent, "reviewStatus">) =>
+  item.reviewStatus === "auto";
 
 const LEGACY_TOPIC_TO_DOMAIN: Record<string, DomainSlug> = {
   "mCRC-BRAF-V600E": "colorectal-oncology",
@@ -410,11 +454,19 @@ const daysBefore = (isoDate: string, days: number) => {
   return day.toISOString().slice(0, 10);
 };
 
-/** The home page dateline: the newest date across papers, commentary and news, and what arrived in its week. */
-export function weekStats(papers: readonly Paper[], news: readonly News[]) {
+/** The home page dateline: the newest date across papers, commentary, news and events, and what arrived in its week. */
+export function weekStats(
+  papers: readonly Paper[],
+  news: readonly News[],
+  events: readonly NewsEvent[] = [],
+) {
   const rows = updates(papers);
   const lastUpdated =
-    [...rows.map((u) => u.date), ...news.map((n) => n.publishedAt)]
+    [
+      ...rows.map((u) => u.date),
+      ...news.map((n) => n.publishedAt),
+      ...events.map((e) => e.publishedAt),
+    ]
       .sort()
       .at(-1) ?? "";
   const since = daysBefore(lastUpdated, 6);
@@ -422,7 +474,9 @@ export function weekStats(papers: readonly Paper[], news: readonly News[]) {
     lastUpdated,
     weekPapers: rows.filter((u) => u.kind === "paper" && u.date >= since)
       .length,
-    weekNews: news.filter((n) => n.publishedAt >= since).length,
+    weekNews:
+      news.filter((n) => n.publishedAt >= since).length +
+      events.filter((e) => e.publishedAt >= since).length,
   };
 }
 

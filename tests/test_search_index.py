@@ -98,6 +98,38 @@ REPLY = {"id": "22222222-2222-2222-2222-222222222222", "thread": OPENER["id"], "
          "body": "大於 7 mm 會清。"}  # fmt: skip
 
 
+def test_news_events_are_indexed_with_domain_labels() -> None:
+    event = {
+        "id": "tfda-crc-2026",
+        "headline": "TFDA 核准新適應症",
+        "what_happened": "TFDA 核准新標靶療法用於 mCRC。",
+        "why_it_matters": "提供二線新選擇。",
+        "clinical_relevance": "需確認基因突變狀態。",
+        "evidence_limitations": "尚無健保給付。",
+        "primary_domain": "colorectal-oncology",
+        "secondary_domains": ["endoscopy"],
+    }
+    found = si.items(
+        [],
+        [],
+        [],
+        news_events=[event],
+        domain_labels={
+            "colorectal-oncology": ["大腸直腸腫瘤", "Colorectal Oncology"],
+            "endoscopy": ["內視鏡", "Endoscopy"],
+        },
+    )
+    assert len(found) == 1
+    item = found[0]
+    assert (item.kind, item.ref, item.path, item.title) == (
+        "news_event",
+        "tfda-crc-2026",
+        "/news/events/tfda-crc-2026/",
+        "TFDA 核准新適應症",
+    )
+    assert "大腸直腸腫瘤" in item.text and "Endoscopy" in item.text
+
+
 def test_forum_posts_carry_their_thread_and_no_author() -> None:
     opener, reply = si.items([], [], [], [OPENER, REPLY])
     assert (opener.kind, opener.ref, opener.path, opener.title) == ("forum", OPENER["id"], f"/forum/{OPENER['id']}/",

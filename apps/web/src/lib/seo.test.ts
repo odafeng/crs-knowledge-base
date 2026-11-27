@@ -9,7 +9,7 @@ import {
   toJsonFeed,
   toRss,
 } from "./seo";
-import type { News, Paper, Topic } from "./site";
+import type { News, NewsEvent, Paper, Topic } from "./site";
 
 const paper = (id: string, review?: "auto" | "accepted"): Paper => ({
   id,
@@ -146,17 +146,61 @@ describe("indexing", () => {
     expect(robots(false)).toEqual({ index: false, follow: true });
   });
 
-  it("leaves AI-unreviewed papers and news out of the sitemap", () => {
+  it("leaves AI-unreviewed papers, news, and events out of the sitemap while indexing reviewed events", () => {
+    const reviewedEvent: NewsEvent = {
+      id: "tfda-reviewed",
+      category: "regulatory",
+      geography: "taiwan",
+      evidenceStatus: "approved",
+      reviewStatus: "reviewed",
+      eventDate: "2026-11-26",
+      publishedAt: "2026-11-27",
+      effectiveDate: "2026-12-01",
+      firstPublishedAt: "2026-11-27T01:00:00Z",
+      updatedAt: "2026-11-27T01:00:00Z",
+      revisionNumber: 1,
+      headline: "TFDA 核准公告",
+      whatHappened: "核准新適應症",
+      whyItMatters: "擴大治療選擇",
+      clinicalRelevance: "臨床適用",
+      evidenceLimitations: "需自費",
+      correctionNote: null,
+      primaryDomain: "colorectal-oncology",
+      secondaryDomains: [],
+      sources: [],
+    };
+    const autoEvent: NewsEvent = {
+      ...reviewedEvent,
+      id: "auto-draft-event",
+      reviewStatus: "auto",
+    };
     const pages = sitemapPages(
       [paper("A", "auto"), paper("B", "accepted")],
       [story],
       topics,
+      [reviewedEvent, autoEvent],
     ).map(([path]) => path);
     expect(pages).toContain("/papers/b/");
     expect(pages).not.toContain("/papers/a/");
     expect(pages).not.toContain("/news/keynote/");
+    expect(pages).toContain("/news/events/tfda-reviewed/");
+    expect(pages).not.toContain("/news/events/auto-draft-event/");
     expect(pages).toContain("/specialties/colorectal-oncology/");
     expect(pages).toContain("/specialties/endoscopy/");
     expect(pages.slice(0, 3)).toEqual(["/", "/news/", "/updates/"]);
+
+    const [allFeed, newsFeed] = feeds([paper("KEYNOTE_177")], [story], topics, [
+      reviewedEvent,
+    ]);
+    const rss = toRss(allFeed, topics);
+    expect(rss).toContain(
+      '<guid isPermaLink="false">tag:odafeng.github.io,2026:news-event/tfda-reviewed</guid>',
+    );
+    expect(rss).toContain(
+      "<link>https://odafeng.github.io/crs-knowledge-base/news/events/tfda-reviewed/</link>",
+    );
+    expect(newsFeed.items.map((i) => i.id)).toContain(
+      "news-event/tfda-reviewed",
+    );
   });
 });

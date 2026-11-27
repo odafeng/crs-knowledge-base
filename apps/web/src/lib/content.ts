@@ -1,7 +1,14 @@
 // Server-side reads for the public pages: ISR fetches against the FastAPI read API (ADR-0015, B5).
 import { apiError } from "./api";
 import type { DailyPick } from "./daily";
-import type { Domain, News, Paper, Topic } from "./site";
+import type {
+  Domain,
+  News,
+  NewsEvent,
+  NewsSourceHealth,
+  Paper,
+  Topic,
+} from "./site";
 import {
   DOMAIN_SLUGS,
   TAXONOMY_DOMAINS,
@@ -17,6 +24,7 @@ export const CONTENT_TAGS = {
   all: CONTENT_TAG,
   papers: "papers",
   news: "news",
+  newsEvents: "news-events",
   topics: "topics",
   domains: "domains",
   daily: "daily",
@@ -225,4 +233,62 @@ export async function getDailyPick(
     ...options,
     tags: [CONTENT_TAGS.daily, ...(options?.tags ?? [])],
   }).catch(() => null);
+}
+
+type NewsEventPageResponse = {
+  items: NewsEvent[];
+  nextCursor: string | null;
+  degradedSources?: NewsSourceHealth[];
+};
+
+const NEWS_EVENT_ID = /^[a-z0-9][a-z0-9-]*$/;
+
+/** Lists published Newsroom events and degraded source status; gracefully falls back to empty lists on older API revisions. */
+export async function listNewsEvents(
+  options: Options = {},
+): Promise<{ items: NewsEvent[]; degradedSources: NewsSourceHealth[] }> {
+  try {
+    const items: NewsEvent[] = [];
+    let degradedSources: NewsSourceHealth[] = [];
+    let cursor: string | null = null;
+    do {
+      const query: URLSearchParams = new URLSearchParams({
+        limit: "100",
+        ...(options.params ?? {}),
+        ...(cursor ? { cursor } : {}),
+      });
+      const page: NewsEventPageResponse | null =
+        await get<NewsEventPageResponse>(`/news-events?${query}`, {
+          ...options,
+          tags: [CONTENT_TAGS.newsEvents, ...(options.tags ?? [])],
+        });
+      if (!page) return { items: [], degradedSources: [] };
+      items.push(...page.items);
+      if (cursor === null) degradedSources = page.degradedSources ?? [];
+      cursor = page.nextCursor;
+    } while (cursor);
+    return { items, degradedSources };
+  } catch {
+    return { items: [], degradedSources: [] };
+  }
+}
+
+/** Fetches one published Newsroom event by ID; returns null if missing, unverified/draft, or on an older API revision. */
+export async function getNewsEvent(
+  id: string,
+  options: Options = {},
+): Promise<NewsEvent | null> {
+  if (!NEWS_EVENT_ID.test(id)) return null;
+  try {
+    return await get<NewsEvent>(`/news-events/${encodeURIComponent(id)}`, {
+      ...options,
+      tags: [
+        CONTENT_TAGS.newsEvents,
+        `news-event:${id}`,
+        ...(options.tags ?? []),
+      ],
+    });
+  } catch {
+    return null;
+  }
 }

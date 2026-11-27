@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { findEntries, searchIndex, type SearchEntry } from "./search";
-import type { News, Paper, Topic } from "./site";
+import type { News, NewsEvent, Paper, Topic } from "./site";
 
 const topic = {
   key: "mCRC-MSI-H",
@@ -48,6 +48,35 @@ describe("searchIndex", () => {
     expect(findEntries(index, "大腸直腸腫瘤")?.map((e) => e.path)).toEqual([
       "/news/niche2-five-year/",
       "/papers/niche2/",
+    ]);
+  });
+
+  it("includes published NewsEvent briefs with specialty domain labels", () => {
+    const event: NewsEvent = {
+      id: "nhi-update-2026",
+      category: "regulatory",
+      geography: "taiwan",
+      evidenceStatus: "approved",
+      reviewStatus: "reviewed",
+      eventDate: "2026-11-26",
+      publishedAt: "2026-11-27",
+      effectiveDate: "2026-12-01",
+      firstPublishedAt: "2026-11-27T01:00:00Z",
+      updatedAt: "2026-11-27T01:00:00Z",
+      revisionNumber: 1,
+      headline: "健保給付新制上路",
+      whatHappened: "健保署擴大內視鏡處置給付",
+      whyItMatters: "減輕病人負擔",
+      clinicalRelevance: "適用門診大腸鏡瘜肉切除",
+      evidenceLimitations: "限特定適應症",
+      correctionNote: null,
+      primaryDomain: "endoscopy",
+      secondaryDomains: [],
+      sources: [],
+    };
+    const withEvents = searchIndex([paper], [news], [topic], [event]);
+    expect(findEntries(withEvents, "內視鏡")?.map((e) => e.path)).toEqual([
+      "/news/events/nhi-update-2026/",
     ]);
   });
 });

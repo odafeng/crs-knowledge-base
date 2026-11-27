@@ -23,7 +23,13 @@ import {
   Status,
   JsonLd,
 } from "@/components/reading";
-import { getDailyPick, listNews, listPapers, listTopics } from "@/lib/content";
+import {
+  getDailyPick,
+  listNews,
+  listNewsEvents,
+  listPapers,
+  listTopics,
+} from "@/lib/content";
 import { buildRecentTicker } from "@/lib/daily";
 import { drugCounts, drugPath } from "@/lib/drugs";
 import {
@@ -58,19 +64,21 @@ export const metadata: Metadata = {
 export default async function Home() {
   // Rendered per request so `next build` never calls the API; API reads stay cached for 300 s (lib/content.ts).
   await connection();
-  const [papers, news, topics, daily] = await Promise.all([
+  const [papers, news, topics, daily, eventPage] = await Promise.all([
     listPapers(),
     listNews(),
     listTopics(),
     getDailyPick(),
+    listNewsEvents(),
   ]);
+  const events = eventPage.items;
   const pick = daily?.pick;
   const topicOf = (paperId: string) =>
     topics.find((t) => t.key === papers.find((p) => p.id === paperId)?.topic);
   const [lead, ...rest] = news;
   const leadPaper = lead && papers.find((p) => p.id === lead.paperId);
   const leadTopic = lead && topicOf(lead.paperId);
-  const stats = weekStats(papers, news);
+  const stats = weekStats(papers, news, events);
   const mcrc = topics.filter((t) => t.roboticSections.length === 0);
   const sections = topics.flatMap((t) => t.roboticSections);
   const allUpdates = updates(papers);
@@ -83,7 +91,7 @@ export default async function Home() {
       : allUpdates;
   const allDrugs = drugCounts(papers);
   const topDrugs = allDrugs.slice(0, 12);
-  const tickerItems = buildRecentTicker(news, papers, topics, daily);
+  const tickerItems = buildRecentTicker(news, papers, topics, daily, 5, events);
 
   return (
     <>

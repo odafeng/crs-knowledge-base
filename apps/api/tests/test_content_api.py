@@ -159,6 +159,93 @@ def test_news_matches_contract_and_source(client: TestClient) -> None:
     assert get(client, f"/news/{NEWS[0]['id']}")["id"] == NEWS[0]["id"]
 
 
+# --- news events (N6 #291, ADR-0031) -------------------------------------------------------------------------------
+
+
+def test_news_events_expose_only_published_items_and_filter_by_domain_and_search(client: TestClient) -> None:
+    assert DB_URL
+    with psycopg.connect(DB_URL, autocommit=True) as conn:
+        pub_id = "n6-test-pub-event"
+        draft_id = "n6-test-draft-event"
+        withdrawn_id = "n6-test-withdrawn-event"
+        src_id = "n6-test-src"
+        try:
+            conn.execute(
+                "insert into app.news_source_registry"
+                " (id, name, source_type, base_url, terms_reviewed_at, trust_tier, enabled, last_error_at, last_error)"
+                " values (%s, 'Test Delayed Source', 'regulatory', 'https://example.org', '2026-11-01', 'tier1', true, now(), 'timeout')"
+                " on conflict (id) do update set enabled = true, last_error_at = now(), last_success_at = null",
+                (src_id,),
+            )
+            for eid, status, is_withdrawn, headline in (
+                (pub_id, "published", False, "TFDA 核准大腸直腸癌新標靶適應症"),
+                (draft_id, "draft", False, "未發布草稿秘密事件"),
+                (withdrawn_id, "withdrawn", True, "已撤回事件"),
+            ):
+                conn.execute(
+                    "insert into app.news_events"
+                    " (id, dedup_key, category, geography, evidence_status, risk_tier, status, review_status,"
+                    "  event_date, published_at, effective_date, withdrawn_at)"
+                    " values (%s, %s, 'regulatory', 'taiwan', 'approved', 'low', %s, 'reviewed',"
+                    "  '2026-11-26', '2026-11-27', '2026-12-01', case when %s then now() else null end)",
+                    (eid, f"dedup-{eid}", status, is_withdrawn),
+                )
+                rev_id = conn.execute(
+                    "insert into app.news_revisions"
+                    " (event_id, revision_number, headline, what_happened, why_it_matters,"
+                    "  clinical_relevance, evidence_limitations, created_by)"
+                    " values (%s, 1, %s, 'TFDA 正式公告新適應症', '擴大一線治療選擇',"
+                    "  '適用轉移性大腸直腸癌病患', '需確認生物標記檢測', 'test') returning id",
+                    (eid, headline),
+                ).fetchone()
+                assert rev_id is not None
+                conn.execute("update app.news_events set current_revision_id = %s where id = %s", (rev_id[0], eid))
+                conn.execute(
+                    "insert into app.news_event_domains (event_id, domain_slug, is_primary, taxonomy_version)"
+                    " values (%s, 'colorectal-oncology', true, '1.0'), (%s, 'endoscopy', false, '1.0')",
+                    (eid, eid),
+                )
+                conn.execute(
+                    "insert into app.news_event_sources (event_id, url, title, publisher, source_kind, published_at)"
+                    " values (%s, %s, 'TFDA 公告', 'TFDA', 'regulatory', '2026-11-26')",
+                    (eid, f"https://www.fda.gov.tw/{eid}"),
+                )
+
+            page = get(client, "/news-events", domain="colorectal-oncology")
+            schema("NewsEventPage").validate(page)
+            returned_ids = {item["id"] for item in page["items"]}
+            assert pub_id in returned_ids
+            assert draft_id not in returned_ids
+            assert withdrawn_id not in returned_ids
+            assert any(s["id"] == src_id and s["degraded"] is True for s in page["degradedSources"])
+
+            # Secondary domain filter also finds the published event.
+            sec_page = get(client, "/news-events", domain="endoscopy", category="regulatory", geography="taiwan")
+            assert any(item["id"] == pub_id for item in sec_page["items"])
+
+            detail = get(client, f"/news-events/{pub_id}")
+            schema("NewsEvent").validate(detail)
+            assert detail["primaryDomain"] == "colorectal-oncology"
+            assert detail["secondaryDomains"] == ["endoscopy"]
+            assert detail["effectiveDate"] == "2026-12-01"
+
+            # Draft and withdrawn events must return 404.
+            assert client.get(f"{API_PREFIX}/news-events/{draft_id}").status_code == 404
+            assert client.get(f"{API_PREFIX}/news-events/{withdrawn_id}").status_code == 404
+
+            # Search finds published event (including by secondary domain) and never leaks draft/withdrawn.
+            search_hits = all_pages(client, "/search", q="TFDA 核准大腸直腸癌")
+            assert any(
+                h["kind"] == "news_event" and h["id"] == pub_id and h["path"] == f"/news/events/{pub_id}/"
+                for h in search_hits
+            )
+            assert all(h["id"] != draft_id for h in all_pages(client, "/search", q="未發布草稿秘密事件"))
+            assert all(h["id"] != withdrawn_id for h in all_pages(client, "/search", q="已撤回事件"))
+        finally:
+            conn.execute("delete from app.news_events where id = any(%s)", ([pub_id, draft_id, withdrawn_id],))
+            conn.execute("delete from app.news_source_registry where id = %s", (src_id,))
+
+
 # --- topics --------------------------------------------------------------------------------------------------------
 
 
@@ -324,6 +411,10 @@ def test_a_paper_summary_is_returned_as_written(client: TestClient) -> None:
     [
         ("/papers/does-not-exist", 404, "not_found"),
         ("/news/does-not-exist", 404, "not_found"),
+        ("/news-events/does-not-exist", 404, "not_found"),
+        ("/news-events/INVALID_ID", 422, "validation_error"),
+        ("/news-events?domain=not-a-domain", 422, "validation_error"),
+        ("/news-events?category=not-a-category", 422, "validation_error"),
         ("/topics/not-a-topic", 422, "validation_error"),
         ("/papers?topic=not-a-topic", 422, "validation_error"),
         ("/domains/not-a-domain", 422, "validation_error"),

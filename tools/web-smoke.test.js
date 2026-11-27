@@ -56,6 +56,34 @@ const story = {
     { kind: 'interval', label: 'HR', point: 0.52, low: 0.39, high: 0.7 },
   ],
 };
+const newsEvent = {
+  id: 'smoke-event',
+  category: 'regulatory',
+  geography: 'taiwan',
+  evidenceStatus: 'approved',
+  reviewStatus: 'reviewed',
+  eventDate: '2026-11-26',
+  publishedAt: '2026-11-27',
+  effectiveDate: '2026-12-01',
+  firstPublishedAt: '2026-11-27T01:00:00Z',
+  updatedAt: '2026-11-27T01:00:00Z',
+  revisionNumber: 1,
+  headline: 'TFDA 核准新適應症公告',
+  whatHappened: 'TFDA 正式核准大腸直腸癌新治療適應症。',
+  whyItMatters: '為二線病患提供新的標靶選項。',
+  clinicalRelevance: '臨床處方需確認基因突變報告。',
+  evidenceLimitations: '目前尚未納入健保給付。',
+  correctionNote: null,
+  primaryDomain: 'colorectal-oncology',
+  secondaryDomains: ['endoscopy'],
+  sources: [{
+    url: 'https://www.fda.gov.tw/TC/newsContent.aspx?id=smoke',
+    title: 'TFDA 官方核准公告',
+    publisher: 'TFDA',
+    sourceKind: 'regulatory',
+    publishedAt: '2026-11-26',
+  }],
+};
 
 function mockApi() {
   const page = items => ({ items, nextCursor: null });
@@ -67,6 +95,8 @@ function mockApi() {
       '/api/v1/papers': page([slimPaper]),
       [`/api/v1/papers/by-slug/${paper.slug}`]: paper,
       '/api/v1/news': page([story]),
+      '/api/v1/news-events': { items: [newsEvent], nextCursor: null, degradedSources: [] },
+      [`/api/v1/news-events/${newsEvent.id}`]: newsEvent,
       '/api/v1/topics': page([topic, robotic]),
       [`/api/v1/news/${story.id}`]: story,
     };
@@ -195,7 +225,8 @@ test('Next.js start: reading pages render from the read API', { timeout: 90000 }
       '/mcrc/': ['BRAF V600E', '1</span>篇文獻'],
       '/robotic/': ['機器手臂 TME', '證據演進有 1 個時間點'],
       '/updates/': ['共 2 則', '評論', '社論標題'],
-      '/news/': ['二線存活延長', 'AI 新聞稿', 'RSS'],
+      '/news/': ['二線存活延長', 'AI 新聞稿', 'RSS', 'TFDA 核准新適應症公告', '全部專科'],
+      '/news/events/smoke-event/': ['TFDA 核准新適應症公告', '發生了什麼', '為什麼重要', '臨床關聯', '證據狀態與限制', 'TFDA 官方核准公告', '人工已審', '2026-12-01'],
       '/about/': ['內容怎麼產生', 'AI 新聞稿'],
       '/subscribe/': ['/rss.xml', '/feed/news.xml', '/feed/smoke-braf.xml', '/atom.xml', '/feed.json'],
     };
@@ -229,7 +260,7 @@ test('Next.js start: reading pages render from the read API', { timeout: 90000 }
     const paperHtml = await (await fetch(`${origin}/papers/smoke-beacon/`)).text();
     assert.ok(paperHtml.includes('<link rel="canonical" href="https://odafeng.github.io/crs-knowledge-base/papers/smoke-beacon/"/>'));
     assert.ok(paperHtml.includes('"@type":"MedicalWebPage"'));
-    for (const path of ['/papers/BEACON_2019/', '/papers/beacon-2019/', '/news/missing/', '/mcrc/robotic/', '/robotic/nope/', '/specialties/unknown/']) {
+    for (const path of ['/papers/BEACON_2019/', '/papers/beacon-2019/', '/news/missing/', '/news/events/missing/', '/mcrc/robotic/', '/robotic/nope/', '/specialties/unknown/']) {
       assert.equal((await fetch(origin + path)).status, 404, path);
     }
 
@@ -237,6 +268,10 @@ test('Next.js start: reading pages render from the read API', { timeout: 90000 }
     const page = await browser.newPage({ viewport: { width: 360, height: 812 } });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
+    await page.goto(`${origin}/news/`);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, '/news/ overflow');
+    await page.goto(`${origin}/news/events/smoke-event/`);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, '/news/events/smoke-event/ overflow');
     await page.goto(`${origin}/news/smoke-news/`);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.getByRole('link', { name: '看文獻整理' }).click();

@@ -62,6 +62,8 @@ def items(
     topics: Iterable[dict],
     forum: Iterable[dict] = (),
     paper_domains: dict[str, list[str]] | None = None,
+    news_events: Iterable[dict] = (),
+    domain_labels: dict[str, list[str]] | None = None,
 ) -> list[Item]:
     labels = {t["key"]: t["label"] for t in topics}
     topic_domains = {t["key"]: t.get("domain_labels") or [] for t in topics}
@@ -77,6 +79,26 @@ def items(
         title = "".join(n["headline"])
         body = [section.get("text", "") for section in n["body"]]
         found.append(Item("news", n["id"], f"/news/{n['id']}/", title, n["dek"], "\n".join([title, n["dek"], *body])))
+    for ev in news_events:
+        ev_domains: list[str] = []
+        primary = ev.get("primary_domain")
+        if primary and domain_labels:
+            ev_domains.extend(domain_labels.get(primary, ()))
+        for sec in ev.get("secondary_domains") or ():
+            if domain_labels:
+                ev_domains.extend(domain_labels.get(sec, ()))
+        parts = [
+            ev["headline"],
+            *ev_domains,
+            ev["what_happened"],
+            ev["why_it_matters"],
+            ev["clinical_relevance"],
+            ev["evidence_limitations"],
+        ]
+        text = "\n".join(s for s in parts if s)[:MAX_CHARS]
+        found.append(
+            Item("news_event", ev["id"], f"/news/events/{ev['id']}/", ev["headline"], ev["what_happened"][:160], text)
+        )
     for t in topics:
         for index, card in enumerate(t["standard_of_care"]):
             title = f"{t['label']}：{card['title']}"
@@ -175,6 +197,10 @@ def load(conn: Any) -> list[Item]:
         " from app.topics t left join app.domains d on d.slug = t.domain_slug order by t.key"
     )
 
+    domain_labels: dict[str, list[str]] = {}
+    for row in rows("select slug, label_zh, label_en from app.domains order by sort_order, slug"):
+        domain_labels[row["slug"]] = [row["label_zh"], row["label_en"]]
+
     return items(
         rows(
             "select id, slug, topic_key, year, journal, study_type, regimen, endpoint, result, bottom_line,"
@@ -187,6 +213,11 @@ def load(conn: Any) -> list[Item]:
             " from app.visible_forum_posts v left join app.forum_posts t on t.id = v.thread_id order by v.id"
         ),
         paper_domains=paper_domains,
+        news_events=rows(
+            "select id, headline, what_happened, why_it_matters, clinical_relevance, evidence_limitations,"
+            " primary_domain, secondary_domains from app.public_news_events order by id"
+        ),
+        domain_labels=domain_labels,
     )
 
 

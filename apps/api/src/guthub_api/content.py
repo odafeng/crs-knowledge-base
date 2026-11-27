@@ -7,7 +7,7 @@ at write time with the allowlist below (import_content.py) and plain-text column
 import base64
 import binascii
 import json
-from datetime import date
+from datetime import date, datetime
 from typing import Annotated, Any, Literal, LiteralString, get_args
 
 import nh3
@@ -70,7 +70,7 @@ def _page(response: Response, items: list[Any], offset: int, limit: int) -> dict
 # --- mapping -------------------------------------------------------------------------------------------------------
 
 
-def _iso(value: date | None) -> str | None:
+def _iso(value: date | datetime | None) -> str | None:
     return value.isoformat() if value else None
 
 
@@ -273,6 +273,96 @@ def get_news(news_id: str, db: Db, response: Response) -> dict[str, Any]:
     return _news(row)
 
 
+# --- news events (N6 #291, ADR-0031) -------------------------------------------------------------------------------
+
+type NewsEventCategory = Literal["regulatory", "guideline", "trial", "society", "device", "safety", "clinical"]
+type NewsEventGeography = Literal["taiwan", "us", "eu", "global"]
+type NewsEventId = Annotated[str, Path(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")]
+
+NEWS_EVENT_LIST_QUERY: LiteralString = (
+    "select * from app.public_news_events e"
+    " where (%(domain)s::text is null or e.primary_domain = %(domain)s or %(domain)s = any(e.secondary_domains))"
+    " and (%(category)s::text is null or e.category = %(category)s)"
+    " and (%(geography)s::text is null or e.geography = %(geography)s)"
+    " order by e.published_at desc, e.id limit %(limit)s offset %(offset)s"
+)
+
+
+def _news_event(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": row["id"],
+        "category": row["category"],
+        "geography": row["geography"],
+        "evidenceStatus": row["evidence_status"],
+        "reviewStatus": row["review_status"],
+        "eventDate": _iso(row["event_date"]),
+        "publishedAt": _iso(row["published_at"]),
+        "effectiveDate": _iso(row["effective_date"]),
+        "firstPublishedAt": _iso(row["first_published_at"]),
+        "updatedAt": _iso(row["updated_at"]),
+        "revisionNumber": row["revision_number"],
+        "headline": row["headline"],
+        "whatHappened": row["what_happened"],
+        "whyItMatters": row["why_it_matters"],
+        "clinicalRelevance": row["clinical_relevance"],
+        "evidenceLimitations": row["evidence_limitations"],
+        "correctionNote": row["correction_note"],
+        "primaryDomain": row["primary_domain"],
+        "secondaryDomains": list(row["secondary_domains"] or []),
+        "sources": list(row["sources"] or []),
+    }
+
+
+def _source_health(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "sourceType": row["source_type"],
+        "degraded": bool(row["degraded"]),
+        "lastSuccessAt": _iso(row["last_success_at"]),
+        "lastErrorAt": _iso(row["last_error_at"]),
+    }
+
+
+@router.get("/news-events")
+def list_news_events(
+    db: Db,
+    response: Response,
+    limit: Limit = 20,
+    cursor: Cursor = None,
+    domain: DomainSlug | None = None,
+    category: NewsEventCategory | None = None,
+    geography: NewsEventGeography | None = None,
+) -> dict[str, Any]:
+    offset = _offset(cursor)
+    rows = db.execute(
+        NEWS_EVENT_LIST_QUERY,
+        {
+            "domain": domain,
+            "category": category,
+            "geography": geography,
+            "limit": limit + 1,
+            "offset": offset,
+        },
+    ).fetchall()
+    degraded_rows = db.execute(
+        "select id, name, source_type, degraded, last_success_at, last_error_at"
+        " from app.public_news_source_health where degraded = true order by id"
+    ).fetchall()
+    page = _page(response, [_news_event(row) for row in rows], offset, limit)
+    page["degradedSources"] = [_source_health(row) for row in degraded_rows]
+    return page
+
+
+@router.get("/news-events/{event_id}")
+def get_news_event(event_id: NewsEventId, db: Db, response: Response) -> dict[str, Any]:
+    row = db.execute("select * from app.public_news_events where id = %s", (event_id,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="News event not found")
+    response.headers["Cache-Control"] = PUBLIC_CACHE
+    return _news_event(row)
+
+
 # --- topics --------------------------------------------------------------------------------------------------------
 
 TOPIC_QUERY: LiteralString = (
@@ -370,6 +460,22 @@ def get_domain(domain_slug: DomainSlug, db: Db, response: Response) -> dict[str,
 
 SEARCH_QUERY: LiteralString = """
 select * from (
+  select 'news_event' as kind, e.id, '/news/events/' || e.id || '/' as path,
+         e.headline as title,
+         '事件快訊 · ' || coalesce(pd.label_zh, e.category) as summary,
+         0 as rank, e.published_at as sort_date, e.id as sort_id
+  from app.public_news_events e
+  left join app.domains pd on pd.slug = e.primary_domain
+  where lower(
+          concat_ws(' ', e.headline, e.what_happened, e.why_it_matters, e.clinical_relevance, e.evidence_limitations)
+        ) like %(pattern)s
+     or (pd.slug is not null and (lower(pd.label_zh) like %(pattern)s or lower(pd.label_en) like %(pattern)s))
+     or exists (
+       select 1 from app.domains sd
+       where sd.slug = any(e.secondary_domains)
+         and (lower(sd.label_zh) like %(pattern)s or lower(sd.label_en) like %(pattern)s)
+     )
+  union all
   select 'news' as kind, n.id, '/news/' || n.id || '/' as path,
          (select string_agg(part, '' order by ord) from jsonb_array_elements_text(n.headline) with ordinality h(part, ord))
            as title,

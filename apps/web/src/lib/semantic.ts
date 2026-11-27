@@ -4,7 +4,7 @@
 import { apiUrl } from "./auth";
 
 export type SemanticHit = {
-  kind: "paper" | "news" | "card" | "forum";
+  kind: "paper" | "news" | "news_event" | "card" | "forum";
   path: string;
   title: string;
   snippet: string;
@@ -17,6 +17,7 @@ export type SemanticOutcome =
 export const KIND_LABEL: Record<SemanticHit["kind"], string> = {
   paper: "文獻",
   news: "消息",
+  news_event: "事件快訊",
   card: "治療整理",
   forum: "論壇",
 };
