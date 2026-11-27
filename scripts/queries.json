@@ -1,5 +1,9 @@
 {
   "mCRC-BRAF-V600E": {
+    "domain": "colorectal-oncology",
+    "subtopic": "mcrc-braf-v600e",
+    "rollout_batch": 0,
+    "shadow_only": false,
     "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (BRAF V600E OR encorafenib OR BEACON CRC OR BREAKWATER) AND (metastatic OR advanced)",
     "keywords": [
       "BRAF V600E",
@@ -22,6 +26,10 @@
     ]
   },
   "mCRC-KRAS-G12C": {
+    "domain": "colorectal-oncology",
+    "subtopic": "mcrc-kras-g12c",
+    "rollout_batch": 0,
+    "shadow_only": false,
     "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (KRAS G12C OR sotorasib OR adagrasib OR divarasib OR CodeBreaK OR KRYSTAL) AND (metastatic OR advanced)",
     "keywords": [
       "KRAS G12C",
@@ -45,6 +53,10 @@
     ]
   },
   "mCRC-MSI-H": {
+    "domain": "colorectal-oncology",
+    "subtopic": "mcrc-msi-h",
+    "rollout_batch": 0,
+    "shadow_only": false,
     "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (MSI-H OR dMMR OR mismatch repair deficient OR pembrolizumab OR nivolumab OR ipilimumab OR dostarlimab) AND (metastatic OR neoadjuvant)",
     "keywords": [
       "MSI-H",
@@ -68,6 +80,10 @@
     ]
   },
   "mCRC-HER2": {
+    "domain": "colorectal-oncology",
+    "subtopic": "mcrc-her2",
+    "rollout_batch": 0,
+    "shadow_only": false,
     "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (HER2 OR ERBB2 OR trastuzumab deruxtecan OR tucatinib OR pertuzumab OR T-DXd) AND (metastatic OR advanced)",
     "keywords": [
       "HER2",
@@ -91,6 +107,10 @@
     ]
   },
   "mCRC-RAS-wt": {
+    "domain": "colorectal-oncology",
+    "subtopic": "mcrc-ras-wt",
+    "rollout_batch": 0,
+    "shadow_only": false,
     "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (RAS wild-type OR cetuximab OR panitumumab OR anti-EGFR) AND (first-line OR maintenance OR rechallenge OR sidedness) AND (metastatic)",
     "keywords": [
       "RAS wild-type",
@@ -114,6 +134,10 @@
     ]
   },
   "generic-CRS": {
+    "domain": "colorectal-oncology",
+    "subtopic": "mcrc-later-line",
+    "rollout_batch": 0,
+    "shadow_only": false,
     "pubmed_query": "(colorectal cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (((fruquintinib OR Fruzaqla OR FRESCO OR regorafenib OR trifluridine OR TAS-102 OR lonsurf OR zanzalintinib OR STELLAR-303 OR bevacizumab) AND (metastatic OR advanced) AND (third-line OR refractory OR later-line OR salvage)) OR ((total neoadjuvant OR watch-and-wait OR nonoperative management OR ctDNA-guided OR circulating tumor DNA OR adjuvant chemotherapy) AND (randomized OR randomised OR phase 3 OR phase III OR phase 2 OR phase II OR guideline)))",
     "keywords": [
       "fruquintinib",
@@ -128,7 +152,8 @@
       "later-line",
       "total neoadjuvant",
       "ctDNA-guided",
-      "adjuvant chemotherapy"
+      "adjuvant chemotherapy",
+      "anal cancer"
     ],
     "rss_filter_terms": [
       "fruquintinib",
@@ -136,6 +161,12 @@
       "trifluridine",
       "TAS-102",
       "zanzalintinib",
+      "total neoadjuvant",
+      "watch-and-wait",
+      "nonoperative management",
+      "ctDNA",
+      "adjuvant chemotherapy",
+      "anal cancer",
       "colorectal"
     ],
     "conference_terms": [
@@ -148,6 +179,10 @@
     ]
   },
   "robotic-surgery": {
+    "domain": "minimally-invasive-surgery",
+    "subtopic": "robotic-mis",
+    "rollout_batch": 0,
+    "shadow_only": false,
     "pubmed_query": "(rectal cancer[MeSH] OR colon cancer[MeSH] OR colorectal neoplasms[MeSH] OR colorectal[tiab] OR colon[tiab] OR rectal[tiab]) AND (robotic[tiab] OR robot-assisted[tiab] OR laparoscopic[tiab] OR minimally invasive[tiab] OR TaTME[tiab] OR transanal[tiab]) AND (total mesorectal excision[tiab] OR TME[tiab] OR complete mesocolic excision[tiab] OR CME[tiab] OR intracorporeal[tiab] OR anastomotic leak[tiab] OR colorectal anastomosis[tiab] OR ileocolic anastomosis[tiab] OR sphincter-preserving[tiab] OR local excision[tiab])",
     "keywords": [
       "robotic",
@@ -189,6 +224,208 @@
       "intracorporeal anastomosis",
       "anastomotic leak colorectal",
       "minimally invasive rectal surgery"
+    ]
+  },
+  "perioperative-care-nutrition": {
+    "domain": "perioperative-care-nutrition",
+    "subtopic": "eras-prehab-nutrition",
+    "rollout_batch": 1,
+    "shadow_only": true,
+    "pubmed_query": "(colorectal surgery[MeSH] OR colorectal[tiab] OR colectomy[tiab] OR proctectomy[tiab] OR rectal resection[tiab]) AND (enhanced recovery[tiab] OR ERAS[tiab] OR prehabilitation[tiab] OR immunonutrition[tiab] OR sarcopenia[tiab] OR anastomotic leak[tiab] OR anastomotic leakage[tiab] OR stoma[tiab] OR ostomy[tiab] OR surgical site infection[tiab] OR oral antibiotics[tiab]) AND (randomized[tiab] OR randomised[tiab] OR trial[tiab] OR meta-analysis[tiab] OR guideline[tiab])",
+    "keywords": [
+      "ERAS",
+      "enhanced recovery",
+      "prehabilitation",
+      "immunonutrition",
+      "sarcopenia",
+      "anastomotic leak",
+      "stoma",
+      "ostomy",
+      "oral antibiotics",
+      "surgical site infection"
+    ],
+    "rss_filter_terms": [
+      "ERAS",
+      "enhanced recovery",
+      "prehabilitation",
+      "immunonutrition",
+      "sarcopenia",
+      "ostomy",
+      "ileostomy",
+      "colostomy",
+      "surgical site infection",
+      "mechanical bowel preparation"
+    ],
+    "conference_terms": [
+      "ERAS colorectal surgery",
+      "prehabilitation colorectal",
+      "anastomotic leakage prevention",
+      "stoma colorectal surgery"
+    ]
+  },
+  "endoscopy": {
+    "domain": "endoscopy",
+    "subtopic": "esd-emr-polypectomy",
+    "rollout_batch": 1,
+    "shadow_only": true,
+    "pubmed_query": "(colonoscopy[MeSH] OR colorectal[tiab] OR colonic[tiab] OR rectal[tiab]) AND (endoscopic submucosal dissection[tiab] OR ESD[tiab] OR endoscopic mucosal resection[tiab] OR EMR[tiab] OR full-thickness resection[tiab] OR EFTR[tiab] OR cold snare polypectomy[tiab] OR adenoma detection rate[tiab] OR computer-aided detection[tiab] OR CADe[tiab]) AND (randomized[tiab] OR randomised[tiab] OR trial[tiab] OR multicenter[tiab] OR guideline[tiab])",
+    "keywords": [
+      "colonoscopy",
+      "ESD",
+      "endoscopic submucosal dissection",
+      "EMR",
+      "EFTR",
+      "cold snare polypectomy",
+      "adenoma detection rate",
+      "CADe",
+      "polypectomy"
+    ],
+    "rss_filter_terms": [
+      "colonoscopy",
+      "ESD",
+      "endoscopic submucosal dissection",
+      "EMR",
+      "endoscopic mucosal resection",
+      "EFTR",
+      "polypectomy",
+      "adenoma detection",
+      "CADe"
+    ],
+    "conference_terms": [
+      "colorectal ESD",
+      "cold snare EMR",
+      "AI colonoscopy CADe",
+      "colorectal EFTR"
+    ]
+  },
+  "anorectal-diseases": {
+    "domain": "anorectal-diseases",
+    "subtopic": "anorectal-benign-procedures",
+    "rollout_batch": 2,
+    "shadow_only": true,
+    "pubmed_query": "(hemorrhoids[MeSH] OR rectal fistula[MeSH] OR fissure in ano[MeSH] OR pilonidal sinus[MeSH] OR hemorrhoid[tiab] OR haemorrhoid[tiab] OR anal fistula[tiab] OR fistula-in-ano[tiab] OR perianal fistula[tiab] OR anal fissure[tiab] OR perianal abscess[tiab] OR pilonidal[tiab]) AND (randomized[tiab] OR randomised[tiab] OR trial[tiab] OR meta-analysis[tiab] OR guideline[tiab])",
+    "keywords": [
+      "hemorrhoid",
+      "hemorrhoidectomy",
+      "anal fistula",
+      "fistula-in-ano",
+      "LIFT",
+      "anal fissure",
+      "perianal abscess",
+      "pilonidal"
+    ],
+    "rss_filter_terms": [
+      "hemorrhoid",
+      "haemorrhoid",
+      "hemorrhoidectomy",
+      "anal fistula",
+      "fistula-in-ano",
+      "perianal fistula",
+      "anal fissure",
+      "perianal abscess",
+      "pilonidal"
+    ],
+    "conference_terms": [
+      "hemorrhoid surgery trial",
+      "complex anal fistula",
+      "pilonidal sinus randomized"
+    ]
+  },
+  "benign-colorectal-diseases": {
+    "domain": "benign-colorectal-diseases",
+    "subtopic": "ibd-surgery",
+    "rollout_batch": 2,
+    "shadow_only": true,
+    "pubmed_query": "(inflammatory bowel diseases[MeSH] OR diverticulitis[MeSH] OR intestinal volvulus[MeSH] OR Crohn[tiab] OR ulcerative colitis[tiab] OR diverticulitis[tiab] OR sigmoid volvulus[tiab]) AND (surgery[tiab] OR surgical[tiab] OR resection[tiab] OR colectomy[tiab] OR Kono-S[tiab] OR ileal pouch[tiab] OR IPAA[tiab] OR Hartmann[tiab] OR strictureplasty[tiab]) AND (randomized[tiab] OR randomised[tiab] OR trial[tiab] OR multicenter[tiab] OR guideline[tiab])",
+    "keywords": [
+      "Crohn",
+      "ulcerative colitis",
+      "IBD surgery",
+      "Kono-S",
+      "IPAA",
+      "ileal pouch",
+      "diverticulitis",
+      "sigmoid volvulus",
+      "Hartmann"
+    ],
+    "rss_filter_terms": [
+      "Crohn",
+      "ulcerative colitis",
+      "Kono-S",
+      "ileal pouch",
+      "IPAA",
+      "diverticulitis",
+      "volvulus",
+      "strictureplasty"
+    ],
+    "conference_terms": [
+      "Crohn surgery Kono-S",
+      "ulcerative colitis IPAA",
+      "complicated diverticulitis trial"
+    ]
+  },
+  "pelvic-floor-functional": {
+    "domain": "pelvic-floor-functional",
+    "subtopic": "lars-incontinence",
+    "rollout_batch": 3,
+    "shadow_only": true,
+    "pubmed_query": "(fecal incontinence[MeSH] OR rectal prolapse[MeSH] OR constipation[MeSH] OR low anterior resection syndrome[tiab] OR LARS[tiab] OR fecal incontinence[tiab] OR faecal incontinence[tiab] OR rectal prolapse[tiab] OR obstructed defecation[tiab] OR ventral mesh rectopexy[tiab] OR sacral neuromodulation[tiab]) AND (randomized[tiab] OR randomised[tiab] OR trial[tiab] OR multicenter[tiab] OR guideline[tiab])",
+    "keywords": [
+      "low anterior resection syndrome",
+      "LARS",
+      "fecal incontinence",
+      "rectal prolapse",
+      "ventral mesh rectopexy",
+      "sacral neuromodulation",
+      "obstructed defecation",
+      "anorectal manometry"
+    ],
+    "rss_filter_terms": [
+      "low anterior resection syndrome",
+      "LARS",
+      "fecal incontinence",
+      "faecal incontinence",
+      "rectal prolapse",
+      "rectopexy",
+      "sacral neuromodulation",
+      "obstructed defecation"
+    ],
+    "conference_terms": [
+      "low anterior resection syndrome LARS",
+      "rectal prolapse rectopexy",
+      "sacral neuromodulation incontinence"
+    ]
+  },
+  "surgical-intelligence": {
+    "domain": "surgical-intelligence",
+    "subtopic": "surgical-risk-prediction",
+    "rollout_batch": 3,
+    "shadow_only": true,
+    "pubmed_query": "(colorectal[tiab] OR rectal[tiab] OR colon[tiab] OR colectomy[tiab] OR proctectomy[tiab]) AND (artificial intelligence[tiab] OR deep learning[tiab] OR machine learning[tiab] OR radiomics[tiab] OR pelvimetry[tiab] OR computer vision[tiab] OR phase recognition[tiab] OR surgical data science[tiab] OR foundation model[tiab]) AND (surgery[tiab] OR surgical[tiab] OR intraoperative[tiab] OR anastomotic[tiab] OR postoperative[tiab] OR resection[tiab]) AND (prospective[tiab] OR multicenter[tiab] OR external validation[tiab] OR randomized[tiab] OR randomised[tiab] OR trial[tiab])",
+    "keywords": [
+      "artificial intelligence",
+      "deep learning",
+      "machine learning",
+      "radiomics",
+      "pelvimetry",
+      "computer vision",
+      "phase recognition",
+      "surgical data science"
+    ],
+    "rss_filter_terms": [
+      "artificial intelligence",
+      "deep learning",
+      "machine learning",
+      "radiomics",
+      "pelvimetry",
+      "computer vision",
+      "phase recognition",
+      "surgical data science"
+    ],
+    "conference_terms": [
+      "surgical AI colorectal",
+      "deep learning pelvimetry rectal",
+      "intraoperative computer vision surgery"
     ]
   },
   "rss_feeds": [

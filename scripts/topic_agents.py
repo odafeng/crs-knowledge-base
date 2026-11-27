@@ -145,6 +145,54 @@ _TOPIC_CONTEXTS = {
 - 經肛門微創手術（TAMIS/TEM）與器官保留手術策略的前瞻性隨機證據
 - 新型手術機器人平台（Hugo、Versius、單孔 SP 等）與 AI 手術輔助的臨床數據
 - 注意：小型單中心回溯性病例系列或學習曲線報告（無對照或樣本數過小）應給予低分（score <= 2）""",
+    "perioperative-care-nutrition": """## 圍手術期照護與營養（Perioperative Care & Nutrition）
+- 涵蓋大腸直腸手術的 ERAS（Enhanced Recovery After Surgery）、術前預復健（prehabilitation）、免疫營養與肌少症（sarcopenia）、腸道準備與口服抗生素、手術部位感染（SSI）預防、多模式止痛、吻合口滲漏（anastomotic leakage）預防／處置與造口照護（stoma care）。
+- 關鍵問題：機械性清腸合併口服抗生素（MBP+OAB）最佳標準、高風險／肌少症患者多模式預復健是否改善術後併發症、保護性迴腸造口早期關閉時機、吻合口滲漏內視鏡真空治療（EndoVAC）與預防策略。
+
+值得注意的里程碑類型：
+- 多中心 Phase 3 RCT 或 ERAS Society / ASCRS / ESCP 重大指引更新
+- 明確改變圍術期常規（清腸、抗生素、預復健、營養介入、造口關閉或滲漏管理）的高品質隨機證據
+- 注意：單中心回溯性觀察或未設對照的流程回顧應給予低分（score <= 2）""",
+    "endoscopy": """## 內視鏡（Endoscopy）
+- 涵蓋大腸鏡檢查品質（ADR）、息肉切除（cold snare polypectomy）、EMR、ESD、內視鏡全層切除（EFTR）、內視鏡併發症（穿孔／延遲出血）處置與 AI 輔助內視鏡（CADe / CADx）。
+- 關鍵問題：大型無蒂鋸齒狀病變或早期 T1 大腸癌的 EMR vs ESD vs EFTR 適應症與長期復發率、冷圈套切除安全性、AI 輔助大腸鏡在真實世界是否真正降低 interval CRC。
+
+值得注意的里程碑類型：
+- ESGE / ASGE / USMSTF 大腸鏡與息肉處置重大指引更新
+- 比較 ESD / EMR / EFTR / 冷圈套或 AI 輔助內視鏡的多中心 RCT 與大型前瞻性長期追蹤
+- 注意：單中心技術案例報告或樣本數過小的非隨機系列應給予低分（score <= 2）""",
+    "anorectal-diseases": """## 肛門疾病（Anorectal Diseases）
+- 涵蓋痔瘡手術與微創處置（hemorrhoidectomy、HAL-RAR、雷射／結紮）、複雜性肛瘻（LIFT、advancement flap、VAAFT、seton、幹細胞療法）、慢性肛裂、肛門周圍膿瘍與藏毛竇（pilonidal sinus）。
+- 關鍵問題：複雜性肛瘻兼顧癒合率與括約肌功能保留的最佳術式、III–IV 度痔瘡長期復發與疼痛平衡、藏毛竇微創 vs 傳統皮瓣重建。
+
+值得注意的里程碑類型：
+- 比較手術或微創處置的頭對頭多中心 RCT（需有明確復發率與失禁／功能追蹤）
+- ASCRS / ESCP 良性肛門疾病臨床指引重大修訂
+- 注意：小型回溯性單臂病例系列或缺乏客觀追蹤終點的研究應給予低分（score <= 2）""",
+    "benign-colorectal-diseases": """## 良性大腸疾病（Benign Colorectal Diseases）
+- 涵蓋發炎性腸道疾病外科（克隆氏症腸切除、Kono-S 吻合、狹窄成形術；潰瘍性結腸炎全大腸切除與 IPAA 儲袋手術）、複雜性憩室炎、大腸扭轉與非腫瘤性大腸急症。
+- 關鍵問題：克隆氏症術後內視鏡復發預防（Kono-S vs 傳統吻合、早期手術 vs 生物製劑）、急性複雜性憩室炎一期吻合 vs Hartmann 手術、潰瘍性結腸炎急診手術時機與儲袋長期功能。
+
+值得注意的里程碑類型：
+- 改變 IBD 外科或急性憩室炎處置策略的多中心 RCT（如 LIR!C、LADIES、Kono-S 隨機試驗類型）
+- ECCO / ASCRS / ESCP 針對 IBD 外科與憩室疾病之最新指引
+- 注意：純內科生物製劑二期試驗（無外科決策意義）或單中心小規模回溯報告應給予低分（score <= 2）""",
+    "pelvic-floor-functional": """## 骨盆底與功能性疾病（Pelvic Floor & Functional Disorders）
+- 涵蓋低位前切除症候群（LARS）、糞便失禁（薦神經調節 SNM、括約肌修補）、直腸脫垂（腹側網片固定術 VMR、經會陰手術）、排便阻塞症候群（ODS）、頑固型便秘與肛門直腸生理檢查。
+- 關鍵問題：直腸癌術後 LARS 的預防與階梯式治療（經肛門灌洗、骨盆底復健、SNM）、直腸脫垂生物網片 vs 合成網片長期安全性與復發率。
+
+值得注意的里程碑類型：
+- 具標準化功能量表（LARS score、Wexner/Vaizey score）與足夠追蹤期之多中心 RCT
+- 國際骨盆底／LARS 共識或指引更新
+- 注意：未採用標準化量表或追蹤期過短的小型回溯系列應給予低分（score <= 2）""",
+    "surgical-intelligence": """## 外科智慧（Surgical Intelligence）
+- 涵蓋術前風險與手術難度預測模型、CT 骨盆測量（CT pelvimetry）、術中電腦視覺與階段辨識（phase recognition）、解剖結構即時輔助標註、外科資料科學與醫療 AI 臨床安全治理。
+- 關鍵問題：外科 AI 模型是否具備多中心外部驗證（external validation）或前瞻性臨床試驗效益、能否實際降低術中傷害或併發症，而非僅止於單一醫院內部 AUC。
+
+值得注意的里程碑類型：
+- 具多中心外部驗證、前瞻性臨床部署或隨機對照評估之外科 AI／影像辨識研究
+- 重要外科 AI 評估標準、安全框架或大型公開基準資料集
+- 注意：僅在單一中心資料集做回溯性交叉驗證、無外部驗證與臨床端點的純演算法論文應給予低分（score <= 2）""",
 }
 
 
@@ -155,7 +203,7 @@ def build_system_prompt(topic):
     existing_js = papers_js.get(topic, "")
     existing_metrics = metrics_js.get(topic, "")
 
-    return f"""你是一位大腸直腸癌（CRC）臨床研究專家 AI agent，專精於「{topic}」領域。
+    return f"""你是一位大腸直腸外科與結直腸腫瘤臨床研究專家 AI agent，專精於「{topic}」領域。
 你的角色是**主動研究**新發表的文獻，判斷其臨床重要性，並以該領域的既有知識脈絡解釋新發現的意義。
 
 ## 你擁有的工具

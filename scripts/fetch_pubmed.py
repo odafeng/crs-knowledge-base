@@ -152,20 +152,63 @@ CONFERENCE_SUPPLEMENT_QUERIES = [
 ]
 
 
-def fetch_pubmed(topic=None, reldate=PUBMED_RELDATE, dry_run=False):
-    """Fetch new papers from PubMed. Returns list of candidate dicts."""
+def _select_topics(
+    queries: dict,
+    *,
+    topic: str | None = None,
+    include_shadow: bool = False,
+    shadow_batch: int | None = None,
+) -> list[str]:
+    """Select active topic packs; shadow_only packs stay off unless explicitly requested."""
+    if topic:
+        return [topic]
+    selected: list[str] = []
+    for key, cfg in queries.items():
+        if key in ("rss_feeds", "conference_seasons") or not isinstance(cfg, dict):
+            continue
+        if shadow_batch is not None:
+            if cfg.get("rollout_batch") == shadow_batch:
+                selected.append(key)
+        elif include_shadow or not cfg.get("shadow_only", False):
+            selected.append(key)
+    return selected
+
+
+def _merge_domain(existing: dict, domain: str | None) -> None:
+    """Attach a cross-specialty domain onto an existing canonical candidate without duplicating the record."""
+    if not domain:
+        return
+    primary = existing.get("primary_domain")
+    secondaries = existing.setdefault("secondary_domains", [])
+    if not primary:
+        existing["primary_domain"] = domain
+    elif domain != primary and domain not in secondaries:
+        secondaries.append(domain)
+
+
+def fetch_pubmed(
+    topic=None,
+    reldate=PUBMED_RELDATE,
+    dry_run=False,
+    *,
+    include_shadow=False,
+    shadow_batch=None,
+):
+    """Fetch new papers from PubMed. Returns list of canonical candidate dicts (cross-specialty merged)."""
     queries = load_queries()
     tracked_dois, tracked_pmids = tracked_ids(load_tracked_dois())
 
-    topics = [topic] if topic else [t for t in queries if t not in ("rss_feeds", "conference_seasons")]
+    topics = _select_topics(queries, topic=topic, include_shadow=include_shadow, shadow_batch=shadow_batch)
     candidates = []
-    seen_pmids = set()
+    by_pmid: dict[str, dict] = {}
 
     for t in topics:
         if t not in queries:
             print(f"[WARN] Unknown topic: {t}", file=sys.stderr)
             continue
-        q = queries[t]["pubmed_query"]
+        cfg = queries[t]
+        q = cfg["pubmed_query"]
+        domain = cfg.get("domain")
         print(f"[PubMed] Searching topic={t}, reldate={reldate}d ...")
         pmids = esearch(q, reldate=reldate)
         print(f"  Found {len(pmids)} PMIDs")
@@ -179,10 +222,14 @@ def fetch_pubmed(topic=None, reldate=PUBMED_RELDATE, dry_run=False):
         for art in articles:
             if is_tracked(art, tracked_dois, tracked_pmids):
                 continue
-            if art["pmid"] in seen_pmids:
+            pmid = art["pmid"]
+            if pmid in by_pmid:
+                _merge_domain(by_pmid[pmid], domain)
                 continue
-            seen_pmids.add(art["pmid"])
             art["topic"] = t
+            art["primary_domain"] = domain
+            art["secondary_domains"] = []
+            by_pmid[pmid] = art
             candidates.append(art)
 
         print(f"  New candidates after dedup: {len([c for c in candidates if c['topic'] == t])}")
@@ -202,23 +249,29 @@ def fetch_pubmed(topic=None, reldate=PUBMED_RELDATE, dry_run=False):
 
             articles = efetch(pmids)
             for art in articles:
-                if art["pmid"] in seen_pmids:
+                pmid = art["pmid"]
+                if pmid in by_pmid:
                     continue
                 if is_tracked(art, tracked_dois, tracked_pmids):
                     continue
-                seen_pmids.add(art["pmid"])
 
                 # Assign topic by keyword matching from title/abstract
                 title_abs = (art.get("title", "") + " " + art.get("abstract", "")).lower()
-                for t in topics:
-                    if t not in queries:
-                        continue
-                    keywords = queries[t].get("keywords", [])
-                    if any(kw.lower() in title_abs for kw in keywords):
-                        art["topic"] = t
-                        art["source"] = "pubmed_supplement"
-                        candidates.append(art)
-                        break
+                matched_topics = [
+                    t
+                    for t in topics
+                    if t in queries and any(kw.lower() in title_abs for kw in queries[t].get("keywords", []))
+                ]
+                if matched_topics:
+                    first = matched_topics[0]
+                    art["topic"] = first
+                    art["source"] = "pubmed_supplement"
+                    art["primary_domain"] = queries[first].get("domain")
+                    art["secondary_domains"] = []
+                    for extra in matched_topics[1:]:
+                        _merge_domain(art, queries[extra].get("domain"))
+                    by_pmid[pmid] = art
+                    candidates.append(art)
 
             time.sleep(0.5)
 
@@ -228,7 +281,8 @@ def fetch_pubmed(topic=None, reldate=PUBMED_RELDATE, dry_run=False):
     if dry_run:
         print(f"\n[DRY RUN] Total candidates: {len(candidates)}")
         for c in candidates:
-            print(f"  [{c['topic']}] {c['title'][:80]}...")
+            sec = f" (+{','.join(c['secondary_domains'])})" if c.get("secondary_domains") else ""
+            print(f"  [{c['topic']}{sec}] {c['title'][:80]}...")
             print(f"    DOI: {c['doi']} | PMID: {c['pmid']}")
 
     return candidates
@@ -236,12 +290,20 @@ def fetch_pubmed(topic=None, reldate=PUBMED_RELDATE, dry_run=False):
 
 def main():
     parser = argparse.ArgumentParser(description="Fetch new papers from PubMed")
-    parser.add_argument("--topic", help="Single topic to search (default: all)")
+    parser.add_argument("--topic", help="Single topic to search (default: all active)")
     parser.add_argument("--reldate", type=int, default=PUBMED_RELDATE, help="Search window in days")
     parser.add_argument("--dry-run", action="store_true", help="Print results without saving")
+    parser.add_argument("--include-shadow", action="store_true", help="Include shadow_only specialty packs")
+    parser.add_argument("--shadow-batch", type=int, choices=[1, 2, 3], help="Run only a specific T4 shadow batch")
     args = parser.parse_args()
 
-    candidates = fetch_pubmed(topic=args.topic, reldate=args.reldate, dry_run=args.dry_run)
+    candidates = fetch_pubmed(
+        topic=args.topic,
+        reldate=args.reldate,
+        dry_run=args.dry_run,
+        include_shadow=args.include_shadow,
+        shadow_batch=args.shadow_batch,
+    )
 
     if not args.dry_run:
         json.dump(candidates, sys.stdout, indent=2, ensure_ascii=False)

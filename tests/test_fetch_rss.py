@@ -152,10 +152,12 @@ class TestJournalRouting:
                 "Indocyanine green fluorescence angiography to prevent anastomotic leak in rectal surgery",
                 "robotic-surgery",
             ),
-            # No specific term: the catch-all topic, not whichever topic is listed first.
+            # Explicit generic-CRS oncology terms (no longer blind catch-all fallback, T4 #285).
             ("Adjuvant chemotherapy duration in stage III colorectal cancer", "generic-CRS"),
             # "treatment" contains "tme"; it must not read as the robotic term TME.
             ("Total neoadjuvant treatment for rectal cancer", "generic-CRS"),
+            # Unmatched general colorectal paper returns '' rather than being dumped into generic-CRS.
+            ("Economic burden of screening outreach in community clinics", ""),
         ],
     )
     def test_assignment(self, topics, title, expected):
