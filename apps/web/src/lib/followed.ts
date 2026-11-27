@@ -8,16 +8,23 @@ export type FollowRow = {
   date: string;
   topic: string;
   topicLabel: string;
+  domains?: string[];
 };
 
 export function followedUpdates(
   rows: FollowRow[],
   topics: string[],
   limit: number,
+  domains: string[] = [],
 ): FollowRow[] {
-  const chosen = new Set(topics);
+  const chosenTopics = new Set(topics);
+  const chosenDomains = new Set(domains);
   return rows
-    .filter((row) => chosen.has(row.topic))
+    .filter(
+      (row) =>
+        chosenTopics.has(row.topic) ||
+        (row.domains ?? []).some((d) => chosenDomains.has(d)),
+    )
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, limit);
 }
@@ -35,5 +42,21 @@ export async function saveTopics(
   return apiFetch("/me/topics", token, {
     method: "PUT",
     body: JSON.stringify({ topics }),
+  }).catch(() => null);
+}
+
+export async function loadDomains(token: string): Promise<string[] | null> {
+  const response = await apiFetch("/me/domains", token).catch(() => null);
+  if (!response?.ok) return null;
+  return ((await response.json()) as { domains: string[] }).domains;
+}
+
+export async function saveDomains(
+  token: string,
+  domains: string[],
+): Promise<Response | null> {
+  return apiFetch("/me/domains", token, {
+    method: "PUT",
+    body: JSON.stringify({ domains }),
   }).catch(() => null);
 }

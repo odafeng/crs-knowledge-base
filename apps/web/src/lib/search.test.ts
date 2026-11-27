@@ -30,20 +30,24 @@ const news = {
 describe("searchIndex", () => {
   const index = searchIndex([paper], [news], [topic]);
 
-  it("matches sitegen's search.json entries: news first, then papers", () => {
+  it("matches sitegen's search.json entries with specialty domain labels: news first, then papers", () => {
     expect(index).toEqual([
       {
         path: "/news/niche2-five-year/",
         title: "NICHE-2 五年追蹤",
         meta: "最新消息 · MSI-H / dMMR",
-        text: "niche-2 五年追蹤 無復發 dostarlimab 對照",
+        text: "niche-2 五年追蹤 無復發 大腸直腸腫瘤 colorectal oncology dostarlimab 對照",
       },
       {
         path: "/papers/niche2/",
         title: "Nivolumab + Ipilimumab（NEJM 2024）",
         meta: "MSI-H / dMMR · Phase 2",
-        text: "niche2 nivolumab + ipilimumab nejm 2024 msi-h / dmmr phase 2 major pathologic response 95% mpr neoadjuvant ici works",
+        text: "niche2 nivolumab + ipilimumab nejm 2024 msi-h / dmmr 大腸直腸腫瘤 colorectal oncology phase 2 major pathologic response 95% mpr neoadjuvant ici works",
       },
+    ]);
+    expect(findEntries(index, "大腸直腸腫瘤")?.map((e) => e.path)).toEqual([
+      "/news/niche2-five-year/",
+      "/papers/niche2/",
     ]);
   });
 });

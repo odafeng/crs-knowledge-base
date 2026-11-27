@@ -2,11 +2,13 @@
 // sitemap.py. Feed IDs must never change: readers would see every old item as new.
 import type { Metadata } from "next";
 import {
+  byDomain,
   isUnreviewed,
   NEWS_FEED,
   feedPath,
   newsPath,
   paperPath,
+  specialtyPath,
   updates,
   type Crumbs,
   type News,
@@ -14,6 +16,7 @@ import {
   type Topic,
   type Update,
 } from "./site";
+import { TAXONOMY_DOMAINS } from "./taxonomy.generated";
 
 export const SITE_NAME = "GutHub";
 export const TAGLINE = "大腸直腸外科實證更新";
@@ -428,6 +431,13 @@ export function sitemapPages(
     ["/robotic/", roboticReviewed],
     ["/subscribe/", null],
     ["/about/", null],
+    ...TAXONOMY_DOMAINS.map((domain): [string, string | null] => {
+      const reviewed = byDomain(papers, domain.slug)
+        .map((p) => p.reviewedAt)
+        .sort()
+        .at(-1);
+      return [specialtyPath(domain.slug), reviewed ?? null];
+    }),
     ...mcrc.map((topic): [string, string | null] => {
       const reviewed = papers
         .filter((p) => p.topic === topic.key)

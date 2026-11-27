@@ -374,13 +374,28 @@ select * from (
          (select string_agg(part, '' order by ord) from jsonb_array_elements_text(n.headline) with ordinality h(part, ord))
            as title,
          '最新消息 · ' || t.label as summary, 0 as rank, n.published_at as sort_date, n.id as sort_id
-  from app.public_news n join app.papers p on p.id = n.paper_id join app.topics t on t.key = p.topic_key
+  from app.public_news n
+  join app.papers p on p.id = n.paper_id
+  join app.topics t on t.key = p.topic_key
+  left join app.domains td on td.slug = t.domain_slug
   where n.search_text like %(pattern)s
+     or (td.slug is not null and (lower(td.label_zh) like %(pattern)s or lower(td.label_en) like %(pattern)s))
+     or exists (
+       select 1 from app.paper_domains pd join app.domains d on d.slug = pd.domain_slug
+       where pd.paper_id = p.id and (lower(d.label_zh) like %(pattern)s or lower(d.label_en) like %(pattern)s)
+     )
   union all
   select 'paper', p.id, '/papers/' || p.slug || '/', p.regimen || '（' || p.journal || ' ' || p.year || '）',
          t.label || ' · ' || p.study_type, 1, make_date(p.year, 1, 1), p.id
-  from app.public_papers p join app.topics t on t.key = p.topic_key
+  from app.public_papers p
+  join app.topics t on t.key = p.topic_key
+  left join app.domains td on td.slug = t.domain_slug
   where p.search_text like %(pattern)s
+     or (td.slug is not null and (lower(td.label_zh) like %(pattern)s or lower(td.label_en) like %(pattern)s))
+     or exists (
+       select 1 from app.paper_domains pd join app.domains d on d.slug = pd.domain_slug
+       where pd.paper_id = p.id and (lower(d.label_zh) like %(pattern)s or lower(d.label_en) like %(pattern)s)
+     )
 ) hits
 order by rank, sort_date desc, sort_id
 limit %(limit)s offset %(offset)s

@@ -247,6 +247,11 @@ def test_search_finds_papers_and_news_with_site_paths(client: TestClient) -> Non
         h for h in news_hits if h["id"] == story["id"]
     ).items()
 
+    domain_hits = all_pages(client, "/search", q="大腸直腸腫瘤")
+    assert any(h["kind"] == "paper" and h["id"] == paper["id"] for h in domain_hits)
+    en_hits = all_pages(client, "/search", q="Colorectal Oncology")
+    assert any(h["kind"] == "paper" and h["id"] == paper["id"] for h in en_hits)
+
 
 def test_search_treats_wildcards_literally(client: TestClient) -> None:
     assert get(client, "/search", q="%%")["items"] == []

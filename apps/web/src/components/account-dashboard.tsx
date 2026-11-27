@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAccount, type Account } from "@/components/account";
 import { Avatar } from "@/components/avatar";
 import { DisplaySettings } from "@/components/display-settings";
-import { TopicChoices } from "@/components/followed-topics";
+import { DomainChoices, TopicChoices } from "@/components/followed-topics";
 import { FollowedPapers } from "@/components/paper-follows";
 import { PushToggle } from "@/components/push-toggle";
 import { Icon } from "@/components/reading";
@@ -316,6 +316,7 @@ function SignedInDashboard({
 
           <FollowedPapers papers={papers} onChange={setFollows} />
           <TopicChoices topics={topics} onChange={setFollowedTopics} />
+          <DomainChoices />
         </div>
 
         <aside className="dash-grid__side" aria-label="會員資格與偏好設定">

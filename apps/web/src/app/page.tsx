@@ -27,7 +27,9 @@ import { getDailyPick, listNews, listPapers, listTopics } from "@/lib/content";
 import { buildRecentTicker } from "@/lib/daily";
 import { drugCounts, drugPath } from "@/lib/drugs";
 import {
+  byDomain,
   byTopic,
+  domainsOfPaper,
   formatWeekSummary,
   isUnreviewed,
   latestCoverage,
@@ -35,11 +37,13 @@ import {
   paperPath,
   plateKicker,
   ROBOTIC_PAGES,
+  specialtyPath,
   topicPath,
   updates,
   weekStats,
   HOME,
 } from "@/lib/site";
+import { TAXONOMY_DOMAINS } from "@/lib/taxonomy.generated";
 
 const longDate = (iso: string) => {
   const [year, month, day] = iso.split("-").map(Number);
@@ -195,6 +199,7 @@ export default async function Home() {
               date: update.date,
               topic: update.paper.topic,
               topicLabel: topic?.label ?? "",
+              domains: domainsOfPaper(update.paper),
             };
           })}
         />
@@ -224,10 +229,20 @@ export default async function Home() {
             <section className="rail-section" aria-labelledby="topics-title">
               <div className="rail-head">
                 <h2 className="rail-title" id="topics-title">
-                  主題
+                  依專科瀏覽
                 </h2>
                 <Link href="/topics/">全部主題</Link>
               </div>
+              <TopicMap
+                label="八大專科"
+                unit="篇"
+                rows={TAXONOMY_DOMAINS.map((domain) => ({
+                  key: domain.slug,
+                  href: specialtyPath(domain.slug),
+                  name: domain.labelZh,
+                  count: byDomain(papers, domain.slug).length,
+                }))}
+              />
               <TopicMap
                 label="mCRC 治療"
                 unit="篇"

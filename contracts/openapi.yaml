@@ -980,7 +980,7 @@ paths:
       parameters:
       - {$ref: '#/components/parameters/Limit'}
       - {$ref: '#/components/parameters/Cursor'}
-      - {name: topic, in: query, schema: {$ref: '#/components/schemas/TopicKey'}}
+      - {name: topic, in: query, schema: {$ref: '#/components/schemas/ForumTopicKey'}}
       - {name: paperId, in: query, schema: {type: string, minLength: 1}}
       description: 'Members only: anyone who is not a verified colorectal surgeon gets 404, signed in or not, so nothing reveals whether a thread exists. Set Cache-Control: private, no-store.'
     post:
@@ -1370,6 +1370,11 @@ components:
     TopicKey:
       type: string
       enum: [mCRC-BRAF-V600E, mCRC-KRAS-G12C, mCRC-MSI-H, mCRC-HER2, mCRC-RAS-wt, generic-CRS, robotic-surgery]
+    ForumTopicKey:
+      type: string
+      enum: [mCRC-BRAF-V600E, mCRC-KRAS-G12C, mCRC-MSI-H, mCRC-HER2, mCRC-RAS-wt, generic-CRS, robotic-surgery,
+        anorectal-diseases, benign-colorectal-diseases, pelvic-floor-functional, perioperative-care-nutrition,
+        endoscopy, surgical-intelligence]
     DomainSlug:
       type: string
       enum: [colorectal-oncology, anorectal-diseases, benign-colorectal-diseases, pelvic-floor-functional,
@@ -2165,7 +2170,7 @@ components:
         title: {type: string, minLength: 1}
         topicKey:
           oneOf:
-          - {$ref: '#/components/schemas/TopicKey'}
+          - {$ref: '#/components/schemas/ForumTopicKey'}
           - {type: 'null'}
         paperId:
           type: [string, 'null']
@@ -2215,7 +2220,7 @@ components:
         bodyPreview: {type: string}
         topicKey:
           oneOf:
-          - {$ref: '#/components/schemas/TopicKey'}
+          - {$ref: '#/components/schemas/ForumTopicKey'}
           - {type: 'null'}
         paperId:
           type: [string, 'null']
@@ -2283,7 +2288,7 @@ components:
             mapping for the author and moderators (ADR-0017).'}
         topicKey:
           oneOf:
-          - {$ref: '#/components/schemas/TopicKey'}
+          - {$ref: '#/components/schemas/ForumTopicKey'}
           - {type: 'null'}
         paperId:
           type: [string, 'null']

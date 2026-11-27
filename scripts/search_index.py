@@ -57,15 +57,21 @@ def plain(html: str) -> str:
 
 
 def items(
-    papers: Iterable[dict], news: Iterable[dict], topics: Iterable[dict], forum: Iterable[dict] = ()
+    papers: Iterable[dict],
+    news: Iterable[dict],
+    topics: Iterable[dict],
+    forum: Iterable[dict] = (),
+    paper_domains: dict[str, list[str]] | None = None,
 ) -> list[Item]:
     labels = {t["key"]: t["label"] for t in topics}
+    topic_domains = {t["key"]: t.get("domain_labels") or [] for t in topics}
     found: list[Item] = []
     for p in papers:
         title = f"{unescape(p['regimen'])}（{unescape(p['journal'])} {p['year']}）"
-        summary = [title, labels.get(p["topic_key"], ""), p["study_type"], unescape(p["endpoint"]),
+        domain_terms = (paper_domains or {}).get(p["id"]) or topic_domains.get(p["topic_key"]) or []
+        summary = [title, labels.get(p["topic_key"], ""), *domain_terms, p["study_type"], unescape(p["endpoint"]),
                    unescape(p["result"]), unescape(p["bottom_line"])]  # fmt: skip
-        text = "\n".join([*summary, plain(p["detail_html"])])[:MAX_CHARS]
+        text = "\n".join([*(s for s in summary if s), plain(p["detail_html"])])[:MAX_CHARS]
         found.append(Item("paper", p["id"], f"/papers/{p['slug']}/", title, unescape(p["bottom_line"]), text))
     for n in news:
         title = "".join(n["headline"])
@@ -155,17 +161,32 @@ def load(conn: Any) -> list[Item]:
         names = [c.name for c in cursor.description]
         return [dict(zip(names, row, strict=True)) for row in cursor.fetchall()]
 
+    domain_rows = rows(
+        "select pd.paper_id, d.label_zh, d.label_en from app.paper_domains pd"
+        " join app.domains d on d.slug = pd.domain_slug order by pd.paper_id, pd.is_primary desc, d.sort_order"
+    )
+    paper_domains: dict[str, list[str]] = {}
+    for row in domain_rows:
+        paper_domains.setdefault(row["paper_id"], []).extend([row["label_zh"], row["label_en"]])
+
+    topic_rows = rows(
+        "select t.key, t.slug, t.label, t.standard_of_care, t.robotic_sections,"
+        " coalesce(array_remove(array[d.label_zh, d.label_en], null), '{}'::text[]) as domain_labels"
+        " from app.topics t left join app.domains d on d.slug = t.domain_slug order by t.key"
+    )
+
     return items(
         rows(
             "select id, slug, topic_key, year, journal, study_type, regimen, endpoint, result, bottom_line,"
             " detail_html from app.public_papers order by id"
         ),
         rows("select id, headline, dek, body from app.public_news order by id"),
-        rows("select key, slug, label, standard_of_care, robotic_sections from app.topics order by key"),
+        topic_rows,
         rows(
             "select v.id, coalesce(v.thread_id, v.id) as thread, coalesce(v.title, t.title) as title, v.body"
             " from app.visible_forum_posts v left join app.forum_posts t on t.id = v.thread_id order by v.id"
         ),
+        paper_domains=paper_domains,
     )
 
 
