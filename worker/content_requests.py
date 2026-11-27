@@ -45,6 +45,7 @@ from revalidate_site import revalidate_site  # noqa: E402
 ACCEPTED = "accepted"
 UNPUBLISH = "unpublish-request"
 UNPUBLISH_TITLE = "[撤下] "
+IGNORED_INTAKE_LABELS = ("news-candidate", "source:chatgpt")
 ACTIONS_BOT = "github-actions[bot]"
 TAIPEI = ZoneInfo("Asia/Taipei")
 
@@ -65,6 +66,11 @@ def _labelled(issue: Issue, label: str) -> bool:
     return any(item["name"] == label for item in issue["labels"])
 
 
+def _is_news_intake(issue: Issue) -> bool:
+    """Defensive guard (ADR-0031, N1 #286): never route ChatGPT/news intake issues through content_requests."""
+    return any(_labelled(issue, label) for label in IGNORED_INTAKE_LABELS)
+
+
 def pending(issues: list[Issue], owner: str) -> tuple[list[Issue], list[Issue]]:
     """(accept requests, unpublish requests), oldest first; anything not opened by the pipeline is ignored."""
     issues = sorted(issues, key=lambda issue: issue["number"])
@@ -72,12 +78,18 @@ def pending(issues: list[Issue], owner: str) -> tuple[list[Issue], list[Issue]]:
         i
         for i in issues
         # A digest's picks need classifying, which only Paper Watch can do (#218)
-        if _labelled(i, ACCEPTED) and i["user"]["login"] in (ACTIONS_BOT, owner) and not is_digest(i.get("body"))
+        if not _is_news_intake(i)
+        and _labelled(i, ACCEPTED)
+        and i["user"]["login"] in (ACTIONS_BOT, owner)
+        and not is_digest(i.get("body"))
     ]
     unpublishes = [
         i
         for i in issues
-        if _labelled(i, UNPUBLISH) and i["user"]["login"] == ACTIONS_BOT and i["title"].startswith(UNPUBLISH_TITLE)
+        if not _is_news_intake(i)
+        and _labelled(i, UNPUBLISH)
+        and i["user"]["login"] == ACTIONS_BOT
+        and i["title"].startswith(UNPUBLISH_TITLE)
     ]
     return accepts, unpublishes
 
