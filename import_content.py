@@ -129,7 +129,17 @@ def _detail(root: Path, filename: str | None) -> str:
 
 # Columns per table, in insert order. JSON columns are wrapped as jsonb when written.
 COLUMNS: dict[str, tuple[str, ...]] = {
-    "topics": ("key", "slug", "label", "title", "standard_of_care", "soc_title", "robotic_sections", "metrics"),
+    "topics": (
+        "key",
+        "slug",
+        "label",
+        "title",
+        "domain_slug",
+        "standard_of_care",
+        "soc_title",
+        "robotic_sections",
+        "metrics",
+    ),
     "papers": (
         "id",
         "slug",
@@ -254,6 +264,7 @@ def build_rows(root: Path = ROOT) -> Rows:
                 "slug": topic.slug,
                 "label": topic.label,
                 "title": topic.title,
+                "domain_slug": "colorectal-oncology",
                 "standard_of_care": cards,
                 "soc_title": soc.get("title"),
                 "robotic_sections": [],
@@ -292,6 +303,7 @@ def build_rows(root: Path = ROOT) -> Rows:
     rows.tables["topics"].append(
         {
             **ROBOTIC_TOPIC,
+            "domain_slug": "minimally-invasive-surgery",
             "standard_of_care": [],
             "soc_title": None,
             "robotic_sections": robotic_sections,

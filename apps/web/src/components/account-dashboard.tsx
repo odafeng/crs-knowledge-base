@@ -315,8 +315,8 @@ function SignedInDashboard({
           </section>
 
           <FollowedPapers papers={papers} onChange={setFollows} />
-          <DomainChoices />
           <TopicChoices topics={topics} onChange={setFollowedTopics} />
+          <DomainChoices />
         </div>
 
         <aside className="dash-grid__side" aria-label="會員資格與偏好設定">
