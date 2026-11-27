@@ -3,9 +3,11 @@ import { ApiError } from "./api";
 import {
   CONTENT_TAG,
   CONTENT_TAGS,
+  getDomain,
   getNews,
   getPaperBySlug,
   listAll,
+  listDomains,
   listPapers,
   REVALIDATE_SECONDS,
 } from "./content";
@@ -190,5 +192,27 @@ describe("server content reads", () => {
     vi.stubEnv("GUTHUB_API_URL", "");
     await expect(getNews("x")).rejects.toThrow("GUTHUB_API_URL is not set");
     vi.unstubAllEnvs();
+  });
+
+  it("reads specialty domains from the API and falls back to the bundled registry on older APIs", async () => {
+    const legacyApi = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json(
+        {
+          error: { code: "not_found", message: "Not Found", requestId: "r" },
+        },
+        { status: 404 },
+      ),
+    );
+    const domains = await listDomains({ fetcher: legacyApi, baseUrl });
+    expect(domains).toHaveLength(8);
+    expect(domains[0].slug).toBe("colorectal-oncology");
+    const single = await getDomain("endoscopy", {
+      fetcher: legacyApi,
+      baseUrl,
+    });
+    expect(single?.labelZh).toBe("內視鏡");
+    await expect(
+      getDomain("not-a-domain", { fetcher: legacyApi, baseUrl }),
+    ).resolves.toBeNull();
   });
 });

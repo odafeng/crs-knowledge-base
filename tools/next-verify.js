@@ -12,7 +12,7 @@ const PAGES = [
   'robotic/tme/', 'robotic/anastomosis/', 'subscribe/', 'about/',
 ];
 // Pages added by the Next.js site (D1 #67+), checked as a visitor sees them.
-const NEXT_ONLY = ['login/', 'account/', 'auth/callback/', 'admin/comments/', 'tumor-board/', 'tumor-board/ras-wt/', 'privacy/', 'drugs/', 'drugs/regorafenib/'];
+const NEXT_ONLY = ['login/', 'account/', 'auth/callback/', 'admin/comments/', 'tumor-board/', 'tumor-board/ras-wt/', 'privacy/', 'drugs/', 'drugs/regorafenib/', 'specialties/colorectal-oncology/', 'specialties/endoscopy/'];
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 
 (async () => {

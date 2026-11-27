@@ -1007,6 +1007,8 @@ export interface components {
         /** @enum {string} */
         TopicKey: "mCRC-BRAF-V600E" | "mCRC-KRAS-G12C" | "mCRC-MSI-H" | "mCRC-HER2" | "mCRC-RAS-wt" | "generic-CRS" | "robotic-surgery";
         /** @enum {string} */
+        ForumTopicKey: "mCRC-BRAF-V600E" | "mCRC-KRAS-G12C" | "mCRC-MSI-H" | "mCRC-HER2" | "mCRC-RAS-wt" | "generic-CRS" | "robotic-surgery" | "anorectal-diseases" | "benign-colorectal-diseases" | "pelvic-floor-functional" | "perioperative-care-nutrition" | "endoscopy" | "surgical-intelligence";
+        /** @enum {string} */
         DomainSlug: "colorectal-oncology" | "anorectal-diseases" | "benign-colorectal-diseases" | "pelvic-floor-functional" | "minimally-invasive-surgery" | "perioperative-care-nutrition" | "endoscopy" | "surgical-intelligence";
         SubtopicRef: {
             id: string;
@@ -1517,7 +1519,7 @@ export interface components {
             mine: boolean;
             threadId: null;
             title: string;
-            topicKey: components["schemas"]["TopicKey"] | null;
+            topicKey: components["schemas"]["ForumTopicKey"] | null;
             /** @description The linked paper while it is public; null once it is withdrawn. */
             paperId: string | null;
             pinned: boolean;
@@ -1538,7 +1540,7 @@ export interface components {
             id: string;
             title: string;
             bodyPreview?: string;
-            topicKey: components["schemas"]["TopicKey"] | null;
+            topicKey: components["schemas"]["ForumTopicKey"] | null;
             paperId: string | null;
             anonymous: boolean;
             displayName: string | null;
@@ -1573,7 +1575,7 @@ export interface components {
             body: string;
             /** @description true hides the name from other members; the platform keeps the author mapping for the author and moderators (ADR-0017). */
             anonymous: boolean;
-            topicKey?: components["schemas"]["TopicKey"] | null;
+            topicKey?: components["schemas"]["ForumTopicKey"] | null;
             /** @description A public paper; anything else is 422. */
             paperId?: string | null;
         };
@@ -3075,7 +3077,7 @@ export interface operations {
             query?: {
                 limit?: components["parameters"]["Limit"];
                 cursor?: components["parameters"]["Cursor"];
-                topic?: components["schemas"]["TopicKey"];
+                topic?: components["schemas"]["ForumTopicKey"];
                 paperId?: string;
             };
             header?: never;

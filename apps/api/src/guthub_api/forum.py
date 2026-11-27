@@ -35,6 +35,16 @@ from guthub_api.content import TopicKey
 from guthub_api.db import Conn, get_conn
 from guthub_api.settings import Settings
 
+type ForumDomainKey = Literal[
+    "anorectal-diseases",
+    "benign-colorectal-diseases",
+    "pelvic-floor-functional",
+    "perioperative-care-nutrition",
+    "endoscopy",
+    "surgical-intelligence",
+]
+type ForumTopicKey = TopicKey | ForumDomainKey
+
 BODY_MAX = 5000  # longer than a paper comment: a case discussion needs room. The database allows up to 20000.
 TITLE_MAX = 120
 NOT_FOUND = HTTPException(status_code=404, detail="Not found")
@@ -109,7 +119,7 @@ class ThreadCreate(BaseModel):
     title: Title
     body: Body
     anonymous: bool
-    topic_key: TopicKey | None = Field(default=None, alias="topicKey")
+    topic_key: ForumTopicKey | None = Field(default=None, alias="topicKey")
     paper_id: Annotated[str, StringConstraints(min_length=1)] | None = Field(default=None, alias="paperId")
 
 
@@ -331,7 +341,7 @@ def list_threads(
     response: Response,
     limit: Limit = 20,
     cursor: Cursor = None,
-    topic: TopicKey | None = None,
+    topic: ForumTopicKey | None = None,
     paper_id: Annotated[str | None, Query(alias="paperId", min_length=1)] = None,
 ) -> dict[str, Any]:
     """Visible threads, newest first. Pinned threads come apart, on the first page only, so paging stays stable."""

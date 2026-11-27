@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   areaOf,
+  byDomain,
   byTopic,
   cleanPaperDetailHtml,
+  domainsOfPaper,
   extractPmid,
   feedList,
   formatWeekSummary,
+  paperPath,
   plateKicker,
+  specialtyPath,
   TABS,
   topicPath,
   updates,
@@ -380,5 +384,35 @@ describe("navigation, reading log and feeds mirrored from sitegen", () => {
     ]);
     expect(topicPath({ slug: "msi-h" })).toBe("/mcrc/msi-h/");
     expect(topicPath({ slug: "robotic" })).toBe("/robotic/");
+    expect(specialtyPath("endoscopy")).toBe("/specialties/endoscopy/");
+    expect(areaOf("/specialties/endoscopy/")).toBe("topics");
+  });
+
+  it("resolves cross-specialty papers onto every assigned domain with one canonical URL", () => {
+    const cross: Paper = {
+      ...paper("ai-tme", "robotic-surgery", 2026),
+      primaryDomain: "minimally-invasive-surgery",
+      secondaryDomains: [
+        "surgical-intelligence",
+        "perioperative-care-nutrition",
+      ],
+    };
+    const legacy = paper("legacy-msi", "mCRC-MSI-H", 2025);
+    expect(domainsOfPaper(cross)).toEqual([
+      "minimally-invasive-surgery",
+      "surgical-intelligence",
+      "perioperative-care-nutrition",
+    ]);
+    expect(domainsOfPaper(legacy)).toEqual(["colorectal-oncology"]);
+    expect(
+      byDomain([cross, legacy], "surgical-intelligence").map((p) =>
+        paperPath(p),
+      ),
+    ).toEqual(["/papers/ai-tme/"]);
+    expect(
+      byDomain([cross, legacy], "minimally-invasive-surgery").map((p) =>
+        paperPath(p),
+      ),
+    ).toEqual(["/papers/ai-tme/"]);
   });
 });

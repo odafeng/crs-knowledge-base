@@ -493,3 +493,19 @@ def test_thread_summary_carries_preview_like_mine_and_latest_reply_without_leaki
     assert updated["latestReply"]["displayName"] is None
     assert updated["latestReply"]["bodyPreview"] == "Anonymous clinical reply"
     assert "林醫師" not in str(updated["latestReply"])
+
+
+def test_threads_support_new_specialty_domain_keys(client: TestClient, forum: Forum) -> None:
+    f = forum
+    thread = published_thread(
+        client,
+        f,
+        f.surgeon,
+        title="ESD perforation management",
+        body="How do you manage small colonic perforation during ESD?",
+        topicKey="endoscopy",
+    )
+    filtered = thread_list(client, f, f.peer, topic="endoscopy")
+    assert [t["id"] for t in filtered if t["id"] == thread] == [thread]
+    detail = thread_of(client, f, f.peer, thread)
+    assert detail["thread"]["topicKey"] == "endoscopy"

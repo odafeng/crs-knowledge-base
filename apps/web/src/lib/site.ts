@@ -1,10 +1,19 @@
 // Labels, paths and presentation rules shared by the reading pages. Values mirror sitegen/config.py, urls.py and
 // render.py so the Next.js pages keep the current site's URLs, wording and ordering.
 import type { components } from "./api.generated";
+import {
+  TAXONOMY_DOMAINS,
+  TAXONOMY_SUBTOPICS,
+  type DomainSlug,
+  type TaxonomyDomain,
+  type TaxonomySubtopic,
+} from "./taxonomy.generated";
 
 export type Paper = components["schemas"]["Paper"];
 export type News = components["schemas"]["News"];
 export type Topic = components["schemas"]["Topic"];
+export type Domain = components["schemas"]["Domain"];
+export type SubtopicRef = components["schemas"]["SubtopicRef"];
 export type Figure = components["schemas"]["Figure"];
 export type RegulatoryRow = components["schemas"]["RegulatoryRow"];
 // openapi-typescript renders the contract's "properties + anyOf [doi | pmid]" as a union with the bare {doi} and
@@ -66,8 +75,16 @@ export const ROBOTIC_PAGES: Record<string, string> = {
 
 export const HOME: Crumbs = [["首頁", "/"]];
 export const TOPICS: Crumbs = [...HOME, ["主題", "/topics/"]];
-export const MCRC: Crumbs = [...TOPICS, ["mCRC 治療", "/mcrc/"]];
-export const ROBOTIC: Crumbs = [...TOPICS, ["機器手臂手術", "/robotic/"]];
+export const MCRC: Crumbs = [
+  ...TOPICS,
+  ["大腸直腸腫瘤", "/specialties/colorectal-oncology/"],
+  ["mCRC 治療", "/mcrc/"],
+];
+export const ROBOTIC: Crumbs = [
+  ...TOPICS,
+  ["微創手術", "/specialties/minimally-invasive-surgery/"],
+  ["機器手臂手術", "/robotic/"],
+];
 export const NEWS: Crumbs = [...HOME, ["最新消息", "/news/"]];
 
 export const paperPath = (paper: Pick<Paper, "slug">) =>
@@ -75,7 +92,76 @@ export const paperPath = (paper: Pick<Paper, "slug">) =>
 export const newsPath = (item: Pick<News, "id">) => `/news/${item.id}/`;
 export const topicPath = (topic: Pick<Topic, "slug">) =>
   topic.slug === "robotic" ? "/robotic/" : `/mcrc/${topic.slug}/`;
+export const specialtyPath = (slug: string) => `/specialties/${slug}/`;
 export const doiUrl = (doi: string) => `https://doi.org/${doi}`;
+
+const LEGACY_TOPIC_TO_DOMAIN: Record<string, DomainSlug> = {
+  "mCRC-BRAF-V600E": "colorectal-oncology",
+  "mCRC-KRAS-G12C": "colorectal-oncology",
+  "mCRC-MSI-H": "colorectal-oncology",
+  "mCRC-HER2": "colorectal-oncology",
+  "mCRC-RAS-wt": "colorectal-oncology",
+  "generic-CRS": "colorectal-oncology",
+  "robotic-surgery": "minimally-invasive-surgery",
+};
+
+const DOMAIN_MAP = new Map<string, TaxonomyDomain>(
+  TAXONOMY_DOMAINS.map((d) => [d.slug, d]),
+);
+
+export const domainBySlug = (slug: string): TaxonomyDomain | undefined =>
+  DOMAIN_MAP.get(slug);
+
+export const subtopicsOfDomain = (slug: DomainSlug): TaxonomySubtopic[] =>
+  TAXONOMY_SUBTOPICS.filter((s) => s.parentDomain === slug);
+
+export function domainOfTopicKey(topicKey: string): DomainSlug | null {
+  if (topicKey in LEGACY_TOPIC_TO_DOMAIN)
+    return LEGACY_TOPIC_TO_DOMAIN[topicKey];
+  if (DOMAIN_MAP.has(topicKey)) return topicKey as DomainSlug;
+  return null;
+}
+
+/** Authoritative multi-domain list when the API returns paper_domains, falling back to legacy topic mapping pre-backfill. */
+export function domainsOfPaper(
+  paper: Pick<Paper, "topic" | "primaryDomain" | "secondaryDomains">,
+): DomainSlug[] {
+  const result: DomainSlug[] = [];
+  if (paper.primaryDomain && DOMAIN_MAP.has(paper.primaryDomain)) {
+    result.push(paper.primaryDomain as DomainSlug);
+  }
+  for (const sec of paper.secondaryDomains ?? []) {
+    if (DOMAIN_MAP.has(sec) && !result.includes(sec as DomainSlug)) {
+      result.push(sec as DomainSlug);
+    }
+  }
+  if (result.length === 0) {
+    const fallback = domainOfTopicKey(paper.topic);
+    if (fallback) result.push(fallback);
+  }
+  return result;
+}
+
+/** Papers belonging to a specialty domain (as primary or secondary), newest first. */
+export function byDomain(
+  papers: readonly Paper[],
+  domainSlug: string,
+): Paper[] {
+  return papers
+    .filter((paper) => domainsOfPaper(paper).includes(domainSlug as DomainSlug))
+    .sort(
+      (a, b) => b.year - a.year || publishedAt(b).localeCompare(publishedAt(a)),
+    );
+}
+
+/** The 6 newly added specialty domain keys seeded in app.topics (kind='domain') for forum tagging alongside the 7 legacy topics. */
+export const FORUM_DOMAIN_TOPICS: ReadonlyArray<{
+  key: DomainSlug;
+  label: string;
+}> = TAXONOMY_DOMAINS.filter(
+  (d) =>
+    d.slug !== "colorectal-oncology" && d.slug !== "minimally-invasive-surgery",
+).map((d) => ({ key: d.slug, label: d.labelZh }));
 
 export const isUnreviewed = (item: { review?: { status: string } }) =>
   item.review?.status === "auto";
@@ -264,9 +350,14 @@ export function areaOf(path: string): Area | null {
   if (path.startsWith("/updates/") || path.startsWith("/papers/"))
     return "papers";
   if (
-    ["/topics/", "/mcrc/", "/robotic/", "/drugs/", "/tumor-board/"].some(
-      (prefix) => path.startsWith(prefix),
-    )
+    [
+      "/topics/",
+      "/specialties/",
+      "/mcrc/",
+      "/robotic/",
+      "/drugs/",
+      "/tumor-board/",
+    ].some((prefix) => path.startsWith(prefix))
   )
     return "topics";
   if (path.startsWith("/subscribe/")) return "subscribe";

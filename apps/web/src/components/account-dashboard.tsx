@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAccount, type Account } from "@/components/account";
 import { Avatar } from "@/components/avatar";
 import { DisplaySettings } from "@/components/display-settings";
-import { TopicChoices } from "@/components/followed-topics";
+import { DomainChoices, TopicChoices } from "@/components/followed-topics";
 import { FollowedPapers } from "@/components/paper-follows";
 import { PushToggle } from "@/components/push-toggle";
 import { Icon } from "@/components/reading";
@@ -315,6 +315,7 @@ function SignedInDashboard({
           </section>
 
           <FollowedPapers papers={papers} onChange={setFollows} />
+          <DomainChoices />
           <TopicChoices topics={topics} onChange={setFollowedTopics} />
         </div>
 

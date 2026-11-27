@@ -155,6 +155,8 @@ describe("indexing", () => {
     expect(pages).toContain("/papers/b/");
     expect(pages).not.toContain("/papers/a/");
     expect(pages).not.toContain("/news/keynote/");
+    expect(pages).toContain("/specialties/colorectal-oncology/");
+    expect(pages).toContain("/specialties/endoscopy/");
     expect(pages.slice(0, 3)).toEqual(["/", "/news/", "/updates/"]);
   });
 });

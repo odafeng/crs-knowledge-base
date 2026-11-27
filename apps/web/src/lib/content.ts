@@ -1,7 +1,14 @@
 // Server-side reads for the public pages: ISR fetches against the FastAPI read API (ADR-0015, B5).
 import { apiError } from "./api";
 import type { DailyPick } from "./daily";
-import type { News, Paper, Topic } from "./site";
+import type { Domain, News, Paper, Topic } from "./site";
+import {
+  DOMAIN_SLUGS,
+  TAXONOMY_DOMAINS,
+  TAXONOMY_SUBTOPICS,
+  TAXONOMY_VERSION,
+  type DomainSlug,
+} from "./taxonomy.generated";
 
 /** Public content cache TTL (1 hour, K3 #253). Writes purge immediately via POST /api/revalidate using CONTENT_TAG. */
 export const REVALIDATE_SECONDS = 3600;
@@ -11,6 +18,7 @@ export const CONTENT_TAGS = {
   papers: "papers",
   news: "news",
   topics: "topics",
+  domains: "domains",
   daily: "daily",
 } as const;
 
@@ -151,6 +159,62 @@ export async function getTopicBySlug(
   return (
     (await listTopics(options)).find((topic) => topic.slug === slug) ?? null
   );
+}
+
+const VALID_DOMAIN_SLUGS = new Set<string>(DOMAIN_SLUGS);
+
+function fallbackDomains(): Domain[] {
+  return TAXONOMY_DOMAINS.map((d) => ({
+    slug: d.slug,
+    order: d.order,
+    labelZh: d.labelZh,
+    labelEn: d.labelEn,
+    descriptionZh: d.descriptionZh,
+    status: d.status,
+    registryVersion: TAXONOMY_VERSION,
+    paperCount: 0,
+    subtopics: TAXONOMY_SUBTOPICS.filter((s) => s.parentDomain === d.slug).map(
+      (s) => ({
+        id: s.id,
+        slug: s.slug,
+        labelZh: s.labelZh,
+        labelEn: s.labelEn,
+        legacyTopicKey: s.legacyTopicKey,
+        routePath: s.routePath,
+        status: s.status,
+      }),
+    ),
+  }));
+}
+
+/** Lists the 8 clinical specialty domains, falling back to the bundled registry if talking to an older API revision. */
+export async function listDomains(options?: Options): Promise<Domain[]> {
+  try {
+    return await listAll<Domain>("/domains", {
+      ...options,
+      tags: [CONTENT_TAGS.domains, ...(options?.tags ?? [])],
+    });
+  } catch {
+    return fallbackDomains();
+  }
+}
+
+/** Fetches one specialty domain by slug; returns null for unknown slugs and falls back to the registry on older APIs. */
+export async function getDomain(
+  slug: string,
+  options: Options = {},
+): Promise<Domain | null> {
+  if (!VALID_DOMAIN_SLUGS.has(slug)) return null;
+  try {
+    const domain = await get<Domain>(`/domains/${encodeURIComponent(slug)}`, {
+      ...options,
+      tags: [CONTENT_TAGS.domains, `domain:${slug}`, ...(options.tags ?? [])],
+    });
+    if (domain) return domain;
+  } catch {
+    // Older API revision without /domains/{slug} falls back to the versioned static registry.
+  }
+  return fallbackDomains().find((d) => d.slug === (slug as DomainSlug)) ?? null;
 }
 
 /** The day's pick, or the latest earlier one; null if the API has none (or predates G2), so the home page still renders. */

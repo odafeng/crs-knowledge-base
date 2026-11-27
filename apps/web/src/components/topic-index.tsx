@@ -2,7 +2,15 @@
 import Link from "next/link";
 import { Breadcrumb, PaperCard } from "@/components/reading";
 import { listPapers, listTopics } from "@/lib/content";
-import { byTopic, ROBOTIC_PAGES, topicPath, type Crumbs } from "@/lib/site";
+import {
+  byDomain,
+  byTopic,
+  ROBOTIC_PAGES,
+  specialtyPath,
+  topicPath,
+  type Crumbs,
+} from "@/lib/site";
+import { TAXONOMY_DOMAINS } from "@/lib/taxonomy.generated";
 
 type Group = "mcrc" | "robotic";
 const GROUPS: Record<Group, readonly [name: string, href: string]> = {
@@ -31,9 +39,46 @@ export async function TopicIndex({
         <p className="page-head__lead">
           {groups.length === 1 && groups[0] === "robotic"
             ? "機器手臂 TME、吻合技術與微創大腸直腸外科試驗實證。"
-            : "每個主題有核准與給付現況、治療現況與全部文獻。"}
+            : "依八大專科領域或深層專題瀏覽大腸直腸外科實證整理、核准給付現況與全部文獻。"}
         </p>
       </header>
+      {groups.length > 1 && (
+        <section className="page__section" aria-labelledby="group-specialties">
+          <h2 id="group-specialties">八大專科領域</h2>
+          <ul className="tile-grid">
+            {TAXONOMY_DOMAINS.map((domain) => {
+              const mine = byDomain(papers, domain.slug);
+              const roboticCards =
+                domain.slug === "minimally-invasive-surgery"
+                  ? sections.reduce((sum, s) => sum + s.cards.length, 0)
+                  : 0;
+              return (
+                <li className="tile" key={domain.slug}>
+                  <p className="tile__count">
+                    {mine.length > 0 ? (
+                      <>
+                        <span className="num">{mine.length}</span>篇文獻
+                      </>
+                    ) : roboticCards > 0 ? (
+                      <>
+                        <span className="num">{roboticCards}</span>則實證整理
+                      </>
+                    ) : (
+                      "建置中"
+                    )}
+                  </p>
+                  <h3 className="tile__title">
+                    <Link href={specialtyPath(domain.slug)}>
+                      {domain.labelZh}
+                    </Link>
+                  </h3>
+                  <p className="tile__text">{domain.descriptionZh}</p>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
       {groups.map((group) => (
         <section
           className="page__section"

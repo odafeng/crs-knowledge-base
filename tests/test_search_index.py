@@ -27,9 +27,15 @@ NEWS = {"id": "niche2", "headline": ["NICHE-2：", "五年無復發"], "dek": "�
 
 
 def test_passages_follow_what_the_site_shows() -> None:
-    paper, news, card, robotic = si.items([PAPER], [NEWS], TOPICS)
+    paper, news, card, robotic = si.items(
+        [PAPER],
+        [NEWS],
+        TOPICS,
+        paper_domains={"fresco": ["大腸直腸腫瘤", "Colorectal Oncology"]},
+    )
     assert (paper.path, paper.title, paper.snippet) == ("/papers/fresco/", "Fruquintinib & BSC（JAMA 2018）", "延長 OS")
     assert "p<.001" in paper.text and "後線治療" in paper.text and "中國族群" in paper.text
+    assert "大腸直腸腫瘤" in paper.text and "Colorectal Oncology" in paper.text
     assert (news.path, news.title, news.snippet) == ("/news/niche2/", "NICHE-2：五年無復發", "術前雙免疫")
     assert (card.ref, card.path, card.title) == ("mCRC-MSI-H#0", "/mcrc/msi-h/", "MSI-H / dMMR：一線")
     assert "給付規定 9.69" in card.text and "<" not in card.snippet

@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { NewThread } from "@/components/forum";
 import { listTopics } from "@/lib/content";
 import { SITE_NAME } from "@/lib/seo";
+import { FORUM_DOMAIN_TOPICS } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: `開新話題｜大腸直腸外科論壇｜${SITE_NAME}`,
@@ -13,10 +14,13 @@ export const metadata: Metadata = {
 
 export default async function NewThreadPage() {
   await connection();
-  const topics = (await listTopics()).map((t) => ({
-    key: t.key,
-    label: t.label,
-  }));
+  const topics = [
+    ...(await listTopics()).map((t) => ({
+      key: t.key,
+      label: t.label,
+    })),
+    ...FORUM_DOMAIN_TOPICS,
+  ];
   return (
     <div className="container page">
       <header className="page-head">

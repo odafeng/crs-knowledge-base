@@ -188,8 +188,10 @@ test('Next.js start: reading pages render from the read API', { timeout: 90000 }
       '/news/smoke-news/': ['二線存活延長', 'data-figure=""', 'data-figure-kind="compare"', 'data-figure-kind="meters"', 'data-figure-part="interval-point"', '看文獻整理'],
       '/mcrc/smoke-braf/': ['核准與給付現況', '有條件給付', '給付規定 9.134', 'BEACON 整理', '二線標準治療'],
       '/robotic/tme/': ['機器手臂 TME', 'ROLARR，轉換率 NS', 'TME 品質', '詳細'],
-      '/': ['二線存活延長', '本週新增', '新收錄文獻', '社論標題', '用一句話找證據', '最新核准給付資訊', '2026 年 5 月 1 日', 'DurgFileName=9.134._20260501.pdf', '機器手臂 TME'],
-      '/topics/': ['mCRC 治療', '機器手臂手術', '最新：Encorafenib + cetuximab'],
+      '/': ['二線存活延長', '本週新增', '新收錄文獻', '社論標題', '用一句話找證據', '最新核准給付資訊', '2026 年 5 月 1 日', 'DurgFileName=9.134._20260501.pdf', '機器手臂 TME', '依專科瀏覽', '大腸直腸腫瘤'],
+      '/topics/': ['八大專科領域', '大腸直腸腫瘤', 'mCRC 治療', '機器手臂手術', '最新：Encorafenib + cetuximab'],
+      '/specialties/colorectal-oncology/': ['大腸直腸腫瘤', 'BRAF V600E', 'Encorafenib + cetuximab'],
+      '/specialties/endoscopy/': ['內視鏡', '文獻追蹤建置中'],
       '/mcrc/': ['BRAF V600E', '1</span>篇文獻'],
       '/robotic/': ['機器手臂 TME', '證據演進有 1 個時間點'],
       '/updates/': ['共 2 則', '評論', '社論標題'],
@@ -227,7 +229,7 @@ test('Next.js start: reading pages render from the read API', { timeout: 90000 }
     const paperHtml = await (await fetch(`${origin}/papers/smoke-beacon/`)).text();
     assert.ok(paperHtml.includes('<link rel="canonical" href="https://odafeng.github.io/crs-knowledge-base/papers/smoke-beacon/"/>'));
     assert.ok(paperHtml.includes('"@type":"MedicalWebPage"'));
-    for (const path of ['/papers/BEACON_2019/', '/papers/beacon-2019/', '/news/missing/', '/mcrc/robotic/', '/robotic/nope/']) {
+    for (const path of ['/papers/BEACON_2019/', '/papers/beacon-2019/', '/news/missing/', '/mcrc/robotic/', '/robotic/nope/', '/specialties/unknown/']) {
       assert.equal((await fetch(origin + path)).status, 404, path);
     }
 

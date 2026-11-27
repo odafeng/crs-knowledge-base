@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { ForumHome } from "@/components/forum";
 import { listTopics } from "@/lib/content";
 import { SITE_NAME } from "@/lib/seo";
+import { FORUM_DOMAIN_TOPICS } from "@/lib/site";
 
 // Members only (ADR-0022): the HTML holds no forum content, and search engines are told to stay away.
 export const metadata: Metadata = {
@@ -13,10 +14,13 @@ export const metadata: Metadata = {
 export default async function ForumPage() {
   // Rendered per request so `next build` never calls the API; the topic list is public and cached (lib/content.ts).
   await connection();
-  const topics = (await listTopics()).map((t) => ({
-    key: t.key,
-    label: t.label,
-  }));
+  const topics = [
+    ...(await listTopics()).map((t) => ({
+      key: t.key,
+      label: t.label,
+    })),
+    ...FORUM_DOMAIN_TOPICS,
+  ];
   return (
     <div className="container page">
       <header className="page-head">
