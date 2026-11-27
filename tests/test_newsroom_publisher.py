@@ -155,4 +155,5 @@ def test_controlled_publisher_lifecycle_revisions_idempotency_and_revalidation()
         actions = conn.execute(
             "select action from app.news_review_actions where event_id = 'n5-evt' order by created_at, id"
         ).fetchall()
-        assert [a[0] for a in actions] == ["approve", "revise", "withdraw"]
+        # All three actions run inside one test transaction (identical now() timestamps), so assert exact multiset.
+        assert sorted(a[0] for a in actions) == ["approve", "revise", "withdraw"]
