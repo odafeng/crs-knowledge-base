@@ -82,4 +82,14 @@ describe("pickDailyClinicalInsight", () => {
     expect(a?.reviewedAt).toBe("2026-11-01");
     expect(a?.path).toMatch(/^\/papers\/p[12]\/$/);
   });
+
+  it("never shows an AI-unreviewed summary when falling back to reviewed papers", () => {
+    const paper = makePaper("P_PENDING", "accepted", true);
+    paper.summary = { ...paper.summary!, reviewedAt: null };
+    const insight = pickDailyClinicalInsight([paper], [topic], "2026-11-28");
+    expect(insight).not.toBeNull();
+    expect(insight?.title).toBe("P_PENDING regimen");
+    expect(insight?.takeaway).toBe("P_PENDING result");
+    expect(insight?.clinicalNote).toBe("P_PENDING bottom line");
+  });
 });

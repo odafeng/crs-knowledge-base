@@ -62,14 +62,17 @@ export function pickDailyClinicalInsight(
   const domainLabel = primarySlug
     ? (domainBySlug(primarySlug)?.labelZh ?? topicLabel)
     : topicLabel;
-  const lead = paperLead(chosen);
+  // The fallback pool may hold accepted papers whose AI summary is still pending review: never show that copy.
+  const summary =
+    chosen.summary?.reviewedAt !== null ? chosen.summary : undefined;
+  const lead = paperLead({ ...chosen, summary });
 
   return {
     label: "知識回顧",
     date: dateIso,
     title: lead.title,
     takeaway: lead.result,
-    clinicalNote: chosen.summary?.meaning?.trim() || chosen.bottomLine,
+    clinicalNote: summary?.meaning?.trim() || chosen.bottomLine,
     path: paperPath(chosen),
     domainSlug: primarySlug,
     domainLabel,
