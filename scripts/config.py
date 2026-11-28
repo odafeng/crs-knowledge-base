@@ -50,10 +50,9 @@ LINE_USER_ID = os.environ.get("LINE_USER_ID", "")
 # Search window
 PUBMED_RELDATE = 14  # days
 
-# AI classification threshold
-# Score ≥4 → GitHub Issue for human review + LINE notification.
-# No auto-PR or auto-merge. User decides whether to incorporate.
-RELEVANCE_THRESHOLD = 4
+# AI classification threshold: score ≥3 auto-publishes through the provenance gate as "AI 未審" (ADR-0013,
+# ADR-0029, ADR-0032 / K14 #308). Automatic news keeps its own higher bar (news_writer.NEWS_SCORE_THRESHOLD).
+RELEVANCE_THRESHOLD = 3
 
 
 def load_queries():
