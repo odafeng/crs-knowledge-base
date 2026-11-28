@@ -59,6 +59,7 @@ export async function semanticSearch(
     cache: "no-store",
     headers,
     body: JSON.stringify({ query: query.trim() }),
+    signal: AbortSignal.timeout(15_000),
   }).catch(() => null);
   if (response?.ok) {
     const body = (await response.json()) as { results: SemanticHit[] };

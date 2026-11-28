@@ -817,6 +817,7 @@ function PostFields({
   setAnonymous,
   confirmed,
   setConfirmed,
+  confirmRef,
 }: {
   idPrefix: string;
   name: string;
@@ -824,6 +825,7 @@ function PostFields({
   setAnonymous: (value: boolean) => void;
   confirmed: boolean;
   setConfirmed: (value: boolean) => void;
+  confirmRef?: React.RefObject<HTMLInputElement | null>;
 }) {
   return (
     <>
@@ -854,6 +856,7 @@ function PostFields({
         <p>{DEIDENTIFY}</p>
         <label className="forum-deidentify__check">
           <input
+            ref={confirmRef}
             type="checkbox"
             checked={confirmed}
             onChange={(event) => setConfirmed(event.target.checked)}
@@ -907,12 +910,21 @@ function NewThreadForm({
     | { kind: "pending" }
   >({ kind: "idle" });
   const sending = useRef(false);
+  const titleField = useRef<HTMLInputElement>(null);
+  const bodyField = useRef<HTMLTextAreaElement>(null);
+  const confirmField = useRef<HTMLInputElement>(null);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (sending.current) return;
     const problem = writeProblem(body, confirmed, title);
-    if (problem) return setState({ kind: "error", message: problem });
+    if (problem) {
+      setState({ kind: "error", message: problem });
+      if (titleError(title)) titleField.current?.focus();
+      else if (bodyError(body)) bodyField.current?.focus();
+      else confirmField.current?.focus();
+      return;
+    }
     sending.current = true;
     setState({ kind: "sending" });
     const response = await apiFetch("/forum/threads", account.token, {
@@ -989,6 +1001,7 @@ function NewThreadForm({
           <div className="forum-field">
             <label htmlFor="thread-title">標題</label>
             <input
+              ref={titleField}
               id="thread-title"
               className="forum-input"
               placeholder="例：低位直腸癌 TNT 後 cCR 的追蹤節奏討論"
@@ -1016,6 +1029,7 @@ function NewThreadForm({
           <div className="forum-field">
             <label htmlFor="thread-body">內容</label>
             <textarea
+              ref={bodyField}
               id="thread-body"
               rows={8}
               placeholder="分享你的臨床經驗、疑問或文獻觀察（請改寫為年齡區間與必要臨床資訊）…"
@@ -1035,6 +1049,7 @@ function NewThreadForm({
             setAnonymous={setAnonymous}
             confirmed={confirmed}
             setConfirmed={setConfirmed}
+            confirmRef={confirmField}
           />
           <div className="forum-composer-form__actions">
             <button
@@ -1369,12 +1384,19 @@ function ReplyForm({
     | { kind: "sent"; status: PostReceipt["status"] }
   >({ kind: "idle" });
   const sending = useRef(false);
+  const bodyField = useRef<HTMLTextAreaElement>(null);
+  const confirmField = useRef<HTMLInputElement>(null);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (sending.current) return;
     const problem = writeProblem(body, confirmed);
-    if (problem) return setState({ kind: "error", message: problem });
+    if (problem) {
+      setState({ kind: "error", message: problem });
+      if (bodyError(body)) bodyField.current?.focus();
+      else confirmField.current?.focus();
+      return;
+    }
     sending.current = true;
     setState({ kind: "sending" });
     const response = await apiFetch(
@@ -1410,6 +1432,7 @@ function ReplyForm({
       </div>
       <label htmlFor="reply-body">你的回覆</label>
       <textarea
+        ref={bodyField}
         id="reply-body"
         rows={4}
         placeholder="寫下你的臨床看法或補充經驗…"
@@ -1431,6 +1454,7 @@ function ReplyForm({
         setAnonymous={setAnonymous}
         confirmed={confirmed}
         setConfirmed={setConfirmed}
+        confirmRef={confirmField}
       />
       <button
         className="btn btn--primary"

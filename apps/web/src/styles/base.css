@@ -92,6 +92,16 @@ a:hover {
   text-decoration-thickness: 2px;
 }
 
+:root {
+  accent-color: var(--brand);
+  scrollbar-color: var(--ink-3) var(--sunken);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand) 22%, transparent);
+  color: inherit;
+}
+
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
@@ -250,11 +260,8 @@ mark.hl {
 .source-details > summary {
   cursor: pointer;
   list-style-position: inside;
-  font-weight: 700;
-}
-.source-details > summary h2 {
-  display: inline;
   font-size: var(--text-base);
+  font-weight: 700;
 }
 .source-details[open] > summary {
   margin-block-end: var(--space-4);

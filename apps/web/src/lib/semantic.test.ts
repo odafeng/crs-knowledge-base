@@ -24,6 +24,7 @@ describe("semantic search", () => {
     const [url, init] = fetcher.mock.calls[0];
     expect(String(url)).toMatch(/\/semantic-search$/);
     expect(init).toMatchObject({ method: "POST", credentials: "omit" });
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
     expect(JSON.parse(String(init?.body))).toEqual({
       query: "regorafenib 先用嗎",
     });

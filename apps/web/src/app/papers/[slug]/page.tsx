@@ -158,7 +158,7 @@ export default async function PaperPage({ params }: Props) {
           {(summary || detailHtml) && (
             <details className="page__section source-details" open={!summary}>
               <summary>
-                <h2>{summary ? "原始條目與原文摘要" : "詳細證據整理"}</h2>
+                {summary ? "原始條目與原文摘要" : "詳細證據整理"}
               </summary>
               {summary && (
                 <>

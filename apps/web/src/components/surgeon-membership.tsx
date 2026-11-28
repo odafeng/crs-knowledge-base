@@ -64,7 +64,19 @@ export function SurgeonMembership({
     event.preventDefault();
     if (!token) return;
     const problem = formProblem(form);
-    if (problem) return setStatus(problem);
+    if (problem) {
+      setStatus(problem);
+      const firstEmpty = FIELDS.find(([key]) => !form[key].trim())?.[0];
+      const targetName =
+        firstEmpty ??
+        (!/^\d{3}$/.test(form.certificateDigits.trim())
+          ? "certificateDigits"
+          : FIELDS[0][0]);
+      event.currentTarget
+        .querySelector<HTMLInputElement>(`input[name="${targetName}"]`)
+        ?.focus();
+      return;
+    }
     setBusy(true);
     const result = await submitApplication(token, form);
     setBusy(false);

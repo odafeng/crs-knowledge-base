@@ -85,6 +85,10 @@
   padding-block: var(--space-6);
   border-block-end: 1px solid var(--line);
 }
+.news-list > .news-row:nth-child(n + 6) {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 10rem;
+}
 .news-row h2 {
   font-size: var(--text-xl);
   line-height: 1.38;
@@ -227,6 +231,10 @@
     border-block-start: 1px solid var(--line);
     border-block-end: 0;
   }
+}
+.entries--grid > .entry:nth-child(n + 9) {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 12rem;
 }
 .entry__title {
   font-size: var(--text-lg);
@@ -505,6 +513,10 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
   transition: border-color var(--fast) var(--ease);
+}
+.paper-list > .paper:nth-child(n + 7) {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 13rem;
 }
 .paper:hover {
   border-color: var(--line-strong);

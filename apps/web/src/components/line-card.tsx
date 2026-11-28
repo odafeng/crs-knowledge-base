@@ -36,6 +36,8 @@ export function LineCard() {
           alt={`掃描 QR code 加入 GutHub LINE 官方帳號（${LINE_OA.id}）`}
           width={156}
           height={156}
+          loading="lazy"
+          decoding="async"
         />
         <figcaption>手機掃描加入好友</figcaption>
       </figure>
