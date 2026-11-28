@@ -130,7 +130,7 @@ export const drugByBrand = (slug: string) =>
 /** A drug's evidence as a history: oldest publication first, then the order the site took them in. */
 export const evidenceOrder = <P extends Pick<Paper, "year">>(
   papers: readonly P[],
-) => [...papers].sort((a, b) => a.year - b.year); // sort is stable: same-year papers keep the site's order
+) => papers.toSorted((a, b) => a.year - b.year); // sort is stable: same-year papers keep the site's order
 
 export const drugPath = (drug: Pick<Drug, "slug">) => `/drugs/${drug.slug}/`;
 

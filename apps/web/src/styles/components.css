@@ -500,6 +500,22 @@
 .accordion > .note {
   padding-block-start: 0;
 }
+:is(.accordion, .source-details)::details-content {
+  interpolate-size: allow-keywords;
+  overflow: clip;
+  contain: layout;
+}
+:is(.accordion, .source-details):not([open])::details-content {
+  block-size: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :is(.accordion, .source-details)::details-content {
+    transition:
+      block-size var(--base) var(--ease),
+      content-visibility var(--base) var(--ease);
+    transition-behavior: allow-discrete;
+  }
+}
 
 /* Tables: engineered clinical data grids with progressive horizontal scroll affordance */
 .scroll-table {

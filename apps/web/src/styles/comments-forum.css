@@ -14,6 +14,10 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
 }
+.comment-list > .comment:nth-child(n + 7) {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 9rem;
+}
 .comment__meta {
   display: flex;
   flex-wrap: wrap;
@@ -49,12 +53,20 @@
 }
 .comment-form textarea {
   width: 100%;
+  min-block-size: 5lh;
+  max-block-size: 18lh;
+  field-sizing: content;
   padding: var(--space-3) var(--space-4);
   background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-control);
   font: inherit;
   resize: vertical;
+}
+.comment-form textarea:user-invalid,
+.forum-input:user-invalid {
+  border-color: var(--bad);
+  background: var(--bad-bg);
 }
 .comment-form__identity {
   display: grid;
@@ -476,6 +488,10 @@
   transition:
     border-color var(--fast) var(--ease),
     box-shadow var(--fast) var(--ease);
+}
+.forum-feed > .feed-card:nth-child(n + 7) {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 12rem;
 }
 .feed-card:hover {
   border-color: var(--line-strong);

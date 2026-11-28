@@ -212,6 +212,7 @@ function CommentForm({
   >({ kind: "idle" });
   // Blocks a second submit (double click, Enter twice) before React re-renders the disabled button.
   const sending = useRef(false);
+  const bodyField = useRef<HTMLTextAreaElement>(null);
 
   if (account.status === "loading") return null;
   if (account.status === "unavailable") {
@@ -248,7 +249,11 @@ function CommentForm({
     event.preventDefault();
     if (sending.current) return;
     const problem = bodyError(body);
-    if (problem) return setState({ kind: "error", message: problem });
+    if (problem) {
+      setState({ kind: "error", message: problem });
+      bodyField.current?.focus();
+      return;
+    }
     sending.current = true;
     setState({ kind: "sending" });
     const response = await apiFetch(
@@ -276,6 +281,7 @@ function CommentForm({
       <h3>留言</h3>
       <label htmlFor="comment-body">你的留言</label>
       <textarea
+        ref={bodyField}
         id="comment-body"
         name="body"
         rows={4}

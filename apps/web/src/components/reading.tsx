@@ -282,6 +282,8 @@ export function Alerts({ showLine = true }: { showLine?: boolean } = {}) {
               alt={`掃描加入 GutHub LINE 官方帳號（${LINE_OA.id}）`}
               width={88}
               height={88}
+              loading="lazy"
+              decoding="async"
             />
             <div className={lineStyles.alertsLineBody}>
               <p className={lineStyles.alertsLineTitle}>LINE 晨間摘要</p>

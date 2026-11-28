@@ -86,6 +86,14 @@
   background: var(--surface);
   border-color: var(--brand);
 }
+.sign-in__form input:user-invalid,
+.surgeon__field input:user-invalid {
+  border-color: var(--bad);
+  background: var(--bad-bg);
+}
+.sign-in__form input[type="email"]:user-valid {
+  border-color: var(--good);
+}
 .sign-in__form .btn {
   width: 100%;
   margin-block-start: var(--space-2);
