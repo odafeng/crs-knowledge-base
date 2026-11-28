@@ -35,7 +35,7 @@ export function UpdatesFilter({
   const track = useRef<HTMLDivElement>(null);
   const [fade, setFade] = useState({ start: false, end: false });
 
-  const topicMap = new Map(topics.map((t) => [t.key, t]));
+  const topicMap = new Map<string, Topic>(topics.map((t) => [t.key, t]));
   const topicCounts = new Map<string, number>();
   let commentaryCount = 0;
   for (const row of rows) {

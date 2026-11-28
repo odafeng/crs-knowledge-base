@@ -1080,6 +1080,11 @@ export interface components {
     schemas: {
         /** @enum {string} */
         TopicKey: "mCRC-BRAF-V600E" | "mCRC-KRAS-G12C" | "mCRC-MSI-H" | "mCRC-HER2" | "mCRC-RAS-wt" | "generic-CRS" | "robotic-surgery";
+        /**
+         * @description The topic a paper is filed under. The six specialty domains file papers under their own key (T5).
+         * @enum {string}
+         */
+        PaperTopicKey: "mCRC-BRAF-V600E" | "mCRC-KRAS-G12C" | "mCRC-MSI-H" | "mCRC-HER2" | "mCRC-RAS-wt" | "generic-CRS" | "robotic-surgery" | "anorectal-diseases" | "benign-colorectal-diseases" | "pelvic-floor-functional" | "perioperative-care-nutrition" | "endoscopy" | "surgical-intelligence";
         /** @enum {string} */
         ForumTopicKey: "mCRC-BRAF-V600E" | "mCRC-KRAS-G12C" | "mCRC-MSI-H" | "mCRC-HER2" | "mCRC-RAS-wt" | "generic-CRS" | "robotic-surgery" | "anorectal-diseases" | "benign-colorectal-diseases" | "pelvic-floor-functional" | "perioperative-care-nutrition" | "endoscopy" | "surgical-intelligence";
         /** @enum {string} */
@@ -1140,7 +1145,7 @@ export interface components {
             /** @description Stable existing paper ID; preserve case and underscores. */
             id: string;
             slug: string;
-            topic: components["schemas"]["TopicKey"];
+            topic: components["schemas"]["PaperTopicKey"];
             year: number;
             journal: string;
             /** @enum {string} */

@@ -177,6 +177,30 @@ def test_robotic_surgery_paper_publishes_and_round_trips_export(db_writer, tmp_p
     assert build_rows(out).errors == []
 
 
+def test_new_specialty_domain_paper_publishes_and_round_trips_export(db_writer, tmp_path):
+    """T4 #285: a paper filed under one of the six new domain topics publishes like a legacy-topic paper."""
+    paper = _paper(id="endocuff-rct-2026")
+    paper["topic"] = "endoscopy"
+    paper["doi"] = "10.1016/test-endoscopy-db"
+    paper["pmid"] = "99990998"
+    paper["ai_suggested_filename"] = "ENDOCUFF_RCT_2026.html"
+    with content_session("publish_paper", paper["doi"], key="k-endoscopy-1", conn=db_writer) as session:
+        entry = publish_paper(paper, "auto", TODAY, **session.kb_args)
+        session.record(f"publish {entry['id']}")
+    assert (
+        count(
+            db_writer,
+            "select count(*) from app.public_papers where id = 'endocuff-rct-2026' and topic_key = 'endoscopy'",
+        )
+        == 1
+    )
+    out = tmp_path / "exported"
+    export_kb(db_writer, out)
+    exported = json.loads((out / "data/papers.json").read_text(encoding="utf-8"))
+    assert [p["id"] for p in exported["endoscopy"]["papers"]] == ["endocuff-rct-2026"]
+    assert build_rows(out).errors == []
+
+
 def test_a_failed_publish_leaves_nothing_behind(db_writer):
     publish_auto(db_writer, "k-1")
     before = manifest_of(db_writer)

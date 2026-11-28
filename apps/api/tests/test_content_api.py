@@ -403,6 +403,26 @@ def test_a_paper_summary_is_returned_as_written(client: TestClient) -> None:
     assert "summary" not in get(client, f"/papers/{target}")
 
 
+def test_a_specialty_domain_paper_matches_the_contract(client: TestClient) -> None:
+    """T5 #310: a paper filed under a specialty domain topic is served, contract-valid, and leaves /topics alone."""
+    target = next(iter(RAW_PAPERS))
+    assert DB_URL
+    with psycopg.connect(DB_URL, autocommit=True) as conn:
+        row = conn.execute("select topic_key from app.papers where id = %s", (target,)).fetchone()
+        assert row is not None
+        original = row[0]
+        conn.execute("update app.papers set topic_key = 'endoscopy' where id = %s", (target,))
+        try:
+            paper = get(client, f"/papers/{target}")
+            schema("Paper").validate(paper)
+            assert paper["topic"] == "endoscopy"
+            listed = next(p for p in all_pages(client, "/papers", limit=100) if p["id"] == target)
+            assert listed["topic"] == "endoscopy"
+            assert [t["key"] for t in get(client, "/topics")["items"]] == list(TOPIC_ORDER)
+        finally:
+            conn.execute("update app.papers set topic_key = %s where id = %s", (original, target))
+
+
 # --- errors --------------------------------------------------------------------------------------------------------
 
 

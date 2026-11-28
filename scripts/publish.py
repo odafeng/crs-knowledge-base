@@ -32,6 +32,13 @@ AUTO_PUBLISH_TOPICS = {
     "mCRC-RAS-wt",
     "generic-CRS",
     "robotic-surgery",
+    # T4 #285: the six specialty domains, filed under their kind='domain' app.topics rows (ADR-0030).
+    "perioperative-care-nutrition",
+    "endoscopy",
+    "anorectal-diseases",
+    "benign-colorectal-diseases",
+    "pelvic-floor-functional",
+    "surgical-intelligence",
 }
 
 # Must match validate.REVIEW_STATUSES.
@@ -237,7 +244,7 @@ def publish_paper(paper: dict, review: ReviewStatus, today: str, kb: KB | None =
     doc_path = kb.root / entry["file"]
     if doc_path.exists():
         raise PublishError([f"詳細頁已存在：{entry['file']}"])
-    data[topic]["papers"].append(entry)
+    data.setdefault(topic, {"papers": [], "metrics": {}})["papers"].append(entry)  # a domain's first paper (T5 #310)
     _check(data, kb, frozenset({entry["file"]}))
 
     doc_path.parent.mkdir(parents=True, exist_ok=True)

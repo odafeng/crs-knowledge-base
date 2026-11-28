@@ -1470,6 +1470,12 @@ components:
     TopicKey:
       type: string
       enum: [mCRC-BRAF-V600E, mCRC-KRAS-G12C, mCRC-MSI-H, mCRC-HER2, mCRC-RAS-wt, generic-CRS, robotic-surgery]
+    PaperTopicKey:
+      type: string
+      description: The topic a paper is filed under. The six specialty domains file papers under their own key (T5).
+      enum: [mCRC-BRAF-V600E, mCRC-KRAS-G12C, mCRC-MSI-H, mCRC-HER2, mCRC-RAS-wt, generic-CRS, robotic-surgery,
+        anorectal-diseases, benign-colorectal-diseases, pelvic-floor-functional, perioperative-care-nutrition,
+        endoscopy, surgical-intelligence]
     ForumTopicKey:
       type: string
       enum: [mCRC-BRAF-V600E, mCRC-KRAS-G12C, mCRC-MSI-H, mCRC-HER2, mCRC-RAS-wt, generic-CRS, robotic-surgery,
@@ -1567,7 +1573,7 @@ components:
       properties:
         id: {type: string, minLength: 1, description: Stable existing paper ID; preserve case and underscores.}
         slug: {type: string, pattern: '^[a-z0-9][a-z0-9-]*$'}
-        topic: {$ref: '#/components/schemas/TopicKey'}
+        topic: {$ref: '#/components/schemas/PaperTopicKey'}
         year: {type: integer}
         journal: {type: string, minLength: 1}
         studyType:
