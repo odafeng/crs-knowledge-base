@@ -17,7 +17,7 @@ from topic_agents import build_paper_prompt, build_system_prompt
 from usage import USAGE
 
 MAX_AGENT_TURNS = 8  # Max tool-use rounds per paper
-MAX_REPAIR_ATTEMPTS = 2  # Max self-repair passes when a score >= 4 paper fails the provenance gate (ADR-0029)
+MAX_REPAIR_ATTEMPTS = 2  # Max self-repair passes when a score >= 3 paper fails the provenance gate (ADR-0029)
 MAX_OUTPUT_TOKENS = 16000  # Thinking is always on and counts toward max_tokens
 
 # Nudge sent when the agent runs out of turns (or stops) without submitting.
@@ -87,15 +87,15 @@ SUBMIT_CLASSIFICATION_TOOL = {
             },
             "bottom_line": {
                 "type": "string",
-                "description": "繁體中文 one-line summary (≤100 chars). Required for score ≥ 4.",
+                "description": "繁體中文 one-line summary (≤100 chars). Required for score ≥ 3.",
             },
             "suggested_js": {
                 "type": "object",
-                "description": "JS paper object draft. Required for score ≥ 4.",
+                "description": "JS paper object draft. Required for score ≥ 3.",
             },
             "suggested_filename": {
                 "type": "string",
-                "description": "Evidence HTML filename. Required for score ≥ 4.",
+                "description": "Evidence HTML filename. Required for score ≥ 3.",
             },
             "relations": {
                 "type": "array",

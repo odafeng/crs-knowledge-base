@@ -20,7 +20,7 @@ from typing import Any, TypeGuard
 
 from anthropic import Anthropic
 
-from config import ANTHROPIC_API_KEY, CLASSIFY_MODEL, FALLBACK_BETA, RELEVANCE_THRESHOLD
+from config import ANTHROPIC_API_KEY, CLASSIFY_MODEL, FALLBACK_BETA
 from content_store import DATABASE_ENV, content_session
 from publish import ROOT, publish_news
 from usage import USAGE
@@ -31,6 +31,8 @@ if str(ROOT) not in sys.path:
 from newsroom.gate import unsupported
 
 MAX_STORIES_PER_RUN = 2
+# Only high-impact papers get a story, even though score-3 papers auto-publish (ADR-0032 / K14 #308).
+NEWS_SCORE_THRESHOLD = 4
 MAJOR_STUDY_TYPES = ("Phase 3", "Phase 2", "Meta-analysis", "Guideline", "Pooled analysis")
 NEWS_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -193,7 +195,7 @@ def is_newsworthy(paper: dict[str, Any], score: int | None = None) -> bool:
     study_type = str(paper.get("studyType") or paper.get("study_type") or "")
     major = any(marker in study_type for marker in MAJOR_STUDY_TYPES)
     if score is not None:
-        return score >= RELEVANCE_THRESHOLD and major
+        return score >= NEWS_SCORE_THRESHOLD and major
     return major
 
 

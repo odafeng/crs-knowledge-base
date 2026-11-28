@@ -297,7 +297,7 @@ class TestPipelineGate:
         paper = _paper(n=51)
 
         def downgrade(_client, target, _reasons):
-            target["ai_score"] = 3
+            target["ai_score"] = 2  # below RELEVANCE_THRESHOLD (3, ADR-0032)
             return True
 
         with (

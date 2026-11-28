@@ -263,7 +263,7 @@ def build_system_prompt(topic):
    - 它與既有文獻的關係（builds_on / supersedes / contradicts 哪篇？）
    - 它為什麼重要（或不重要）？對臨床實踐的潛在影響
 
-3. **Structured Output**（只有 score >= 4 才產出）：
+3. **Structured Output**（只有 score >= 3 才產出）：
    - bottomLine：繁體中文，100 字以內，一句話摘要
    - JS 物件草稿（符合既有 schema：id, year, journal, studyType, n, regimen, endpoint, result, bottomLine, doi, file, relations）
    - studyType 只能用：Phase 3 RCT, Phase 3 RCT (updated), Phase 2 RCT, Phase 2, Phase 1-2, Phase 1, Phase 1b, Biomarker (exploratory), Post-hoc analysis, Meta-analysis, Pooled analysis, Prospective cohort, Retrospective cohort, Guideline, Phase 3 (Cohort N), Phase 2 (updated), Phase 2 (exploratory)
@@ -316,8 +316,8 @@ chart_updates 規則：
 - action "update"：找到 match_label 對應的既有 bar，更新其欄位（常見：ongoing trial 報告最終數據時把 val 從 null 改為實際值、ongoing 從 true 改為 false）
 - new_max：如果新的 val 超過目前的 max，需要調高 max
 - chart_updates 是選填——沒有圖表數據的文獻不要加這個欄位
-- 只有 score >= 4 才需要 suggested_js / suggested_filename / relations / chart_updates
-- Score < 4 時只需 relevance_score + contextual_analysis"""
+- 只有 score >= 3 才需要 suggested_js / suggested_filename / relations / chart_updates
+- Score < 3 時只需 relevance_score + contextual_analysis"""
 
 
 def build_paper_prompt(paper):

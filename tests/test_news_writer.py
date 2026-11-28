@@ -142,6 +142,8 @@ def test_is_newsworthy_and_select_candidates() -> None:
     assert not news_writer.is_newsworthy({"studyType": "Retrospective cohort"}, score=4)
     assert news_writer.is_newsworthy({"studyType": "Prospective cohort"}, score=5)
     assert news_writer.is_newsworthy({"studyType": "Phase 3 RCT"}, score=4)
+    # Score-3 papers auto-publish (K14 #308, ADR-0032) but never get an automatic story.
+    assert not news_writer.is_newsworthy({"studyType": "Phase 3 RCT"}, score=3)
     # Capped at MAX_STORIES_PER_RUN (2), score 5 Phase 3 first, then score 5 cohort
     assert news_writer.select_candidates(published) == ["phase3-2026", "cohort-breakthrough"]
 

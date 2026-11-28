@@ -233,6 +233,12 @@ class TestClassifyPaper:
         assert len(kept) == 2  # score=5 + parse_failed, NOT score=2
         assert any(c["title"] == "C" for c in kept)  # parse failure kept
 
+    def test_score_three_passes_the_auto_publish_threshold(self):
+        """Moderate (score 3) papers auto-publish too; score 2 is still dropped (K14 #308, ADR-0032)."""
+        from config import RELEVANCE_THRESHOLD
+
+        assert 3 >= RELEVANCE_THRESHOLD > 2
+
 
 def _assert_strict_objects(schema: dict, path: str = "$") -> None:
     if schema.get("type") == "object":
