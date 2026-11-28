@@ -18,7 +18,7 @@ NEW_BATCHES = {
 }
 
 
-def test_every_query_pack_references_valid_registry_domain_and_shadows_new_batches() -> None:
+def test_every_query_pack_references_valid_registry_domain_and_enables_new_batches() -> None:
     registry = load_registry()
     queries = load_queries()
     topic_packs = {k: v for k, v in queries.items() if k not in ("rss_feeds", "conference_seasons")}
@@ -39,25 +39,24 @@ def test_every_query_pack_references_valid_registry_domain_and_shadows_new_batch
         found = {k for k, cfg in topic_packs.items() if cfg.get("rollout_batch") == batch_num}
         assert found == expected_domains
         for key in expected_domains:
-            assert topic_packs[key]["shadow_only"] is True
-            assert key not in AUTO_PUBLISH_TOPICS
+            # Enabled after the 2026-11-28 shadow precision review (T4 #285) and allowed to publish (T5 #310).
+            assert topic_packs[key]["shadow_only"] is False
+            assert key in AUTO_PUBLISH_TOPICS
             assert len(build_system_prompt(key)) > 400
 
 
-def test_shadow_packs_are_excluded_by_default_and_selectable_by_batch_or_topic() -> None:
+def test_enabled_packs_run_by_default_and_stay_selectable_by_batch_or_topic() -> None:
     queries = load_queries()
     default_topics = fp._select_topics(queries)
     for domains in NEW_BATCHES.values():
-        assert not (set(default_topics) & domains)
+        assert domains <= set(default_topics)
 
     assert set(fp._select_topics(queries, shadow_batch=1)) == NEW_BATCHES[1]
     assert set(fp._select_topics(queries, shadow_batch=2)) == NEW_BATCHES[2]
     assert set(fp._select_topics(queries, shadow_batch=3)) == NEW_BATCHES[3]
     assert fp._select_topics(queries, topic="endoscopy") == ["endoscopy"]
 
-    active_rss = fr._active_topics(queries)
-    assert "endoscopy" not in active_rss
-    assert "endoscopy" in fr._active_topics(queries, include_shadow=True)
+    assert "endoscopy" in fr._active_topics(queries)
 
 
 def test_cross_specialty_paper_creates_single_canonical_candidate_with_secondary_domains() -> None:
@@ -162,4 +161,5 @@ def test_unmatched_journal_articles_are_recorded_instead_of_dumped_into_generic_
 
 def test_adr_0013_and_adr_0029_guardrails_remain_intact() -> None:
     assert MAX_REPAIR_ATTEMPTS == 2
-    assert len(AUTO_PUBLISH_TOPICS) == 7
+    # 7 legacy topics + 6 specialty domains (T5 #310); the provenance gate itself is unchanged.
+    assert len(AUTO_PUBLISH_TOPICS) == 13

@@ -52,6 +52,31 @@ TOPICS: tuple[Topic, ...] = (
     Topic("generic-CRS", "later-line", "後線治療", "mCRC 後線治療與跨分子型"),
 )
 ROBOTIC_KEY = "robotic-surgery"
+# The six specialty domains (ADR-0030, T5 #310). Their app.topics rows (kind='domain') come from the taxonomy
+# migration; papers.json holds a block for one only once it has papers, so the repository content round-trips unchanged.
+DOMAIN_TOPICS: tuple[Topic, ...] = (
+    Topic("anorectal-diseases", "anorectal-diseases", "肛門疾病", "肛門疾病 Anorectal Diseases"),
+    Topic(
+        "benign-colorectal-diseases",
+        "benign-colorectal-diseases",
+        "良性大腸疾病",
+        "良性大腸疾病 Benign Colorectal Diseases",
+    ),
+    Topic(
+        "pelvic-floor-functional",
+        "pelvic-floor-functional",
+        "骨盆底與功能性疾病",
+        "骨盆底與功能性疾病 Pelvic Floor & Functional Disorders",
+    ),
+    Topic(
+        "perioperative-care-nutrition",
+        "perioperative-care-nutrition",
+        "圍手術期照護與營養",
+        "圍手術期照護與營養 Perioperative Care & Nutrition",
+    ),
+    Topic("endoscopy", "endoscopy", "內視鏡", "內視鏡 Endoscopy"),
+    Topic("surgical-intelligence", "surgical-intelligence", "外科智慧", "外科智慧 Surgical Intelligence"),
+)
 ROBOTIC_PAGES: tuple[RoboticPage, ...] = (
     RoboticPage("tme", "機器手臂 TME", "tl_tme", "tme_cards"),
     RoboticPage("anastomosis", "機器手臂吻合", "tl_anast", "anast_cards"),
@@ -231,7 +256,8 @@ def build_rows(root: Path = ROOT) -> Rows:
         "data/news.json": _sha256(news_path.read_bytes()),
     }
     known = {t.key for t in TOPICS} | {ROBOTIC_KEY}
-    rows.errors += [f"unknown topic in papers.json: {key}" for key in raw if key not in known]
+    domains = {t.key for t in DOMAIN_TOPICS}
+    rows.errors += [f"unknown topic in papers.json: {key}" for key in raw if key not in known | domains]
     for key in known:
         if key not in raw:
             rows.errors.append(f"missing topic in papers.json: {key}")
@@ -317,6 +343,31 @@ def build_rows(root: Path = ROOT) -> Rows:
             rows.errors.append(f"knowledge base does not load: {exc}")
             return rows
         _paper_rows(rows, root, ROBOTIC_KEY, p, detail_html)
+
+    for topic in DOMAIN_TOPICS:
+        if topic.key not in raw:
+            continue
+        block = raw[topic.key]
+        rows.tables["topics"].append(
+            {
+                "key": topic.key,
+                "slug": topic.slug,
+                "label": topic.label,
+                "title": topic.title,
+                "domain_slug": topic.key,
+                "standard_of_care": [],
+                "soc_title": None,
+                "robotic_sections": [],
+                "metrics": block.get("metrics", {}),
+            }
+        )
+        for p in block.get("papers", []):
+            try:
+                detail_html = _detail(root, p.get("file"))
+            except ValueError as exc:
+                rows.errors.append(f"knowledge base does not load: {exc}")
+                return rows
+            _paper_rows(rows, root, topic.key, p, detail_html)
 
     for story in news:
         status, published = _review(story)
@@ -604,6 +655,8 @@ def export_kb(conn: Any, root: Path) -> None:
         if p["summary"]:
             entry["summary"] = p["summary"]
         entry |= review(p["review_status"], p["review_published_at"])
+        if p["topic_key"] not in raw:  # a specialty domain's first papers (T5 #310)
+            raw[p["topic_key"]] = {"papers": [], "metrics": (topics.get(p["topic_key"]) or {}).get("metrics") or {}}
         raw[p["topic_key"]]["papers"].append(entry)
 
     news = []

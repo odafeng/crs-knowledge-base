@@ -45,7 +45,7 @@ export function buildRecentTicker(
 ): TickerItem[] {
   const paperById = new Map(papers.map((p) => [p.id, p]));
   const paperByPath = new Map(papers.map((p) => [paperPath(p), p]));
-  const topicByKey = new Map(topics.map((t) => [t.key, t]));
+  const topicByKey = new Map<string, Topic>(topics.map((t) => [t.key, t]));
 
   const items: TickerItem[] = [];
   const seenUrls = new Set<string>();

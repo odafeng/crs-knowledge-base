@@ -230,7 +230,7 @@
     "domain": "perioperative-care-nutrition",
     "subtopic": "eras-prehab-nutrition",
     "rollout_batch": 1,
-    "shadow_only": true,
+    "shadow_only": false,
     "pubmed_query": "(colorectal surgery[MeSH] OR colorectal[tiab] OR colectomy[tiab] OR proctectomy[tiab] OR rectal resection[tiab]) AND (enhanced recovery[tiab] OR ERAS[tiab] OR prehabilitation[tiab] OR immunonutrition[tiab] OR sarcopenia[tiab] OR anastomotic leak[tiab] OR anastomotic leakage[tiab] OR stoma[tiab] OR ostomy[tiab] OR surgical site infection[tiab] OR oral antibiotics[tiab]) AND (randomized[tiab] OR randomised[tiab] OR trial[tiab] OR meta-analysis[tiab] OR guideline[tiab])",
     "keywords": [
       "ERAS",
@@ -267,7 +267,7 @@
     "domain": "endoscopy",
     "subtopic": "esd-emr-polypectomy",
     "rollout_batch": 1,
-    "shadow_only": true,
+    "shadow_only": false,
     "pubmed_query": "(colonoscopy[MeSH] OR colorectal[tiab] OR colonic[tiab] OR rectal[tiab]) AND (endoscopic submucosal dissection[tiab] OR ESD[tiab] OR endoscopic mucosal resection[tiab] OR EMR[tiab] OR full-thickness resection[tiab] OR EFTR[tiab] OR cold snare polypectomy[tiab] OR adenoma detection rate[tiab] OR computer-aided detection[tiab] OR CADe[tiab]) AND (randomized[tiab] OR randomised[tiab] OR trial[tiab] OR multicenter[tiab] OR guideline[tiab])",
     "keywords": [
       "colonoscopy",
@@ -302,7 +302,7 @@
     "domain": "anorectal-diseases",
     "subtopic": "anorectal-benign-procedures",
     "rollout_batch": 2,
-    "shadow_only": true,
+    "shadow_only": false,
     "pubmed_query": "(hemorrhoids[MeSH] OR rectal fistula[MeSH] OR fissure in ano[MeSH] OR pilonidal sinus[MeSH] OR hemorrhoid[tiab] OR haemorrhoid[tiab] OR anal fistula[tiab] OR fistula-in-ano[tiab] OR perianal fistula[tiab] OR anal fissure[tiab] OR perianal abscess[tiab] OR pilonidal[tiab]) AND (randomized[tiab] OR randomised[tiab] OR trial[tiab] OR meta-analysis[tiab] OR guideline[tiab])",
     "keywords": [
       "hemorrhoid",
@@ -335,7 +335,7 @@
     "domain": "benign-colorectal-diseases",
     "subtopic": "ibd-surgery",
     "rollout_batch": 2,
-    "shadow_only": true,
+    "shadow_only": false,
     "pubmed_query": "(inflammatory bowel diseases[MeSH] OR diverticulitis[MeSH] OR intestinal volvulus[MeSH] OR Crohn[tiab] OR ulcerative colitis[tiab] OR diverticulitis[tiab] OR sigmoid volvulus[tiab]) AND (surgery[tiab] OR surgical[tiab] OR resection[tiab] OR colectomy[tiab] OR Kono-S[tiab] OR ileal pouch[tiab] OR IPAA[tiab] OR Hartmann[tiab] OR strictureplasty[tiab]) AND (randomized[tiab] OR randomised[tiab] OR trial[tiab] OR multicenter[tiab] OR guideline[tiab])",
     "keywords": [
       "Crohn",
@@ -368,8 +368,8 @@
     "domain": "pelvic-floor-functional",
     "subtopic": "lars-incontinence",
     "rollout_batch": 3,
-    "shadow_only": true,
-    "pubmed_query": "(fecal incontinence[MeSH] OR rectal prolapse[MeSH] OR constipation[MeSH] OR low anterior resection syndrome[tiab] OR LARS[tiab] OR fecal incontinence[tiab] OR faecal incontinence[tiab] OR rectal prolapse[tiab] OR obstructed defecation[tiab] OR ventral mesh rectopexy[tiab] OR sacral neuromodulation[tiab]) AND (randomized[tiab] OR randomised[tiab] OR trial[tiab] OR multicenter[tiab] OR guideline[tiab])",
+    "shadow_only": false,
+    "pubmed_query": "(fecal incontinence[MeSH] OR rectal prolapse[MeSH] OR constipation[MeSH] OR low anterior resection syndrome[tiab] OR LARS score[tiab] OR fecal incontinence[tiab] OR faecal incontinence[tiab] OR rectal prolapse[tiab] OR obstructed defecation[tiab] OR ventral mesh rectopexy[tiab] OR sacral neuromodulation[tiab]) AND (rectal[tiab] OR rectum[tiab] OR anal[tiab] OR anorectal[tiab] OR colorectal[tiab] OR pelvic floor[tiab] OR defecation[tiab] OR bowel function[tiab]) AND (randomized[tiab] OR randomised[tiab] OR trial[tiab] OR multicenter[tiab] OR guideline[tiab])",
     "keywords": [
       "low anterior resection syndrome",
       "LARS",
@@ -400,7 +400,7 @@
     "domain": "surgical-intelligence",
     "subtopic": "surgical-risk-prediction",
     "rollout_batch": 3,
-    "shadow_only": true,
+    "shadow_only": false,
     "pubmed_query": "(colorectal[tiab] OR rectal[tiab] OR colon[tiab] OR colectomy[tiab] OR proctectomy[tiab]) AND (artificial intelligence[tiab] OR deep learning[tiab] OR machine learning[tiab] OR radiomics[tiab] OR pelvimetry[tiab] OR computer vision[tiab] OR phase recognition[tiab] OR surgical data science[tiab] OR foundation model[tiab]) AND (surgery[tiab] OR surgical[tiab] OR intraoperative[tiab] OR anastomotic[tiab] OR postoperative[tiab] OR resection[tiab]) AND (prospective[tiab] OR multicenter[tiab] OR external validation[tiab] OR randomized[tiab] OR randomised[tiab] OR trial[tiab])",
     "keywords": [
       "artificial intelligence",

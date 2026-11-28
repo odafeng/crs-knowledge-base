@@ -90,7 +90,7 @@ export function NewsFeed({
 
   const unified = useMemo<UnifiedItem[]>(() => {
     const paperMap = new Map(papers.map((p) => [p.id, p]));
-    const topicMap = new Map(topics.map((t) => [t.key, t]));
+    const topicMap = new Map<string, Topic>(topics.map((t) => [t.key, t]));
 
     const eventItems: UnifiedItem[] = events.map((event) => ({
       kind: "event",
