@@ -23,6 +23,8 @@ import {
   Status,
   JsonLd,
 } from "@/components/reading";
+import insightStyles from "@/components/clinical-insight.module.css";
+import { pickDailyClinicalInsight } from "@/lib/clinical-insight";
 import {
   getDailyPick,
   listNews,
@@ -55,6 +57,15 @@ const longDate = (iso: string) => {
   const [year, month, day] = iso.split("-").map(Number);
   return `${year} 年 ${month} 月 ${day} 日`;
 };
+
+function taipeiTodayIso(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
 
 export const metadata: Metadata = {
   ...pageMetadata(TAGLINE, DESCRIPTION, "/"),
@@ -92,6 +103,7 @@ export default async function Home() {
   const allDrugs = drugCounts(papers);
   const topDrugs = allDrugs.slice(0, 12);
   const tickerItems = buildRecentTicker(news, papers, topics, daily, 5, events);
+  const insight = pickDailyClinicalInsight(papers, topics, taipeiTodayIso());
 
   return (
     <>
@@ -231,6 +243,45 @@ export default async function Home() {
                 瀏覽全部 {papers.length} 篇文獻與評論
               </Link>
             </p>
+            {insight && (
+              <section
+                className="page__section"
+                aria-labelledby="clinical-insight-title"
+              >
+                <div className={insightStyles.card}>
+                  <p className={insightStyles.head}>
+                    <span className={insightStyles.tag}>{insight.label}</span>
+                    {insight.domainSlug ? (
+                      <Link
+                        className="eyebrow__topic"
+                        href={specialtyPath(insight.domainSlug)}
+                      >
+                        {insight.domainLabel}
+                      </Link>
+                    ) : (
+                      <span>{insight.domainLabel}</span>
+                    )}
+                    <span>
+                      {insight.journal} {insight.year}
+                    </span>
+                  </p>
+                  <h2
+                    className={insightStyles.title}
+                    id="clinical-insight-title"
+                  >
+                    <Link href={insight.path}>{insight.title}</Link>
+                  </h2>
+                  <p className={insightStyles.takeaway}>{insight.takeaway}</p>
+                  <p className={insightStyles.note}>{insight.clinicalNote}</p>
+                  <p className={insightStyles.meta}>
+                    知識回顧輪播自既有已審實證，不計入當日新事件 · 審閱日期{" "}
+                    <time dateTime={insight.reviewedAt}>
+                      {insight.reviewedAt}
+                    </time>
+                  </p>
+                </div>
+              </section>
+            )}
           </section>
           <aside className="home-rail" aria-label="訂閱、主題、最新給付與藥物">
             <Alerts />

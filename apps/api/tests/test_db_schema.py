@@ -67,6 +67,7 @@ TABLES = [
     "news_claims",
     "news_review_actions",
     "news_runs",
+    "news_event_push_announcements",
 ]
 VIEWS = [
     "public_papers",

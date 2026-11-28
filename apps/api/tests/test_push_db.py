@@ -174,3 +174,58 @@ def test_announce_needs_the_vapid_settings(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setenv("GUTHUB_DATABASE_URL", API_DB_URL)
     monkeypatch.delenv("GUTHUB_VAPID_PRIVATE_KEY", raising=False)
     assert maintenance.main(["announce-news"]) == 1
+
+
+def test_newsroom_event_web_push_is_gated_by_flag_and_deduplicated_on_rerun(
+    stories: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """N7 #292: NEWSROOM_NOTIFY_ENABLED defaults OFF; when enabled, each published event pushes at most once."""
+    run = uuid.uuid4().hex[:8]
+    event_id = f"n7-push-{run}"
+    draft_id = f"n7-push-draft-{run}"
+    # Mark fixture legacy story already announced so only the Newsroom event is under test.
+    sql(
+        "insert into app.push_announcements (news_id, sent, removed, failed) values (%s, 0, 0, 0)"
+        " on conflict do nothing",
+        (stories["fresh"],),
+    )
+    sql(
+        "insert into app.push_subscriptions (endpoint, p256dh, auth) values (%s, %s, %s)",
+        (endpoint(f"n7-{run}"), P256DH, AUTH),
+    )
+    try:
+        for eid, status in ((event_id, "published"), (draft_id, "draft")):
+            sql(
+                "insert into app.news_events"
+                " (id, dedup_key, category, geography, evidence_status, risk_tier, status, review_status, published_at)"
+                " values (%s, %s, 'regulatory', 'taiwan', 'approved', 'low', %s, 'reviewed', current_date)",
+                (eid, f"dedup-{eid}", status),
+            )
+            [(rev_id,)] = sql(
+                "insert into app.news_revisions"
+                " (event_id, revision_number, headline, what_happened, why_it_matters,"
+                "  clinical_relevance, evidence_limitations, created_by)"
+                " values (%s, 1, 'TFDA 發布新警訊', '公告臨床注意事項', '影響處方判斷', '臨床關聯', '限制', 'test')"
+                " returning id",
+                (eid,),
+            )
+            sql("update app.news_events set current_revision_id = %s where id = %s", (rev_id, eid))
+
+        monkeypatch.delenv("NEWSROOM_NOTIFY_ENABLED", raising=False)
+        push = FakePush()
+        # Default OFF: nothing sent and nothing claimed.
+        assert announce_news(API_DB_URL, push) == {"stories": 0, "sent": 0, "removed": 0, "failed": 0}
+        assert push.delivered == []
+
+        # Explicitly enabled: published event is announced once; draft is never announced; rerun sends zero duplicates.
+        monkeypatch.setenv("NEWSROOM_NOTIFY_ENABLED", "true")
+        first = announce_news(API_DB_URL, push)
+        assert first == {"stories": 1, "sent": 1, "removed": 0, "failed": 0}
+        assert len(push.delivered) == 1
+        assert push.delivered[0][1]["url"] == f"/news/events/{event_id}/"
+        assert announce_news(API_DB_URL, push) == {"stories": 0, "sent": 0, "removed": 0, "failed": 0}
+        assert len(push.delivered) == 1
+        assert sql("select 1 from app.news_event_push_announcements where event_id = %s", (draft_id,)) == []
+    finally:
+        sql("delete from app.news_events where id = any(%s)", ([event_id, draft_id],))
+        sql("delete from app.push_subscriptions where endpoint = %s", (endpoint(f"n7-{run}"),))
